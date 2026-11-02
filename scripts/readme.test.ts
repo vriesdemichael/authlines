@@ -25,7 +25,8 @@ describe('the README', () => {
 	});
 
 	it('only names commands that are there', () => {
-		const named = [...README.matchAll(/\bpnpm ([a-z][\w:-]*)/g)].map((match) => match[1]);
+		// As a command, in a code block or in quotes, and not a sentence with the word in it.
+		const named = [...README.matchAll(/(?:^|`)pnpm ([a-z][\w:-]*)/gm)].map((match) => match[1]);
 		const builtIn = ['install', 'exec'];
 		expect(named.length).toBeGreaterThan(0);
 		expect(named.filter((name) => !builtIn.includes(name) && !scripts[name])).toEqual([]);
