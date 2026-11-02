@@ -1,27 +1,43 @@
 // Breaks the code on purpose, one way at a time, and checks that a test notices. A review did this by
 // hand once and 24 of 68 breakages went unnoticed, so a green suite meant less than it sounded like.
 //
-//   pnpm test:breakages         runs them all, and exits 1 if one goes unnoticed or no longer applies
-//   pnpm test:breakages keys    only those whose name has that word in it
+//   pnpm test:breakages             runs them all, and exits 1 if one goes unnoticed or no longer applies
+//   pnpm test:breakages keys        only those whose name has that word in it
+//   pnpm test:breakages --part=2/3  only every third one, so that CI can run them side by side
 //
 // Each one has to be a real mistake someone could make. A new test that exists to catch one adds it here.
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { breakages } from './breakages.mjs';
 
-const only = process.argv[2];
-const chosen = breakages.filter((breakage) => !only || breakage.name.includes(only));
+const args = process.argv.slice(2);
+const part = args.find((arg) => arg.startsWith('--part='))?.slice('--part='.length);
+const only = args.find((arg) => !arg.startsWith('--'));
+const [which, of] = part ? part.split('/').map(Number) : [1, 1];
+const chosen = breakages
+	.filter((breakage) => !only || breakage.name.includes(only))
+	.filter((_, index) => index % of === which - 1);
 
-function testsFail() {
+// This one reads the list and the files it names, so it would notice every breakage and prove nothing.
+const NOT_THIS_ONE = '**/breakages.test.ts';
+
+function failed(...vitest) {
 	try {
-		execFileSync('pnpm', ['exec', 'vitest', 'run', '--bail=1'], { stdio: 'ignore', shell: true });
+		execFileSync(
+			'pnpm',
+			['exec', 'vitest', ...vitest, '--bail=1', '--passWithNoTests', '--exclude', NOT_THIS_ONE],
+			{ stdio: 'ignore', shell: true }
+		);
 		return false;
 	} catch {
 		return true;
 	}
 }
+// A test that imports the broken file is the likely one to notice, and takes a fraction of the whole
+// suite. Only a pass there needs the rest, so the answer is the same as running everything each time.
+const noticed = (file) => failed('related', file, '--run') || failed('run');
 
-if (testsFail()) {
+if (failed('run')) {
 	console.error('The tests fail before anything has been broken, so this would say nothing.');
 	process.exit(1);
 }
@@ -40,9 +56,9 @@ for (const { name, file, from, to } of chosen) {
 		original.replace(from, () => to)
 	);
 	try {
-		const noticed = testsFail();
-		if (!noticed) unnoticed.push(name);
-		console.log(`${noticed ? 'ok' : 'UNNOTICED'} ${name}`);
+		const caught = noticed(file);
+		if (!caught) unnoticed.push(name);
+		console.log(`${caught ? 'ok' : 'UNNOTICED'} ${name}`);
 	} finally {
 		writeFileSync(file, original);
 	}
