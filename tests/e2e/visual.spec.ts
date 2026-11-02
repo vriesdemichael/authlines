@@ -12,6 +12,7 @@ const states: readonly [string, string, 'flow' | 'setup'][] = [
 	['simple-first-step', 'mode=simple', 'flow'],
 	['simple-token-response', 'mode=simple&oidc=1&step=token-response', 'flow'],
 	['simple-explanation', 'mode=simple&step=callback&explain=artifact.code', 'flow'],
+	['address-refused', 'mode=simple&address=other&step=address-refused', 'flow'],
 	['every-label', 'labels=1&step=callback', 'flow'],
 	['every-label-setup', 'labels=1&step=hand-over-credentials', 'setup'],
 	['settings-put-away', 'settings=off&step=callback', 'flow'],

@@ -642,7 +642,10 @@ export class Demo {
 				const query = new URLSearchParams({
 					response_type: 'code',
 					client_id: run.clientId,
-					redirect_uri: REDIRECT_URI,
+					redirect_uri:
+						settings.address === 'other'
+							? `${new URL(REDIRECT_URI).origin}/not-registered`
+							: REDIRECT_URI,
 					state: this.#state
 				});
 				if (this.#nonce) {

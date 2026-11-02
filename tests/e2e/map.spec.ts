@@ -27,7 +27,7 @@ const STABLE_NODES = [
 	{ id: 'getting-to-know-each-other', step: 'register-client', stepCount: 9, mode: 'simple' },
 	{ id: 'stolen-code', step: 'attacker-steals-code', stepCount: 14, mode: 'simple' },
 	{ id: 'pkce', step: 'make-verifier', stepCount: 14, mode: 'simple' },
-	{ id: 'redirect-uri-error', step: 'authorize', stepCount: 12, mode: 'simple' }
+	{ id: 'redirect-uri-error', step: 'address-refused', stepCount: 4, mode: 'simple' }
 ];
 
 test.describe('the map', () => {

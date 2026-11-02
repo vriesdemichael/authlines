@@ -141,6 +141,12 @@ export async function capturePages(
 			await typeACode(page)
 		)();
 	});
+	await capture('device-code-refused', async (page) => {
+		await page.goto(`${KEYCLOAK}/realms/${LOCAL_REALM}/device`);
+		await page.fill('[name="device_user_code"]', 'XXXX-XXXX');
+		await page.click('[type="submit"]');
+		await page.getByText('Invalid code').waitFor();
+	});
 	await capture('device-denied', async (page) => {
 		await (
 			await typeACode(page)

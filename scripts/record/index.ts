@@ -43,6 +43,7 @@ import {
 	SERVICE_CLIENT,
 	DEVICE_CLIENT,
 	QUICK_DEVICE_CLIENT,
+	SOMEONE_ELSE,
 	setUpFor,
 	setUpRealms,
 	startKeycloak,
@@ -131,6 +132,9 @@ function classifyResponse(url: URL, status: number, location: string | null): st
 		return steps[url.pathname] ?? null;
 	}
 	if (url.pathname.endsWith('/protocol/openid-connect/logout')) return 'logout-redirect-back';
+	if (url.pathname === `/realms/${LOCAL_REALM}/protocol/openid-connect/auth` && status === 400) {
+		return 'address-refused';
+	}
 	if (location?.startsWith(REDIRECT_URI)) return 'redirect-with-code';
 	if (location?.includes(`/realms/${UPSTREAM_REALM}/protocol/openid-connect/auth`)) {
 		return 'redirect-to-upstream';
@@ -259,6 +263,12 @@ async function login(browser: Browser, run: Run) {
 	watch(page, run, cookies);
 
 	await page.goto(APP);
+	if (run.settings.address === 'other') {
+		await page.getByText('Invalid parameter: redirect_uri').waitFor();
+		await Promise.all(cookies);
+		await context.close();
+		return;
+	}
 	await page.locator('#username').waitFor();
 	await page.fill('#username', USERNAME);
 	await page.fill('#password', PASSWORD);
@@ -361,7 +371,13 @@ function writeWithNoUser(recordings: readonly Recording[]) {
 }
 
 /** A browser somewhere else, which only ever talks to the identity provider. */
-async function logInElsewhere(browser: Browser, run: Run, address: string, userCode: string) {
+async function logInElsewhere(
+	browser: Browser,
+	run: Run,
+	address: string,
+	userCode: string,
+	who = USERNAME
+) {
 	const context = await browser.newContext();
 	const page = await context.newPage();
 	const cookies: Promise<void>[] = [];
@@ -370,7 +386,7 @@ async function logInElsewhere(browser: Browser, run: Run, address: string, userC
 	await page.fill('[name="device_user_code"]', userCode);
 	await page.click('[type="submit"]');
 	await page.locator('#username').waitFor();
-	await page.fill('#username', USERNAME);
+	await page.fill('#username', who);
 	await page.fill('#password', PASSWORD);
 	await page.click('#kc-login');
 	if (run.settings.deviceEnds === 'says-no') {
@@ -383,6 +399,49 @@ async function logInElsewhere(browser: Browser, run: Run, address: string, userC
 	await Promise.all(cookies);
 	await context.close();
 }
+
+/** Someone who read the code finishes first, in a browser of their own, and then the user tries. */
+async function getThereFirst(browser: Browser, run: Run, address: string, userCode: string) {
+	const from = run.messages.length;
+	await logInElsewhere(browser, run, address, userCode, SOMEONE_ELSE);
+	const drawn: Record<string, string> = {
+		'submit-code': 'read-submit-code',
+		'submit-credentials': 'read-submit-credentials',
+		'consent-grant': 'read-agree'
+	};
+	for (const message of run.messages.slice(from)) {
+		message.step = (message.step && drawn[message.step]) ?? null;
+	}
+
+	const tried = run.messages.length;
+	const context = await browser.newContext();
+	const page = await context.newPage();
+	const cookies: Promise<void>[] = [];
+	watch(page, run, cookies, true);
+	await page.goto(address);
+	await page.fill('[name="device_user_code"]', userCode);
+	await page.click('[type="submit"]');
+	await page.getByText('Invalid code').waitFor();
+	await Promise.all(cookies);
+	await context.close();
+	for (const message of run.messages.slice(tried)) {
+		if (message.step === 'login-page') message.step = 'read-code-refused';
+	}
+}
+
+// To the identity provider they are the app, so these are the same requests, drawn coming from them.
+const THEIRS = new Set([
+	'request',
+	'response',
+	'poll',
+	'pending',
+	'poll-again',
+	'token-response',
+	'denied-response',
+	'expired-response',
+	'api-request',
+	'api-response'
+]);
 
 async function recordDevice(browser: Browser, demo: Demo, keycloak: string, recordedAt: string) {
 	const recordings: Recording[] = [];
@@ -397,12 +456,22 @@ async function recordDevice(browser: Browser, demo: Demo, keycloak: string, reco
 		};
 		await demo.discover(run);
 		demo.current = run;
-		await demo.onADevice(run, (address, code) => logInElsewhere(browser, run, address, code));
+		await demo.onADevice(run, (address, code) =>
+			settings.deviceAttack === 'reads-code'
+				? getThereFirst(browser, run, address, code)
+				: logInElsewhere(browser, run, address, code)
+		);
 		demo.current = null;
 		console.log(`${preset.id}: ${run.messages.length} messages`);
+		const named = (step: string) => {
+			if (step.startsWith('read-')) return step;
+			return settings.deviceAttack === 'sends-code' && THEIRS.has(step)
+				? `sent-${step}`
+				: `device-${step}`;
+		};
 		const messages = run.messages.map((message) => ({
 			...message,
-			step: message.step && `device-${message.step}`
+			step: message.step && named(message.step)
 		}));
 		// Not a setting on this flow, and not what the run's settings would otherwise say.
 		const asRun: Settings = { ...settings, clientType: 'public' };

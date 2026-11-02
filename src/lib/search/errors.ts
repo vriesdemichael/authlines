@@ -57,8 +57,8 @@ export const knownErrors: readonly KnownError[] = [
 	{
 		text: 'Invalid parameter: redirect_uri',
 		means: 'The address the app sent is not one registered for this client.',
-		step: 'authorize',
-		settings: {}
+		step: 'address-refused',
+		settings: { address: 'other' }
 	},
 	{
 		text: 'invalid_grant',

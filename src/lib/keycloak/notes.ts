@@ -100,7 +100,7 @@ const requirePkcePlace = clientSettings('Capability config', 'Require PKCE');
 export const noteDefs: readonly NoteDef[] = [
 	{
 		id: 'valid-redirect-uris',
-		steps: ['authorize', 'create-client'],
+		steps: ['authorize', 'address-refused', 'create-client'],
 		title: 'Valid redirect URIs',
 		text: 'The addresses this client may send users back to. Anything else gets a 400, and the page says: Invalid parameter: redirect_uri. It does take a * at the end of an address, which then lets any page on that site get the code, and * alone takes any site at all. An exact match closes both.',
 		place: clientSettings('Access settings', 'Valid redirect URIs'),

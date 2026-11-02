@@ -94,6 +94,30 @@ test.describe('a flow on two devices', () => {
 		await expect(page.locator('[data-step="device-open-page"]')).toHaveCount(0);
 	});
 
+	test('someone sending the user a code takes the place of the app, in simple mode too', async ({
+		page
+	}) => {
+		await openIt(page, 'mode=simple');
+		await page.locator('[data-setting="deviceAttack"] input[value="sends-code"]').check();
+		await expect(page).toHaveURL(/misuse=sends-code/);
+		await expect(page.locator('[data-lifeline="attacker"]')).toHaveCount(1);
+		await expect(page.locator('[data-lifeline="app"]')).toHaveCount(0);
+		await page.locator('[data-setting="deviceAttack"] input[value="reads-code"]').check();
+		await expect(page.locator('[data-lifeline="app"]')).toHaveCount(1);
+		await expect(page.locator('[data-lifeline="attacker"]')).toHaveCount(1);
+	});
+
+	test('what the user does changes the answer they get', async ({ page }) => {
+		await page.goto(`${PATH}?mode=advanced&misuse=sends-code&step=sent-token-response`);
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		await expect(page.getByTestId('payload')).toContainText('access_token');
+		await page.goto(
+			`${PATH}?mode=advanced&misuse=sends-code&ends=says-no&step=sent-denied-response`
+		);
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		await expect(page.getByTestId('payload')).toContainText('access_denied');
+	});
+
 	test('pasting expired_token opens the refusal, and not a success', async ({ page }) => {
 		await page.goto('./');
 		await page.locator('main[data-ready="true"]').waitFor();
@@ -117,7 +141,7 @@ test.describe('a flow on two devices', () => {
 		await openIt(page, 'mode=advanced');
 		const list = page.getByTestId('not-here');
 		await expect(list.locator('[data-not-here="consent"]')).toContainText('asks here anyway');
-		await expect(list.locator('[data-not-here="attacker"]')).toContainText('not drawn');
+		await expect(list.locator('[data-not-here="attacker"]')).toContainText('Someone misusing it');
 		await expect(list.locator('[data-not-here="clientType"]')).toContainText('no secret');
 	});
 

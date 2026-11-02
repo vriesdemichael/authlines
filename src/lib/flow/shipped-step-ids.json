@@ -94,5 +94,6 @@
 	"handed-token-request",
 	"handed-token-response",
 	"handed-nonce-check",
-	"attacker-handed-answer"
+	"attacker-handed-answer",
+	"address-refused"
 ]

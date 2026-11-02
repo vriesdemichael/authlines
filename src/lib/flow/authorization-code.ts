@@ -355,7 +355,18 @@ export const authorizationCode: DiagramDef = {
 			fields: [
 				{ name: 'response_type=code', place: 'query' },
 				{ name: 'client_id', place: 'query' },
-				{ name: 'redirect_uri', place: 'query', note: 'Must match what was registered in setup' },
+				{
+					name: 'redirect_uri',
+					place: 'query',
+					note: 'Must match what was registered in setup',
+					when: not(is('address', 'other'))
+				},
+				{
+					name: 'redirect_uri',
+					place: 'query',
+					note: 'Not one that was registered in setup',
+					when: is('address', 'other')
+				},
 				{ name: 'state', place: 'query' },
 				{ name: 'scope=openid', place: 'query', when: oidc },
 				{ name: 'nonce', place: 'query', when: oidc },
@@ -377,6 +388,44 @@ export const authorizationCode: DiagramDef = {
 					place: 'query',
 					note: 'How the fingerprint was made: a one-way hash, which is why it cannot be turned back. RFC 7636 also has plain, where the challenge is the verifier itself, and RFC 9700 says to use a method that does not expose it.',
 					when: pkce
+				}
+			]
+		},
+		{
+			id: 'address-refused',
+			when: is('address', 'other'),
+			last: true,
+			cites: [
+				{
+					source: 'rfc6749',
+					section: '4.1.2.1',
+					why: 'Section 4.1.2.1 says that with a wrong redirect address, the server should tell the user, and must not send the browser there.'
+				},
+				{
+					source: 'rfc9700',
+					section: '2.1',
+					why: 'Section 2.1 says servers must compare redirect addresses by exact match, which is the current advice this step mentions.'
+				}
+			],
+			from: 'idp',
+			to: 'browser',
+			kind: 'response',
+			plain: 'It refuses, and says so',
+			label: '400 Invalid parameter: redirect_uri',
+			page: {
+				address: 'authorize',
+				shows: "The identity provider's own error page, with no way back to the app.",
+				shot: 'wrong-redirect'
+			},
+			concept:
+				'This is where it stops. The address is not one registered for this app, so there is no login and no code. It does not send the browser back to the app either, because that address is the one it cannot trust, so the page says what is wrong and has no way back. What your app sent is in the address of this page, after redirect_uri.',
+			inPractice:
+				'Compare what your app sent with what is registered for this client, in the provider’s settings for it. Current advice is that they have to match exactly, so look at http or https, the port, and a slash at the end. Your app usually takes it from its own settings, so the fix is in those or in the registration.',
+			links: [
+				{
+					diagram: 'setup',
+					step: 'register-client',
+					text: 'See where the address is registered'
 				}
 			]
 		},

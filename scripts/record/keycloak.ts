@@ -48,6 +48,7 @@ export const DEVICE_CLIENT = 'demo-device';
 export const DEVICE_GRANT_ON = { 'oauth2.device.authorization.grant.enabled': 'true' };
 /** The same, with codes that do not last, so that a run can get to them running out. */
 export const QUICK_DEVICE_CLIENT = 'demo-device-quick';
+export const SOMEONE_ELSE = 'someone-else';
 export const SECOND_REDIRECT_URI = `${SECOND_APP}/callback`;
 export const BACKCHANNEL_URL = 'http://host.docker.internal:9103/backchannel';
 export const API_CLIENT = 'demo-api';
@@ -191,6 +192,12 @@ export async function setUpRealms(admin: Admin) {
 	}
 
 	await admin.call('POST', `/realms/${LOCAL_REALM}/users`, user);
+	// Someone with an account of their own, for what they can do with it.
+	await admin.call('POST', `/realms/${LOCAL_REALM}/users`, {
+		...user,
+		username: SOMEONE_ELSE,
+		email: `${SOMEONE_ELSE}@example.com`
+	});
 	await admin.call('POST', `/realms/${LOCAL_REALM}/clients`, {
 		...client(SECOND_CLIENT, confidential),
 		redirectUris: [SECOND_REDIRECT_URI],
