@@ -76,17 +76,34 @@ test.describe('something failing to load', () => {
 		await expect(page.getByTestId('not-started').getByRole('link')).toHaveText('Try again');
 	});
 
-	test('search says so when it cannot load, and offers to try again', async ({ page }) => {
+	test('search says so when it cannot load, and offers to try again', async ({
+		page,
+		browserName
+	}) => {
 		await page.goto('./');
 		await page.locator('main[data-ready="true"]').waitFor();
 		// As for a tab left open across a deploy, which has removed what it would ask for.
-		await page.route('**/_app/immutable/chunks/**', (route) => route.abort());
+		await page.route('**/_app/immutable/chunks/**', (route) =>
+			route.fulfill({ status: 404, body: '' })
+		);
 		await page.getByTestId('open-search').click();
 		await page.getByTestId('search-input').fill('refresh');
 		const status = page.getByTestId('search-status');
 		await expect(status).toContainText('did not load', { timeout: 5000 });
 		await expect(status).not.toContainText('Getting ready');
+		await expect(status).toContainText('a new tab');
 		await page.unroute('**/_app/immutable/chunks/**');
+		// WebKit holds on to a script that failed for as long as the tab is open, whatever the tab does
+		// next, which is why it says so. After a deploy a reload asks for scripts with new names.
+		if (browserName === 'webkit') {
+			const other = await page.context().newPage();
+			await other.goto('./');
+			await other.locator('main[data-ready="true"]').waitFor();
+			await other.getByTestId('open-search').click();
+			await other.getByTestId('search-input').fill('refresh');
+			await expect(other.getByTestId('search').locator('[data-result]').first()).toBeVisible();
+			return;
+		}
 		// Or the old page is still there to say it is ready.
 		await Promise.all([page.waitForEvent('load'), page.getByTestId('search-again').click()]);
 		await page.locator('main[data-ready="true"]').waitFor();

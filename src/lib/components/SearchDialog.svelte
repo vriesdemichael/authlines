@@ -175,6 +175,8 @@
 					data-testid="search-again"
 					onclick={() => window.location.reload()}>Try again</button
 				>
+				<!-- Safari holds on to a script that failed for as long as the tab is open. -->
+				If it still does not load, a new tab will.
 			{:else if !typed}
 				For example: SSO, refresh token, or the error on your screen.
 				{#if byFind}Press it again for the browser's own find.{/if}
