@@ -274,7 +274,7 @@ export function render(sections: readonly Section[], previous = ''): string {
 			const hashed = hash(text).slice(0, 12);
 			const ticked = ticks.get(id) === hashed;
 			const changed = ticks.has(id) && !ticked;
-			const isNew = previous !== '' && !known.has(id);
+			const isNew = known.size > 0 && !known.has(id);
 			const mark = changed ? '**Changed since you ticked it.** ' : isNew ? '**New.** ' : '';
 			lines.push(`- [${ticked ? 'x' : ' '}] ${mark}${text} <!-- ${id} ${hashed} -->`);
 		}

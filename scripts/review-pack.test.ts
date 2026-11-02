@@ -63,5 +63,6 @@ describe('running it again', () => {
 
 	it('does not call everything new the first time', () => {
 		expect(body).not.toContain('**New.**');
+		expect(render(pack(), 'Being generated.')).not.toContain('**New.**');
 	});
 });
