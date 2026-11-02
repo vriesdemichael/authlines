@@ -1,5 +1,4 @@
 import type { DiagramView, Lifeline } from '#lib/flow/model.ts';
-import type { Mode } from '#lib/flow/vocabulary.ts';
 import { KEYCLOAK_PHRASES, keycloakName } from '#lib/keycloak/words.ts';
 
 /** Whose words the diagram is in. A view of the same steps, so it changes no flow (ADR-004). */
@@ -14,7 +13,8 @@ export const wordingNames: Readonly<Record<Wording, string>> = {
 };
 
 /** Plain for someone new, and for someone who asked for the detail, what the docs will call it. */
-export const wordingFor = (mode: Mode): Wording => (mode === 'simple' ? 'plain' : 'specs');
+/** What it says until someone chooses, because asking for more detail is not asking for new names. */
+export const DEFAULT_WORDING: Wording = 'plain';
 
 type Named = Pick<Lifeline, 'id' | 'plainName' | 'plainRole' | 'name' | 'role'>;
 

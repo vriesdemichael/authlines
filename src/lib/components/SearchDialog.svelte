@@ -134,6 +134,8 @@
 				Getting ready.
 			{:else if !found.results.length}
 				Nothing here about that yet.
+			{:else if found.closest}
+				Nothing with all of those words. The closest:
 			{:else}
 				{found.results.length === 1 ? '1 result' : `${found.results.length} results`}
 			{/if}

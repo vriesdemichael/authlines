@@ -69,8 +69,13 @@
 	// Flipping a setting can move the others, and something sliding under a mouse that stayed where it
 	// pressed is not someone pointing at it.
 	let pressedAt = { x: -1, y: -1 };
+	// Going by movement and not by entering, because the page opening under a mouse that is resting
+	// where it clicked enters whatever lands there, and that is nobody pointing at anything.
+	let pointedRow: EventTarget | null = null;
 	function pointAt(event: PointerEvent, id: SettingId, value: boolean | string) {
+		if (pointedRow === event.currentTarget) return;
 		if (event.clientX === pressedAt.x && event.clientY === pressedAt.y) return;
+		pointedRow = event.currentTarget;
 		// A finger has nothing to hover with, and a tap flips it as it always did.
 		if (event.pointerType === 'mouse') consider(id, value);
 	}
@@ -79,6 +84,7 @@
 		if ((event.target as Element).matches(':focus-visible')) consider(id, value);
 	}
 	function letGo() {
+		pointedRow = null;
 		clearTimeout(settling);
 		onpreview?.(null);
 	}
@@ -138,7 +144,7 @@
 			<label
 				class="toggle"
 				class:blocked
-				onpointerenter={(event) => pointAt(event, id, settings[id] !== true)}
+				onpointermove={(event) => pointAt(event, id, settings[id] !== true)}
 				onpointerleave={letGo}
 				onfocusin={(event) => focusOn(event, id, settings[id] !== true)}
 				onfocusout={letGo}
@@ -160,7 +166,7 @@
 					<label
 						class:blocked
 						title={blocked}
-						onpointerenter={(event) => pointAt(event, id, option.value)}
+						onpointermove={(event) => pointAt(event, id, option.value)}
 						onpointerleave={letGo}
 						onfocusin={(event) => focusOn(event, id, option.value)}
 						onfocusout={letGo}

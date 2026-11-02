@@ -31,7 +31,7 @@
 	<p><Worded {segments} {onterm} /></p>
 	{#if onrewind}
 		<button type="button" class="rewind" data-testid="how-we-got-here" onclick={onrewind}>
-			See how we got here
+			Walk through it from the start
 		</button>
 	{/if}
 	{#if follows}

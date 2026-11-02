@@ -418,7 +418,8 @@ export const authorizationCode: DiagramDef = {
 			label: '303 to the other provider',
 			concept:
 				'The identity provider does not log the user in itself. It sends the browser on to the other provider.',
-			inPractice: 'Nothing changes for your app. It does not know this is happening.',
+			inPractice:
+				'Nothing changes for an app that already uses this identity provider. It does not know this is happening.',
 			when: broker
 		},
 		{
@@ -658,7 +659,7 @@ export const authorizationCode: DiagramDef = {
 			plain: 'Sent back with a one-time code',
 			label: '302 back with a code',
 			concept:
-				'The identity provider sets a cookie on its own address, so it will know this browser next time, and sends the browser back to the app with a short-lived, one-time code. This goes through the browser, where it can be seen, so it cannot be a token yet.',
+				'The identity provider sets a cookie on its own address, so it will know this browser next time, and sends the browser back to the app with a short-lived, one-time code. This goes through the browser, where it can be seen, so it should not be a token.',
 			pitfall: {
 				title: 'Why not send the token here?',
 				text: 'That is the implicit flow, and it is what apps in a browser used to do. The token then sits in the address, where browser history and anything running in the page can get at it, and it cannot be tied to the app that asked. Current advice is not to use it, though you will still see it offered.'
@@ -1097,6 +1098,12 @@ export const authorizationCode: DiagramDef = {
 			id: 'token-request',
 			cites: [
 				{
+					source: 'rfc10017',
+					section: '6.3.3.1',
+					why: 'Section 6.3.3.1 says a secret that ships with an app in the browser should not be treated as a secret, and that a server must not take it as proof of who the client is.',
+					when: not(confidential)
+				},
+				{
 					source: 'rfc9700',
 					section: '2.1.1',
 					why: 'Section 2.1.1 is the current advice: public clients must use PKCE, and for confidential clients it is recommended.',
@@ -1127,8 +1134,9 @@ export const authorizationCode: DiagramDef = {
 				{ text: 'A library does this. There is no secret to keep, because there could not be one.' }
 			],
 			practice: [
-				example('passport', true, 'once it has the code'),
-				example('openidClient', true, 'when you call its code grant')
+				example('passport', true, 'once it has the code', confidential),
+				example('openidClient', true, 'when you call its code grant', confidential),
+				example('oidcClientTs', true, 'does this in the browser, with PKCE', not(confidential))
 			],
 			concept: [
 				{
@@ -1316,6 +1324,20 @@ export const authorizationCode: DiagramDef = {
 		},
 		{
 			id: 'token-response',
+			cites: [
+				{
+					source: 'rfc10017',
+					section: '8.5',
+					why: 'Section 8.5 goes through localStorage, sessionStorage and IndexedDB, and says none of them can fully stop a script running in the page from taking tokens.',
+					when: not(confidential)
+				},
+				{
+					source: 'rfc10017',
+					section: '6.1.4.3',
+					why: 'Section 6.1.4.3 strongly recommends a backend that keeps the tokens for business applications and those that handle personal data, and section 6.3.4.3 does not recommend keeping them in the browser for those.',
+					when: not(confidential)
+				}
+			],
 			when: stillGoing,
 			from: 'idp',
 			to: 'app',
@@ -1334,7 +1356,7 @@ export const authorizationCode: DiagramDef = {
 			inPractice: [
 				{
 					when: not(confidential),
-					text: 'A library takes these. If your app runs in the browser, so do they: the diagram draws the two apart to show the redirects, but anything running in that page can reach them. That is why some keep tokens on a server behind the app.'
+					text: 'A library takes these. If your app runs in the browser, so do they: the diagram draws the two apart to show the redirects, but anything running in that page can reach them, wherever in the browser they are kept. That is why current advice for anything sensitive is a server behind the app that keeps them, called a backend for frontend.'
 				},
 				{
 					when: dpop,
@@ -1345,8 +1367,14 @@ export const authorizationCode: DiagramDef = {
 				}
 			],
 			practice: [
-				example('passport', true, 'hands them to the function you give it'),
-				example('openidClient', true, 'returns them from its code grant')
+				example('passport', true, 'hands them to the function you give it', confidential),
+				example('openidClient', true, 'returns them from its code grant', confidential),
+				example(
+					'oidcClientTs',
+					true,
+					'keeps them in sessionStorage unless you tell it otherwise',
+					not(confidential)
+				)
 			],
 			fields: [
 				{ name: 'access_token', place: 'body', artifact: 'access-token' },
@@ -1580,7 +1608,7 @@ export const authorizationCode: DiagramDef = {
 				},
 				{
 					when: sends('elsewhere'),
-					text: 'A 401 with invalid_token. The signature is good and it has not expired, and it is still refused, because it does not name this API. Otherwise a token meant for one API would open every other one.'
+					text: 'A 401 with invalid_token. The signature is good and it has not expired, and it is still refused, because it does not name this API. Otherwise a token meant for one API would open every other one. The fix is at the identity provider, which has to put this API’s name in the tokens it issues for this app.'
 				},
 				{
 					when: sends('noscope'),
@@ -1609,7 +1637,7 @@ export const authorizationCode: DiagramDef = {
 			concept:
 				'Nothing is sent here, because time is what happens. An access token is short-lived on purpose: anyone holding one can use it, so a stolen one should not be good for long.',
 			inPractice:
-				'The token response said how long it has, in expires_in. How long that is depends on the server.',
+				'The token response said how long it has, in expires_in. How long that is depends on the server. In this recording it was set to 3 seconds, so that a real run could get here.',
 			fields: []
 		},
 		{
@@ -2211,7 +2239,7 @@ export const authorizationCode: DiagramDef = {
 			plain: 'It ends the session',
 			label: 'End the session',
 			concept:
-				'The session is over, so it has gone from under the names. The tokens are still there. An access token does not know the session ended, and the logout specifications say nothing about access tokens.',
+				'The session is over, so it has gone from under the browser and the identity provider. The tokens are still there. An access token does not know the session ended, and the logout specifications say nothing about access tokens.',
 			ends: ['session'],
 			fields: []
 		},

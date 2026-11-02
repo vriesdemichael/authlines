@@ -13,7 +13,7 @@
 		type Mode,
 		type ShotId
 	} from '#lib/flow/vocabulary.ts';
-	import { nameIn, wordingFor, type Wording } from '#lib/flow/wording.ts';
+	import { DEFAULT_WORDING, nameIn, type Wording } from '#lib/flow/wording.ts';
 	import type { Note } from '#lib/keycloak/notes.ts';
 	import { recordedIndex, type Known } from '#lib/recordings/known.ts';
 	import { refLabel, type SourceRef } from '#lib/sources/sources.ts';
@@ -36,6 +36,8 @@
 		partWhy?: string | null;
 		/** Who this is being shown as, when they were not part of this step. */
 		unseenBy?: string | null;
+		/** The app may be running in the browser that is said not to have seen this. */
+		unseenButInThePage?: boolean;
 		change?: ViewDiff | null;
 		resets?: readonly Reset[];
 		links?: readonly Link[];
@@ -75,7 +77,7 @@
 		step,
 		lifelines,
 		mode = 'advanced',
-		wording = wordingFor(mode),
+		wording = DEFAULT_WORDING,
 		inTheBrowser,
 		onlist,
 		oncite,
@@ -83,6 +85,7 @@
 		intro = null,
 		partWhy = null,
 		unseenBy = null,
+		unseenButInThePage = false,
 		change = null,
 		resets = [],
 		links = [],
@@ -224,6 +227,13 @@
 					something in it reaches {unseenBy} later, that shows on the step where it does.
 				{/if}
 			</p>
+			{#if unseenButInThePage && step.from !== step.to}
+				<p data-testid="unseen-in-the-page">
+					That is for an app on a phone or a server. An app that runs in the browser is drawn apart
+					from it here, and is not apart from it: this call comes from the page, and what comes back
+					is in the page.
+				</p>
+			{/if}
 		{:else}
 			<h2 class="title">{simple ? step.plain : step.label}</h2>
 			{#if sayPlainly}

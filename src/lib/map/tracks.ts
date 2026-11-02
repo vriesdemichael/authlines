@@ -73,7 +73,7 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'what-the-browser-sees',
 					answer:
-						"With an app on a server, what matters of what passes through it: the user's password, the one-time code and its session with the identity provider. The access token goes straight to the app, on a direct call the browser is not part of.",
+						"With an app on a server, three things that matter pass through it: the user's password, the one-time code and its session with the identity provider. The access token goes straight to the app, on a direct call the browser is not part of.",
 					title: 'What can the browser see?',
 					summary: 'The whole flow with everything the browser was not sent hidden.',
 					preset: 'oauth',
@@ -85,7 +85,8 @@ export const mapTracks: readonly MapTrack[] = [
 					answer:
 						'OAuth alone only gives the app access, and does not tell it who logged in. OpenID Connect adds an ID token that does, made for the app to read.',
 					title: 'How does an app know who logged in?',
-					summary: 'Access is not identity, which is what OpenID Connect adds.',
+					summary:
+						'Access is not identity, which is what OpenID Connect adds. OAuth alone is not login.',
 					preset: 'oidc',
 					step: 'token-response'
 				}),
@@ -272,6 +273,16 @@ export const mapTracks: readonly MapTrack[] = [
 					step: 'refresh-again'
 				}),
 				node({
+					id: 'refresh-rotate',
+					answer:
+						'A new one coming back is not enough, because the old one may still work. The server has to be set to refuse it, and then a second use ends the session here. A retry, or two tabs at once, counts as a second use, so refresh one at a time.',
+					title: 'How do I make refresh tokens rotate?',
+					summary: 'A new one coming back is not enough: the old one has to stop working.',
+					mode: 'advanced',
+					preset: 'refresh-public-ends',
+					step: 'refresh-again-response'
+				}),
+				node({
 					id: 'stolen-token',
 					answer:
 						'It ties the token to a key that never leaves the app, and each call has to carry a proof signed with that key. At an API that checks the proof, the token alone gets nobody in.',
@@ -304,7 +315,8 @@ export const mapTracks: readonly MapTrack[] = [
 					answer:
 						'The identity provider sends the user on to the other provider, and then gives the app its usual code. The app does not notice.',
 					title: 'How do you log in with another provider?',
-					summary: 'The app does not notice, and that is the point.',
+					summary:
+						'The app does not notice, and that is the point. It is one way "log in with your company account" works.',
 					preset: 'broker',
 					step: 'redirect-to-upstream'
 				}),
@@ -403,8 +415,27 @@ export const mapTracks: readonly MapTrack[] = [
 						'It has no secret, so PKCE protects the code. The harder problem is what follows: the tokens live in the page, where any script running there can reach them.',
 					title: 'An app that runs in the browser',
 					summary:
-						'No secret to keep, so PKCE protects the code. The tokens then live in the page, which is the harder problem.',
+						'A single-page app, in React, say. No secret to keep, so PKCE protects the code. The tokens then live in the page, which is the harder problem.',
 					mode: 'advanced',
+					preset: 'browser-app',
+					step: 'token-request'
+				}),
+				node({
+					id: 'tokens-in-the-browser',
+					answer:
+						'Nowhere in the page is safe from a script running there, whichever storage it is, and that script can ask for new tokens anyway. So for anything sensitive, current advice is to keep them on a server behind the app, and give the browser a cookie.',
+					title: 'Where should an app in the browser keep its tokens?',
+					summary:
+						'localStorage, sessionStorage or memory: none of them stops a script in the page. A backend for frontend keeps them out of it.',
+					preset: 'browser-app',
+					step: 'token-response'
+				}),
+				node({
+					id: 'secret-in-the-page',
+					answer:
+						'Then it is not a secret: anyone can read it in their copy, so a server cannot take it as proof of anything. Make it a client with no secret, and turn on PKCE. If that client may also act for itself, that secret alone gets tokens with no user.',
+					title: 'What if our client secret is in the JavaScript?',
+					summary: 'Then it is not a secret, and anyone can read it.',
 					preset: 'browser-app',
 					step: 'token-request'
 				})
@@ -462,7 +493,7 @@ export const mapTracks: readonly MapTrack[] = [
 					answer:
 						'Because it does not name this API. Its signature is good and it has not expired, but a token meant for one API should not open every other one.',
 					title: 'Why does my API refuse a token that is still good?',
-					summary: 'It has to be for this API, and it is not until someone arranges that.',
+					summary: 'It has to be for this API, which takes setting up at the identity provider.',
 					mode: 'advanced',
 					preset: 'api-elsewhere',
 					step: 'api-response'

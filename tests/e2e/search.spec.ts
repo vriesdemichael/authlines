@@ -91,6 +91,13 @@ test.describe('searching', () => {
 		});
 	}
 
+	test('says when it only has the closest thing to what was typed', async ({ page }) => {
+		await start(page);
+		await input(page).fill('Invalid audience');
+		await expect(status(page)).toContainText('The closest');
+		await expect(results(page).first()).toBeVisible();
+	});
+
 	test('says so when something is not here yet', async ({ page }) => {
 		await start(page);
 		await input(page).fill('saml');

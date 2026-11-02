@@ -69,7 +69,8 @@ export const knownErrors: readonly KnownError[] = [
 	},
 	{
 		text: 'Code not valid',
-		means: 'A code works once, and this one has been used already.',
+		means:
+			'A code works once, and this one has been used already. It is shown here on someone else’s stolen code, because that is where a real server said it.',
 		step: 'real-app-refused',
 		settings: stolenFromPublicWithPkce
 	},
@@ -182,7 +183,8 @@ export const knownErrors: readonly KnownError[] = [
 	},
 	{
 		text: 'unauthorized_client',
-		means: 'The client did not prove who it is. The spec calls this invalid_client.',
+		means:
+			'The client did not prove who it is. The spec calls this invalid_client. It is shown here on someone else’s stolen code, because that is where a real server said it.',
 		step: 'attacker-token-response',
 		settings: { attacker: true }
 	},
@@ -203,7 +205,8 @@ export const knownErrors: readonly KnownError[] = [
 	},
 	{
 		text: 'Invalid client or Invalid client credentials',
-		means: 'The client did not prove who it is, usually a missing or wrong secret.',
+		means:
+			'The client did not prove who it is, usually a missing or wrong secret. It is shown here on someone else’s stolen code, because that is where a real server said it.',
 		step: 'attacker-token-response',
 		settings: { attacker: true }
 	},

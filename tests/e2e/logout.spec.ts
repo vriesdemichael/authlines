@@ -79,7 +79,7 @@ test.describe('logging out', () => {
 		await expect(page.getByTestId('step-pitfall')).toContainText('What if it stops here?');
 		await open(page, 'oidc=1&logout=1&step=logout-redirect');
 		const pitfall = page.getByTestId('step-pitfall');
-		await expect(pitfall).toContainText('What if the client sends no ID token?');
+		await expect(pitfall).toContainText('What if the app sends no ID token?');
 		await pitfall.locator('summary').click();
 		await expect(pitfall).toContainText('has to ask the user');
 	});

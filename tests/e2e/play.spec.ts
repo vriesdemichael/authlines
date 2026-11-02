@@ -54,7 +54,7 @@ test.describe('the timeline', () => {
 		await open(page, 'step=authorize');
 		await expect(page.getByTestId('part-why')).toHaveCount(0);
 		await page.getByTestId('next').click();
-		await expect(page.getByTestId('part-why')).toContainText('away from the client');
+		await expect(page.getByTestId('part-why')).toContainText('away from the app');
 		await page.getByTestId('next').click();
 		await expect(page.getByTestId('part-why')).toHaveCount(0);
 	});

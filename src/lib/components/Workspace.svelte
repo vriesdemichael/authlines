@@ -816,6 +816,7 @@
 			onlist={openList}
 			{intro}
 			{partWhy}
+			unseenButInThePage={appState.eyes === 'browser' && appState.settings.clientType === 'public'}
 			unseenBy={seesStep(current.id) ? null : eyesName}
 			previousChannel={steps[position - 1]?.channel ?? null}
 			atEnd={position === steps.length - 1}

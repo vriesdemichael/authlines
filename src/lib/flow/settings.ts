@@ -281,7 +281,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		param: 'broker',
 		default: false,
 		summary: 'The IdP hands the login to another IdP. The app does not notice.',
-		why: 'Users often already have an account somewhere else, such as at their employer. The IdP hands the login over, so the app needs no changes and never learns how the login happened.',
+		why: 'Users often already have an account somewhere else, such as at their employer. The IdP hands the login over, so an app that already uses it needs no changes, and never learns how the login happened.',
 		simple: {
 			label: 'Log in with another provider',
 			summary: 'The identity provider hands the login to another one. The app does not notice.'

@@ -142,7 +142,6 @@ test.describe('settings', () => {
 		await expect.poll(() => currentSearch(page)).toBe('oidc=1');
 		await expect(page.locator('[data-chip="authorize:scope=openid"]')).toBeVisible();
 		await expect(page.locator('[data-chip="token-response:id_token"]')).toBeVisible();
-		await expect(page.locator('[data-lifeline="app"]')).toContainText('Relying party');
 		await expect(page.getByTestId('change-summary')).toContainText('3 steps added');
 		check();
 	});

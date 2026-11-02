@@ -62,7 +62,7 @@
 
 	const current = $derived(mounted ? page.url.searchParams.get('at') : null);
 	const DESCRIPTION =
-		"OAuth and OpenID Connect on one living diagram, with its messages recorded from a real Keycloak, a free identity provider you can run yourself. The specs are the same elsewhere, though the wording of errors, token formats, defaults and the stored-token API are Keycloak's own. Pick a question and follow it, one message at a time.";
+		"OAuth and OpenID Connect on one living diagram, with its messages recorded from a real Keycloak, a free identity provider you can run yourself. The specs are the same elsewhere, though the wording of errors, token formats and defaults are Keycloak's own. Pick a question and follow it, one message at a time.";
 	const TITLE = `${SITE_NAME}: OAuth and OpenID Connect on one living diagram`;
 	const sharing = sharingTags({
 		title: TITLE,
@@ -94,9 +94,8 @@
 			<p class="lead">
 				OAuth and OpenID Connect on one living diagram, with its messages recorded from a real
 				Keycloak, a free identity provider you can run yourself. The specs are the same elsewhere,
-				though the wording of errors, token formats, defaults and the stored-token API are
-				Keycloak's own. Pick a question and follow it, one message at a time. New to this? Start
-				with the first one.
+				though the wording of errors, token formats and defaults are Keycloak's own. Pick a question
+				and follow it, one message at a time. New to this? Start with the first one.
 			</p>
 			<button
 				type="button"

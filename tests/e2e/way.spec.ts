@@ -136,7 +136,7 @@ test.describe('what is on every step', () => {
 		await expect(page.getByTestId('step-detail').locator('.plain')).toHaveCount(0);
 		await open(page, 'step=token-request');
 		await expect(page.getByTestId('step-detail').locator('.plain')).toHaveText(
-			'The client trades the code for tokens'
+			'The app trades the code for tokens'
 		);
 	});
 
@@ -193,7 +193,7 @@ test.describe('someone who asks why not just send the token', () => {
 			'data-step',
 			'redirect-with-code'
 		);
-		await expect(page.getByTestId('step-detail')).toContainText('so it cannot be a token yet');
+		await expect(page.getByTestId('step-detail')).toContainText('so it should not be a token');
 		const pitfall = page.getByTestId('step-pitfall');
 		await pitfall.locator('summary').click();
 		await expect(pitfall).toContainText('implicit flow');

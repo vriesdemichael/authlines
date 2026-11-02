@@ -5,6 +5,40 @@ const setting = (page: Page, id: string) => page.locator(`[data-setting="${id}"]
 const row = (page: Page, id: string) => page.locator(`[data-step="${id}"]`);
 const preview = (page: Page) => page.getByTestId('setting-preview');
 
+test.describe('opening a question from the map', () => {
+	test.use({ viewport: { width: 1440, height: 900 } });
+
+	test('leaves a setting alone that lands under the mouse that clicked it', async ({ page }) => {
+		await page.goto('./');
+		await page.locator('main[data-ready="true"]').waitFor();
+		const question = page.getByTestId('node-how-access-works');
+		const box = (await question.boundingBox())!;
+		const at = { x: box.x + 60, y: box.y + box.height / 2 };
+		await page.mouse.click(at.x, at.y);
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+
+		// Or this would pass for not being anywhere near one.
+		const under = await page.evaluate(
+			({ x, y }) =>
+				document.elementFromPoint(x, y)?.closest('[data-setting]')?.getAttribute('data-setting'),
+			at
+		);
+		expect(under).toBeTruthy();
+
+		await page.waitForTimeout(400);
+		await expect(preview(page)).toHaveCount(0);
+		await expect(page.locator('[data-lifeline="upstream"]')).toHaveCount(0);
+		const position = await page.getByTestId('position').innerText();
+		await page.keyboard.press('PageDown');
+		await expect(page.getByTestId('position')).not.toHaveText(position);
+		await expect(preview(page)).toHaveCount(0);
+
+		// Moving it is pointing at it, and that still works.
+		await page.mouse.move(at.x + 3, at.y);
+		await expect(preview(page)).toBeVisible();
+	});
+});
+
 test.describe('pointing at a setting', () => {
 	test('shows what it would add, in words as well', async ({ page }) => {
 		const check = watchForErrors(page);

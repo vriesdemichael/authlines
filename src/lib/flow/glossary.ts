@@ -439,6 +439,77 @@ const list: readonly Term[] = [
 		opens: { flow: 'device', step: 'device-show-code' }
 	},
 	{
+		id: 'authn-authz',
+		name: 'Authentication and authorization',
+		words: ['authentication and authorization', 'authn', 'authz'],
+		explains:
+			'Authentication is finding out who someone is, and authorization is what they may do. OAuth is about the second. OpenID Connect adds the first, with an ID token.',
+		alsoCalled: [
+			'authentication vs authorization',
+			'authn vs authz',
+			'OAuth is not login',
+			'is OAuth login',
+			'difference between OAuth and OpenID Connect',
+			'difference between OAuth and OIDC'
+		],
+		at: flowAt('token-response', { oidc: true })
+	},
+	{
+		id: 'refresh-rotation',
+		name: 'Refresh token rotation',
+		words: [
+			'refresh token rotation',
+			'token rotation',
+			'rotation',
+			'rotate',
+			'rotates',
+			'rotating'
+		],
+		explains:
+			'Giving out a new refresh token each time one is used. It only helps if the old one then stops working, which a server may have to be set to do.',
+		at: flowAt('refresh-again-response', { refresh: true })
+	},
+	{
+		id: 'xss',
+		name: 'XSS',
+		words: ['XSS', 'cross-site scripting'],
+		explains:
+			'Someone getting a script of theirs to run in your page. It can then do whatever your page can, including reading or using any token the page holds, and asking for new ones.',
+		alsoCalled: ['cross-site scripting']
+	},
+	{
+		id: 'web-storage',
+		name: 'Storage in the browser',
+		words: ['localStorage', 'sessionStorage', 'IndexedDB', 'local storage', 'session storage'],
+		explains:
+			'Where a page can keep things in the browser. Any script running in that page can read it, so a token kept there is only as safe as the page. Keeping it in memory limits that, and does not end it.',
+		at: flowAt('token-response', { oidc: true, clientType: 'public', pkce: true })
+	},
+	{
+		id: 'bff',
+		name: 'Backend for frontend',
+		words: ['backend for frontend', 'backend-for-frontend', 'BFF'],
+		explains:
+			'A server of your own behind an app in the browser. It is the client: it does the login and keeps the tokens, and the browser only gets a cookie from it, so there are no tokens in the page to take.',
+		alsoCalled: ['BFF']
+	},
+	{
+		id: 'spa',
+		name: 'Single-page app',
+		words: ['single-page app', 'single page app', 'SPA', 'SPAs'],
+		explains:
+			'An app that runs entirely in the browser. It cannot keep a secret, and whatever it holds is in the page.',
+		alsoCalled: ['SPA'],
+		at: flowAt('token-request', { oidc: true, clientType: 'public', pkce: true })
+	},
+	{
+		id: 'password-grant',
+		name: 'Password grant',
+		words: ['password grant', 'resource owner password credentials'],
+		explains:
+			'An app taking the user’s password itself and sending it for a token. Current advice says it must not be used, because it hands the app the one thing all of this keeps from it.'
+	},
+	{
 		id: 'authorization-pending',
 		name: 'authorization_pending',
 		words: ['authorization_pending'],

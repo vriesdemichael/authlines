@@ -302,7 +302,7 @@ describe('layout', () => {
 	it('numbers every message, and says in words what the arrow shows', () => {
 		const { rows } = layout();
 		expect(rows.map((row) => row.number)).toEqual(rows.map((_, i) => i + 1));
-		expect(rows[2].route).toBe('User agent to Authorization server');
+		expect(rows[2].route).toBe("User's browser to Identity provider");
 	});
 
 	it('keeps every chip inside the diagram, in every combination', () => {
