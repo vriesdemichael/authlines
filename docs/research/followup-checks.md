@@ -266,3 +266,26 @@ Asked of Keycloak 26.8.1 on 2026-11-02.
 - **What using a refresh token twice ends.** With Revoke Refresh Token on, the old one gets `Maximum allowed refresh token reuse exceeded` and the newest then gets `Session doesn't have required client`. A new login in the same browser asks for no password: it goes straight back to the app with a code, and that code gets tokens. So this ends the app's session, and not the user's at the identity provider. The site used to say it ended the login, and that the user had to go through it again.
 
 The second is not in a recording or in `questions.json`, so nothing checks it again by itself.
+
+## DCR and CIMD on a real server
+
+Tried on Keycloak 26.8.1 on 2026-11-02. The two successful runs are recorded (`registers-itself` and `points-at-a-document`). The refusals, the second use of a token, the caching and the missing audience were tried by hand in a throwaway container, so nothing checks them again until someone does.
+
+**DCR is on with no flag.** With nothing, the registration endpoint answers 403, "Policy 'Trusted Hosts' rejected request to client-registration service". With an initial access token it answers 201, with a client ID, a secret and a registration access token. A token made with `count: 1` used again is 401, "No remaining count on initial access token". Login and the API work as they do for a client an admin made, with no consent page.
+
+**CIMD takes `--features=cimd` and a client policy.** The flag alone leaves "Client not found", with nothing fetched. The policy is the `client-id-metadata-document` executor. In the order it happens:
+
+- Plain HTTP without `cimd-allow-http-scheme`: "Invalid Client ID: invalid scheme", and nothing fetched.
+- A client ID on a domain not in `cimd-allow-permitted-domains`: "Invalid Client ID: domain not allowed", and nothing fetched.
+- A client ID allowed and a `redirect_uri` in the document on a domain that is not: the document is fetched, and then the same message.
+- Both allowed: the login form. A client with that ID now exists in the realm. Asked again at once, nothing is fetched.
+
+An audit of the source said it caches for 300 seconds, which was not tried past the second ask.
+
+**Three things nobody asked for, which the diagram now says:**
+
+- The user is asked, with "Grant Access to Demo app", where a default client is not.
+- No refresh token comes, because the document's `grant_types` has only `authorization_code`.
+- The token has no audience, and the demo API answered "not for this API". Putting an audience mapper in the `basic` client scope gave it `aud: account`, and the API answered.
+
+The recording turned on plain HTTP, because the demo app has no certificate, and a real one has to be HTTPS. The draft was at -03 that day.

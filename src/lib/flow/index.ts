@@ -10,6 +10,16 @@ import { codeFlowSettingIds } from '#lib/flow/settings.ts';
 const presets: readonly Preset[] = [
 	{ id: 'oauth', title: 'OAuth', settings: {} },
 	{
+		id: 'registers-itself',
+		title: 'An app that registers itself',
+		settings: { registration: 'dcr' }
+	},
+	{
+		id: 'points-at-a-document',
+		title: 'An app that points at a document',
+		settings: { registration: 'cimd', clientType: 'public', pkce: true, consent: true }
+	},
+	{
 		id: 'the-old-way',
 		title: 'The old way: the app has your password',
 		settings: { oldWay: true }

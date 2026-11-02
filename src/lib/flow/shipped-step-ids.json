@@ -101,5 +101,13 @@
 	"old-way-keep",
 	"old-way-call",
 	"old-way-answer",
-	"old-way-nothing-to-set-up"
+	"old-way-nothing-to-set-up",
+	"dcr-make-token",
+	"dcr-hand-token",
+	"dcr-request",
+	"dcr-response",
+	"cimd-allow",
+	"cimd-host",
+	"cimd-fetch",
+	"cimd-document"
 ]

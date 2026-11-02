@@ -402,6 +402,29 @@ export const mapTracks: readonly MapTrack[] = [
 		chains: [
 			[
 				node({
+					id: 'registers-itself',
+					alsoAskedAs: ['dcr', 'dynamic client registration', 'register a client automatically'],
+					answer:
+						'It sends what someone would otherwise have told an admin, and gets a client ID and a secret back. On the server recorded it still takes one hand-off: an admin creates a token that lets it do that.',
+					title: 'Can an app register itself?',
+					summary: 'An admin still hands over a token, and one request does the rest.',
+					preset: 'registers-itself',
+					diagram: 'setup',
+					mode: 'advanced',
+					step: 'dcr-request'
+				}),
+				node({
+					id: 'points-at-a-document',
+					alsoAskedAs: ['cimd', 'client id metadata document', 'mcp client registration'],
+					answer:
+						'Its client ID is the address of a document about it, which the identity provider fetches when it first sees the app. So nobody has to register it first. On the server recorded, an admin names domains and sets the audience, and the user gets asked.',
+					title: 'What if nobody registers the app at all?',
+					summary: 'A document at an address the app controls, fetched when it first asks.',
+					preset: 'points-at-a-document',
+					mode: 'advanced',
+					step: 'cimd-document'
+				}),
+				node({
 					id: 'when-do-i-get-asked',
 					answer:
 						'When the identity provider is set up to ask for this app, and it then lists what the app wants. Many are set up not to, which is why you may never have seen it.',
@@ -517,16 +540,6 @@ export const mapTracks: readonly MapTrack[] = [
 					mode: 'advanced',
 					preset: 'oauth',
 					step: 'token-request'
-				}),
-				node({
-					id: 'two-apps-one-login',
-					answer:
-						'They share the session on the identity provider, and nothing else. Each gets tokens of its own, and here the two ID tokens name the same session and login time, and a different app.',
-					title: 'Do two apps share a token?',
-					summary: 'They share a login, and each has tokens of its own.',
-					mode: 'advanced',
-					preset: 'sso-oidc',
-					step: 'second-token-response'
 				}),
 				node({
 					id: 'what-is-in-my-token',
@@ -661,16 +674,6 @@ export const mapTracks: readonly MapTrack[] = [
 					summary: 'The codes run out, and the app is told when it next asks.',
 					answer:
 						'The codes only last so long. The next time the app asks after that, it gets a 400 with expired_token, stops asking, and tells the user. Trying again takes new codes, once the user asks to.'
-				}),
-				node({
-					id: 'device-who-logged-in',
-					flow: 'device',
-					preset: 'on-a-device-oidc',
-					step: 'device-check-id-token',
-					title: 'Can a device know who logged in?',
-					summary: 'Usually, with an ID token.',
-					answer:
-						'Usually. RFC 8628 does not cover it, so it is up to the server, and the one recorded here does it: the app adds openid at the start, and the last answer has an ID token. It says who agreed, which need not be who is at the device.'
 				})
 			]
 		]
@@ -685,6 +688,26 @@ export const mapNodes: readonly MapNode[] = mapTracks.flatMap((track) => track.c
  * they were about through the question that took them over.
  */
 export const offTheMap: readonly MapNode[] = [
+	node({
+		id: 'two-apps-one-login',
+		answer:
+			'They share the session on the identity provider, and nothing else. Each gets tokens of its own, and here the two ID tokens name the same session and login time, and a different app.',
+		title: 'Do two apps share a token?',
+		summary: 'They share a login, and each has tokens of its own.',
+		mode: 'advanced',
+		preset: 'sso-oidc',
+		step: 'second-token-response'
+	}),
+	node({
+		id: 'device-who-logged-in',
+		flow: 'device',
+		preset: 'on-a-device-oidc',
+		step: 'device-check-id-token',
+		title: 'Can a device know who logged in?',
+		summary: 'Usually, with an ID token.',
+		answer:
+			'Usually. RFC 8628 does not cover it, so it is up to the server, and the one recorded here does it: the app adds openid at the start, and the last answer has an ID token. It says who agreed, which need not be who is at the device.'
+	}),
 	node({
 		id: 'device-pending-error',
 		flow: 'device',

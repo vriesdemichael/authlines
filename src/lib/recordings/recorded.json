@@ -13,6 +13,10 @@
 		"identity-brokering-api:v2": {
 			"type": "DISABLED_BY_DEFAULT",
 			"enabled": false
+		},
+		"cimd": {
+			"type": "EXPERIMENTAL",
+			"enabled": false
 		}
 	},
 	"recordedOn": {
@@ -34,12 +38,16 @@
 		"address-refused": "2026-11-02",
 		"browser-app": "2026-11-02",
 		"in-the-page": "2026-11-02",
-		"the-old-way": "2026-11-02"
+		"the-old-way": "2026-11-02",
+		"registers-itself": "2026-11-02",
+		"points-at-a-document": "2026-11-02"
 	},
 	"flows": {
 		"authorization-code": {
 			"presets": [
 				"oauth",
+				"registers-itself",
+				"points-at-a-document",
 				"the-old-way",
 				"address-refused",
 				"api-no-token",
@@ -103,8 +111,12 @@
 				"backchannel-response",
 				"call-upstream",
 				"callback",
+				"cimd-document",
+				"cimd-fetch",
 				"consent-grant",
 				"consent-page",
+				"dcr-request",
+				"dcr-response",
 				"discover",
 				"discovery-document",
 				"end-session",

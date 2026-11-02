@@ -38,6 +38,35 @@ const flowAt = (step: string, settings?: Partial<Settings>): TermPlace => ({
 
 const list: readonly Term[] = [
 	{
+		id: 'dcr',
+		name: 'Dynamic client registration',
+		words: ['dynamic client registration', 'DCR'],
+		explains:
+			'An app registering itself, by sending what someone would otherwise have told an admin. It gets a client ID and perhaps a secret back.',
+		at: { diagram: 'setup', step: 'dcr-request', settings: { registration: 'dcr' } }
+	},
+	{
+		id: 'cimd',
+		name: 'Client ID metadata document',
+		words: ['client ID metadata document', 'CIMD'],
+		explains:
+			'A document about an app at an address it controls, with that address as its client ID. So nobody has to register it first, and the identity provider fetches it when it first sees the app.',
+		at: flowAt('cimd-document', {
+			registration: 'cimd',
+			clientType: 'public',
+			pkce: true,
+			consent: true
+		})
+	},
+	{
+		id: 'initial-access-token',
+		name: 'Initial access token',
+		words: ['initial access token'],
+		explains:
+			'What an admin hands over so that an app can register itself, on a server that limits who may.',
+		at: { diagram: 'setup', step: 'dcr-make-token', settings: { registration: 'dcr' } }
+	},
+	{
 		id: 'http-basic',
 		name: 'HTTP Basic',
 		words: ['HTTP Basic', 'Basic auth', 'basic authentication'],

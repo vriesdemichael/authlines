@@ -39,6 +39,9 @@ function* everyStep() {
  */
 const CITED: readonly [step: string, SourceId, section: string, phrase: string][] = [
 	['authorize', 'rfc6749', '4.1.2.1', 'MUST NOT automatically redirect'],
+	['dcr-make-token', 'rfc7591', '3', 'with no initial access token'],
+	['dcr-request', 'rfc7591', '3.1', 'initial access token'],
+	['dcr-response', 'rfc7591', '3.2.1', 'client_secret'],
 	['old-way-keep', 'rfc6749', '1', 'typically a password in'],
 	['old-way-call', 'rfc7617', '2', 'using Base64'],
 	['old-way-call', 'rfc6749', '1', 'overly broad access'],

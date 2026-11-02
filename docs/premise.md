@@ -126,7 +126,7 @@ Three things follow:
 - **Registration is the setup.** Manual registration, DCR and CIMD are three answers to one question: how does the IdP get to know this app? So the CIMD toggle lives in the setup diagram and fits the story rather than being an advanced extra.
 - **Setup and login are linked.** The redirect URI registered in setup is checked during login, and those two steps link to each other. That explains the most-viewed Keycloak error, and a choice in advanced mode draws it: an address that was not registered, where the flow stops with what a real server said.
 - **It says what is left to you.** **Proposed:** in simple mode the people on it are "You", the app team, and an admin. Steps your app or API takes part in have a line saying which part a library does and which part is your code, because someone told to add login mostly wants to know what they have to do. That is general knowledge, not recorded, and the map has that question. All of it is also one list, grouped by whose job it is, with the pitfalls, which follows the settings and prints ([#102](https://github.com/vriesdemichael/authlines/issues/102)). Nothing in it is written for it, so it can only say what the steps do. It is a view of the state, with an address, and it stays in the application.
-- **The setup diagram differs from runtime.** Manual setup is mostly people, an application team and an IdP admin copying values between consoles, not HTTP messages. So those people are lifelines on it, each next to the system they look after, and their hand-offs are drawn differently from HTTP. **Proposed:** DCR and CIMD take the people off the diagram, so that the hand-offs turn into HTTP arrows as a transition.
+- **The setup diagram differs from runtime.** Manual setup is mostly people, an application team and an IdP admin copying values between consoles, not HTTP messages. So those people are lifelines on it, each next to the system they look after, and their hand-offs are drawn differently from HTTP. **Built, in advanced mode for the maintainer to judge:** one choice between someone registering the app, it registering itself (DCR) and it pointing at a document (CIMD), and the hand-offs turn into HTTP arrows as a transition. A real server keeps the people from leaving altogether. DCR on a default realm still takes an admin handing over one token. On the server recorded, CIMD takes an admin once, to say which domains to trust and to put the audience in a scope every client gets, and it is the one that reaches the user flow, because the document is fetched when the app first asks, and the user is asked.
 
 ### 5.4 Limited context per step
 
@@ -270,7 +270,7 @@ So organise the site by protocol concept and show Keycloak's status as a badge. 
 
 ### Protocols drift (Proposed)
 
-Stamp each flow with its spec version and a last-verified date. Experimental flags will mean rework. The version skew is itself teachable: CIMD is at IETF draft -02 with no last call recorded, MCP still links -00, and MCP's 2026-07-28 revision makes CIMD SHOULD and DCR MAY and deprecated.
+Stamp each flow with its spec version and a last-verified date. Experimental flags will mean rework. The version skew is itself teachable: CIMD was at IETF draft -03 on 2026-11-02, MCP still links -00, and MCP's 2026-07-28 revision makes CIMD SHOULD and DCR MAY and deprecated.
 
 ### Combinations grow fast (Proposed)
 
@@ -317,7 +317,7 @@ An order for later releases. **Proposed**, and expected to change.
 | PKCE | Modifier, off to start with | Adds `code_challenge` and `code_verifier`, with a step where the app makes them and one where the IdP checks them. Independent of the client type, because a real Keycloak takes all four combinations |
 | Public or confidential client | Exclusive | Changes setup and the token request |
 | Where the app runs ([#59](https://github.com/vriesdemichael/authlines/issues/59)) | Exclusive, in simple mode, and it brings the client type along | On a server, or in the page, built, where the app joins the browser on the diagram, its calls go through the browser, and the tokens end up under it. A phone, and a page with a server behind it, are still to come |
-| Pre-registered, DCR or CIMD | Exclusive | Changes the setup diagram. CIMD is the `cimd` flag, experimental |
+| Pre-registered, DCR or CIMD, built | Exclusive, advanced only, in the plain case | Changes the setup diagram. CIMD is the `cimd` flag, experimental, with a client policy, and adds the fetch and the consent to the user flow |
 | External IdP (brokering) | Modifier | Adds a lifeline and a nested flow |
 | Stored upstream tokens | Modifier on brokering, then API V1 or V2 | Adds a retrieval call after login. V2 needs a confidential client |
 | User federation | Modifier | Adds a server-side lookup, no redirect |

@@ -16,6 +16,8 @@ const confidential = is('clientType', 'confidential');
 const pkce = is('pkce', true);
 const consent = is('consent', true);
 const inPage = is('appRuns', 'page');
+const fromADocument = is('registration', 'cimd');
+const byHand = is('registration', 'manual');
 const attacker = is('attacker', true);
 // The code is one-time, and on a public client nothing stops someone else using it first.
 const codeTaken = all(attacker, not(confidential));
@@ -243,6 +245,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					diagram: 'setup',
 					step: 'register-client',
+					when: byHand,
 					text: 'See how the app and the identity provider got to know each other'
 				}
 			]
@@ -370,6 +373,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			label: 'GET /authorize',
 			concept: [
 				{
+					when: fromADocument,
+					text: 'The browser asks the identity provider to log the user in and grant the app access. The client ID here is an address, and where to send the user back to gets checked against what the app’s document says.'
+				},
+				{
 					when: oidc,
 					text: 'The browser asks the identity provider to log the user in. The openid scope asks for proof of who that was as well. The identity provider first checks that the address to send the user back to is one registered in setup.'
 				},
@@ -387,17 +394,30 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					diagram: 'setup',
 					step: 'register-client',
+					when: byHand,
 					text: 'See where the address was registered'
 				}
 			],
 			fields: [
 				{ name: 'response_type=code', place: 'query' },
-				{ name: 'client_id', place: 'query' },
+				{
+					name: 'client_id',
+					place: 'query',
+					note: 'The address of a document about the app, on HTTPS in a real one',
+					when: fromADocument
+				},
+				{ name: 'client_id', place: 'query', when: not(fromADocument) },
 				{
 					name: 'redirect_uri',
 					place: 'query',
 					note: 'Must match what was registered in setup',
-					when: not(is('address', 'other'))
+					when: all(not(is('address', 'other')), not(fromADocument))
+				},
+				{
+					name: 'redirect_uri',
+					place: 'query',
+					note: 'Must match what the document says',
+					when: fromADocument
 				},
 				{
 					name: 'redirect_uri',
@@ -463,8 +483,55 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					diagram: 'setup',
 					step: 'register-client',
+					when: byHand,
 					text: 'See where the address is registered'
 				}
+			]
+		},
+		{
+			id: 'cimd-fetch',
+			when: fromADocument,
+			from: 'idp',
+			to: 'app',
+			kind: 'request',
+			plain: 'The identity provider fetches the app’s document',
+			label: 'GET the client_id address',
+			concept:
+				'The first time it sees this app, it fetches the address the client ID names, and goes by what it finds there. Later it may use a copy.',
+			cites: [
+				{
+					source: 'cimd-draft',
+					why: 'The draft has the server fetch the document when it sees a client ID that is an address, and lets it keep a copy.'
+				}
+			],
+			links: [{ diagram: 'setup', step: 'cimd-host', text: 'See where this document came from' }],
+			fields: []
+		},
+		{
+			id: 'cimd-document',
+			when: fromADocument,
+			from: 'app',
+			to: 'idp',
+			kind: 'response',
+			plain: 'What the document says',
+			label: '200 with client metadata',
+			concept:
+				'This is what would otherwise have been registered by hand. Anyone can publish a document, so each server decides how far to trust one. The server recorded only goes on for domains it was told to trust.',
+			pitfall: {
+				title: 'What if the domain is not trusted?',
+				text: 'The login stops, and the user sees an error. On the server recorded, a client ID on a domain it does not trust, or on plain HTTP, is refused before anything is fetched, and an address in the document on such a domain after.'
+			},
+			fields: [
+				{
+					name: 'client_id',
+					place: 'body',
+					note: 'The same address it was fetched from, on HTTPS in a real one'
+				},
+				{ name: 'client_name', place: 'body' },
+				{ name: 'redirect_uris', place: 'body' },
+				{ name: 'token_endpoint_auth_method', place: 'body', note: 'None, so it has no secret' },
+				{ name: 'grant_types', place: 'body' },
+				{ name: 'response_types', place: 'body' }
 			]
 		},
 		{
@@ -678,8 +745,15 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					"The identity provider's own page, asking the user to agree to what the app asked for.",
 				shot: 'consent'
 			},
-			concept:
-				'The identity provider asks the user whether this app may have this access. What it lists are scopes: each one names some access or some information. They come from what the app asked for and from how it was set up. This is between the user and the identity provider, and the app has no part in it.',
+			concept: [
+				{
+					when: fromADocument,
+					text: 'The identity provider asks the user whether this app may have this access. The server recorded asks here, though nobody turned this on and a default client is not asked. What it lists are scopes.'
+				},
+				{
+					text: 'The identity provider asks the user whether this app may have this access. What it lists are scopes: each one names some access or some information. They come from what the app asked for and from how it was set up. This is between the user and the identity provider, and the app has no part in it.'
+				}
+			],
 			pitfall: {
 				title: 'What if the user says no?',
 				text: 'The browser still goes back to the app, but with error=access_denied in place of a code. So the app has to expect this, and has nothing to trade.'
@@ -1463,6 +1537,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: 'The tokens are in the page now, and so in the browser, which the rest of this flow took care to avoid. On a server they would be out of reach of the user’s browser. Here, any script running in this page can reach them, and that is the price of having no server.'
 				},
 				{
+					when: fromADocument,
+					text: 'The access token lets the app call the API, and is meant for the API to read. No refresh token comes here, because the document did not ask for one.'
+				},
+				{
 					when: oidc,
 					text: 'The access token is for the API, and the ID token tells the app who logged in. Here a refresh token comes too, to get a new access token later without the user.'
 				},
@@ -1508,7 +1586,8 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					name: 'refresh_token',
 					place: 'body',
 					artifact: 'refresh-token',
-					note: 'Gets a new access token later, without the user'
+					note: 'Gets a new access token later, without the user',
+					when: not(fromADocument)
 				},
 				{ name: 'scope', place: 'body' }
 			]

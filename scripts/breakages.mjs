@@ -17,6 +17,12 @@ const LEFT = 'src/lib/flow/left-to-you.ts';
 const ERRORS = 'src/lib/search/errors.ts';
 
 export const breakages = [
+	{
+		name: 'cimd: the login says the address was registered in setup',
+		file: 'src/lib/flow/authorization-code.ts',
+		from: "note: 'Must match what the document says',",
+		to: "note: 'Must match what was registered in setup',"
+	},
 	// What a claims audit found in words written the same day.
 	{
 		name: 'old way: the app says it never sees the password it was just given',

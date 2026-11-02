@@ -80,6 +80,8 @@ describe('constraints', () => {
 		const withLogout = 2 * 2 * 2;
 		// On its own, because nothing else here means anything without an identity provider.
 		const theOldWay = 1;
+		// Each only in the plain case for now, because each brings a different client.
+		const howItRegisters = 2;
 		expect(allValidSettings()).toBe(allValidSettings());
 		expect(Object.isFrozen(allValidSettings())).toBe(true);
 		expect(allValidSettings().every((settings) => Object.isFrozen(settings))).toBe(true);
@@ -91,7 +93,8 @@ describe('constraints', () => {
 				withRefresh +
 				withASecondApp +
 				withLogout +
-				theOldWay
+				theOldWay +
+				howItRegisters
 		);
 	});
 

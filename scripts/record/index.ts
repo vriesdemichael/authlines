@@ -26,7 +26,7 @@ import { evidenceDifferences, pagesGone, whatChanged } from '#lib/recordings/che
 import { defaultSettings, flagsInSettings, normalize, type Settings } from '#lib/flow/settings.ts';
 import type { ShotId } from '#lib/flow/vocabulary.ts';
 import type { FlagStatus, Recording, RecordingIndex } from '#lib/recordings/format.ts';
-import { Demo, requestMessage, responseMessage, type Run } from './demo.ts';
+import { CLIENT_DOCUMENT, Demo, requestMessage, responseMessage, type Run } from './demo.ts';
 import {
 	Admin,
 	APP,
@@ -44,6 +44,8 @@ import {
 	DEVICE_CLIENT,
 	QUICK_DEVICE_CLIENT,
 	SOMEONE_ELSE,
+	allowClientDocuments,
+	makeInitialAccessToken,
 	setUpFor,
 	setUpRealms,
 	startKeycloak,
@@ -64,6 +66,7 @@ import { deviceNoteDefs, noUserNoteDefs } from '#lib/keycloak/notes.ts';
 const { presets } = base;
 
 export const PINNED_KEYCLOAK = '26.8.1';
+const CIMD_FLAG = 'cimd';
 const FOLDER = 'static/recordings/authorization-code';
 const INDEX = 'src/lib/recordings/recorded.json';
 
@@ -322,7 +325,12 @@ async function login(browser: Browser, run: Run) {
 	}
 	await page
 		.getByRole('heading', { name: /Logged in|Refused|Failed/ })
-		.waitFor({ timeout: 30_000 });
+		.waitFor({ timeout: 30_000 })
+		.catch(async (error) => {
+			// A timeout says what it waited for, and what was on the screen is what anyone needs to know.
+			const shown = (await page.locator('body').innerText()).slice(0, 400);
+			throw new Error(`Stuck at ${page.url()}, showing: ${shown}`, { cause: error });
+		});
 	await Promise.all(cookies);
 	const outcome = await page.locator('body').innerText();
 	if (outcome.includes('Failed')) throw new Error(`Login failed: ${outcome}`);
@@ -360,9 +368,17 @@ async function record(
 		return run;
 	}
 	await setUpFor(admin, run.realm, settings);
+	if (settings.registration === 'cimd') {
+		await allowClientDocuments(admin, run.realm);
+		run.clientId = CLIENT_DOCUMENT;
+		run.clientSecret = null;
+	}
 
 	// Setup's one HTTP exchange. Everything else in setup is people, or the admin calls in keycloak.ts.
-	await demo.discover(run);
+	await demo.discover(
+		run,
+		settings.registration === 'dcr' ? await makeInitialAccessToken(admin, run.realm) : undefined
+	);
 
 	await admin.forgetBrokeredUsers();
 	demo.current = run;
@@ -669,6 +685,7 @@ function indexOf(
 }
 
 const needsV2 = (preset: (typeof presets)[number]) => preset.settings.upstreamTokens === 'v2';
+const needsCimd = (preset: (typeof presets)[number]) => preset.settings.registration === 'cimd';
 
 /** Only those, because a whole run changes every value in every recording. */
 async function recordOnlyPresets(ids: readonly string[]) {
@@ -676,7 +693,9 @@ async function recordOnlyPresets(ids: readonly string[]) {
 	await demo.start();
 	const browser = await chromium.launch();
 	try {
-		await startKeycloak(version, []);
+		// One or the other, because the flag changes what discovery says for everything recorded with it.
+		const wanted = presets.filter(({ id }) => ids.includes(id));
+		await startKeycloak(version, wanted.some(needsCimd) ? [CIMD_FLAG] : []);
 		const admin = await Admin.connect();
 		const keycloak = await admin.serverVersion();
 		await setUpRealms(admin);
@@ -756,8 +775,9 @@ async function main() {
 
 	try {
 		for (const [features, wanted, questions] of [
-			[[], presets.filter((preset) => !needsV2(preset)), questionsWithApiV1],
-			[[API_V2_FLAG], presets.filter(needsV2), questionsWithApiV2]
+			[[], presets.filter((preset) => !needsV2(preset) && !needsCimd(preset)), questionsWithApiV1],
+			[[API_V2_FLAG], presets.filter(needsV2), questionsWithApiV2],
+			[[CIMD_FLAG], presets.filter(needsCimd), async () => ({})]
 		] as const) {
 			console.log(`Starting Keycloak ${version} ${features.join(' ')}`);
 			await startKeycloak(version, features);

@@ -318,11 +318,7 @@ export const notHereYet: readonly string[] = [
 	'scram',
 	'oauth 1',
 	'digest auth',
-	// Named in the brief, and not built yet: #143 and #144.
-	'cimd',
-	'client id metadata',
-	'dcr',
-	'dynamic client registration',
+	// Named in the brief, and not built yet: #144.
 	'user federation',
 	'ldap',
 	'active directory'

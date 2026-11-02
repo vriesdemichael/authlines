@@ -299,6 +299,64 @@ const defaultsForQuestions: Pick<Settings, 'clientType' | 'consent' | 'upstreamT
  * carries over from another run, such as an answer to the consent question, and a setting that is
  * off really is off, on a client and a provider that are otherwise on their defaults (ADR-005).
  */
+/** What an admin creates and hands to a team, so that their app can register itself, once. */
+export async function makeInitialAccessToken(admin: Admin, realm: string) {
+	const { token } = await admin.call<{ token: string }>(
+		'POST',
+		`/realms/${realm}/clients-initial-access`,
+		{ count: 1, expiration: 600 }
+	);
+	return token;
+}
+
+/**
+ * The flag alone does nothing: it takes a client policy too. Plain HTTP is turned on only because the
+ * demo app has no certificate, and the screen says a real one has to be HTTPS.
+ */
+export async function allowClientDocuments(admin: Admin, realm: string) {
+	await admin.call('PUT', `/realms/${realm}/client-policies/profiles`, {
+		profiles: [
+			{
+				name: 'client-documents',
+				description: 'Apps may point at a document about themselves',
+				executors: [
+					{
+						executor: 'client-id-metadata-document',
+						configuration: {
+							'cimd-allow-http-scheme': 'true',
+							'cimd-allow-permitted-domains': ['host.docker.internal', 'localhost']
+						}
+					}
+				]
+			}
+		]
+	});
+	await admin.call('PUT', `/realms/${realm}/client-policies/policies`, {
+		policies: [
+			{
+				name: 'client-documents',
+				description: 'Apps may point at a document about themselves',
+				enabled: true,
+				conditions: [{ condition: 'any-client', configuration: {} }],
+				profiles: ['client-documents']
+			}
+		]
+	});
+	// Its token has no roles, and so no audience, and an API that checks says "not for this API". There
+	// is no client to set it on, so an admin has to put it in a scope every client gets.
+	const scopes = await admin.call<{ id: string; name: string }[]>(
+		'GET',
+		`/realms/${realm}/client-scopes`
+	);
+	const basic = scopes.find(({ name }) => name === 'basic');
+	await admin.call('POST', `/realms/${realm}/client-scopes/${basic?.id}/protocol-mappers/models`, {
+		name: 'audience of the API',
+		protocol: 'openid-connect',
+		protocolMapper: 'oidc-audience-mapper',
+		config: { 'included.custom.audience': API_AUDIENCE, 'access.token.claim': 'true' }
+	});
+}
+
 export async function setUpFor(
 	admin: Admin,
 	realm: string,
