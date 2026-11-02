@@ -7,6 +7,7 @@ import { socialKey } from '#lib/map/social.ts';
 import social from '#lib/map/social.json';
 import { recordingFor } from '#lib/recordings/known.ts';
 import {
+	allNodes,
 	mapNodes,
 	mapTracks,
 	nextQuestion,
@@ -40,8 +41,13 @@ describe('the map', () => {
 		expect(nodeSettings(second)).toEqual(defaultSettings);
 	});
 
+	// "Very busy and cluttered", the maintainer said on 2026-11-02. A new question takes one off (#142).
+	it('stays short enough to look through', () => {
+		expect(mapNodes.length).toBeLessThanOrEqual(53);
+	});
+
 	it('offers everything that was recorded', () => {
-		const used = new Set(mapNodes.map((node) => node.preset));
+		const used = new Set(allNodes.map((node) => node.preset));
 		expect(base.presets.filter((preset) => !used.has(preset.id)).map((p) => p.id)).toEqual([]);
 	});
 

@@ -15,7 +15,6 @@
 	import type { Mode } from '#lib/flow/vocabulary.ts';
 	import type { Say } from '#lib/flow/wording.ts';
 	import { flagStatus } from '#lib/keycloak/flags.ts';
-	import { isVendorSource, refLabel, type SourceRef } from '#lib/sources/sources.ts';
 
 	interface Props {
 		/** Why the others are not here, because a setting that just vanishes says nothing. */
@@ -27,7 +26,6 @@
 		available?: readonly SettingId[];
 		mode?: Mode;
 		onchange: <K extends SettingId>(id: K, value: Settings[K]) => void;
-		onopensource: (setting: SettingId, ref: SourceRef) => void;
 		onexplain?: (setting: SettingId) => void;
 		/** Whether to show what is specific to the server this was recorded from. */
 		serverNotes?: boolean;
@@ -49,7 +47,6 @@
 		available = settingIds,
 		mode = 'advanced',
 		onchange,
-		onopensource,
 		onexplain,
 		serverNotes = true,
 		onservernotes,
@@ -150,7 +147,7 @@
 {/if}
 {#each offered as id (id)}
 	{@const def = defOf(id)}
-	<section data-setting={id} class:beside-the-switch={simple} aria-describedby={`about-${id}`}>
+	<section data-setting={id} class="beside-the-switch" aria-describedby={`about-${id}`}>
 		{#if def.kind === 'toggle'}
 			{@const blocked = blockedBy(id, true)}
 			<label
@@ -226,23 +223,9 @@
 					aria-label={`Why ${simple ? (def.simple?.label ?? def.label) : def.label}?`}
 					onclick={() => onexplain?.(id)}
 				>
-					{simple ? '?' : 'Why?'}
+					?
 				</button>
 			</li>
-			{#if !simple}
-				{#each def.sources.filter((ref) => serverNotes || !isVendorSource(ref.source)) as ref (ref.source)}
-					<li>
-						<button
-							type="button"
-							class="link"
-							data-source-ref={`${id}:${ref.source}`}
-							onclick={() => onopensource(id, ref)}
-						>
-							{refLabel(ref)}
-						</button>
-					</li>
-				{/each}
-			{/if}
 		</ul>
 	</section>
 {/each}
@@ -313,7 +296,7 @@
 <p class="said" role="status" data-testid="preview-said">{previewed?.says ?? ''}</p>
 
 <style>
-	/* A row for each "Why?" is five more things to read, so in simple mode it is a mark beside the switch. */
+	/* A row for each "Why?" is more to read and takes the room from the settings, so it is a mark beside each. */
 	.beside-the-switch {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto;

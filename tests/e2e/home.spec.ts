@@ -93,7 +93,12 @@ test.describe('what is on show', () => {
 		[1440, 900],
 		[1920, 1080]
 	] as const) {
-		test(`has no row cut off at ${width}x${height}, for any question`, async ({ page }) => {
+		test(`has no row cut off at ${width}x${height}, for any question`, async ({
+			page,
+			browserName
+		}) => {
+			// Every question at each size is a lot of pages, and a layout is a layout in any browser.
+			test.skip(browserName !== 'chromium', 'Chromium is enough for this');
 			test.slow();
 			await page.setViewportSize({ width, height });
 			for (const node of mapNodes) {

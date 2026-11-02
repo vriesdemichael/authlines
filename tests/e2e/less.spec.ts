@@ -139,6 +139,29 @@ test.describe('the start', () => {
 		await expect(page.locator('.track details[open]')).toHaveCount(1);
 	});
 
+	// Measured when the maintainer found it busy, so that it can only stay or go down (#142).
+	for (const [mode, words, controls] of [
+		['simple', 330, 40],
+		['advanced', 610, 56]
+	] as const) {
+		test(`stays within what ${mode} mode has on screen`, async ({ page }) => {
+			await page.setViewportSize({ width: 1440, height: 900 });
+			await page.goto(`authorization-code/?mode=${mode}`);
+			await page.locator('.workspace[data-ready="true"]').waitFor();
+			const measured = await page.evaluate(() => ({
+				words: document.body.innerText.split(/\s+/).filter(Boolean).length,
+				controls: [...document.querySelectorAll('button, a, input, select, summary')].filter(
+					(control) => {
+						const box = control.getBoundingClientRect();
+						return box.width > 0 && box.height > 0 && box.top < innerHeight;
+					}
+				).length
+			}));
+			expect(measured.words).toBeLessThanOrEqual(words);
+			expect(measured.controls).toBeLessThanOrEqual(controls);
+		});
+	}
+
 	test('fits what it first says on the first screen', async ({ page }) => {
 		await page.setViewportSize({ width: 1440, height: 900 });
 		await page.goto('./');

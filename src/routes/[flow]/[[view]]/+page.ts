@@ -1,9 +1,9 @@
 import { error } from '@sveltejs/kit';
 import { flows } from '#lib/flow/index.ts';
 import type { DiagramId } from '#lib/flow/model.ts';
-import { mapNodes, type MapNode } from '#lib/map/nodes.ts';
+import { allNodes, type MapNode } from '#lib/map/nodes.ts';
 
-const nodesOf = (flow: string) => mapNodes.filter((node) => node.flow === flow);
+const nodesOf = (flow: string) => allNodes.filter((node) => node.flow === flow);
 
 export const entries = () =>
 	Object.keys(flows).flatMap((flow) => [
