@@ -54,19 +54,21 @@ test.describe('whose words the diagram is in', () => {
 		expect(said).not.toMatch(/\s[,.;:]/);
 	});
 
-	test('follows the mode until someone chooses, and then stays', async ({ page }) => {
+	test('stays in plain words in advanced mode, until someone chooses, and then stays', async ({
+		page
+	}) => {
 		await open(page, 'mode=simple');
 		await expect(words(page)).toHaveValue('plain');
 		await page.locator('[data-mode="advanced"]').click();
-		await expect(words(page)).toHaveValue('specs');
-		await expect(head(page, 'app')).toContainText('Client');
+		await expect(words(page)).toHaveValue('plain');
+		await expect(head(page, 'app')).toContainText('App');
 		await expect(page).not.toHaveURL(/say=/);
 
-		await words(page).selectOption('plain');
-		await expect(head(page, 'app')).toContainText('App');
+		await words(page).selectOption('specs');
+		await expect(head(page, 'app')).toContainText('Client');
 		await page.locator('[data-mode="simple"]').click();
 		await page.locator('[data-mode="advanced"]').click();
-		await expect(words(page)).toHaveValue('plain');
+		await expect(words(page)).toHaveValue('specs');
 	});
 
 	test('in Keycloak’s, the identity provider is the other one', async ({ page }) => {
@@ -128,7 +130,7 @@ test.describe('whose words the diagram is in', () => {
 	}
 
 	test('from the specs’ words, it says the plain one as well', async ({ page }) => {
-		await open(page, 'mode=advanced');
+		await open(page, 'mode=advanced&say=specs');
 		await head(page, 'app').click();
 		await expect(page.getByTestId('explanation').getByRole('heading')).toHaveText('Client');
 		await expect(page.getByTestId('explanation-also-called')).toContainText('App, in plain words');

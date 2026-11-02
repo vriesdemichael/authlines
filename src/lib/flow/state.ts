@@ -19,7 +19,7 @@ import {
 	type Settings
 } from '#lib/flow/settings.ts';
 import { artifacts, type ArtifactId, type Mode } from '#lib/flow/vocabulary.ts';
-import { wordingFor, wordings, type Wording } from '#lib/flow/wording.ts';
+import { DEFAULT_WORDING, wordings, type Wording } from '#lib/flow/wording.ts';
 import {
 	isVendorSource,
 	nameSources,
@@ -368,7 +368,7 @@ export function withWording(state: AppState, wording: Wording | null): AppState 
 }
 
 export const wordingOf = (state: Pick<AppState, 'mode' | 'wording'>): Wording =>
-	state.wording ?? wordingFor(state.mode);
+	state.wording ?? DEFAULT_WORDING;
 
 export function withExplained(state: AppState, explained: Explained | null): AppState {
 	return { ...state, explained };

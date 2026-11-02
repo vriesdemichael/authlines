@@ -6,6 +6,7 @@ export type SourceId =
 	| 'rfc9207'
 	| 'rfc8628'
 	| 'rfc9700'
+	| 'rfc10017'
 	| 'oidc-core'
 	| 'oidc-rp-logout'
 	| 'oidc-backchannel-logout'
@@ -94,6 +95,15 @@ export const sources: Record<SourceId, SourceDef> = {
 			'The current security advice for OAuth 2.0, written with what has gone wrong since OAuth was published. It describes the attacks and says what clients and servers have to do about them: for example PKCE to protect the code, exact matching of redirect addresses, and no more implicit or password grants.',
 		url: 'https://www.rfc-editor.org/rfc/rfc9700.html',
 		textFile: 'rfc9700.txt'
+	},
+	rfc10017: {
+		label: 'RFC 10017',
+		title: 'OAuth 2.0 for Browser-Based Applications',
+		status: 'Best Current Practice (BCP 212), August 2026.',
+		summary:
+			'What an app in the browser has to do, and what it cannot get away from. It goes through what a script running in the page can do, compares a backend that keeps the tokens with an app that keeps them itself, and says what each place in the browser does and does not protect.',
+		url: 'https://www.rfc-editor.org/rfc/rfc10017.html',
+		textFile: 'rfc10017.txt'
 	},
 	'oidc-core': {
 		label: 'OpenID Connect Core 1.0',

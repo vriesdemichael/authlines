@@ -14,6 +14,7 @@ const named = {
 	},
 	oauth4webapi: { name: 'oauth4webapi', url: 'https://github.com/panva/oauth4webapi' },
 	openidClient: { name: 'openid-client', url: 'https://github.com/panva/openid-client' },
+	oidcClientTs: { name: 'oidc-client-ts', url: 'https://github.com/authts/oidc-client-ts' },
 	jose: { name: 'jose', url: 'https://github.com/panva/jose' },
 	awsJwt: {
 		name: "AWS API Gateway's JWT authorizer",

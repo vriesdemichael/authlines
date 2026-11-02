@@ -40,6 +40,8 @@ export interface Found {
 	results: Result[];
 	/** Asked about something this application does not cover yet. */
 	notHereYet: string | null;
+	/** Nothing has all of what was typed, so these have most of it, and it should say so. */
+	closest?: boolean;
 }
 
 /** All the fields, including those only some settings bring, because that is what someone looks for. */
@@ -335,13 +337,20 @@ function wordsOf(query: string): string[] {
 		.filter((word) => word.length < 40);
 }
 
-const scoreOf = (entry: Entry, phrase: string, words: readonly string[]) => {
+/** A short word only counts as a word, or SPA is found in lifespan. */
+function has(text: string, word: string) {
+	if (word.length > 3) return text.includes(word);
+	const safe = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	return new RegExp(`(^|[^a-z0-9])${safe}($|[^a-z0-9])`).test(text);
+}
+
+const scoreOf = (entry: Entry, phrase: string, words: readonly string[], needed = words.length) => {
 	const title = lower(entry.title);
 	const text = lower(entry.text);
-	const inTitle = words.filter((word) => title.includes(word)).length;
-	const inText = words.filter((word) => text.includes(word)).length;
-	const matched = words.filter((word) => title.includes(word) || text.includes(word)).length;
-	if (matched < words.length) return 0;
+	const inTitle = words.filter((word) => has(title, word)).length;
+	const inText = words.filter((word) => has(text, word)).length;
+	const matched = words.filter((word) => has(title, word) || has(text, word)).length;
+	if (matched < needed) return 0;
 	return (
 		(entry.exactly?.includes(phrase) ? 100 : 0) +
 		(title.includes(phrase) ? 40 : 0) +
@@ -352,6 +361,13 @@ const scoreOf = (entry: Entry, phrase: string, words: readonly string[]) => {
 };
 
 const ORDER: readonly ResultKind[] = ['question', 'word', 'setting', 'step', 'note'];
+
+/** Words nearly everything here has, which say nothing about what someone is after. */
+const COMMON_WORDS = new Set(
+	'app apps client code error errors flow invalid log login request response token tokens user users'.split(
+		' '
+	)
+);
 const LIMIT = 8;
 
 /** The states that answer what someone typed, with an exact error first. */
@@ -371,25 +387,40 @@ export function search(query: string): Found {
 
 	// A pasted line says plenty besides the error, which should not get in the way of it.
 	const words = wordsOf(query);
-	const others =
-		pasted.length || !words.length
-			? []
-			: entries
-					.map((entry) => ({ entry, score: scoreOf(entry, phrase, words) }))
-					.filter(({ score }) => score > 0)
-					.sort(
-						(a, b) =>
-							b.score - a.score ||
-							ORDER.indexOf(a.entry.result.kind) - ORDER.indexOf(b.entry.result.kind)
-					)
-					.map(({ entry }) => entry.result);
+	const ranked = (wanted: readonly string[], needed: number) =>
+		entries
+			.map((entry) => ({ entry, score: scoreOf(entry, phrase, wanted, needed) }))
+			.filter(({ score }) => score > 0)
+			.sort(
+				(a, b) =>
+					b.score - a.score ||
+					ORDER.indexOf(a.entry.result.kind) - ORDER.indexOf(b.entry.result.kind)
+			);
+	const all = pasted.length || !words.length ? [] : ranked(words, words.length);
+	const telling = words.filter((word) => !COMMON_WORDS.has(word));
+	const closest =
+		!all.length && !pasted.length && !partOfAnError.length && words.length > 1 && telling.length
+			? ranked(telling, Math.ceil(telling.length / 2))
+			: [];
+	// A word's own entry, ahead of errors that only happen to have that word in them.
+	const itself = all.filter(({ entry }) => entry.exactly?.includes(phrase));
+	const others = [...all, ...closest].map(({ entry }) => entry.result);
 
 	const seen = new Set<string>();
-	const results = [...longestFirst, ...partOfAnError, ...others].filter((result) => {
+	const results = [
+		...longestFirst,
+		...itself.map(({ entry }) => entry.result),
+		...partOfAnError,
+		...others
+	].filter((result) => {
 		const key = resultKey(result);
 		if (seen.has(key)) return false;
 		seen.add(key);
 		return true;
 	});
-	return { results: results.slice(0, LIMIT), notHereYet: null };
+	return {
+		results: results.slice(0, LIMIT),
+		notHereYet: null,
+		closest: closest.length > 0
+	};
 }

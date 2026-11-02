@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
-import { sayer, wordingFor } from '../../src/lib/flow/wording.ts';
+import { DEFAULT_WORDING, sayer } from '../../src/lib/flow/wording.ts';
 import { mapNodes } from '../../src/lib/map/nodes.ts';
 import { open } from './helpers.ts';
 
@@ -16,7 +16,7 @@ test.describe('a question', () => {
 	for (const each of mapNodes) {
 		test(`${each.id} says its answer straight away`, async ({ page }) => {
 			await openNode(page, each.id);
-			await expect(answer(page)).toContainText(sayer(wordingFor(each.mode))(each.answer));
+			await expect(answer(page)).toContainText(sayer(DEFAULT_WORDING)(each.answer));
 		});
 	}
 

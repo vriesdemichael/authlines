@@ -209,10 +209,10 @@ describe('whose words the diagram is in', () => {
 		expect(known('browser')?.map(({ word }) => word)).toEqual(['user agent', 'user agent']);
 	});
 
-	it('follows the mode until someone chooses, and the choice is in the URL', () => {
+	it('stays in plain words in either mode until someone chooses, and the choice is in the URL', () => {
 		const simple = parseState(base, 'flow', '');
 		expect(wordingOf(simple)).toBe('plain');
-		expect(wordingOf(parseState(base, 'flow', 'mode=advanced'))).toBe('specs');
+		expect(wordingOf(parseState(base, 'flow', 'mode=advanced'))).toBe('plain');
 		expect(serializeState(base, parseState(base, 'flow', 'mode=advanced'))).not.toContain('say');
 
 		const chosen = withWording(simple, 'specs');

@@ -80,7 +80,7 @@ test.describe('what the second app asks for', () => {
 		await open(page, 'sso=1&oidc=1&second=insists&step=second-authorize');
 		await expect(payload(page)).toContainText('prompt');
 		await expect(payload(page)).toContainText(/cookie: KEYCLOAK_IDENTITY/i);
-		await expect(row(page, 'idp-recognises')).toContainText('Session, but the client insists');
+		await expect(row(page, 'idp-recognises')).toContainText('Session, but the app insists');
 	});
 
 	test('in a new browser, it says login_required, with no code and no tokens', async ({ page }) => {

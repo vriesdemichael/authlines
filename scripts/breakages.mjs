@@ -55,6 +55,30 @@ export const breakages = [
 		to: '`${kind}:${title}:${query}`;'
 	},
 	{
+		name: 'words: asking for more detail changes the names',
+		file: 'src/lib/flow/wording.ts',
+		from: "export const DEFAULT_WORDING: Wording = 'plain';",
+		to: "export const DEFAULT_WORDING: Wording = 'specs';"
+	},
+	{
+		name: 'search: a short word is found inside another',
+		file: 'src/lib/search/search.ts',
+		from: 'if (word.length > 3) return text.includes(word);',
+		to: 'if (word.length > 0) return text.includes(word);'
+	},
+	{
+		name: 'search: it does not say this is only the closest',
+		file: 'src/lib/search/search.ts',
+		from: 'closest: closest.length > 0',
+		to: 'closest: false'
+	},
+	{
+		name: 'search: errors go ahead of a word’s own entry',
+		file: 'src/lib/search/search.ts',
+		from: '...itself.map(({ entry }) => entry.result),',
+		to: ''
+	},
+	{
 		name: 'device: the browser is given the code that gets the tokens',
 		file: 'src/lib/flow/device.ts',
 		from: "name: 'user_code',\n\t\t\t\t\tplace: 'memory',\n\t\t\t\t\tartifact: 'user-code',",
@@ -1083,8 +1107,8 @@ export const breakages = [
 	{
 		name: 'search: an error opens the wrong step',
 		file: 'src/lib/search/errors.ts',
-		from: "means: 'A code works once, and this one has been used already.',\n\t\tstep: 'real-app-refused',",
-		to: "means: 'A code works once, and this one has been used already.',\n\t\tstep: 'open-app',"
+		from: "because that is where a real server said it.',\n\t\tstep: 'real-app-refused',",
+		to: "because that is where a real server said it.',\n\t\tstep: 'open-app',"
 	},
 
 	// Answers.

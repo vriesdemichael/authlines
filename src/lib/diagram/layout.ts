@@ -11,7 +11,7 @@ import {
 	roleIn,
 	sayer,
 	speak,
-	wordingFor,
+	DEFAULT_WORDING,
 	wordings,
 	type Wording
 } from '#lib/flow/wording.ts';
@@ -290,7 +290,7 @@ export function layoutDiagram(
 	inPlainWords: DiagramView,
 	mode: Mode = 'simple',
 	room?: Room,
-	wording: Wording = wordingFor(mode),
+	wording: Wording = DEFAULT_WORDING,
 	whole = false
 ): DiagramLayout {
 	const view = speak(inPlainWords, sayer(wording));

@@ -97,6 +97,55 @@ describe('what people bring', () => {
 		expect(parseState(flows.device, 'flow', error!.query).mode).toBe(mode);
 	});
 
+	it.each([
+		'localStorage',
+		'sessionStorage',
+		'session storage',
+		'XSS',
+		'BFF',
+		'backend for frontend',
+		'refresh token rotation',
+		'rotate',
+		'SPA',
+		'single page app',
+		'password grant',
+		'authentication vs authorization',
+		'OAuth is not login',
+		'authn',
+		'log in with your company account',
+		'client secret in javascript'
+	])('%s finds something, because people bring it in those words', (query) => {
+		expect(search(query).results.length, query).toBeGreaterThan(0);
+	});
+
+	it('finds a short word as a word, and not inside another', () => {
+		const found = search('SPA').results;
+		expect(found.length).toBeGreaterThan(0);
+		for (const { title } of found) expect(title).not.toMatch(/lifespan/i);
+		expect(found[0].title).toBe('Single-page app');
+	});
+
+	it('says when it only has most of what was typed', () => {
+		const found = search('Invalid audience');
+		expect(found.closest).toBe(true);
+		expect(found.results.map(({ title }) => title).join(' ')).toMatch(/audience/i);
+		expect(search('difference between oauth and something').closest).toBe(true);
+		expect(search('audience').closest).toBe(false);
+		expect(search('xyzzy plugh').results).toEqual([]);
+		expect(search('xyzzy plugh').closest).toBe(false);
+	});
+
+	it('puts a word’s own entry ahead of errors that only have that word in them', () => {
+		expect(search('refresh token').results[0].kind).toBe('word');
+		expect(search('session').results[0].kind).toBe('word');
+	});
+
+	it('says a stolen code is why, when an error of someone’s own opens on one', () => {
+		for (const text of ['Code not valid', 'Invalid client or Invalid client credentials']) {
+			expect(search(text).results[0].says, text).toContain('stolen code');
+		}
+	});
+
 	it('gives every result a key of its own, because the list cannot draw two the same', () => {
 		for (const { text } of knownErrors) {
 			const keys = search(text).results.map(resultKey);

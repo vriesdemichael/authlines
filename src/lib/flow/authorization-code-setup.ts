@@ -175,6 +175,8 @@ export const authorizationCodeSetup: DiagramDef = {
 			label: 'Register as a client',
 			concept:
 				'The identity provider is itself a client of the other provider, so it has to be registered there the same way.',
+			inPractice:
+				'Whoever runs the other provider has to do their half, so this is a conversation with them. If each customer has a provider of their own, it is one conversation for each.',
 			when: broker,
 			fields: [
 				{

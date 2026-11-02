@@ -154,7 +154,7 @@ export const noteDefs: readonly NoteDef[] = [
 		text: [
 			{
 				when: confidential,
-				text: 'On, which makes this a confidential client. Turn it off and this request needs no secret.'
+				text: 'On, which makes this a confidential client. Turn it off and this request needs no secret. That is for an app that cannot keep one, and not a way past a wrong secret, because anyone can then ask as this client.'
 			},
 			{
 				text: 'Off, which makes this a public client. Turn it on and this request gets a 401 without a secret, with the error unauthorized_client, where RFC 6749 says invalid_client.'

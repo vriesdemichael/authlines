@@ -6,6 +6,15 @@ const row = (page: Page, id: string) => page.locator(`[data-step="${id}"]`);
 const eyes = (page: Page) => page.getByTestId('eyes');
 
 test.describe('seeing it as one party', () => {
+	test('does not say an app in the browser kept something from the browser', async ({ page }) => {
+		await open(page, 'client=public&pkce=1&eyes=browser&step=token-request');
+		await expect(page.getByTestId('unseen')).toBeVisible();
+		await expect(page.getByTestId('unseen-in-the-page')).toContainText('comes from the page');
+		await open(page, 'eyes=browser&step=token-request');
+		await expect(page.getByTestId('unseen')).toBeVisible();
+		await expect(page.getByTestId('unseen-in-the-page')).toHaveCount(0);
+	});
+
 	test('hides what the browser was not sent, and keeps what it was', async ({ page }) => {
 		const check = watchForErrors(page);
 		await open(page, 'mode=simple&eyes=browser&step=token-response');

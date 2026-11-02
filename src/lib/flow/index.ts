@@ -33,6 +33,11 @@ const presets: readonly Preset[] = [
 		title: 'Using a refresh token twice ends the login',
 		settings: { refresh: true, reuse: 'ends' }
 	},
+	{
+		id: 'refresh-public-ends',
+		title: 'Using a refresh token twice ends the login, with no secret',
+		settings: { refresh: true, clientType: 'public', pkce: true, reuse: 'ends' }
+	},
 	{ id: 'sso', title: 'A second app', settings: { sso: true } },
 	{
 		id: 'sso-oidc',
