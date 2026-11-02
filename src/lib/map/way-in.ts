@@ -18,7 +18,7 @@ export const wayIn = {
 	},
 	on: {
 		title: 'Now your password stays where your account is',
-		says: 'It goes there and nowhere else. The app gets something else instead: a token that allows only what you agreed to, and can be taken back. Many buttons like “Log in with ...” are built on this, and it is called OAuth.',
+		says: 'It goes there, and the app never sees it. The app gets something else instead: a token, which is good for certain things and runs out. Many buttons like “Log in with ...” are built on this, and it is called OAuth.',
 		link: 'Follow it, one message at a time'
 	}
 } as const;

@@ -77,7 +77,7 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'what-is-an-identity-provider',
 					answer:
-						'The service that logs users in, and the only one that sees the password. Its issuer is the address that names it, and each token it signs says who issued it.',
+						'The service that logs users in, so the app never has to see the password. Its issuer is the address that names it, and a token it signs says who issued it.',
 					startsAtTheBeginning: 'It is about who is on the diagram, so it starts at the beginning.',
 					title: 'What is an identity provider, and an issuer?',
 					summary: 'The place you log in, and how everything else knows which one it is.',
@@ -87,7 +87,7 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'what-is-a-token',
 					answer:
-						'What an app gets instead of your password. It says what it allows and who it is for, it runs out, and whoever holds it can use it, so it is kept away from anyone who has no need of it.',
+						'What an app gets instead of your password. It is good for certain things and it runs out. An ordinary one works for whoever holds it, which is why it matters who has seen it.',
 					title: 'What is a token?',
 					summary: 'What the app gets instead of your password.',
 					preset: 'oauth',
