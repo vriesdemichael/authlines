@@ -134,6 +134,10 @@ test.describe('a source', () => {
 		await expect(page.locator('[data-section="2.1"]').locator('b')).toBeInViewport();
 		// Once the dialog has been drawn, because WebKit moves it back then and it moves on again.
 		await page.waitForTimeout(300);
+		await page.getByTestId('source-sections').selectOption('4.1');
+		await expect.poll(() => currentSearch(page)).toContain('section=4.1');
+		await expect(page.locator('[data-section="4.1"]').locator('b')).toBeInViewport();
+
 		const box = (await dialog(page).boundingBox())!;
 		expect(box.height).toBeGreaterThan(500);
 		const scrolled = () => dialog(page).evaluate((element) => element.scrollTop);
@@ -149,9 +153,5 @@ test.describe('a source', () => {
 			await page.keyboard.press('PageDown');
 			await expect.poll(scrolled).toBeGreaterThan(wheeled);
 		}
-
-		await page.getByTestId('source-sections').selectOption('4.1');
-		await expect.poll(() => currentSearch(page)).toContain('section=4.1');
-		await expect(page.locator('[data-section="4.1"]').locator('b')).toBeInViewport();
 	});
 });
