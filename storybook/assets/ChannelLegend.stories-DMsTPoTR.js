@@ -1,1 +1,0 @@
-import{t as e}from"./rolldown-runtime-Dh6celcD.js";import{n as t,t as n}from"./ChannelLegend-Bgay87CV.js";var r,i,a,o;function s(){return(s=e((()=>{t(),r={title:`ChannelLegend`,component:n,args:{present:[`front`,`back`,`internal`]}},i={},a={args:{present:[`people`,`back`]}},o=[`UserFlow`,`Setup`]})))()}s();export{a as Setup,i as UserFlow,o as __namedExportsOrder,r as default};

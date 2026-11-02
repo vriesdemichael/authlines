@@ -1,1 +1,0 @@
-import{t as e}from"./rolldown-runtime-Dh6celcD.js";import{n as t,t as n}from"./Mark-7wtVcjL3.js";var r,i,a,o,s;function c(){return(c=e((()=>{t(),r={title:`Mark`,component:n},i={},a={args:{size:32}},o={args:{size:64}},s=[`InTheHeader`,`AsAHeading`,`Large`]})))()}c();export{a as AsAHeading,i as InTheHeader,o as Large,s as __namedExportsOrder,r as default};

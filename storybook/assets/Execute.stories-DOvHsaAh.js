@@ -1,1 +1,0 @@
-import{t as e}from"./rolldown-runtime-Dh6celcD.js";import{n as t,t as n}from"./Execute-DM2jtkgn.js";var r,i,a;function o(){return(o=e((()=>{t(),r={title:`Execute`,component:n,args:{answerAt:9,onexecute:()=>{}}},i={},a=[`Ready`]})))()}o();export{i as Ready,a as __namedExportsOrder,r as default};

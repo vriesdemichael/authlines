@@ -1,1 +1,0 @@
-import{t as e}from"./rolldown-runtime-Dh6celcD.js";import{n as t,t as n}from"./ModeSwitch-DwWozXjQ.js";var r,i,a,o;function s(){return(s=e((()=>{t(),r={title:`ModeSwitch`,component:n,args:{mode:`simple`,onchange:()=>{}}},i={},a={args:{mode:`advanced`}},o=[`Simple`,`Advanced`]})))()}s();export{a as Advanced,i as Simple,o as __namedExportsOrder,r as default};
