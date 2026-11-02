@@ -51,6 +51,12 @@
 		if (!split || !target) return;
 		const part = document?.querySelector(`[data-section="${CSS.escape(target)}"]`);
 		part?.scrollIntoView({ block: 'start' });
+		// WebKit puts a dialog back at its top the first time it draws it, which is too late if the
+		// text was there first, as it is for anyone who has read this source before.
+		const drawn = requestAnimationFrame(() =>
+			requestAnimationFrame(() => part?.scrollIntoView({ block: 'start' }))
+		);
+		return () => cancelAnimationFrame(drawn);
 	});
 </script>
 

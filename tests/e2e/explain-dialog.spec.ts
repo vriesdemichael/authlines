@@ -127,17 +127,31 @@ test.describe('an explanation', () => {
 });
 
 test.describe('a source', () => {
-	test('can be read and moved through in the dialog', async ({ page }) => {
+	test('can be read and moved through in the dialog', async ({ page, browserName }) => {
 		await open(page, 'source=rfc6749&for=client&section=2.1');
 		const text = page.getByTestId('source-text');
 		await expect(text).toBeVisible();
+		await expect(page.locator('[data-section="2.1"]').locator('b')).toBeInViewport();
+		// Once the dialog has been drawn, because WebKit moves it back then and it moves on again.
+		await page.waitForTimeout(300);
 		const box = (await dialog(page).boundingBox())!;
 		expect(box.height).toBeGreaterThan(500);
 		const scrolled = () => dialog(page).evaluate((element) => element.scrollTop);
+
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
 		const before = await scrolled();
-		await page.keyboard.press('PageDown');
+		await page.mouse.wheel(0, 600);
 		await expect.poll(scrolled).toBeGreaterThan(before);
+
+		// WebKit here does not take these keys from where the focus is. Not tried in Safari itself.
+		if (browserName !== 'webkit') {
+			const wheeled = await scrolled();
+			await page.keyboard.press('PageDown');
+			await expect.poll(scrolled).toBeGreaterThan(wheeled);
+		}
+
 		await page.getByTestId('source-sections').selectOption('4.1');
 		await expect.poll(() => currentSearch(page)).toContain('section=4.1');
+		await expect(page.locator('[data-section="4.1"]').locator('b')).toBeInViewport();
 	});
 });
