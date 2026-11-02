@@ -10,6 +10,11 @@ import { codeFlowSettingIds } from '#lib/flow/settings.ts';
 const presets: readonly Preset[] = [
 	{ id: 'oauth', title: 'OAuth', settings: {} },
 	{
+		id: 'the-old-way',
+		title: 'The old way: the app has your password',
+		settings: { oldWay: true }
+	},
+	{
 		id: 'address-refused',
 		title: 'An address that was not registered',
 		settings: { address: 'other' }

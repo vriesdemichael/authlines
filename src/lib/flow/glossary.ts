@@ -38,6 +38,14 @@ const flowAt = (step: string, settings?: Partial<Settings>): TermPlace => ({
 
 const list: readonly Term[] = [
 	{
+		id: 'http-basic',
+		name: 'HTTP Basic',
+		words: ['HTTP Basic', 'Basic auth', 'basic authentication'],
+		explains:
+			'A way to send a username and password with each HTTP request, encoded so anyone can read them back. At the token step, an app sends its client ID and secret the same way.',
+		at: flowAt('old-way-call', { oldWay: true })
+	},
+	{
 		id: 'oauth',
 		name: 'OAuth',
 		words: ['OAuth', 'OAuth 2.0'],

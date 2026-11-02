@@ -6,7 +6,7 @@ How this project is built and worked on, one rule to a record. Each record says 
 - [ADR-002: The premise holds intent, and decision records hold rules](002-the-premise-holds-intent-and-records-hold-rules.md)
 - [ADR-003: The state is in the URL, and a variant gets no page of its own](003-state-is-in-the-url-and-variants-get-no-page.md)
 - [ADR-004: A mode changes what is on offer, never the flow on screen](004-modes-never-change-the-flow.md)
-- [ADR-005: Payloads are recorded from a real Keycloak and never invented](005-payloads-are-recorded-never-invented.md)
+- [ADR-005: Payloads are recorded from a real server and never invented](005-payloads-are-recorded-never-invented.md)
 - [ADR-006: CI gates every change from the first code commit](006-ci-gates-every-change-from-the-first-commit.md)
 - [ADR-007: Every component has a Storybook story from the start](007-every-component-has-a-story.md)
 - [ADR-008: Desktop comes first, and nothing may rule out phones](008-desktop-first-without-ruling-out-phones.md)

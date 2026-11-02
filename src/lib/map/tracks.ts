@@ -1,3 +1,4 @@
+import type { AppState } from '#lib/flow/state.ts';
 import type { DiagramId } from '#lib/flow/model.ts';
 import type { ArtifactId, Mode } from '#lib/flow/vocabulary.ts';
 
@@ -10,6 +11,10 @@ export interface MapNode {
 	id: string;
 	title: string;
 	summary: string;
+	/** What opens with it, because the question is what something is. */
+	explains?: AppState['explained'];
+	/** The words someone else might use for it, for search, which go nowhere on screen. */
+	alsoAskedAs?: readonly string[];
 	/** The answer, in a sentence or two, because someone with a question should not have to walk to it. */
 	answer: string;
 	flow: string;
@@ -52,6 +57,44 @@ export const mapTracks: readonly MapTrack[] = [
 		chains: [
 			[
 				node({
+					id: 'the-old-way',
+					answer:
+						'That is how it used to work. The app kept your password and sent it with every call, so it could do anything you can with that account, and if it was broken into, your password went with it.',
+					startsAtTheBeginning: 'It is only four steps, so its start is its answer.',
+					title: 'Why not just give the app my password?',
+					summary: 'What came before, and what most of this is for.',
+					preset: 'the-old-way',
+					alsoAskedAs: [
+						'log in with google',
+						'sign in with google',
+						'log in with',
+						'why oauth',
+						'why does oauth exist',
+						'basic auth',
+						'http basic'
+					]
+				}),
+				node({
+					id: 'what-is-an-identity-provider',
+					answer:
+						'The service that logs users in, so the app never has to see the password. Its issuer is the address that names it, and a token it signs says who issued it.',
+					startsAtTheBeginning: 'It is about who is on the diagram, so it starts at the beginning.',
+					title: 'What is an identity provider, and an issuer?',
+					summary: 'The place you log in, and how everything else knows which one it is.',
+					preset: 'oauth',
+					explains: { kind: 'lifeline', id: 'idp' }
+				}),
+				node({
+					id: 'what-is-a-token',
+					answer:
+						'What an app gets instead of your password. It is good for certain things and it runs out. An ordinary one works for whoever holds it, which is why it matters who has seen it.',
+					title: 'What is a token?',
+					summary: 'What the app gets instead of your password.',
+					preset: 'oauth',
+					step: 'token-response',
+					explains: { kind: 'artifact', id: 'access-token' }
+				}),
+				node({
 					id: 'how-access-works',
 					answer:
 						'The user logs in at an identity provider, and never at the app. The app gets a token that lets it act for them, without ever seeing their password.',
@@ -82,6 +125,7 @@ export const mapTracks: readonly MapTrack[] = [
 				}),
 				node({
 					id: 'who-logged-in',
+					alsoAskedAs: ['log in with google', 'sign in with google', 'what is openid connect for'],
 					answer:
 						'OAuth alone gives the app access, and defines no way to tell it who logged in. A token may name them, but it is meant for the API. OpenID Connect adds an ID token, made for the app to read.',
 					title: 'How does an app know who logged in?',
@@ -89,34 +133,6 @@ export const mapTracks: readonly MapTrack[] = [
 						'Access is not identity, which is what OpenID Connect adds. OAuth alone is not login.',
 					preset: 'oidc',
 					step: 'token-response'
-				}),
-				node({
-					id: 'when-do-i-get-asked',
-					answer:
-						'When the identity provider is set up to ask for this app, and it then lists what the app wants. Many are set up not to, which is why you may never have seen it.',
-					title: 'When does the user get asked?',
-					summary: 'What a scope is, and why you may never have seen the question.',
-					preset: 'consent',
-					step: 'consent-page'
-				}),
-				node({
-					id: 'single-sign-on',
-					answer:
-						'The identity provider remembers the browser, in a cookie on its own address. A second app sends the browser there, the cookie goes along, and it answers without asking. Neither app ever sees that cookie.',
-					title: "What is single sign-on? Why don't I log in twice?",
-					summary: 'A second app, the same login, and no password.',
-					preset: 'sso',
-					step: 'idp-recognises'
-				}),
-				node({
-					id: 'getting-to-know-each-other',
-					answer:
-						'Before anyone logs in, the identity provider is told about the app, including where users may be sent back to. The app is told the issuer, and can look up the rest from that.',
-					startsAtTheBeginning: 'Setup is the answer, from its first step.',
-					title: 'How do an app and a provider get to know each other?',
-					summary: 'What people have to do before anyone can log in.',
-					diagram: 'setup',
-					preset: 'oauth'
 				})
 			],
 			[
@@ -396,6 +412,12 @@ export const mapTracks: readonly MapTrack[] = [
 			[
 				node({
 					id: 'another-provider',
+					alsoAskedAs: [
+						'brokering',
+						'identity brokering',
+						'external idp',
+						'external identity provider'
+					],
 					answer:
 						'The identity provider sends the user on to the other provider, and then gives the app its usual code. The app does not notice.',
 					title: 'How do you log in with another provider?',
@@ -406,6 +428,7 @@ export const mapTracks: readonly MapTrack[] = [
 				}),
 				node({
 					id: 'calling-the-other-provider',
+					alsoAskedAs: ['token brokering', 'upstream token', 'upstream tokens', 'stored tokens'],
 					answer:
 						'The identity provider can keep the tokens the other provider issued, and hand them over when the app asks. Whether it keeps them, and who may ask, are settings.',
 					title: "How does the app call the other provider's API?",
@@ -433,6 +456,34 @@ export const mapTracks: readonly MapTrack[] = [
 		lead: 'The combinations people use, with what is really sent.',
 		chains: [
 			[
+				node({
+					id: 'when-do-i-get-asked',
+					answer:
+						'When the identity provider is set up to ask for this app, and it then lists what the app wants. Many are set up not to, which is why you may never have seen it.',
+					title: 'When does the user get asked?',
+					summary: 'What a scope is, and why you may never have seen the question.',
+					preset: 'consent',
+					step: 'consent-page'
+				}),
+				node({
+					id: 'single-sign-on',
+					answer:
+						'The identity provider remembers the browser, in a cookie on its own address. A second app sends the browser there, the cookie goes along, and it answers without asking. Neither app ever sees that cookie.',
+					title: "What is single sign-on? Why don't I log in twice?",
+					summary: 'A second app, the same login, and no password.',
+					preset: 'sso',
+					step: 'idp-recognises'
+				}),
+				node({
+					id: 'getting-to-know-each-other',
+					answer:
+						'Before anyone logs in, the identity provider is told about the app, including where users may be sent back to. The app is told the issuer, and can look up the rest from that.',
+					startsAtTheBeginning: 'Setup is the answer, from its first step.',
+					title: 'How do an app and a provider get to know each other?',
+					summary: 'What people have to do before anyone can log in.',
+					diagram: 'setup',
+					preset: 'oauth'
+				}),
 				node({
 					id: 'what-api-checks',
 					answer:

@@ -176,7 +176,7 @@ export interface DiagramDef {
 	caption: string;
 	summary: string;
 	/** Where someone new starts: what this is for, in their words. */
-	intro: string;
+	intro: Text;
 	/** The specs this diagram rests on, whatever the settings. */
 	specs: readonly SourceId[];
 	lifelines: readonly LifelineDef[];
@@ -289,6 +289,12 @@ function causes(when: Condition | undefined, settings: Settings): SettingId[] {
 	const needed = changed.filter((id) => !holds(when, { ...settings, [id]: defaultSettings[id] }));
 	return needed.length ? needed : changed;
 }
+
+export const introOf = (flow: DiagramDef, settings: Settings) => resolveText(flow.intro, settings);
+
+/** All it can say, for whatever has to hold of each. */
+export const introsOf = (flow: DiagramDef): readonly string[] =>
+	typeof flow.intro === 'string' ? [flow.intro] : flow.intro.map(({ text }) => text);
 
 function channelOf(flow: DiagramDef, step: StepDef): Channel {
 	if (step.channel) return step.channel;

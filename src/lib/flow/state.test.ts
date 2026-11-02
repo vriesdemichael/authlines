@@ -85,7 +85,8 @@ describe('the URL', () => {
 			{ kind: 'setting', id: 'pkce' }
 		];
 		const source = settingDefs.pkce.sources[0].source;
-		for (const settings of allValidSettings()) {
+		// The old way has no such step, and every other combination does.
+		for (const settings of allValidSettings().filter(({ oldWay }) => !oldWay)) {
 			for (const mode of ['simple', 'advanced'] as const) {
 				for (const explained of explanations) {
 					for (const onOff of [true, false]) {

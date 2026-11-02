@@ -94,7 +94,10 @@
 	const notOffered = $derived(simple ? [] : (Object.keys(notApplicable) as SettingId[]));
 	const offered = $derived(
 		(simple ? simpleSettingIds.filter((id) => !notHere.includes(id)) : settingIds).filter(
-			(id) => available.includes(id) && isOffered(id, settings)
+			(id) =>
+				available.includes(id) &&
+				isOffered(id, settings) &&
+				(!defOf(id).notOnOffer || settings[id] !== defaultSettings[id])
 		)
 	);
 	// What a choice here brought with it, which nobody has to take off again.

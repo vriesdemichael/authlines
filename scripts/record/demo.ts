@@ -22,7 +22,9 @@ import {
 	SECOND_CLIENT,
 	SERVICE_CLIENT,
 	SECOND_REDIRECT_URI,
-	UPSTREAM_REALM
+	UPSTREAM_REALM,
+	PASSWORD,
+	USERNAME
 } from './keycloak.ts';
 
 /** The browser reports what it did a moment later, so what follows has to wait to stay in order. */
@@ -277,6 +279,10 @@ const keysAt = async (jwksUri: string) =>
 const basicAuth = (id: string, secret: string) =>
 	`Basic ${Buffer.from(`${encodeURIComponent(id)}:${encodeURIComponent(secret)}`).toString('base64')}`;
 
+/** A person's own username and password, on every call (RFC 7617 section 2). */
+const passwordAuth = (username: string, password: string) =>
+	`Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
+
 interface Tokens {
 	access_token: string;
 	id_token?: string;
@@ -287,6 +293,20 @@ interface Tokens {
 
 export class Demo {
 	current: Run | null = null;
+	#keptLogin = { username: '', password: '' };
+
+	/** What came before: no identity provider, only the app taking the password from a form. */
+	async theOldWay(run: Run) {
+		await call(
+			run,
+			['old-way-form', null],
+			'POST',
+			`${APP}/old-way/login`,
+			{},
+			{ username: USERNAME, password: PASSWORD }
+		);
+	}
+
 	/** The code from a login that was not part of a run, for trying things out with it. */
 	lastCode = '';
 	/** Logout tokens that came in with no run going, for a question to count. */
@@ -713,6 +733,25 @@ export class Demo {
 	async start() {
 		const app = createServer(async (request, response) => {
 			const url = new URL(request.url ?? '/', APP);
+			// The old way: it takes the password, and from then on logs in as the user with it.
+			if (url.pathname === '/old-way/login') {
+				const form = new URLSearchParams(await readBody(request));
+				// It keeps it, as the step says, because it needs it for this call and every one after.
+				this.#keptLogin = {
+					username: form.get('username') ?? '',
+					password: form.get('password') ?? ''
+				};
+				const { status } = await call(
+					this.#run,
+					['old-way-call', 'old-way-answer'],
+					'GET',
+					`${API}/old-way/resource`,
+					{ authorization: passwordAuth(this.#keptLogin.username, this.#keptLogin.password) }
+				);
+				response.writeHead(status === 200 ? 200 : 500, { 'content-type': 'text/plain' });
+				response.end(status === 200 ? 'Logged in' : 'Failed');
+				return;
+			}
 			// An app in the page: the same page for both addresses, and all it does it does from there.
 			if (
 				this.current?.settings.appRuns === 'page' &&
@@ -810,6 +849,18 @@ export class Demo {
 					response.end();
 					return;
 				}
+			}
+			// The old way: it knows the password itself, which is what is wrong with it (RFC 7617).
+			if (request.url === '/old-way/resource') {
+				const allowed = request.headers.authorization === passwordAuth(USERNAME, PASSWORD);
+				response.writeHead(allowed ? 200 : 401, {
+					'content-type': 'application/json',
+					...(allowed ? {} : { 'www-authenticate': 'Basic realm="demo", charset="UTF-8"' })
+				});
+				response.end(
+					JSON.stringify(allowed ? { resource: 'something only this user may see' } : {})
+				);
+				return;
 			}
 			// With nothing to be wrong, there is no error to name (RFC 6750 section 3.1).
 			if (!request.headers.authorization) {

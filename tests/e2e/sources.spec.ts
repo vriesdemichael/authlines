@@ -20,6 +20,7 @@ const rfcRequests = (page: Page) => {
 const ALL_ON_OFFER = 'binding=dpop&broker=1';
 const NEEDS: Partial<Record<string, string>> = {
 	attacker: '',
+	oldWay: 'oldway=1',
 	attackerUses: 'attacker=1',
 	reuse: 'refresh=1',
 	ssoAsks: 'sso=1'
@@ -34,7 +35,7 @@ test.describe('a source', () => {
 				const source = sources[ref.source];
 				const { onlyOn }: SettingDef = settingDefs[setting];
 				if (onlyOn) {
-					await page.goto(`${onlyOn}/?mode=advanced`);
+					await page.goto(`${onlyOn}/?mode=advanced&${NEEDS[setting] ?? ''}`);
 					await page.locator('.workspace[data-ready="true"]').waitFor();
 				} else {
 					await open(page, onOffer(setting));

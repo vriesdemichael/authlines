@@ -33,7 +33,11 @@ describe('the map', () => {
 		const first = mapTracks[0].chains[0][0];
 		expect(first.mode).toBe('simple');
 		expect(first.step).toBeUndefined();
-		expect(nodeSettings(first)).toEqual(defaultSettings);
+		// What came before, which the plain flow right after it is the answer to.
+		expect(nodeSettings(first)).toEqual({ ...defaultSettings, oldWay: true });
+		const second = mapTracks[0].chains[0][1];
+		expect(second.step).toBeUndefined();
+		expect(nodeSettings(second)).toEqual(defaultSettings);
 	});
 
 	it('offers everything that was recorded', () => {
@@ -133,7 +137,7 @@ describe.each(asCases)('the node %s', (_, node) => {
 });
 
 describe('where someone is', () => {
-	const [start] = mapNodes;
+	const start = mapNodes.find((node) => node.id === 'how-access-works')!;
 
 	it('is still a node while stepping through it', () => {
 		const stepped = { ...nodeState(start), step: 'token-request' };

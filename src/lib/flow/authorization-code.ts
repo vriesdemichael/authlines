@@ -1,3 +1,4 @@
+import { withTheOldWayInTheFlow } from '#lib/flow/old-way.ts';
 import type { DiagramDef, FieldDef } from '#lib/flow/model.ts';
 import { example } from '#lib/flow/libraries.ts';
 import {
@@ -58,7 +59,7 @@ const refreshFields: FieldDef[] = [
  * Every field here is held to the recordings of a real Keycloak by src/lib/recordings/recordings.test.ts.
  * The concept texts are not, because they explain and do not describe the wire.
  */
-export const authorizationCode: DiagramDef = {
+export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 	id: 'authorization-code',
 	title: 'Authorization code flow',
 	caption: 'What happens when a user arrives.',
@@ -2645,4 +2646,4 @@ export const authorizationCode: DiagramDef = {
 			fields: [{ name: 'Authorization: Bearer', place: 'header', artifact: 'upstream-token' }]
 		}
 	]
-};
+});

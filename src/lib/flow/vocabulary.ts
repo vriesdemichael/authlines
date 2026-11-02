@@ -20,8 +20,7 @@ export const artifacts: Readonly<
 	password: {
 		label: 'password',
 		short: 'password',
-		explains:
-			'How the user proves who they are. It only ever goes to whoever does the login, and the app never sees it, which is the point of all this.'
+		explains: 'How the user proves who they are. Keeping it from the app is the point of all this.'
 	},
 	code: {
 		label: 'code',

@@ -1,6 +1,7 @@
 export type SourceId =
 	| 'rfc6749'
 	| 'rfc6750'
+	| 'rfc7617'
 	| 'rfc7636'
 	| 'rfc9449'
 	| 'rfc9207'
@@ -42,6 +43,15 @@ export const sources: Record<SourceId, SourceDef> = {
 			'The core of OAuth 2.0. It lets an app get limited access to an HTTP service, either on behalf of a user who approved it or on its own behalf. It defines the roles, the authorization and token endpoints, the ways to get a token, and the two client types. Later RFCs update it, so it is not the last word on security.',
 		url: 'https://www.rfc-editor.org/rfc/rfc6749.html',
 		textFile: 'rfc6749.txt'
+	},
+	rfc7617: {
+		label: 'RFC 7617',
+		title: "The 'Basic' HTTP Authentication Scheme",
+		status: 'Proposed Standard, September 2015.',
+		summary:
+			'A way to send a username and password with an HTTP request, joined with a colon and Base64-encoded. Base64 is not encryption, so it calls this cleartext, and says not to protect anything sensitive with it without something like HTTPS.',
+		url: 'https://www.rfc-editor.org/rfc/rfc7617.html',
+		textFile: 'rfc7617.txt'
 	},
 	rfc6750: {
 		label: 'RFC 6750',

@@ -1,3 +1,7 @@
+# Quiet unless something fails, because this output goes into every commit an agent makes.
+output:
+  - failure
+
 commit-msg:
   commands:
     commitlint:

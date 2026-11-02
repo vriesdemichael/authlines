@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/sveltekit';
 import StepDetail from '#lib/components/StepDetail.svelte';
 import { authorizationCode as flow } from '#lib/flow/authorization-code.ts';
 import { authorizationCodeSetup as setup } from '#lib/flow/authorization-code-setup.ts';
-import { diffViews, evaluate } from '#lib/flow/model.ts';
+import { diffViews, evaluate, introOf } from '#lib/flow/model.ts';
 import { defaultSettings, type Settings } from '#lib/flow/settings.ts';
 import { notesFor } from '#lib/keycloak/notes.ts';
 
@@ -96,7 +96,7 @@ export const Simple: Story = {
 };
 
 export const SimpleOnTheFirstStep: Story = {
-	args: { mode: 'simple', step: stepIn('open-app'), intro: flow.intro }
+	args: { mode: 'simple', step: stepIn('open-app'), intro: introOf(flow, defaultSettings) }
 };
 
 export const SimpleWithAPitfall: Story = {

@@ -4,7 +4,7 @@ import { layoutDiagram } from '#lib/diagram/layout.ts';
 import { authorizationCode } from '#lib/flow/authorization-code.ts';
 import { authorizationCodeSetup } from '#lib/flow/authorization-code-setup.ts';
 import { authorizationCodeBase as base } from '#lib/flow/index.ts';
-import { evaluate, type DiagramView } from '#lib/flow/model.ts';
+import { evaluate, introsOf, type DiagramView } from '#lib/flow/model.ts';
 import { allValidSettings, defaultSettings, settingDefs, settingIds } from '#lib/flow/settings.ts';
 import {
 	parseState,
@@ -48,7 +48,7 @@ function everything(wording: Wording): string[] {
 		const say = sayer(wording);
 		for (const diagram of diagrams) {
 			for (const text of textsOf(speak(evaluate(diagram, settings), say))) seen.add(text);
-			seen.add(say(diagram.intro));
+			for (const intro of introsOf(diagram)) seen.add(say(intro));
 			seen.add(say(diagram.caption));
 		}
 		for (const id of settingIds) {

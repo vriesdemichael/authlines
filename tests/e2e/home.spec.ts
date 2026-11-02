@@ -12,27 +12,97 @@ async function openHome(page: Page) {
 	await living(page).waitFor();
 }
 
-test.describe('the living diagram, with no input', () => {
-	test.use({ contextOptions: { reducedMotion: 'no-preference' } });
-
-	test('changes once within five seconds, and then stays still', async ({ page }) => {
+// Someone who knows none of the words starts from something they have done (#150).
+test.describe('the way in', () => {
+	test('opens on the old way, with a handful of arrows and one switch', async ({ page }) => {
 		await openHome(page);
-		await expect(living(page)).toHaveAttribute('data-node', 'how-access-works');
-		await expect(living(page)).toHaveAttribute('data-node', 'who-logged-in', { timeout: 5000 });
-		const animated = page.getByTestId('diagram');
-		await expect(animated).toHaveAttribute('data-animating', 'false');
-		await page.waitForTimeout(3000);
-		await expect(living(page)).toHaveAttribute('data-node', 'who-logged-in');
-		await expect(animated).toHaveAttribute('data-animating', 'false');
+		await expect(living(page)).toHaveAttribute('data-node', 'the-old-way');
+		await expect(living(page).locator('[data-step]')).toHaveCount(4);
+		await expect(page.locator('[data-lifeline="idp"]')).toHaveCount(0);
+		await expect(page.getByTestId('way-in-switch')).not.toBeChecked();
+		await expect(living(page).getByRole('checkbox')).toHaveCount(1);
+		await expect(living(page).locator('desc[id="seen-app"]')).toHaveText(/Has seen: password/);
+		await expect(living(page).locator('desc[id="seen-api"]')).toHaveText(/Has seen: password/);
 	});
 
-	test('does not move by itself once someone has pointed at something', async ({ page }) => {
+	test('does not say OAuth until someone has seen what it is for', async ({ page }) => {
 		await openHome(page);
+		await expect(page.locator('p.lead')).not.toContainText('OAuth');
+		await expect(living(page)).not.toContainText('OAuth');
+		await page.getByTestId('way-in-switch').check();
+		await expect(living(page).locator('.words')).toContainText('OAuth');
+	});
+
+	test('flipped, the password stays where the account is', async ({ page }) => {
+		await openHome(page);
+		await page.getByTestId('way-in-switch').check();
+		await expect(living(page)).toHaveAttribute('data-node', 'how-access-works');
+		await expect(page.locator('[data-lifeline="idp"]')).toBeVisible();
+		await expect(living(page).locator('[data-state="current"]')).toHaveAttribute(
+			'data-step',
+			'submit-credentials'
+		);
+		await expect(living(page).locator('desc[id="seen-idp"]')).toHaveText(/password/);
+		await expect(living(page).locator('desc[id="seen-app"]')).toHaveText(/nothing yet/);
+	});
+
+	test('goes on to the full diagram with one click', async ({ page }) => {
+		await openHome(page);
+		await page.getByTestId('way-in-switch').check();
+		await page.getByTestId('living-open').click();
+		await expect(page).toHaveURL(/how-access-works\/$/);
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+	});
+
+	test('moves when someone flips it, and not by itself', async ({ page }) => {
+		await page.emulateMedia({ reducedMotion: 'no-preference' });
+		await openHome(page);
+		await page.waitForTimeout(3000);
+		await expect(living(page)).toHaveAttribute('data-node', 'the-old-way');
+	});
+
+	test('comes back, unflipped, by pointing at its question', async ({ page }) => {
+		await openHome(page);
+		await page.getByTestId('way-in-switch').check();
 		await (await onTheMap(page, 'pkce')).hover();
 		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
-		await page.waitForTimeout(3000);
-		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
+		await expect(page.getByTestId('way-in-switch')).toHaveCount(0);
+		await (await onTheMap(page, 'the-old-way')).hover();
+		await expect(living(page)).toHaveAttribute('data-node', 'the-old-way');
+		await expect(page.getByTestId('way-in-switch')).not.toBeChecked();
 	});
+});
+
+// The rows themselves, and what they say, because a test of two other things once called this fine.
+test.describe('what is on show', () => {
+	const cutOff = (page: Page) =>
+		living(page).evaluate((section) => {
+			const view = section.querySelector('.scroller')!.getBoundingClientRect();
+			return (
+				[...section.querySelectorAll('[data-step] line, [data-step] .label')]
+					.map((part) => ({ part, box: part.getBoundingClientRect() }))
+					// A text box is taller than its letters, more so in Firefox.
+					.filter(({ box }) => box.top < view.top - 4 || box.bottom > view.bottom + 4)
+					.map(({ part }) => part.closest('[data-step]')!.getAttribute('data-step'))
+			);
+		});
+
+	for (const [width, height] of [
+		[1280, 720],
+		[1366, 768],
+		[1440, 900],
+		[1920, 1080]
+	] as const) {
+		test(`has no row cut off at ${width}x${height}, for any question`, async ({ page }) => {
+			test.slow();
+			await page.setViewportSize({ width, height });
+			for (const node of mapNodes) {
+				await page.goto(`./?at=${node.id}`);
+				await expect(living(page)).toHaveAttribute('data-node', node.id);
+				await expect.poll(() => cutOff(page), { message: node.id }).toEqual([]);
+			}
+		});
+	}
 });
 
 test.describe('pointing at a question', () => {
@@ -71,15 +141,6 @@ test.describe('pointing at a question', () => {
 		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
 	});
 
-	test('does not move by itself under a mouse that is on it', async ({ page }) => {
-		await page.emulateMedia({ reducedMotion: 'no-preference' });
-		await openHome(page);
-		const there = (await living(page).boundingBox())!;
-		await page.mouse.move(there.x + there.width / 2, there.y + there.height / 2);
-		await page.waitForTimeout(3000);
-		await expect(living(page)).toHaveAttribute('data-node', 'how-access-works');
-	});
-
 	test('still shows a question reached with the keyboard', async ({ page }) => {
 		await openHome(page);
 		const pkce = await onTheMap(page, 'pkce');
@@ -98,7 +159,7 @@ test.describe('pointing at a question', () => {
 test.describe('the first screen', () => {
 	test('has the whole diagram and what it says on it, without scrolling', async ({ page }) => {
 		await openHome(page);
-		await expect(page.getByTestId('living-open')).toBeInViewport();
+		await expect(page.getByTestId('way-in-switch')).toBeInViewport();
 		await expect(page.locator('[data-lifeline="api"]')).toBeInViewport();
 	});
 
@@ -115,8 +176,11 @@ test.describe('with reduced motion', () => {
 	test('does not move at all, and still says what it shows', async ({ page }) => {
 		await openHome(page);
 		await page.waitForTimeout(3000);
-		await expect(living(page)).toHaveAttribute('data-node', 'how-access-works');
+		await expect(living(page)).toHaveAttribute('data-node', 'the-old-way');
 		await expect(page.getByTestId('living-answer')).not.toBeEmpty();
+		await page.getByTestId('way-in-switch').check();
+		await expect(living(page)).toHaveAttribute('data-node', 'how-access-works');
+		await expect(page.getByTestId('living-answer')).toContainText('OAuth');
 	});
 });
 

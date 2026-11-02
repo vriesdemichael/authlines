@@ -39,6 +39,10 @@ function* everyStep() {
  */
 const CITED: readonly [step: string, SourceId, section: string, phrase: string][] = [
 	['authorize', 'rfc6749', '4.1.2.1', 'MUST NOT automatically redirect'],
+	['old-way-keep', 'rfc6749', '1', 'typically a password in'],
+	['old-way-call', 'rfc7617', '2', 'using Base64'],
+	['old-way-call', 'rfc6749', '1', 'overly broad access'],
+	['old-way-answer', 'rfc6749', '1', 'cannot revoke access to an individual third party'],
 	['address-refused', 'rfc6749', '4.1.2.1', 'MUST NOT automatically redirect'],
 	['address-refused', 'rfc9700', '2.1', 'exact string matching'],
 	['authorize', 'rfc9700', '2.1', 'exact string matching'],

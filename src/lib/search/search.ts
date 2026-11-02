@@ -157,7 +157,8 @@ function allEntries(): Entry[] {
 				query: ''
 			},
 			title: node.title,
-			text: `${node.summary} ${node.answer}`
+			text: `${node.summary} ${node.answer} ${node.alsoAskedAs?.join(' ') ?? ''}`,
+			exactly: node.alsoAskedAs?.map(lower)
 		});
 	}
 
@@ -373,8 +374,13 @@ const COMMON_WORDS = new Set(
 const LIMIT = 8;
 
 /** The states that answer what someone typed, with an exact error first. */
-export function search(query: string): Found {
-	const phrase = lower(query.trim());
+export function search(typed: string): Found {
+	const query = typed
+		.trim()
+		.replace(/^what(?:'s| is| are)\s+(?:an?\s+|the\s+)?/i, '')
+		.replace(/\?$/, '');
+	const asked = query.trim();
+	const phrase = lower(asked);
 	if (phrase.length < 2) return { results: [], notHereYet: null };
 	const { entries, errors } = index();
 
