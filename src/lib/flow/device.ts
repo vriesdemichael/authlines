@@ -523,7 +523,7 @@ export const device: DiagramDef = {
 			concept:
 				'The API checks the signature, who issued the token, that it has not expired, and who it is for, the same as for a token from any other flow.',
 			inPractice:
-				'A library or a gateway does this, once you tell it the issuer and who tokens have to be for. Whether the scope covers this request is your code.',
+				'A library or a gateway does this, once you tell it the issuer and who tokens have to be for. Which scopes a request needs is yours to set, in code or on the gateway.',
 			practice: [example('jose', true, 'when you pass it the issuer and audience')],
 			pitfall: {
 				title: 'What if the API wants its own name in the token?',
@@ -540,7 +540,11 @@ export const device: DiagramDef = {
 				{ name: 'iss', place: 'token' },
 				{ name: 'aud', place: 'token' },
 				{ name: 'exp', place: 'token' },
-				{ name: 'scope', place: 'token', note: 'What the token allows, for your code to compare' }
+				{
+					name: 'scope',
+					place: 'token',
+					note: 'What the token allows, to compare with what this request needs'
+				}
 			]
 		},
 		{

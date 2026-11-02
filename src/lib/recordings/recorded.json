@@ -23,7 +23,8 @@
 		"as-itself": "2026-11-02",
 		"on-a-device": "2026-11-02",
 		"on-a-device-oidc": "2026-11-02",
-		"refresh-public-ends": "2026-11-02"
+		"refresh-public-ends": "2026-11-02",
+		"api-no-token": "2026-11-02"
 	},
 	"flows": {
 		"authorization-code": {

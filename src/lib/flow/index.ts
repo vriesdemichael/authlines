@@ -30,12 +30,12 @@ const presets: readonly Preset[] = [
 	},
 	{
 		id: 'refresh-ends',
-		title: 'Using a refresh token twice ends the login',
+		title: 'Using a refresh token twice ends the app’s session',
 		settings: { refresh: true, reuse: 'ends' }
 	},
 	{
 		id: 'refresh-public-ends',
-		title: 'Using a refresh token twice ends the login, with no secret',
+		title: 'Using a refresh token twice ends the app’s session, with no secret',
 		settings: { refresh: true, clientType: 'public', pkce: true, reuse: 'ends' }
 	},
 	{ id: 'sso', title: 'A second app', settings: { sso: true } },
@@ -176,7 +176,7 @@ export const clientCredentialsBase: BaseFlow = {
 		attacker: 'There is no code to steal.',
 		broker: 'There is no login to hand to anyone.',
 		sso: 'There is no login to remember.',
-		refresh: 'There is no refresh token. The app asks again with its secret.',
+		refresh: 'A refresh token should not be included here. The app asks again with its secret.',
 		logout: 'There is no login to end.',
 		apiToken: ONLY_RECORDED_THERE,
 		dpopNonce: ONLY_DRAWN_THERE

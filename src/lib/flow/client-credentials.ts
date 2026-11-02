@@ -194,7 +194,7 @@ export const clientCredentials: DiagramDef = {
 					text: 'An ordinary JWT library or gateway checks the token and ignores the proof, so it takes a stolen DPoP token sent as Bearer. Checking the proof takes a library that does DPoP.'
 				},
 				{
-					text: 'A library or a gateway does this, once you tell it the issuer and who tokens have to be for. Whether the scope covers this request is your code.'
+					text: 'A library or a gateway does this, once you tell it the issuer and who tokens have to be for. Which scopes a request needs is yours to set, in code or on the gateway.'
 				}
 			],
 			practice: [
@@ -216,7 +216,11 @@ export const clientCredentials: DiagramDef = {
 				{ name: 'iss', place: 'token' },
 				{ name: 'aud', place: 'token' },
 				{ name: 'exp', place: 'token' },
-				{ name: 'scope', place: 'token', note: 'What the token allows, for your code to compare' },
+				{
+					name: 'scope',
+					place: 'token',
+					note: 'What the token allows, to compare with what this request needs'
+				},
 				{ name: 'cnf.jkt', place: 'token', note: 'The key the token is tied to', when: dpop }
 			]
 		},

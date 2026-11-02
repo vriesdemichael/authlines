@@ -101,7 +101,7 @@ export const sources: Record<SourceId, SourceDef> = {
 		title: 'OAuth 2.0 for Browser-Based Applications',
 		status: 'Best Current Practice (BCP 212), August 2026.',
 		summary:
-			'What an app in the browser has to do, and what it cannot get away from. It goes through what a script running in the page can do, compares a backend that keeps the tokens with an app that keeps them itself, and says what each place in the browser does and does not protect.',
+			'What an app in the browser has to do, and what it cannot get away from. It goes through what a script running in the page can do, compares a backend that keeps the tokens, one that hands them over, and an app that keeps them itself, and says what each place in the browser does and does not protect.',
 		url: 'https://www.rfc-editor.org/rfc/rfc10017.html',
 		textFile: 'rfc10017.txt'
 	},

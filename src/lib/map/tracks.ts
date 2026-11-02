@@ -83,7 +83,7 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'who-logged-in',
 					answer:
-						'OAuth alone only gives the app access, and does not tell it who logged in. OpenID Connect adds an ID token that does, made for the app to read.',
+						'OAuth alone gives the app access, and defines no way to tell it who logged in. A token may name them, but it is meant for the API. OpenID Connect adds an ID token, made for the app to read.',
 					title: 'How does an app know who logged in?',
 					summary:
 						'Access is not identity, which is what OpenID Connect adds. OAuth alone is not login.',
@@ -149,7 +149,7 @@ export const mapTracks: readonly MapTrack[] = [
 					summary:
 						'Cross-site request forgery, or CSRF: someone slipping their own answer into your login.',
 					answer:
-						'The specs say it stops someone slipping their own answer into your login, leaving you in their account. The app makes up a value and checks it comes back. PKCE or a nonce also do this. That is not drawn here, and state does not stop a stolen code.'
+						'The specs say it stops someone slipping their own answer into your login. The app ties a value to this browser and checks the same one comes back. PKCE or a nonce can also do this. It is not drawn, and state does not stop a stolen code.'
 				}),
 				node({
 					id: 'what-iss-does',
@@ -159,7 +159,7 @@ export const mapTracks: readonly MapTrack[] = [
 					title: 'What is iss doing in the address?',
 					summary: 'It says which server answered.',
 					answer:
-						'It says which server the answer came from. An app that uses more than one provider has to guard against sending a code from one to another, the mix-up attack, and RFC 9700 says this is how. That attack is not drawn here.'
+						'It says which server the answer came from. An app that uses more than one provider has to guard against sending a code from one to another, the mix-up attack, and RFC 9700 says it should check this against the server it asked. That attack is not drawn here.'
 				})
 			],
 			[
@@ -215,16 +215,16 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'pkce-with-a-secret',
 					answer:
-						'Yes. A secret stops someone trading a stolen code themselves. They can still start a login of their own and hand the code to the real app, which trades it with its secret and logs them in. PKCE is what stops that.',
+						'Current advice recommends it. A secret stops someone trading a stolen code themselves, but they can hand it to the real app from a login of their own, and it logs them in. PKCE stops that at the server, and a nonce the app checks can too.',
 					title: 'Does an app with a secret need PKCE too?',
-					summary: 'Why current advice says yes, even when a stolen code is not enough alone.',
+					summary: 'Why current advice recommends it, even when a stolen code is not enough alone.',
 					preset: 'attack-at-the-app',
 					step: 'attacker-handed-answer'
 				}),
 				node({
 					id: 'both-protections',
 					answer:
-						'Nothing. Without the secret the identity provider will not look at the code, and handing it to the real app fails because the verifier does not match, though that uses up the code.',
+						'Nothing. Without the secret the identity provider refuses them, and handing it to the real app fails because the verifier does not match, though on this server that uses up the code.',
 					title: 'What does an attacker get against both?',
 					summary: 'A secret and PKCE together, against the same attempt.',
 					preset: 'attack-confidential-pkce',
@@ -259,7 +259,7 @@ export const mapTracks: readonly MapTrack[] = [
 					title: 'Does a nonce stop it as well?',
 					summary: 'Yes, if the app checks it, and later.',
 					answer:
-						'Yes, if the app checks it. The server still hands over the tokens, but the ID token has the nonce from the real user’s login, and the app made a different one for this login. PKCE stops it earlier, at the server.'
+						'Yes, if the app checks it and uses no token until it has. The server still hands over the tokens, but the ID token has the nonce from the real user’s login, and the app made a different one for this login. PKCE stops it earlier, at the server.'
 				})
 			],
 			[
@@ -275,7 +275,7 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'refresh-rotate',
 					answer:
-						'A new one coming back is not enough, because the old one may still work. The server has to be set to refuse it, and then a second use ends the session here. A retry, or two tabs at once, counts as a second use, so refresh one at a time.',
+						'A new one coming back is not enough, because the old one may still work. The server has to refuse it, which here is a setting, and a second use then ends the app’s session. A retry after a lost answer, or two tabs at once, can look like a second use.',
 					title: 'How do I make refresh tokens rotate?',
 					summary: 'A new one coming back is not enough: the old one has to stop working.',
 					mode: 'advanced',
@@ -285,10 +285,9 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'stolen-token',
 					answer:
-						'It ties the token to a key that never leaves the app, and each call has to carry a proof signed with that key. At an API that checks the proof, the token alone gets nobody in.',
+						'It ties the token to a key that stays in the app, and each call has to carry a proof signed with that key. At an API that checks the proof, the token alone gets nobody in.',
 					title: 'How does DPoP stop a stolen token being used?',
-					summary:
-						'It ties a token to a key that never leaves the app. The theft itself is not drawn.',
+					summary: 'It ties a token to a key that stays in the app. The theft itself is not drawn.',
 					preset: 'dpop',
 					step: 'api-request'
 				}),
@@ -297,7 +296,8 @@ export const mapTracks: readonly MapTrack[] = [
 					answer:
 						'The server hands out a nonce that the next proof has to include, so a proof made earlier is refused. The spec allows this, and the server recorded here did not ask for one.',
 					title: 'How can a proof be stopped from being used later?',
-					summary: 'A nonce from the server. The spec allows it, and Keycloak did not ask.',
+					summary:
+						'A nonce from the server. The spec allows it, and the server recorded here did not ask.',
 					preset: 'dpop-nonce',
 					step: 'nonce-challenge'
 				})
@@ -352,7 +352,7 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'what-api-checks',
 					answer:
-						'The signature, who issued the token, that it has not expired, and that it is for this API. Whether the token allows this request, and whether this user may see this thing, is your own code.',
+						'The signature, who issued the token, that it has not expired, and that it is for this API. Which scopes a request needs is yours to set, and whether this user may see this thing is your own code.',
 					title: 'What does my API have to check?',
 					summary: 'A token says nothing until someone has looked.',
 					preset: 'oauth',
@@ -390,7 +390,7 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'logged-out-of-other-apps',
 					answer:
-						'Of the identity provider, yes, so their next login asks again and their refresh tokens usually stop working. An app that registered an address is told right away. Any other keeps them logged in until it next asks.',
+						'Of the identity provider, yes, so their next login asks again and their refresh tokens usually stop working. An app that registered an address is told right away. Any other that is told no other way keeps them logged in until it next asks.',
 					title: 'Am I logged out of my other apps too?',
 					summary: 'They lose the session they relied on, and may not know yet.',
 					preset: 'logout-two-apps',
@@ -423,17 +423,17 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'tokens-in-the-browser',
 					answer:
-						'Nowhere in the page is safe from a script running there, whichever storage it is, and that script can ask for new tokens anyway. So for anything sensitive, current advice is to keep them on a server behind the app, and give the browser a cookie.',
+						'A script in the page can read any storage there. A worker can keep tokens from it, but it can often start a login of its own for new ones. So for business apps, or anything sensitive or personal, current advice is a server behind the app that keeps them.',
 					title: 'Where should an app in the browser keep its tokens?',
 					summary:
-						'localStorage, sessionStorage or memory: none of them stops a script in the page. A backend for frontend keeps them out of it.',
+						'localStorage, sessionStorage or memory: none of them fully stops a script in the page. A backend for frontend keeps tokens out of it, though a script can still act through the open page.',
 					preset: 'browser-app',
 					step: 'token-response'
 				}),
 				node({
 					id: 'secret-in-the-page',
 					answer:
-						'Then it is not a secret: anyone can read it in their copy, so a server cannot take it as proof of anything. Make it a client with no secret, and turn on PKCE. If that client may also act for itself, that secret alone gets tokens with no user.',
+						'Then it is not a secret: anyone who can load the page can read it, so it should not count as proof of which app this is. Make it a client with no secret, and turn on PKCE. If it may also act for itself, that secret gets tokens with no user.',
 					title: 'What if our client secret is in the JavaScript?',
 					summary: 'Then it is not a secret, and anyone can read it.',
 					preset: 'browser-app',
@@ -513,7 +513,7 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'redirect-uri-error',
 					answer:
-						'The address the app sent is not one registered for this client, so the server refuses before anyone logs in. It has to match what was registered, exactly.',
+						'The address the app sent is not one registered for this client, so the server refuses before anyone logs in. It has to match what was registered, and current advice is an exact match.',
 					title: 'Why do I get Invalid parameter: redirect_uri?',
 					summary: 'Where the address is checked, and where it was registered.',
 					mode: 'advanced',
@@ -533,7 +533,7 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'force-a-login',
 					answer:
-						'Send prompt=login with the request. The identity provider shows the form, though it knows the browser. To be sure it happened, check auth_time in the ID token.',
+						'Send prompt=login with the request. The identity provider shows the form, though it knows the browser. To be sure it happened, check auth_time in the ID token, if it has one: a provider only has to send it when the app asks for it.',
 					title: 'How do I make someone log in again?',
 					summary: 'A session is usually good enough. One parameter says not this time.',
 					mode: 'advanced',

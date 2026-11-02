@@ -90,6 +90,26 @@ describe('a line about what libraries do', () => {
 		});
 	});
 
+	it('says what state is on a logout, where it has nothing to do with a login', () => {
+		const settings = { ...defaultSettings, oidc: true, logout: true };
+		const steps = evaluate(base.diagrams.flow, settings).steps;
+		for (const id of ['logout-redirect', 'end-session', 'logout-redirect-back', 'logged-out']) {
+			const state = steps
+				.find((step) => step.id === id)
+				?.fields.find(({ name }) => name === 'state');
+			expect(state?.note, id).toContain('comes back with the user');
+		}
+	});
+
+	it('does not say Auth.js checks a nonce, which it only does once someone adds it', () => {
+		const check = evaluate(base.diagrams.flow, { ...defaultSettings, oidc: true }).steps.find(
+			(step) => step.id === 'validate-id-token'
+		);
+		const authjs = check?.practice.find((example) => example.name === 'Auth.js');
+		expect(authjs?.does).toBe(false);
+		expect(authjs?.text).toContain('once you add it');
+	});
+
 	it('does not say what a DPoP-unaware one does not do', () => {
 		const dpop = { ...defaultSettings, binding: 'dpop' as const };
 		const check = evaluate(base.diagrams.flow, dpop).steps.find(

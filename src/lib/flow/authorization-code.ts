@@ -343,7 +343,7 @@ export const authorizationCode: DiagramDef = {
 				title: 'What if the address does not match?',
 				shot: 'wrong-redirect',
 				shows: "The identity provider's own error page, with no way back to the app.",
-				text: 'The identity provider has to stop and show an error, and must not send the browser anywhere. Otherwise an attacker could ask for the code to be sent to them, which is why current advice is an exact match.'
+				text: 'The identity provider must not send the browser to that address, and should show the user an error. Otherwise an attacker could ask for the code to be sent to them, which is why current advice is an exact match.'
 			},
 			links: [
 				{
@@ -645,7 +645,7 @@ export const authorizationCode: DiagramDef = {
 				{
 					source: 'rfc9700',
 					section: '4.4',
-					why: 'Section 4.4 is the mix-up attack, where an app that uses more than one provider is tricked into sending a code from one to another. Its countermeasure is to check who answered, which is what iss is for.'
+					why: 'Section 4.4 is the mix-up attack, where an app that uses more than one provider is tricked into sending a code from one to another. Its main countermeasure is to check who answered, which is what iss is for.'
 				},
 				{
 					source: 'rfc9700',
@@ -887,7 +887,7 @@ export const authorizationCode: DiagramDef = {
 			plain: 'The app checks the ID token, and it is for another login',
 			label: 'Compare the nonce',
 			concept:
-				'The ID token has the nonce from the real user’s login, and the app made a different one for this login. So it stops here. That only helps if the check is really done, and it happens after the server has already handed over the tokens.',
+				'The ID token has the nonce from the real user’s login, and the app made a different one for this login. So it stops here. That only helps if the check is really done and no token is used before it, and it happens after the server has already handed over the tokens.',
 			when: stoppedByNonce,
 			fields: [{ name: 'nonce', place: 'memory', note: 'The one made for this login' }]
 		},
@@ -980,10 +980,10 @@ export const authorizationCode: DiagramDef = {
 				},
 				{
 					when: pkce,
-					text: 'Without the secret, the identity provider will not even look at the code. Handing it to the real app from their own browser gets them nothing, because the verifier does not match, though on this server it uses up the code.'
+					text: 'Without the secret, the identity provider refuses them. Handing it to the real app from their own browser gets them nothing, because the verifier does not match, though on this server it uses up the code.'
 				},
 				{
-					text: 'Without the secret, the identity provider will not even look at the code. But they could still hand it to the real app from their own browser, so that it trades the code for them, which is what PKCE stops.'
+					text: 'Without the secret, the identity provider refuses them. But they could still hand it to the real app from their own browser, so that it trades the code for them, which is what PKCE stops.'
 				}
 			],
 			when: all(attacker, not(handedToTheApp)),
@@ -1047,7 +1047,7 @@ export const authorizationCode: DiagramDef = {
 				{
 					source: 'rfc9700',
 					section: '4.7',
-					why: 'Section 4.7 is the same attack in the current advice, and says that PKCE or a nonce can stand in for state.'
+					why: 'Section 4.7 is the same attack in the current advice, and says that PKCE or a nonce can stand in for state, once the app has made sure the server supports PKCE.'
 				}
 			],
 			from: 'browser',
@@ -1112,7 +1112,7 @@ export const authorizationCode: DiagramDef = {
 				{
 					source: 'rfc9449',
 					section: '10',
-					why: 'Section 10 is how a login can name a key with dpop_jkt, which is what ties the code to it. Without that parameter nothing does.',
+					why: 'Section 10 is how a login can name a key with dpop_jkt, which is what ties the code to it. Without that, or a proof on a pushed request as in section 10.1, nothing does.',
 					when: all(not(confidential), not(pkce), dpop)
 				}
 			],
@@ -1327,6 +1327,18 @@ export const authorizationCode: DiagramDef = {
 			cites: [
 				{
 					source: 'rfc10017',
+					section: '5.1.3',
+					why: 'Section 5.1.3 is a script in the page starting a login of its own, which keeping tokens somewhere better does not stop. It takes a session at the server, and a server that allows it silently.',
+					when: not(confidential)
+				},
+				{
+					source: 'rfc10017',
+					section: '6.1.4.1',
+					why: 'Section 6.1.4.1 says a script in the page can still send requests through a backend for frontend, and that nothing stops that except keeping the script out.',
+					when: not(confidential)
+				},
+				{
+					source: 'rfc10017',
 					section: '8.5',
 					why: 'Section 8.5 goes through localStorage, sessionStorage and IndexedDB, and says none of them can fully stop a script running in the page from taking tokens.',
 					when: not(confidential)
@@ -1347,16 +1359,16 @@ export const authorizationCode: DiagramDef = {
 			concept: [
 				{
 					when: oidc,
-					text: 'The access token is for the API, and the ID token tells the app who logged in. The refresh token is for later, to get a new access token without the user.'
+					text: 'The access token is for the API, and the ID token tells the app who logged in. Here a refresh token comes too, to get a new access token later without the user.'
 				},
 				{
-					text: 'The access token lets the app call the API, and is meant for the API to read. The refresh token is for later, to get a new one without the user.'
+					text: 'The access token lets the app call the API, and is meant for the API to read. Here a refresh token comes too, to get a new one later without the user.'
 				}
 			],
 			inPractice: [
 				{
 					when: not(confidential),
-					text: 'A library takes these. If your app runs in the browser, so do they: the diagram draws the two apart to show the redirects, but anything running in that page can reach them, wherever in the browser they are kept. That is why current advice for anything sensitive is a server behind the app that keeps them, called a backend for frontend.'
+					text: 'A library takes these. If your app runs in the browser, so do they: the diagram draws the two apart to show the redirects, but a script running in that page can reach whatever the page can, and can often start a login of its own for new tokens. A worker narrows the first and not the second. That is why current advice for business apps, and anything sensitive or personal, is a server behind the app that keeps them, called a backend for frontend. A script can still act through the open page.'
 				},
 				{
 					when: dpop,
@@ -1374,7 +1386,8 @@ export const authorizationCode: DiagramDef = {
 					true,
 					'keeps them in sessionStorage unless you tell it otherwise',
 					not(confidential)
-				)
+				),
+				example('oauth4webapi', false, 'leaves where they are kept to you', not(confidential))
 			],
 			fields: [
 				{ name: 'access_token', place: 'body', artifact: 'access-token' },
@@ -1409,9 +1422,9 @@ export const authorizationCode: DiagramDef = {
 			largerJob:
 				'Your own session for the user is yours to write, and so is logging out of it. Neither is on this diagram.',
 			inPractice:
-				'A framework usually does all of this. A low-level library may leave parts of it to you, such as the nonce, so read what yours does, and do not skip any of it.',
+				'A framework may do most of this. Parts of it can be left to you, such as the nonce, so read what yours does, and do not skip any of it.',
 			practice: [
-				example('authjs', true, 'keeps the nonce and checks it'),
+				example('authjs', false, 'keeps and checks a nonce only once you add it to its checks'),
 				example(
 					'oauth4webapi',
 					false,
@@ -1546,10 +1559,10 @@ export const authorizationCode: DiagramDef = {
 			inPractice: [
 				{
 					when: dpop,
-					text: 'An ordinary JWT library or gateway checks the token and ignores the proof, so it takes a stolen DPoP token sent as Bearer. Checking the proof takes a library that does DPoP. Whether the scope covers this request, and whether this user may see this thing, is your code, and a valid token says neither.'
+					text: 'An ordinary JWT library or gateway checks the token and ignores the proof, so it takes a stolen DPoP token sent as Bearer. Checking the proof takes a library that does DPoP. Which scopes a request needs is yours to set, in code or on the gateway. Whether this user may see this thing is your code, and a valid token says neither.'
 				},
 				{
-					text: 'A library or a gateway does this, once you tell it the issuer and who tokens have to be for. Forget the second, and a token meant for another API gets in. Whether the scope covers this request, and whether this user may see this thing, is your code, and a valid token says neither.'
+					text: 'A library or a gateway does this, once you tell it the issuer and who tokens have to be for. Forget the second, and a token meant for another API gets in. Which scopes a request needs is yours to set, in code or on the gateway. Whether this user may see this thing is your code, and a valid token says neither.'
 				}
 			],
 			practice: [
@@ -1569,7 +1582,11 @@ export const authorizationCode: DiagramDef = {
 				{ name: 'iss', place: 'token' },
 				{ name: 'aud', place: 'token' },
 				{ name: 'exp', place: 'token' },
-				{ name: 'scope', place: 'token', note: 'What the token allows, for your code to compare' },
+				{
+					name: 'scope',
+					place: 'token',
+					note: 'What the token allows, to compare with what this request needs'
+				},
 				{ name: 'cnf.jkt', place: 'token', note: 'The key the token is tied to', when: dpop }
 			]
 		},
@@ -1839,7 +1856,7 @@ export const authorizationCode: DiagramDef = {
 			plain: 'Refused too: the app has to start a new login',
 			label: '400 invalid_grant',
 			concept:
-				'Refused as well, though nothing is wrong with this one. The identity provider cannot tell which of the two is the thief, so it stops them both. The app has to send the user through the login again, which is the price of finding out.',
+				'Refused as well, though nothing is wrong with this one. The identity provider cannot tell which of the two is the thief, so it stops them both. The app has to start a new login. With a session still in the browser, the user may not even be asked for a password, so this ends the app’s session and not theirs at the identity provider.',
 			fields: [
 				{ name: 'error=invalid_grant', place: 'body', note: 'This refresh token cannot be used' },
 				{ name: 'error_description', place: 'body' }
@@ -2197,7 +2214,11 @@ export const authorizationCode: DiagramDef = {
 					place: 'query',
 					note: 'Where to come back to, which has to be registered'
 				},
-				{ name: 'state', place: 'query' }
+				{
+					name: 'state',
+					place: 'query',
+					note: 'The app’s own value, which comes back with the user so it can pick up where it left off'
+				}
 			]
 		},
 		{
@@ -2221,7 +2242,11 @@ export const authorizationCode: DiagramDef = {
 					place: 'query',
 					note: 'Where to come back to, which has to be registered'
 				},
-				{ name: 'state', place: 'query' },
+				{
+					name: 'state',
+					place: 'query',
+					note: 'The app’s own value, which comes back with the user so it can pick up where it left off'
+				},
 				{
 					name: 'Cookie',
 					place: 'header',
@@ -2276,7 +2301,11 @@ export const authorizationCode: DiagramDef = {
 			label: '302 back to the app',
 			concept: 'The cookie is emptied, and the browser goes back to the address the app gave.',
 			fields: [
-				{ name: 'state', place: 'query' },
+				{
+					name: 'state',
+					place: 'query',
+					note: 'The app’s own value, which comes back with the user so it can pick up where it left off'
+				},
 				{ name: 'Set-Cookie', place: 'header', note: 'Empties the session cookie' }
 			]
 		},
@@ -2289,7 +2318,13 @@ export const authorizationCode: DiagramDef = {
 			plain: 'The user is back, and logged out',
 			label: 'Back at the app',
 			concept: 'As far as the user can tell, that is the end of it.',
-			fields: [{ name: 'state', place: 'query' }]
+			fields: [
+				{
+					name: 'state',
+					place: 'query',
+					note: 'The app’s own value, which comes back with the user so it can pick up where it left off'
+				}
+			]
 		},
 		{
 			id: 'token-after-logout',

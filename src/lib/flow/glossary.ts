@@ -42,7 +42,7 @@ const list: readonly Term[] = [
 		name: 'OAuth',
 		words: ['OAuth', 'OAuth 2.0'],
 		explains:
-			'A way for an app to get access on behalf of a user, without being given their password. It is about access, and does not say who the user is.'
+			'A way for an app to get access on behalf of a user, without being given their password. It is about access, and defines no way to tell the app who the user is.'
 	},
 	{
 		id: 'openid-connect',
@@ -109,7 +109,7 @@ const list: readonly Term[] = [
 		name: 'iss',
 		words: ['iss', 'RFC 9207', 'mix-up', 'mix-up attack'],
 		explains:
-			'Says which server an answer came from, as RFC 9207 defines it. An app that uses more than one has to guard against taking the answer from one for the answer from another, which is the mix-up attack, and RFC 9700 says to use this.',
+			'Says which server an answer came from, as RFC 9207 defines it. An app that uses more than one has to guard against taking the answer from one for the answer from another, which is the mix-up attack, and RFC 9700 says it should check this, or something like it.',
 		at: flowAt('callback')
 	},
 	{
@@ -153,7 +153,7 @@ const list: readonly Term[] = [
 		id: 'access-denied',
 		name: 'access_denied',
 		words: ['access_denied'],
-		explains: 'The error the app gets back when the user says no.',
+		explains: 'The error the app gets back when the user says no, or the server refuses this way.',
 		at: flowAt('consent-page', { consent: true })
 	},
 	{
@@ -386,7 +386,7 @@ const list: readonly Term[] = [
 		name: 'Signature',
 		words: ['signature', 'signatures', 'signed'],
 		explains:
-			'A value made with a private key, which anyone with the matching public key can check. So a token cannot be changed without that being noticed.',
+			'A value made with a private key, which anyone with the matching public key can check. So a token cannot be changed without that being noticed. Some are made with a shared key instead, which only those who hold it can check.',
 		at: flowAt('api-check-token')
 	},
 	{
@@ -409,7 +409,7 @@ const list: readonly Term[] = [
 		name: 'State',
 		words: ['state'],
 		explains:
-			"A random value the app sends with the login and checks when the user comes back, so nobody can slip an answer into this user's login. It does not stop someone starting a login in their own browser and handing the app a stolen code, which takes PKCE or a nonce. Those can also do what state does.",
+			"A random value, tied to this browser, that the app sends with the login and checks when the user comes back, so nobody can slip an answer into this user's login. It does not stop someone starting a login in their own browser and handing the app a stolen code, which takes PKCE or a nonce. Those can also do what state does, once the app has made sure the server supports PKCE.",
 		alsoCalled: ['CSRF protection'],
 		at: flowAt('authorize')
 	},
@@ -443,7 +443,7 @@ const list: readonly Term[] = [
 		name: 'Authentication and authorization',
 		words: ['authentication and authorization', 'authn', 'authz'],
 		explains:
-			'Authentication is finding out who someone is, and authorization is what they may do. OAuth is about the second. OpenID Connect adds the first, with an ID token.',
+			'Authentication is finding out who someone is, and authorization is what they may do. Someone logs in under OAuth too, but OAuth only says what the app may do. OpenID Connect also tells the app who it was, with an ID token.',
 		alsoCalled: [
 			'authentication vs authorization',
 			'authn vs authz',
@@ -486,11 +486,18 @@ const list: readonly Term[] = [
 		at: flowAt('token-response', { oidc: true, clientType: 'public', pkce: true })
 	},
 	{
+		id: 'worker',
+		name: 'Worker',
+		words: ['worker', 'workers', 'Web Worker', 'Service Worker'],
+		explains:
+			'Code the browser runs apart from the page, so the page can only ask it to do things. A token kept there is out of a script’s reach, though the script can still ask the worker to use it.'
+	},
+	{
 		id: 'bff',
 		name: 'Backend for frontend',
 		words: ['backend for frontend', 'backend-for-frontend', 'BFF'],
 		explains:
-			'A server of your own behind an app in the browser. It is the client: it does the login and keeps the tokens, and the browser only gets a cookie from it, so there are no tokens in the page to take.',
+			'A server of your own behind an app in the browser. It is the client: it does the login and keeps the tokens, and the browser only gets a cookie from it, so there are no tokens in the page to take. A script running there can still send requests through it as the user, for as long as the page is open.',
 		alsoCalled: ['BFF']
 	},
 	{
@@ -498,7 +505,7 @@ const list: readonly Term[] = [
 		name: 'Single-page app',
 		words: ['single-page app', 'single page app', 'SPA', 'SPAs'],
 		explains:
-			'An app that runs entirely in the browser. It cannot keep a secret, and whatever it holds is in the page.',
+			'An app whose code runs in the browser. That code cannot keep a secret, and what it holds is within reach of the page, unless a server behind it holds it instead.',
 		alsoCalled: ['SPA'],
 		at: flowAt('token-request', { oidc: true, clientType: 'public', pkce: true })
 	},
@@ -554,7 +561,7 @@ const list: readonly Term[] = [
 		name: 'Code injection',
 		words: ['injection', 'code injection', 'authorization code injection'],
 		explains:
-			'Getting an app to trade a stolen code for you, by handing it to the app in a login of your own. Its secret does not help, because the app is the one using it. PKCE or a nonce stop it.',
+			'Getting an app to trade a stolen code for you, by handing it to the app in a login of your own. Its secret does not help, because the app is the one using it. PKCE stops it, and so does a nonce if the app checks it and uses no token before then. Neither helps if they can also change the request.',
 		at: flowAt('attacker-hands-code', { attacker: true, attackerUses: 'real-app' })
 	},
 	{
@@ -615,7 +622,7 @@ const list: readonly Term[] = [
 		name: 'JWT',
 		words: ['JWT', 'JWTs'],
 		explains:
-			'JSON Web Token, a token format that can be read by anyone and is signed so it cannot be changed. Many tokens here are JWTs, though an access token does not have to be one.',
+			'JSON Web Token, a token format that can usually be read by anyone and is signed so it cannot be changed. Many tokens here are JWTs, though an access token does not have to be one.',
 		at: flowAt('token-response')
 	},
 	{
@@ -683,7 +690,8 @@ const parts: readonly Term[] = [
 		name: 'Teal',
 		words: [],
 		part: true,
-		explains: 'One system calls another directly, so the browser never sees this message.'
+		explains:
+			'One system calls another directly, without sending the browser there. If the app runs in the browser, that call comes from the page.'
 	},
 	{
 		id: 'part-number',

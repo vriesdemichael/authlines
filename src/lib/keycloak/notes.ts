@@ -580,7 +580,7 @@ export const noteDefs: readonly NoteDef[] = [
 		id: 'issuer',
 		steps: ['configure-app', 'discover'],
 		title: 'Endpoints',
-		text: "The issuer is the server's address, then /realms/ and the name of the realm, so each realm is an identity provider of its own. This page links to its discovery document.",
+		text: "The issuer is the server's address, then /realms/ and the name of the realm, so each realm is an identity provider of its own. This page links to its discovery document. RFC 8414 puts the well-known part ahead of the realm's path, at /.well-known/oauth-authorization-server/realms/demo, and this server answers there too. The recording asked after the realm instead, which is where OpenID Connect Discovery's address does go.",
 		place: {
 			path: ['Realm settings', 'General', 'Endpoints'],
 			page: 'realm-settings',
@@ -705,7 +705,7 @@ export const noUserNoteDefs: readonly NoteDef[] = [
 		id: 'id-token-for-client-credentials',
 		steps: ['service-token-response'],
 		title: 'An ID token, if asked for',
-		text: 'Asked for the openid scope, this server sends an ID token here too, about its account for the app. OpenID Connect defines an ID token for a login, so do not count on it elsewhere.',
+		text: 'Asked for the openid scope, this server sends an ID token here too. OpenID Connect defines an ID token for a login, so do not count on it elsewhere.',
 		seen: 'Asked a real server for a token, with and without the openid scope.',
 		backedBy: {
 			question: 'idTokenWhenAsked',

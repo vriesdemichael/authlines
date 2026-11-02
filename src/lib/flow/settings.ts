@@ -223,7 +223,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		default: 'themselves',
 		summary:
 			'A secret stops them trading the code themselves. They can also get the real app to trade it for them, secret and all.',
-		why: 'This is why an app with a secret still needs PKCE. The secret proves the request comes from the real app, and here it does. Nothing in the request says the code was meant for someone else.',
+		why: 'This is why current advice recommends PKCE for an app with a secret too. The secret proves the request comes from the real app, and here it does. Nothing in the request says the code was meant for someone else.',
 		options: [
 			{ value: 'themselves', label: 'Trade it themselves' },
 			{ value: 'real-app', label: 'Hand it to the real app' }
@@ -281,7 +281,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		param: 'broker',
 		default: false,
 		summary: 'The IdP hands the login to another IdP. The app does not notice.',
-		why: 'Users often already have an account somewhere else, such as at their employer. The IdP hands the login over, so an app that already uses it needs no changes, and never learns how the login happened.',
+		why: 'Users often already have an account somewhere else, such as at their employer. The IdP hands the login over, so an app that already uses it needs no changes, and by default never learns how the login happened.',
 		simple: {
 			label: 'Log in with another provider',
 			summary: 'The identity provider hands the login to another one. The app does not notice.'
@@ -407,7 +407,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		},
 		options: [
 			{ value: 'keeps', label: 'It keeps working' },
-			{ value: 'ends', label: 'It ends the login' }
+			{ value: 'ends', label: 'It ends the app’s session' }
 		]
 	},
 	sso: {
