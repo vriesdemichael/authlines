@@ -497,6 +497,12 @@
 		padding: 0;
 	}
 
+	/* A choice that wraps carries on under its own words, not under the button. */
+	fieldset label {
+		padding-left: 24px;
+		text-indent: -24px;
+	}
+
 	legend {
 		padding: 0;
 	}
@@ -522,7 +528,7 @@
 
 	small {
 		display: block;
-		margin-left: 22px;
+		text-indent: 0;
 		font-size: 11.5px;
 	}
 

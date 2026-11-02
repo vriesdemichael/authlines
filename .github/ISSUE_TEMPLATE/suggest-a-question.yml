@@ -1,0 +1,17 @@
+name: Suggest a question
+description: Something you came to find out and did not find.
+labels: [question]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: What did you want to know?
+      description: In your own words. An error message you got is just as good.
+      placeholder: Why was my refresh token refused after a week?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: What were you doing when you wondered?
+      description: Optional. Adding a login, fixing one, explaining one to someone.
