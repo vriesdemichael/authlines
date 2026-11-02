@@ -263,6 +263,7 @@ const jsonOf = <T>(text: string) => JSON.parse(text) as T;
 /** What the app learns from the issuer it was given, which is the last step of setup. */
 interface Discovered {
 	issuer: string;
+	registration_endpoint?: string;
 	authorization_endpoint: string;
 	token_endpoint: string;
 	device_authorization_endpoint?: string;
@@ -291,9 +292,27 @@ interface Tokens {
 	error?: string;
 }
 
+/** The address the identity provider fetches, in its container, where the demo app is the host. */
+export const CLIENT_DOCUMENT = 'http://host.docker.internal:9100/client-document.json';
+
 export class Demo {
 	current: Run | null = null;
 	#keptLogin = { username: '', password: '' };
+
+	/** It asks to be registered, with the one token an admin gave it, and goes on as what it gets back. */
+	async registerItself(run: Run, initialToken: string) {
+		const url = this.#discovered?.registration_endpoint ?? '';
+		const body = JSON.stringify({ client_name: 'Demo app', redirect_uris: [REDIRECT_URI] });
+		const headers = { authorization: `Bearer ${initialToken}`, 'content-type': 'application/json' };
+		run.messages.push(requestMessage('dcr-request', 'POST', url, headers, body));
+		const response = await fetch(url, { method: 'POST', headers, body });
+		const text = await response.text();
+		run.messages.push(responseMessage('dcr-response', response.status, response.headers, text));
+		if (response.status !== 201) throw new Error(`Registering failed: ${text}`);
+		const registered = jsonOf<{ client_id: string; client_secret: string }>(text);
+		run.clientId = registered.client_id;
+		run.clientSecret = registered.client_secret;
+	}
 
 	/** What came before: no identity provider, only the app taking the password from a form. */
 	async theOldWay(run: Run) {
@@ -333,11 +352,12 @@ export class Demo {
 	}
 
 	/** The one thing the app is told is the issuer. Everything else it asks for. */
-	async discover(run: Run) {
+	async discover(run: Run, initialToken?: string) {
 		const name = run.settings.oidc ? 'openid-configuration' : 'oauth-authorization-server';
 		const url = `${KEYCLOAK}/realms/${run.realm}/.well-known/${name}`;
 		const answer = await call(run, ['discover', 'discovery-document'], 'GET', url);
 		this.#discovered = jsonOf<Discovered>(answer.text);
+		if (initialToken) await this.registerItself(run, initialToken);
 		// What the API does when it starts, the same way, and nothing tells it to.
 		await call(run, ['fetch-keys', 'keys'], 'GET', this.#discovered.jwks_uri);
 	}
@@ -733,6 +753,25 @@ export class Demo {
 	async start() {
 		const app = createServer(async (request, response) => {
 			const url = new URL(request.url ?? '/', APP);
+			// What the identity provider fetches when an app it has not seen asks for a login.
+			if (url.pathname === '/client-document.json') {
+				const document = JSON.stringify({
+					client_id: CLIENT_DOCUMENT,
+					client_name: 'Demo app',
+					redirect_uris: [REDIRECT_URI],
+					token_endpoint_auth_method: 'none',
+					grant_types: ['authorization_code'],
+					response_types: ['code']
+				});
+				const headers = { 'content-type': 'application/json' };
+				if (this.current) {
+					this.current.messages.push(requestMessage('cimd-fetch', 'GET', CLIENT_DOCUMENT, {}));
+					this.current.messages.push(responseMessage('cimd-document', 200, headers, document));
+				}
+				response.writeHead(200, headers);
+				response.end(document);
+				return;
+			}
 			// The old way: it takes the password, and from then on logs in as the user with it.
 			if (url.pathname === '/old-way/login') {
 				const form = new URLSearchParams(await readBody(request));

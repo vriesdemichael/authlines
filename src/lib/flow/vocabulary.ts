@@ -98,6 +98,16 @@ export const artifacts: Readonly<
 
 /** Why a parameter is there, for the ones that mean the same wherever they appear. */
 const parameterWhy: Readonly<Record<string, string>> = {
+	'initial access token': 'What lets an app register itself',
+	'allowed domains': 'Whose documents to trust',
+	client_name: 'What the user is told the app is called',
+	redirect_uris: 'Where users may be sent back to',
+	token_endpoint_auth_method: 'How the app proves who it is when it asks for tokens',
+	registration_client_uri: 'Where to change or delete this registration',
+	registration_endpoint: 'Where an app can register itself',
+	grant_types: 'Which ways of getting tokens it may use',
+	response_types: 'What it may ask to get back',
+	client_id_issued_at: 'When it was registered',
 	response_type: 'Asks for a code, which is what makes this the code flow.',
 	client_id: 'Says which app this is, as registered in setup.',
 	redirect_uri: 'Has to be the address the code was sent to.',

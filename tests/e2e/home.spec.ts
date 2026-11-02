@@ -95,6 +95,7 @@ test.describe('the way in', () => {
 		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
 		await page.getByTestId('living-start').click();
 		await expect(living(page)).toHaveAttribute('data-node', 'the-old-way');
+		await expect(page).not.toHaveURL(/at=/);
 		await page.goBack();
 		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
 	});

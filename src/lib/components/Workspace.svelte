@@ -1180,16 +1180,17 @@
 		display: flex;
 		align-items: flex-start;
 		align-self: start;
-		justify-self: start;
+		justify-self: stretch;
+		margin-right: 1px;
 		gap: 6px;
 		padding: 10px 10px 4px;
 		border: 0;
 		border-radius: 0;
-		background: none;
 		color: var(--muted);
 		font-size: 12px;
 		line-height: 12px;
 		white-space: nowrap;
+		background: var(--bg);
 	}
 
 	.settings-toggle svg {
@@ -1205,6 +1206,7 @@
 		flex-direction: column;
 		align-self: stretch;
 		justify-self: stretch;
+		margin-right: 1px;
 		gap: 8px;
 		border-right: 1px solid var(--line);
 	}

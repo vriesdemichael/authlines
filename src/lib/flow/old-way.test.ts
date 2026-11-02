@@ -38,3 +38,30 @@ describe('the old way', () => {
 		expect(held.api).toEqual(['password']);
 	});
 });
+
+// An audit found the login saying "registered in setup", one step before "fetches the document".
+describe('an app that points at a document', () => {
+	const settings = {
+		...defaultSettings,
+		registration: 'cimd',
+		clientType: 'public',
+		pkce: true,
+		consent: true
+	} as const;
+	const steps = evaluate(base.diagrams.flow, settings).steps;
+
+	it('does not say it was registered in setup, anywhere in the login', () => {
+		const said = steps.flatMap(({ id, concept, fields }) =>
+			[concept, ...fields.map(({ note }) => note ?? '')]
+				.filter((text) => /registered in setup/.test(text))
+				.map(() => id)
+		);
+		expect(said).toEqual([]);
+	});
+
+	it('fetches the document before the user is shown anything', () => {
+		const ids = steps.map(({ id }) => id);
+		expect(ids.indexOf('authorize')).toBeLessThan(ids.indexOf('cimd-fetch'));
+		expect(ids.indexOf('cimd-document')).toBeLessThan(ids.indexOf('login-page'));
+	});
+});

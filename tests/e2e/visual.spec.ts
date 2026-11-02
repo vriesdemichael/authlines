@@ -11,6 +11,13 @@ test.skip(
 const states: readonly [string, string, 'flow' | 'setup'][] = [
 	['simple-first-step', 'mode=simple', 'flow'],
 	['the-old-way', 'mode=simple&oldway=1&step=old-way-answer', 'flow'],
+	['registers-itself', 'register=dcr&step=dcr-response', 'setup'],
+	[
+		'points-at-a-document',
+		'register=cimd&client=public&pkce=1&consent=1&step=cimd-document',
+		'flow'
+	],
+	['document-setup', 'register=cimd&client=public&pkce=1&consent=1&step=cimd-host', 'setup'],
 	['simple-token-response', 'mode=simple&oidc=1&step=token-response', 'flow'],
 	['simple-explanation', 'mode=simple&step=callback&explain=artifact.code', 'flow'],
 	['address-refused', 'mode=simple&address=other&step=address-refused', 'flow'],

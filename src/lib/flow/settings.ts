@@ -22,6 +22,7 @@ export interface Settings {
 	address: 'registered' | 'other';
 	appRuns: 'server' | 'page';
 	oldWay: boolean;
+	registration: 'manual' | 'dcr' | 'cimd';
 }
 
 export type SettingId = keyof Settings;
@@ -170,6 +171,78 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		options: [
 			{ value: 'confidential', label: 'Confidential' },
 			{ value: 'public', label: 'Public', plainly: 'This app has no secret' }
+		]
+	},
+	registration: {
+		kind: 'choice',
+		label: 'How the provider learns about the app',
+		param: 'register',
+		default: 'manual',
+		onlyOn: 'authorization-code',
+		summary:
+			'Someone registers it by hand, it registers itself, or it points at a document about itself. It changes the setup, and with a document the login too.',
+		why: 'Registering each app by hand works until there are more apps than people to register them, or apps nobody knew about in advance. So an app can register itself, or be its own registration, with a document at an address it controls.',
+		sources: [
+			{
+				source: 'rfc7591',
+				section: '3',
+				why: 'Section 3 is the request an app sends to register itself, and what comes back.'
+			},
+			{
+				source: 'cimd-draft',
+				why: 'The client ID is the address of a document about the app, and the server fetches it when it needs to. It is still a draft.'
+			}
+		],
+		options: [
+			{ value: 'manual', label: 'Someone registers it' },
+			{
+				value: 'dcr',
+				label: 'It registers itself (DCR)',
+				requires: {
+					when: all(
+						is('clientType', 'confidential'),
+						is('pkce', false),
+						is('oidc', false),
+						is('consent', false),
+						is('attacker', false),
+						is('binding', 'bearer'),
+						is('broker', false),
+						is('apiToken', 'good'),
+						is('refresh', false),
+						is('sso', false),
+						is('logout', false),
+						is('address', 'registered'),
+						is('appRuns', 'server'),
+						is('oldWay', false)
+					),
+					because: 'Only drawn in the plain case so far.'
+				}
+			},
+			{
+				value: 'cimd',
+				label: 'It points at a document (CIMD)',
+				flag: { name: 'cimd', docs: 'And a client policy.' },
+				sets: { clientType: 'public', pkce: true, consent: true },
+				requires: {
+					when: all(
+						is('clientType', 'public'),
+						is('pkce', true),
+						is('oidc', false),
+						is('consent', true),
+						is('attacker', false),
+						is('binding', 'bearer'),
+						is('broker', false),
+						is('apiToken', 'good'),
+						is('refresh', false),
+						is('sso', false),
+						is('logout', false),
+						is('address', 'registered'),
+						is('appRuns', 'server'),
+						is('oldWay', false)
+					),
+					because: 'Only drawn in the plain case so far.'
+				}
+			}
 		]
 	},
 	pkce: {
@@ -593,7 +666,8 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				is('sso', false),
 				is('logout', false),
 				is('address', 'registered'),
-				is('appRuns', 'server')
+				is('appRuns', 'server'),
+				is('registration', 'manual')
 			),
 			because: 'That is about logging in somewhere else, and this is what came before it.'
 		}
@@ -771,13 +845,25 @@ function valuesOf(id: SettingId): readonly (boolean | string)[] {
 	return def.kind === 'toggle' ? [false, true] : def.options.map((option) => option.value);
 }
 
+/**
+ * Every combination that is valid, by walking from one to another one change at a time. Trying every
+ * possible one multiplied with each setting, into millions of objects to find a few hundred, which took
+ * most of the time the unit tests took. A setting a change away from nothing valid would never be found,
+ * so a test counts them.
+ */
 function validCombinations(ids: readonly SettingId[]): Settings[] {
-	const combinations = ids.reduce<Settings[]>(
-		(partial, id) =>
-			partial.flatMap((settings) => valuesOf(id).map((value) => ({ ...settings, [id]: value }))),
-		[defaultSettings]
-	);
-	return combinations.filter((settings) => normalize(settings).resets.length === 0);
+	const keyOf = (settings: Settings) => ids.map((id) => settings[id]).join();
+	const found = new Map([[keyOf(defaultSettings), defaultSettings]]);
+	for (const settings of found.values()) {
+		for (const id of ids) {
+			for (const value of valuesOf(id)) {
+				const next = { ...settings, [id]: value };
+				const key = keyOf(next);
+				if (!found.has(key) && normalize(next).resets.length === 0) found.set(key, next);
+			}
+		}
+	}
+	return [...found.values()];
 }
 
 let everyValid: readonly Readonly<Settings>[] | undefined;

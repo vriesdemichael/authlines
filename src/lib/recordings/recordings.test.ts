@@ -66,6 +66,15 @@ function fieldIsThere(field: Field, message: RecordedMessage): boolean {
 
 // What Keycloak adds that is its own business, which the protocol layer rightly does not show.
 const KEYCLOAK_ONLY = new Set([
+	// What else it says about a client that has just registered itself, beyond what RFC 7591 lists.
+	'subject_type',
+	'request_uris',
+	'tls_client_certificate_bound_access_tokens',
+	'dpop_bound_access_tokens',
+	'post_logout_redirect_uris',
+	'backchannel_logout_session_required',
+	'frontchannel_logout_session_required',
+	'require_pushed_authorization_requests',
 	'session_state',
 	'refresh_expires_in',
 	'not-before-policy',
@@ -192,7 +201,8 @@ describe.each(asCases)('the recording of %s', (preset, recording) => {
 		const values: Partial<Record<ArtifactId, (string | undefined)[]>> = {
 			password: ['throwaway-password'],
 			secret: [
-				recording.settings.clientType === 'confidential' ? 'throwaway-client-secret' : undefined
+				valueIn('dcr-response', 'client_secret') ??
+					(recording.settings.clientType === 'confidential' ? 'throwaway-client-secret' : undefined)
 			],
 			code: [valueIn('redirect-with-code', 'code'), valueIn('second-redirect-with-code', 'code')],
 			session: [sessionIn('redirect-with-code'), sessionIn('second-redirect-with-code')],
@@ -238,7 +248,8 @@ describe.each(asCases)('the recording of %s', (preset, recording) => {
 							text.includes(Buffer.from(`alice:${value}`).toString('base64'))) ||
 						(artifact === 'secret' &&
 							(text.includes(basicAuthOf(value)) ||
-								text.includes(basicAuthOf(value, 'demo-app-two'))))
+								text.includes(basicAuthOf(value, 'demo-app-two')) ||
+								text.includes(basicAuthOf(value, valueIn('dcr-response', 'client_id')))))
 				);
 				return claimed === there
 					? []

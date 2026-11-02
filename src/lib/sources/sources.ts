@@ -2,6 +2,8 @@ export type SourceId =
 	| 'rfc6749'
 	| 'rfc6750'
 	| 'rfc7617'
+	| 'rfc7591'
+	| 'cimd-draft'
 	| 'rfc7636'
 	| 'rfc9449'
 	| 'rfc9207'
@@ -43,6 +45,23 @@ export const sources: Record<SourceId, SourceDef> = {
 			'The core of OAuth 2.0. It lets an app get limited access to an HTTP service, either on behalf of a user who approved it or on its own behalf. It defines the roles, the authorization and token endpoints, the ways to get a token, and the two client types. Later RFCs update it, so it is not the last word on security.',
 		url: 'https://www.rfc-editor.org/rfc/rfc6749.html',
 		textFile: 'rfc6749.txt'
+	},
+	rfc7591: {
+		label: 'RFC 7591',
+		title: 'OAuth 2.0 Dynamic Client Registration Protocol',
+		status: 'Proposed Standard, July 2015.',
+		summary:
+			'How an app registers itself with an authorization server: it sends what it would otherwise tell an admin, and gets a client ID and perhaps a secret back. The server can ask for an initial access token first, so that it is not open to anyone.',
+		url: 'https://www.rfc-editor.org/rfc/rfc7591.html',
+		textFile: 'rfc7591.txt'
+	},
+	'cimd-draft': {
+		label: 'CIMD draft',
+		title: 'OAuth Client ID Metadata Document',
+		status: 'Internet-Draft, at -03 on 2026-11-02, and not a standard.',
+		summary:
+			'The client ID is an HTTPS address, and at that address is a document about the app, such as where users may be sent back to. So nobody has to register it first, and the server fetches the document when an app it has not seen asks for a login, and may keep a copy.',
+		url: 'https://datatracker.ietf.org/doc/draft-ietf-oauth-client-id-metadata-document/'
 	},
 	rfc7617: {
 		label: 'RFC 7617',
