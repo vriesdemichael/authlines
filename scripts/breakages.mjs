@@ -205,7 +205,7 @@ export const breakages = [
 	{
 		name: 'list: people are put with the code',
 		file: LEFT,
-		from: "if (step.kind === 'human') return 'before';",
+		from: "if (diagram === 'setup' && step.kind === 'human') return 'before';",
 		to: ''
 	},
 	{
