@@ -5,7 +5,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { chromium } from '@playwright/test';
 import { layoutDiagram, WIDTH } from '#lib/diagram/layout.ts';
 import type { DiagramView } from '#lib/flow/model.ts';
-import { mapNodes, nodeView } from '#lib/map/nodes.ts';
+import { allNodes, mapNodes, nodeView } from '#lib/map/nodes.ts';
 import { socialKey } from '#lib/map/social.ts';
 
 const OUT = 'static/social';
@@ -87,9 +87,9 @@ await render(
 	'Checked against a real server. Pick a question, and follow it one message at a time.',
 	nodeView(first)
 );
-for (const node of mapNodes) await render(node.id, node.title, node.summary, nodeView(node));
+for (const node of allNodes) await render(node.id, node.title, node.summary, nodeView(node));
 await browser.close();
 
-const keys = Object.fromEntries(mapNodes.map((node) => [node.id, socialKey(node)]));
+const keys = Object.fromEntries(allNodes.map((node) => [node.id, socialKey(node)]));
 writeFileSync(KEYS, `${JSON.stringify(keys, null, '\t')}\n`);
-console.log(`${mapNodes.length + 1} images in ${OUT}`);
+console.log(`${allNodes.length + 1} images in ${OUT}`);

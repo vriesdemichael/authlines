@@ -5,8 +5,11 @@ import { originalUrl, sources } from '../../src/lib/sources/sources.ts';
 import { currentSearch, expectMatchesModel, open, watchForErrors } from './helpers.ts';
 
 const panel = (page: Page) => page.getByTestId('source-panel');
-const opener = (page: Page, setting: string, source: string) =>
-	page.locator(`[data-source-ref="${setting}:${source}"]`);
+// What "Why?" opens names them, because a line of them under each setting made the rail too long.
+const opener = async (page: Page, setting: string, source: string) => {
+	await page.locator(`[data-why="${setting}"]`).click();
+	return page.locator(`[data-name-source="${source}"]`);
+};
 const rfcRequests = (page: Page) => {
 	const seen: string[] = [];
 	page.on('request', (request) => {
@@ -40,7 +43,7 @@ test.describe('a source', () => {
 				} else {
 					await open(page, onOffer(setting));
 				}
-				await opener(page, setting, ref.source).click();
+				await (await opener(page, setting, ref.source)).click();
 
 				await expect(panel(page).getByRole('heading', { level: 2 })).toHaveText(source.title);
 				await expect(panel(page)).toContainText(source.status);
@@ -64,7 +67,7 @@ test.describe('a source', () => {
 	test('opens beside the diagram without moving it', async ({ page }) => {
 		await open(page);
 		const before = await page.getByTestId('diagram').boundingBox();
-		await opener(page, 'clientType', 'rfc6749').click();
+		await (await opener(page, 'clientType', 'rfc6749')).click();
 		await expect(panel(page)).toBeVisible();
 		expect(await page.getByTestId('diagram').boundingBox()).toEqual(before);
 		await expectMatchesModel(page, 'source=rfc6749&for=client&section=2.1');
@@ -88,7 +91,7 @@ test.describe('the text of an RFC', () => {
 		await open(page);
 		await page.getByTestId('next').click();
 		expect(requests).toEqual([]);
-		await opener(page, 'clientType', 'rfc6749').click();
+		await (await opener(page, 'clientType', 'rfc6749')).click();
 		await expect(page.getByTestId('source-text')).toBeVisible();
 		expect(requests).toHaveLength(1);
 		expect(requests[0]).toMatch(/\/rfc\/rfc6749\.txt$/);
@@ -117,7 +120,7 @@ test.describe('the text of an RFC', () => {
 			route.fulfill({ status: 200, contentType: 'text/plain', body })
 		);
 		await open(page, 'binding=dpop');
-		await opener(page, 'dpopNonce', 'rfc9449').click();
+		await (await opener(page, 'dpopNonce', 'rfc9449')).click();
 		const part = page.locator('[data-section="8"]').locator('b');
 		await expect(part).toBeInViewport();
 		// And stays there, once the dialog has been drawn.
@@ -127,7 +130,7 @@ test.describe('the text of an RFC', () => {
 
 	test('opens at the section the source names', async ({ page }) => {
 		await open(page, 'binding=dpop');
-		await opener(page, 'dpopNonce', 'rfc9449').click();
+		await (await opener(page, 'dpopNonce', 'rfc9449')).click();
 		await expect(page.locator('[data-section="8"]').locator('b')).toHaveText(
 			'8.  Authorization Server-Provided Nonce'
 		);
@@ -161,7 +164,7 @@ test.describe('going to another part of a source', () => {
 	test('neither reloads the text nor loses the place in it', async ({ page }) => {
 		const requests = rfcRequests(page);
 		await open(page, 'binding=dpop');
-		await opener(page, 'dpopNonce', 'rfc9449').click();
+		await (await opener(page, 'dpopNonce', 'rfc9449')).click();
 		const part = page.locator('[data-section="8"]').locator('b');
 		await expect(part).toBeInViewport();
 		await page.getByTestId('source-sections').selectOption('4');
@@ -174,10 +177,10 @@ test.describe('going to another part of a source', () => {
 test.describe('the URL', () => {
 	test('holds what is open, and a reload restores it', async ({ page }) => {
 		await open(page, 'binding=dpop');
-		await opener(page, 'dpopNonce', 'rfc9449').click();
+		await (await opener(page, 'dpopNonce', 'rfc9449')).click();
 		await expect
 			.poll(() => currentSearch(page))
-			.toBe('binding=dpop&source=rfc9449&for=nonce&section=8');
+			.toBe('binding=dpop&source=rfc9449&for=nonce&section=8&explain=setting.dpopNonce');
 		await page.reload();
 		await expect(page.locator('[data-section="8"]').locator('b')).toBeInViewport();
 		await expect(page.getByTestId('source-why')).toHaveText(settingDefs.dpopNonce.sources[0].why);
@@ -185,12 +188,12 @@ test.describe('the URL', () => {
 
 	test('Back closes it, even after jumping between sections', async ({ page }) => {
 		await open(page, 'binding=dpop');
-		await opener(page, 'binding', 'rfc9449').click();
+		await (await opener(page, 'binding', 'rfc9449')).click();
 		await page.getByTestId('source-sections').selectOption('8');
 		await expect.poll(() => currentSearch(page)).toContain('section=8');
 		await page.goBack();
 		await expect(panel(page)).toHaveCount(0);
-		await expect.poll(() => currentSearch(page)).toBe('binding=dpop');
+		await expect.poll(() => currentSearch(page)).toBe('binding=dpop&explain=setting.binding');
 	});
 
 	test('a link naming something unknown opens nothing', async ({ page }) => {
@@ -210,7 +213,7 @@ test.describe('the URL', () => {
 test.describe('the keyboard', () => {
 	test('Escape closes it, and focus returns to the source that opened it', async ({ page }) => {
 		await open(page);
-		const source = opener(page, 'clientType', 'rfc6749');
+		const source = await opener(page, 'clientType', 'rfc6749');
 		await source.focus();
 		await page.keyboard.press('Enter');
 		await expect(panel(page)).toBeVisible();
@@ -222,7 +225,7 @@ test.describe('the keyboard', () => {
 
 	test('the close button does the same', async ({ page }) => {
 		await open(page);
-		const source = opener(page, 'oidc', 'oidc-core');
+		const source = await opener(page, 'oidc', 'oidc-core');
 		await source.click();
 		await page.getByTestId('source-close').click();
 		await expect(panel(page)).toHaveCount(0);
@@ -231,7 +234,7 @@ test.describe('the keyboard', () => {
 
 	test('arrow keys inside the panel do not step the diagram', async ({ page }) => {
 		await open(page);
-		await opener(page, 'oidc', 'oidc-core').click();
+		await (await opener(page, 'oidc', 'oidc-core')).click();
 		await expect(panel(page).getByRole('heading', { level: 2 })).toBeFocused();
 		await page.keyboard.press('ArrowRight');
 		await expect(page.locator('[data-state="current"]')).toHaveAttribute('data-step', 'open-app');

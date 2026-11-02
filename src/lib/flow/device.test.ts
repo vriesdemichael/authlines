@@ -15,7 +15,7 @@ import {
 } from '#lib/flow/settings.ts';
 import { parseState, stateInFlow } from '#lib/flow/state.ts';
 import { deviceNoteDefs, notesFor } from '#lib/keycloak/notes.ts';
-import { mapNodes } from '#lib/map/nodes.ts';
+import { allNodes } from '#lib/map/nodes.ts';
 import { addressAt } from '#lib/recordings/address.ts';
 import { traceRun } from '#lib/recordings/wire.ts';
 import { leftToYou } from '#lib/flow/left-to-you.ts';
@@ -139,7 +139,7 @@ describe('the device flow', () => {
 				...steps
 			]),
 			...deviceNoteDefs,
-			...mapNodes.filter((node) => node.flow === base.id)
+			...allNodes.filter((node) => node.flow === base.id)
 		];
 		expect(JSON.stringify(said)).not.toMatch(/\bthe code\b|one-time code|authorization code/i);
 	});
@@ -238,7 +238,7 @@ describe('the device flow', () => {
 
 	it('has a question on the map for each recording', () => {
 		const used = new Set(
-			mapNodes.filter((node) => node.flow === base.id).map(({ preset }) => preset)
+			allNodes.filter((node) => node.flow === base.id).map(({ preset }) => preset)
 		);
 		expect(base.presets.filter(({ id }) => !used.has(id))).toEqual([]);
 	});

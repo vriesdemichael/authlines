@@ -2,9 +2,9 @@ import { flows } from '#lib/flow/index.ts';
 import { evaluate, type DiagramDef } from '#lib/flow/model.ts';
 import { defaultSettings, normalize, settingIds, type Settings } from '#lib/flow/settings.ts';
 import { resolveStep, serializeState, type AppState } from '#lib/flow/state.ts';
-import { mapNodes, mapTracks, type MapNode, type MapTrack } from '#lib/map/tracks.ts';
+import { allNodes, mapNodes, mapTracks, type MapNode, type MapTrack } from '#lib/map/tracks.ts';
 
-export { mapNodes, mapTracks, type MapNode, type MapTrack };
+export { allNodes, mapNodes, mapTracks, type MapNode, type MapTrack };
 
 export function nodeSettings(of: MapNode): Settings {
 	const preset = flows[of.flow].presets.find((candidate) => candidate.id === of.preset);

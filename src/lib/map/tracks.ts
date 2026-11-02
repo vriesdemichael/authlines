@@ -168,6 +168,7 @@ export const mapTracks: readonly MapTrack[] = [
 				}),
 				node({
 					id: 'why-401',
+					alsoAskedAs: ['no token', 'call with no token'],
 					answer:
 						'The API does not accept the token: it is missing, expired, changed, from another issuer, or for someone else. A new token can help, if the reason is that it ran out.',
 					title: 'Why did my API say 401?',
@@ -182,15 +183,6 @@ export const mapTracks: readonly MapTrack[] = [
 					title: 'What is the difference between 401 and 403?',
 					summary: 'One is about the token, and the other about what it allows.',
 					preset: 'api-no-scope',
-					step: 'api-response'
-				}),
-				node({
-					id: 'api-no-token',
-					answer:
-						'A 401, with WWW-Authenticate saying which kind of token it wants. There is no error in it, because there was no token to be wrong.',
-					title: 'What does an API say to a call with no token?',
-					summary: 'Which kind of token it wants, and no error.',
-					preset: 'api-no-token',
 					step: 'api-response'
 				}),
 				node({
@@ -304,44 +296,17 @@ export const mapTracks: readonly MapTrack[] = [
 			],
 			[
 				node({
-					id: 'stolen-from-a-secret',
-					answer:
-						'They cannot trade it themselves, because they do not have the secret. They could still hand it to the real app from their own browser, so that it trades the code for them.',
-					title: 'Can a code be stolen from an app with a secret?',
-					summary: 'They get the code, but cannot trade it. That is not the end of it.',
-					preset: 'attack-confidential',
-					step: 'attacker-token-response'
-				}),
-				node({
 					id: 'pkce-with-a-secret',
+					alsoAskedAs: ['stolen from an app with a secret', 'both protections'],
 					answer:
 						'Current advice recommends it. A secret stops someone trading a stolen code themselves, but they can hand it to the real app from a login of their own, and it logs them in. PKCE stops that at the server, and a nonce the app checks can too.',
 					title: 'Does an app with a secret need PKCE too?',
 					summary: 'Why current advice recommends it, even when a stolen code is not enough alone.',
 					preset: 'attack-at-the-app',
 					step: 'attacker-handed-answer'
-				}),
-				node({
-					id: 'both-protections',
-					answer:
-						'Nothing. Without the secret the identity provider refuses them, and handing it to the real app fails because the verifier does not match, though on this server that uses up the code.',
-					title: 'What does an attacker get against both?',
-					summary: 'A secret and PKCE together, against the same attempt.',
-					preset: 'attack-confidential-pkce',
-					step: 'attacker-token-response'
 				})
 			],
 			[
-				node({
-					id: 'pkce-on-the-wire',
-					preset: 'pkce',
-					step: 'token-request',
-					mode: 'advanced',
-					title: 'What does PKCE add to the requests?',
-					summary: 'A verifier, and a fingerprint of it.',
-					answer:
-						'A random verifier made for each login. A fingerprint of it goes in the redirect as the challenge, and the verifier itself goes in this request, so the server can check that the two match.'
-				}),
 				node({
 					id: 'pkce-at-the-app',
 					preset: 'attack-at-the-app-pkce',
@@ -350,16 +315,6 @@ export const mapTracks: readonly MapTrack[] = [
 					summary: 'The code is tied to the login it came from.',
 					answer:
 						'PKCE. The code is tied to the real user’s challenge, and the app sends the verifier from the login they started, so the server refuses it. That is what PKCE adds to an app with a secret.'
-				}),
-				node({
-					id: 'nonce-at-the-app',
-					preset: 'attack-at-the-app-oidc',
-					step: 'handed-nonce-check',
-					mode: 'advanced',
-					title: 'Does a nonce stop it as well?',
-					summary: 'Yes, if the app checks it, and later.',
-					answer:
-						'Yes, if the app checks it and uses no token until it has. The server still hands over the tokens, but the ID token has the nonce from the real user’s login, and the app made a different one for this login. PKCE stops it earlier, at the server.'
 				})
 			],
 			[
@@ -390,16 +345,6 @@ export const mapTracks: readonly MapTrack[] = [
 					summary: 'It ties a token to a key that stays in the app. The theft itself is not drawn.',
 					preset: 'dpop',
 					step: 'api-request'
-				}),
-				node({
-					id: 'dpop-nonce',
-					answer:
-						'The server hands out a nonce that the next proof has to include, so a proof made earlier is refused. The spec allows this, and the server recorded here did not ask for one.',
-					title: 'How can a proof be stopped from being used later?',
-					summary:
-						'A nonce from the server. The spec allows it, and the server recorded here did not ask.',
-					preset: 'dpop-nonce',
-					step: 'nonce-challenge'
 				})
 			]
 		]
@@ -505,16 +450,8 @@ export const mapTracks: readonly MapTrack[] = [
 			],
 			[
 				node({
-					id: 'what-log-out-does',
-					answer:
-						'The identity provider ends its session, so the next login asks again. The app has to forget the user too, as a session of its own. An access token keeps working at any API that does not ask, and a refresh token from that session usually stops.',
-					title: 'What does log out actually do?',
-					summary: 'Two sessions end, if you ask for both, and an access token keeps working.',
-					preset: 'logout',
-					step: 'session-ended'
-				}),
-				node({
 					id: 'token-after-logout',
+					alsoAskedAs: ['what does log out do', 'what does logging out do', 'log out'],
 					answer:
 						'It depends who checks. An API that only looks at the token takes it until it expires. One that asks the identity provider gets whatever it says, which on the server tried here was no, and a refresh was refused too.',
 					title: 'I logged out. Does the token still work?',
@@ -533,27 +470,6 @@ export const mapTracks: readonly MapTrack[] = [
 				})
 			],
 			[
-				node({
-					id: 'web-app',
-					answer:
-						'It can keep a secret, so that is how it proves which app it is. OpenID Connect tells it who logged in, and PKCE protects the code as well.',
-					startsAtTheBeginning: 'It is about the whole flow, with these settings.',
-					title: 'A web app on a server',
-					summary:
-						'It can keep a secret. With OpenID Connect to know who logged in, and PKCE on top.',
-					mode: 'advanced',
-					preset: 'oidc-pkce'
-				}),
-				node({
-					id: 'browser-app',
-					answer:
-						'It has no secret, so PKCE protects the code. The harder problem is what follows: the tokens live in the page, where any script running there can reach them.',
-					title: 'An app that runs in the browser',
-					summary:
-						'A single-page app, in React, say. No secret to keep, so PKCE protects the code. The tokens then live in the page, which is the harder problem.',
-					preset: 'browser-app',
-					step: 'token-response'
-				}),
 				node({
 					id: 'tokens-in-the-browser',
 					answer:
@@ -660,17 +576,6 @@ export const mapTracks: readonly MapTrack[] = [
 					summary: 'It has its secret, so it can just ask again.',
 					answer:
 						'A refresh token is there to get a new token without asking the user again. Here there is no user, and the app still has its secret, so when the token runs out it asks again.'
-				}),
-				node({
-					id: 'no-user-with-a-key',
-					flow: 'client-credentials',
-					preset: 'as-itself-dpop',
-					mode: 'advanced',
-					step: 'service-api-request',
-					title: 'Can a token for a service be tied to a key?',
-					summary: 'DPoP works the same with no user.',
-					answer:
-						'Yes. The app makes a key, and a proof signed with it goes along when it asks for the token and with every call. At an API that checks the proof, the token is no use to anyone without the key.'
 				})
 			]
 		]
@@ -704,6 +609,7 @@ export const mapTracks: readonly MapTrack[] = [
 				}),
 				node({
 					id: 'device-waiting',
+					alsoAskedAs: ['authorization_pending'],
 					flow: 'device',
 					preset: 'on-a-device',
 					step: 'device-pending',
@@ -757,39 +663,6 @@ export const mapTracks: readonly MapTrack[] = [
 						'The codes only last so long. The next time the app asks after that, it gets a 400 with expired_token, stops asking, and tells the user. Trying again takes new codes, once the user asks to.'
 				}),
 				node({
-					id: 'device-phished-says-no',
-					flow: 'device',
-					preset: 'on-a-device-sent-says-no',
-					mode: 'advanced',
-					step: 'sent-denied-response',
-					title: 'What stops someone who sent me a code?',
-					summary: 'You do, at the page that asks. Nothing else here can.',
-					answer:
-						'You do, at the page that asks you to agree. They get access_denied, and nothing else. Neither the app nor the API is part of this, so neither can stop it, and that page only helps if it gets read.'
-				}),
-				node({
-					id: 'device-phished-runs-out',
-					flow: 'device',
-					preset: 'on-a-device-sent-runs-out',
-					mode: 'advanced',
-					step: 'sent-expired-response',
-					title: 'What if I ignore a code someone sent me?',
-					summary: 'It runs out, which is why these codes are short-lived.',
-					answer:
-						'Nothing happens. It runs out, and whoever started it gets expired_token the next time they ask. That is why these codes are short-lived, though someone talking to you right now can simply get a fresh one.'
-				}),
-				node({
-					id: 'device-pending-error',
-					flow: 'device',
-					preset: 'on-a-device',
-					mode: 'advanced',
-					step: 'device-pending',
-					title: 'Why do I get authorization_pending?',
-					summary: 'It is not a failure, whatever it looks like.',
-					answer:
-						'It is the ordinary answer until the user has finished: a 400, with this in place of tokens. Ask again after waiting as long as the interval said. Asking sooner can get slow_down, and the app then has to wait longer.'
-				}),
-				node({
 					id: 'device-who-logged-in',
 					flow: 'device',
 					preset: 'on-a-device-oidc',
@@ -805,3 +678,144 @@ export const mapTracks: readonly MapTrack[] = [
 ];
 
 export const mapNodes: readonly MapNode[] = mapTracks.flatMap((track) => track.chains.flat());
+
+/**
+ * Questions that no longer have a place on the map, because it had too many and each of these says what
+ * another does, or few would ask it (#142). Their addresses go on working (ADR-003), and search finds what
+ * they were about through the question that took them over.
+ */
+export const offTheMap: readonly MapNode[] = [
+	node({
+		id: 'device-pending-error',
+		flow: 'device',
+		preset: 'on-a-device',
+		mode: 'advanced',
+		step: 'device-pending',
+		title: 'Why do I get authorization_pending?',
+		summary: 'It is not a failure, whatever it looks like.',
+		answer:
+			'It is the ordinary answer until the user has finished: a 400, with this in place of tokens. Ask again after waiting as long as the interval said. Asking sooner can get slow_down, and the app then has to wait longer.'
+	}),
+	node({
+		id: 'both-protections',
+		answer:
+			'Nothing. Without the secret the identity provider refuses them, and handing it to the real app fails because the verifier does not match, though on this server that uses up the code.',
+		title: 'What does an attacker get against both?',
+		summary: 'A secret and PKCE together, against the same attempt.',
+		preset: 'attack-confidential-pkce',
+		step: 'attacker-token-response'
+	}),
+	node({
+		id: 'stolen-from-a-secret',
+		answer:
+			'They cannot trade it themselves, because they do not have the secret. They could still hand it to the real app from their own browser, so that it trades the code for them.',
+		title: 'Can a code be stolen from an app with a secret?',
+		summary: 'They get the code, but cannot trade it. That is not the end of it.',
+		preset: 'attack-confidential',
+		step: 'attacker-token-response'
+	}),
+	node({
+		id: 'nonce-at-the-app',
+		preset: 'attack-at-the-app-oidc',
+		step: 'handed-nonce-check',
+		mode: 'advanced',
+		title: 'Does a nonce stop it as well?',
+		summary: 'Yes, if the app checks it, and later.',
+		answer:
+			'Yes, if the app checks it and uses no token until it has. The server still hands over the tokens, but the ID token has the nonce from the real user’s login, and the app made a different one for this login. PKCE stops it earlier, at the server.'
+	}),
+	node({
+		id: 'pkce-on-the-wire',
+		preset: 'pkce',
+		step: 'token-request',
+		mode: 'advanced',
+		title: 'What does PKCE add to the requests?',
+		summary: 'A verifier, and a fingerprint of it.',
+		answer:
+			'A random verifier made for each login. A fingerprint of it goes in the redirect as the challenge, and the verifier itself goes in this request, so the server can check that the two match.'
+	}),
+	node({
+		id: 'what-log-out-does',
+		answer:
+			'The identity provider ends its session, so the next login asks again. The app has to forget the user too, as a session of its own. An access token keeps working at any API that does not ask, and a refresh token from that session usually stops.',
+		title: 'What does log out actually do?',
+		summary: 'Two sessions end, if you ask for both, and an access token keeps working.',
+		preset: 'logout',
+		step: 'session-ended'
+	}),
+	node({
+		id: 'web-app',
+		answer:
+			'It can keep a secret, so that is how it proves which app it is. OpenID Connect tells it who logged in, and PKCE protects the code as well.',
+		startsAtTheBeginning: 'It is about the whole flow, with these settings.',
+		title: 'A web app on a server',
+		summary: 'It can keep a secret. With OpenID Connect to know who logged in, and PKCE on top.',
+		mode: 'advanced',
+		preset: 'oidc-pkce'
+	}),
+	node({
+		id: 'browser-app',
+		answer:
+			'It has no secret, so PKCE protects the code. The harder problem is what follows: the tokens live in the page, where any script running there can reach them.',
+		title: 'An app that runs in the browser',
+		summary:
+			'A single-page app, in React, say. No secret to keep, so PKCE protects the code. The tokens then live in the page, which is the harder problem.',
+		preset: 'browser-app',
+		step: 'token-response'
+	}),
+	node({
+		id: 'no-user-with-a-key',
+		flow: 'client-credentials',
+		preset: 'as-itself-dpop',
+		mode: 'advanced',
+		step: 'service-api-request',
+		title: 'Can a token for a service be tied to a key?',
+		summary: 'DPoP works the same with no user.',
+		answer:
+			'Yes. The app makes a key, and a proof signed with it goes along when it asks for the token and with every call. At an API that checks the proof, the token is no use to anyone without the key.'
+	}),
+	node({
+		id: 'device-phished-says-no',
+		flow: 'device',
+		preset: 'on-a-device-sent-says-no',
+		mode: 'advanced',
+		step: 'sent-denied-response',
+		title: 'What stops someone who sent me a code?',
+		summary: 'You do, at the page that asks. Nothing else here can.',
+		answer:
+			'You do, at the page that asks you to agree. They get access_denied, and nothing else. Neither the app nor the API is part of this, so neither can stop it, and that page only helps if it gets read.'
+	}),
+	node({
+		id: 'device-phished-runs-out',
+		flow: 'device',
+		preset: 'on-a-device-sent-runs-out',
+		mode: 'advanced',
+		step: 'sent-expired-response',
+		title: 'What if I ignore a code someone sent me?',
+		summary: 'It runs out, which is why these codes are short-lived.',
+		answer:
+			'Nothing happens. It runs out, and whoever started it gets expired_token the next time they ask. That is why these codes are short-lived, though someone talking to you right now can simply get a fresh one.'
+	}),
+	node({
+		id: 'api-no-token',
+		answer:
+			'A 401, with WWW-Authenticate saying which kind of token it wants. There is no error in it, because there was no token to be wrong.',
+		title: 'What does an API say to a call with no token?',
+		summary: 'Which kind of token it wants, and no error.',
+		preset: 'api-no-token',
+		step: 'api-response'
+	}),
+	node({
+		id: 'dpop-nonce',
+		answer:
+			'The server hands out a nonce that the next proof has to include, so a proof made earlier is refused. The spec allows this, and the server recorded here did not ask for one.',
+		title: 'How can a proof be stopped from being used later?',
+		summary:
+			'A nonce from the server. The spec allows it, and the server recorded here did not ask.',
+		preset: 'dpop-nonce',
+		step: 'nonce-challenge'
+	})
+];
+
+/** Everything with an address of its own. */
+export const allNodes: readonly MapNode[] = [...mapNodes, ...offTheMap];

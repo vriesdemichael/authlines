@@ -17,7 +17,7 @@ import {
 import { serializeState, type AppState } from '#lib/flow/state.ts';
 import { artifacts } from '#lib/flow/vocabulary.ts';
 import { notesFor } from '#lib/keycloak/notes.ts';
-import { mapNodes, nodeSettings } from '#lib/map/nodes.ts';
+import { allNodes, mapNodes, nodeSettings } from '#lib/map/nodes.ts';
 import { settingsOf } from '#lib/recordings/known.ts';
 import { knownErrors, notHereYet } from '#lib/search/errors.ts';
 import { resultKey } from '#lib/search/result-key.ts';
@@ -297,7 +297,7 @@ function index() {
 			if (known.flow) {
 				const other = flows[known.flow];
 				const settings = normalize({ ...defaultSettings, ...known.settings }).settings;
-				const about = mapNodes.find((node) => node.id === known.question);
+				const about = allNodes.find((node) => node.id === known.question);
 				return {
 					kind: 'error' as const,
 					title: known.text,

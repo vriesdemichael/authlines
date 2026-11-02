@@ -553,9 +553,7 @@
 			if (lastSource && !source) {
 				const opener = lastSource.fromStep
 					? `[data-step-source="${lastSource.id}"]${lastSource.section ? `[data-section="${lastSource.section}"]` : ''}`
-					: lastSource.setting
-						? `[data-source-ref="${lastSource.setting}:${lastSource.id}"]`
-						: `[data-name-source="${lastSource.id}"]`;
+					: `[data-name-source="${lastSource.id}"]`;
 				tick().then(() => window.document.querySelector<HTMLElement>(opener)?.focus());
 			}
 			lastSource = source;
@@ -746,7 +744,6 @@
 			{notHere}
 			elsewhere={settingsElsewhere}
 			onexplain={(id) => explain({ kind: 'setting', id })}
-			onopensource={(setting, ref) => onnavigate(withSourceOpen(appState, setting, ref), 'push')}
 			onpreview={pointAtSetting}
 			previewed={pointedAt && preview ? { id: pointedAt.id, says: preview.says } : null}
 		/>
