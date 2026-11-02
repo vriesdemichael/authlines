@@ -197,7 +197,7 @@
 			<p class="nothing" data-testid="search-nothing">
 				The <a href={mapHref} onclick={close}>map</a> lists every question, and
 				<a
-					href="https://github.com/vriesdemichael/authlines/issues/new"
+					href="https://github.com/vriesdemichael/authlines/issues/new?template=suggest-a-question.yml"
 					target="_blank"
 					rel="noreferrer">you can suggest this one</a
 				>.

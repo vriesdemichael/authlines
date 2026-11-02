@@ -110,9 +110,15 @@ export function responseMessage(
 /** The whole of an app that runs in the page, as a library would do it for you. */
 function appInThePage(
 	run: Run,
-	server: { authorization_endpoint: string; token_endpoint: string; userinfo_endpoint?: string }
+	server: {
+		issuer: string;
+		authorization_endpoint: string;
+		token_endpoint: string;
+		userinfo_endpoint?: string;
+	}
 ) {
 	const values = {
+		issuer: server.issuer,
 		authorize: server.authorization_endpoint,
 		token: server.token_endpoint,
 		userinfo: server.userinfo_endpoint,
@@ -122,7 +128,7 @@ function appInThePage(
 		oidc: run.settings.oidc
 	};
 	return `<!doctype html><title>An app in the page</title><body><script type="module">
-const { authorize, token, userinfo, client, back, api, oidc } = ${JSON.stringify(values)};
+const { issuer, authorize, token, userinfo, client, back, api, oidc } = ${JSON.stringify(values)};
 const url = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes)))
 	.replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
 const random = () => url(crypto.getRandomValues(new Uint8Array(32)));
@@ -131,16 +137,17 @@ try {
 	if (location.pathname === '/') {
 		const verifier = random();
 		const state = random();
-		sessionStorage.setItem('login', JSON.stringify({ verifier, state }));
+		const nonce = oidc ? random() : null;
+		sessionStorage.setItem('login', JSON.stringify({ verifier, state, nonce }));
 		const challenge = url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
 		const query = new URLSearchParams({
 			response_type: 'code', client_id: client, redirect_uri: back, state,
 			code_challenge: challenge, code_challenge_method: 'S256',
-			...(oidc ? { scope: 'openid', nonce: random() } : {})
+			...(oidc ? { scope: 'openid', nonce } : {})
 		});
 		location.assign(authorize + '?' + query);
 	} else {
-		const { verifier, state } = JSON.parse(sessionStorage.getItem('login'));
+		const { verifier, state, nonce } = JSON.parse(sessionStorage.getItem('login'));
 		const answer = new URLSearchParams(location.search);
 		if (answer.get('state') !== state) throw new Error('An answer to something this app did not ask.');
 		const tokens = await (await fetch(token, {
@@ -152,6 +159,16 @@ try {
 			})
 		})).json();
 		if (!tokens.access_token) throw new Error(JSON.stringify(tokens));
+		if (oidc) {
+			// What the step says the app checks. It came straight from the token endpoint, so the signature
+			// is the one check the spec lets a page leave out, and the step says that too.
+			const part = tokens.id_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+			const claims = JSON.parse(atob(part));
+			if (claims.iss !== issuer) throw new Error('An ID token from another issuer.');
+			if (![claims.aud].flat().includes(client)) throw new Error('An ID token for another app.');
+			if (claims.exp * 1000 <= Date.now()) throw new Error('An ID token that has expired.');
+			if (claims.nonce !== nonce) throw new Error('An ID token from another login.');
+		}
 		const headers = { authorization: 'Bearer ' + tokens.access_token };
 		if (oidc) await (await fetch(userinfo, { headers })).text();
 		const called = await fetch(api, { headers });

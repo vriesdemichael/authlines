@@ -144,6 +144,11 @@ test.describe('searching', () => {
 		await start(page);
 		await input(page).fill('xyzzy plugh');
 		await expect(status(page)).toContainText('Nothing here about that yet');
+		// A short form, and without what was typed, because search sends nothing anywhere.
+		await expect(page.getByRole('link', { name: 'you can suggest this one' })).toHaveAttribute(
+			'href',
+			'https://github.com/vriesdemichael/authlines/issues/new?template=suggest-a-question.yml'
+		);
 	});
 });
 

@@ -120,9 +120,10 @@
 				onpoint={point}
 			/>
 			<p class="source" data-testid="source-link">
-				Recorded from Keycloak, a free identity provider you can run yourself. The specs are the
-				same elsewhere, though the wording of errors, token formats and defaults are Keycloak's own.
-				Open source: see
+				Recorded from Keycloak, a free identity provider
+				<a href={resolve('/run-it-yourself')}>you can run yourself</a>. The specs are the same
+				elsewhere, though the wording of errors, token formats and defaults are Keycloak's own. Open
+				source: see
 				<a href="https://github.com/vriesdemichael/authlines" rel="external"
 					>the code, the recordings and how they are checked</a
 				>.

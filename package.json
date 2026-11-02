@@ -23,7 +23,8 @@
 		"verify": "pnpm format:check && pnpm lint && pnpm check && pnpm test:unit && pnpm test:e2e",
 		"prepare": "lefthook install",
 		"test:browsers": "node scripts/in-ci-image.mjs pnpm exec playwright test",
-		"social": "node scripts/social-images.ts"
+		"social": "node scripts/social-images.ts",
+		"clip": "node scripts/readme-clip.ts"
 	},
 	"devDependencies": {
 		"@axe-core/playwright": "^4.14.0",

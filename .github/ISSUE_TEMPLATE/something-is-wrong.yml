@@ -1,0 +1,23 @@
+name: Something here is wrong
+description: A step, a setting or a sentence that says something untrue, or a screen that does not work.
+labels: [bug]
+body:
+  - type: input
+    id: where
+    attributes:
+      label: Where is it?
+      description: The address in your browser, which says which step and settings you were on.
+      placeholder: https://vriesdemichael.github.io/authlines/authorization-code/?step=token-response
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What does it say or do, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: How do you know?
+      description: Optional. A section of a spec, a page of docs, or what your own server did.
