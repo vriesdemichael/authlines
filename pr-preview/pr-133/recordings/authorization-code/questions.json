@@ -1,0 +1,786 @@
+{
+	"keycloak": "26.8.1",
+	"recordedAt": "2026-11-01",
+	"answers": {
+		"validRedirectUris": {
+			"before": {
+				"status": 400,
+				"says": "Invalid parameter: redirect_uri"
+			},
+			"after": {
+				"status": 200,
+				"says": null
+			},
+			"wildcard": {
+				"atTheEnd": {
+					"sameSite": 200,
+					"otherSite": 400
+				},
+				"noSlash": {
+					"sameSite": 200,
+					"otherSite": 400,
+					"startingTheSame": 400
+				},
+				"alone": {
+					"sameSite": 200,
+					"otherSite": 200
+				}
+			}
+		},
+		"implicitFlow": {
+			"serverLists": true,
+			"before": {
+				"status": 302,
+				"allowed": false
+			},
+			"after": {
+				"status": 200,
+				"allowed": true
+			}
+		},
+		"webOrigins": {
+			"before": {
+				"blocked": true,
+				"status": null,
+				"theSameCodeAfterwards": 200
+			},
+			"after": {
+				"blocked": false,
+				"status": 200,
+				"theSameCodeAfterwards": 400
+			}
+		},
+		"consentRequired": {
+			"before": {
+				"asked": false,
+				"audience": "account",
+				"hasRoles": true
+			},
+			"after": {
+				"asked": true,
+				"lists": [
+					"User roles",
+					"User profile",
+					"Email address"
+				],
+				"audience": "account",
+				"hasRoles": true,
+				"gotCode": true,
+				"secondLoginAsked": false,
+				"whenDeclined": "access_denied"
+			},
+			"onAPublicClient": {
+				"first": {
+					"asked": true,
+					"lists": [
+						"User roles",
+						"User profile",
+						"Email address"
+					]
+				},
+				"second": {
+					"asked": false,
+					"lists": []
+				},
+				"withANewScope": {
+					"asked": true,
+					"lists": [
+						"Phone number"
+					]
+				},
+				"withThatScopeAgain": {
+					"asked": false,
+					"lists": []
+				}
+			}
+		},
+		"clientAuthentication": {
+			"before": {
+				"status": 401,
+				"error": "unauthorized_client"
+			},
+			"after": {
+				"status": 200,
+				"gotTokens": true
+			}
+		},
+		"requirePkce": {
+			"before": {
+				"gotCode": true
+			},
+			"after": {
+				"gotCode": false,
+				"says": "Missing parameter: code_challenge_method"
+			}
+		},
+		"requirePkceWithASecret": {
+			"gotCode": false,
+			"says": "Missing parameter: code_challenge_method"
+		},
+		"clientScopes": {
+			"before": {
+				"hasName": true,
+				"hasEmail": true,
+				"scope": "profile email"
+			},
+			"after": {
+				"hasName": false,
+				"hasEmail": false,
+				"scope": ""
+			}
+		},
+		"audience": {
+			"before": {
+				"aud": "account",
+				"namesTheApi": false,
+				"demoApi": 200
+			},
+			"after": {
+				"aud": [
+					"my-api",
+					"account"
+				],
+				"namesTheApi": true
+			},
+			"withoutTheRolesScope": {
+				"aud": null
+			}
+		},
+		"requireDpop": {
+			"before": {
+				"status": 200,
+				"tokenType": "Bearer"
+			},
+			"after": {
+				"status": 400,
+				"error": "invalid_request"
+			}
+		},
+		"tokenLifespan": {
+			"before": {
+				"expiresIn": 300
+			},
+			"after": {
+				"expiresIn": 60
+			}
+		},
+		"issuerPerRealm": {
+			"issuers": [
+				"http://localhost:18080/realms/demo",
+				"http://localhost:18080/realms/demo-brokered"
+			],
+			"realmsDiffer": true,
+			"endsWithRealm": true
+		},
+		"dpopNonce": {
+			"tokenStatus": 200,
+			"tokenType": "DPoP",
+			"askedForNonce": false,
+			"dpopNonceHeader": null
+		},
+		"userinfoWithDpopToken": {
+			"withProof": {
+				"status": 200,
+				"wwwAuthenticate": null,
+				"body": "a successful answer"
+			},
+			"withoutProof": {
+				"status": 401,
+				"wwwAuthenticate": "DPoP algs=\"PS384 RS384 EdDSA ES384 ES256 RS256 ES512 PS256 PS512 RS512\", realm=\"demo\", error=\"invalid_token\", error_description=\"Token verification failed\"",
+				"body": ""
+			},
+			"asBearer": {
+				"status": 401,
+				"wwwAuthenticate": "Bearer realm=\"demo\", error=\"invalid_token\", error_description=\"Token verification failed\"",
+				"body": ""
+			}
+		},
+		"apiV1WithDpopToken": {
+			"tokenType": "DPoP",
+			"asBearer": {
+				"status": 400,
+				"wwwAuthenticate": null,
+				"body": "{\"errorMessage\":\"Invalid token.\"}"
+			},
+			"asDpop": {
+				"status": 200,
+				"wwwAuthenticate": null,
+				"body": "a successful answer"
+			}
+		},
+		"publicClientWithoutPkce": {
+			"byDefault": {
+				"gotCode": true,
+				"tokenStatus": 200,
+				"landed": "http://localhost:9100/callback"
+			},
+			"withPkceRequiredOnTheClient": {
+				"gotCode": false,
+				"landed": "http://localhost:9100/callback?error=invalid_request&error_description=Missing+parameter%3A+code_challenge_method"
+			}
+		},
+		"interceptedCode": {
+			"publicWithoutPkce": {
+				"status": 200,
+				"error": null,
+				"description": null,
+				"gotTokens": true,
+				"theRealAppAfterwards": {
+					"status": 400,
+					"description": "Code not valid"
+				}
+			},
+			"publicWithPkceNoVerifier": {
+				"status": 400,
+				"error": "invalid_grant",
+				"description": "PKCE code verifier not specified",
+				"gotTokens": false,
+				"theRealAppAfterwards": {
+					"status": 400,
+					"description": "Code not valid"
+				}
+			},
+			"publicWithPkceWrongVerifier": {
+				"status": 400,
+				"error": "invalid_grant",
+				"description": "PKCE verification failed: Code mismatch",
+				"gotTokens": false,
+				"theRealAppAfterwards": {
+					"status": 400,
+					"description": "Code not valid"
+				}
+			},
+			"publicWithPkceRightVerifier": {
+				"status": 200,
+				"error": null,
+				"description": null,
+				"gotTokens": true,
+				"theRealAppAfterwards": {
+					"status": 400,
+					"description": "Code not valid"
+				}
+			},
+			"confidentialNoPkceNoSecret": {
+				"status": 401,
+				"error": "unauthorized_client",
+				"description": "Invalid client or Invalid client credentials",
+				"gotTokens": false,
+				"theRealAppAfterwards": {
+					"status": 200,
+					"description": null
+				}
+			},
+			"confidentialWithPkceSecretButNoVerifier": {
+				"status": 400,
+				"error": "invalid_grant",
+				"description": "PKCE code verifier not specified",
+				"gotTokens": false,
+				"theRealAppAfterwards": {
+					"status": 400,
+					"description": "Code not valid"
+				}
+			},
+			"confidentialWithPkceSecretButWrongVerifier": {
+				"status": 400,
+				"error": "invalid_grant",
+				"description": "PKCE verification failed: Code mismatch",
+				"gotTokens": false,
+				"theRealAppAfterwards": {
+					"status": 400,
+					"description": "Code not valid"
+				}
+			},
+			"withDpop": {
+				"namedKeyNoProof": {
+					"status": 400,
+					"error": "invalid_request",
+					"description": "DPoP Proof missing",
+					"tokenType": null
+				},
+				"namedKeyOtherProof": {
+					"status": 400,
+					"error": "invalid_request",
+					"description": "DPoP Proof public key thumbprint does not match dpop_jkt",
+					"tokenType": null
+				},
+				"namedKeyRightProof": {
+					"status": 200,
+					"error": null,
+					"description": null,
+					"tokenType": "DPoP"
+				},
+				"noNamedKeyNoProof": {
+					"status": 200,
+					"error": null,
+					"description": null,
+					"tokenType": "Bearer"
+				},
+				"noNamedKeyTheirOwnProof": {
+					"status": 200,
+					"error": null,
+					"description": null,
+					"tokenType": "DPoP"
+				},
+				"requiredNoProof": {
+					"status": 400,
+					"error": "invalid_request",
+					"description": "DPoP proof is missing",
+					"tokenType": null
+				},
+				"requiredTheirOwnProof": {
+					"status": 200,
+					"error": null,
+					"description": null,
+					"tokenType": "DPoP"
+				}
+			}
+		},
+		"howAnApiSaysNo": {
+			"goodToken": {
+				"status": 200,
+				"wwwAuthenticate": null
+			},
+			"noToken": {
+				"status": 401,
+				"wwwAuthenticate": "Bearer realm=\"demo\""
+			},
+			"notAToken": {
+				"status": 401,
+				"wwwAuthenticate": "Bearer realm=\"demo\", error=\"invalid_token\", error_description=\"Token verification failed\""
+			},
+			"changed": {
+				"status": 401,
+				"wwwAuthenticate": "Bearer realm=\"demo\", error=\"invalid_token\", error_description=\"Token verification failed\""
+			},
+			"withoutOpenid": {
+				"status": 403,
+				"wwwAuthenticate": "Bearer realm=\"demo\", error=\"insufficient_scope\", error_description=\"Missing openid scope\""
+			}
+		},
+		"singleSignOn": {
+			"first": {
+				"sawForm": true
+			},
+			"second": {
+				"sawForm": false,
+				"gotACode": true
+			},
+			"sameSession": true,
+			"sameLoginTime": true,
+			"audiences": [
+				"note-sso-one",
+				"note-sso-two"
+			],
+			"insists": {
+				"sawForm": true
+			},
+			"told": {
+				"withASession": {
+					"sawForm": false,
+					"gotACode": true
+				},
+				"inANewBrowser": {
+					"sawForm": false,
+					"error": "login_required"
+				}
+			},
+			"cookie": {
+				"name": "KEYCLOAK_IDENTITY",
+				"httpOnly": true,
+				"domain": "localhost"
+			}
+		},
+		"ssoSessionMax": {
+			"before": {
+				"idle": 1800,
+				"max": 36000,
+				"secondSawForm": false
+			},
+			"after": {
+				"max": 3,
+				"secondSawForm": true
+			}
+		},
+		"loggingOut": {
+			"onlyTheAppForgets": {
+				"nextLoginSawForm": false
+			},
+			"withAnIdToken": {
+				"backAtTheApp": true,
+				"state": "kept"
+			},
+			"after": {
+				"tokenNotExpired": true,
+				"demoApi": 200,
+				"userinfo": 401,
+				"otherAppUserinfo": 401,
+				"refresh": {
+					"status": 400,
+					"error": "invalid_grant",
+					"description": "Session not active"
+				},
+				"otherAppRefresh": {
+					"status": 400,
+					"error": "invalid_grant",
+					"description": "Session not active"
+				},
+				"otherAppNextLoginSawForm": true
+			},
+			"withNoIdToken": {
+				"asks": true
+			}
+		},
+		"whoMayAsk": {
+			"before": {
+				"asker": "not named in the token",
+				"active": false
+			},
+			"after": {
+				"asker": "named in the token",
+				"active": true
+			},
+			"afterALogout": {
+				"active": false
+			}
+		},
+		"postLogoutAddress": {
+			"before": {
+				"status": 400,
+				"saysInvalidRedirect": true
+			},
+			"after": {
+				"backAtTheApp": true
+			}
+		},
+		"backchannelLogoutUrl": {
+			"before": {
+				"delivered": 0
+			},
+			"after": {
+				"delivered": 1,
+				"hasTheEvent": true,
+				"aud": "note-logout-two"
+			}
+		},
+		"refreshTokens": {
+			"accessTokenLifespan": 300,
+			"first": {
+				"expiresIn": 300,
+				"refreshExpiresIn": 1800
+			},
+			"refresh": {
+				"status": 200,
+				"cameBackNew": true
+			},
+			"withoutTheSecret": {
+				"status": 401,
+				"error": "unauthorized_client",
+				"description": "Invalid client or Invalid client credentials"
+			},
+			"pastItsLife": {
+				"userinfo": 401,
+				"thenARefresh": 200,
+				"idTokenAgain": true
+			}
+		},
+		"revokeRefreshToken": {
+			"before": {
+				"setting": false,
+				"oldAgain": {
+					"status": 200,
+					"error": null,
+					"description": null
+				},
+				"oldAgainWithNoSecret": {
+					"first": 200,
+					"again": 200
+				}
+			},
+			"after": {
+				"first": 200,
+				"oldAgain": {
+					"status": 400,
+					"error": "invalid_grant",
+					"description": "Maximum allowed refresh token reuse exceeded"
+				},
+				"newest": {
+					"status": 400,
+					"error": "invalid_grant",
+					"description": "Session doesn't have required client"
+				}
+			}
+		},
+		"stolenTokensAfterTheRealAppTried": {
+			"theRealApp": {
+				"status": 400,
+				"description": "Code not valid"
+			},
+			"before": {
+				"userinfo": 200,
+				"demoApi": 200
+			},
+			"after": {
+				"userinfo": 401,
+				"demoApi": 200
+			},
+			"refresh": {
+				"status": 400,
+				"error": "invalid_grant"
+			}
+		},
+		"theDemoChecks": {
+			"appWithAnotherState": 400,
+			"apiWithAGoodProof": 200,
+			"apiWithTheSameProofAgain": 401,
+			"apiWithNoProof": 401,
+			"apiAsBearer": 401,
+			"apiWithAnotherKey": 401,
+			"apiWithANoAudienceToken": {
+				"aud": null,
+				"status": 401
+			}
+		},
+		"wrongRedirectUri": {
+			"status": 400,
+			"location": null,
+			"message": "Invalid parameter: redirect_uri"
+		},
+		"withoutOpenid": {
+			"hasIdToken": false,
+			"accessTokenAudience": "account",
+			"accessTokenNamesTheUser": true,
+			"responseFields": [
+				"access_token",
+				"expires_in",
+				"not-before-policy",
+				"refresh_expires_in",
+				"refresh_token",
+				"scope",
+				"session_state",
+				"token_type"
+			],
+			"userinfo": {
+				"status": 403,
+				"wwwAuthenticate": "Bearer realm=\"demo\", error=\"insufficient_scope\", error_description=\"Missing openid scope\"",
+				"body": ""
+			}
+		},
+		"storeTokens": {
+			"byDefault": {
+				"storeToken": false
+			},
+			"before": {
+				"status": 200,
+				"says": "a successful answer"
+			},
+			"after": {
+				"status": 400,
+				"says": "{\"errorMessage\":\"Identity Provider [upstream] does not support this operation.\"}"
+			}
+		},
+		"storedTokensReadable": {
+			"byDefault": {
+				"addReadTokenRoleOnCreate": false
+			},
+			"before": {
+				"status": 200,
+				"says": "a successful answer"
+			},
+			"after": {
+				"status": 403,
+				"says": "{\"errorMessage\":\"Client [demo-app] not authorized to retrieve tokens from identity provider [upstream].\"}"
+			}
+		},
+		"brokerRedirector": {
+			"before": {
+				"status": 303,
+				"redirects": true
+			},
+			"after": {
+				"status": 200,
+				"redirects": false
+			},
+			"withHint": {
+				"status": 303,
+				"redirects": true
+			}
+		},
+		"storeTokensOnApiV2": {
+			"neither": 400,
+			"inSessionOnly": 200,
+			"inDatabaseOnly": 200,
+			"both": 200
+		},
+		"allowExternalTokens": {
+			"before": {
+				"status": 200
+			},
+			"after": {
+				"status": 403,
+				"says": "{\"error\":\"invalid_client\",\"error_description\":\"Client not allowed to retrieve token for the provider\"}"
+			}
+		},
+		"apiV2WithDpopToken": {
+			"tokenType": "DPoP",
+			"withoutProof": {
+				"status": 400,
+				"wwwAuthenticate": null,
+				"body": "{\"error\":\"invalid_token\",\"error_description\":\"Invalid token\"}"
+			},
+			"withProof": {
+				"status": 400,
+				"wwwAuthenticate": null,
+				"body": "{\"error\":\"invalid_token\",\"error_description\":\"Invalid token\"}"
+			}
+		},
+		"apiV1WhenV2IsEnabled": {
+			"status": 400,
+			"wwwAuthenticate": null,
+			"body": "{\"errorMessage\":\"Identity Brokering API feature not enabled\"}"
+		},
+		"console": {
+			"valid-redirect-uris": {
+				"found": [
+					"Access settings",
+					"Valid redirect URIs"
+				],
+				"missing": []
+			},
+			"consent-required": {
+				"found": [
+					"Login settings",
+					"Consent required"
+				],
+				"missing": []
+			},
+			"client-authentication": {
+				"found": [
+					"Capability config",
+					"Client authentication"
+				],
+				"missing": []
+			},
+			"implicit-flow": {
+				"found": [
+					"Capability config",
+					"Implicit flow"
+				],
+				"missing": []
+			},
+			"web-origins": {
+				"found": [
+					"Access settings",
+					"Web origins"
+				],
+				"missing": []
+			},
+			"require-pkce": {
+				"found": [
+					"Capability config",
+					"Require PKCE"
+				],
+				"missing": []
+			},
+			"intercepted-code": {
+				"found": [
+					"Capability config",
+					"Require PKCE"
+				],
+				"missing": []
+			},
+			"client-scopes": {
+				"found": [
+					"profile",
+					"email"
+				],
+				"missing": []
+			},
+			"token-lifespan": {
+				"found": [
+					"Advanced settings",
+					"Access Token Lifespan"
+				],
+				"missing": []
+			},
+			"audience": {
+				"found": [
+					"Audience"
+				],
+				"missing": []
+			},
+			"post-logout-address": {
+				"found": [
+					"Access settings",
+					"Valid post logout redirect URIs"
+				],
+				"missing": []
+			},
+			"backchannel-logout-url": {
+				"found": [
+					"Logout settings",
+					"Backchannel logout URL"
+				],
+				"missing": []
+			},
+			"who-may-ask": {
+				"found": [
+					"Audience"
+				],
+				"missing": []
+			},
+			"sso-session-max": {
+				"found": [
+					"SSO Session Idle",
+					"SSO Session Max"
+				],
+				"missing": []
+			},
+			"revoke-refresh-token": {
+				"found": [
+					"Revoke Refresh Token"
+				],
+				"missing": []
+			},
+			"require-dpop": {
+				"found": [
+					"Capability config",
+					"Require DPoP bound tokens"
+				],
+				"missing": []
+			},
+			"issuer": {
+				"found": [
+					"Endpoints"
+				],
+				"missing": []
+			},
+			"broker-redirector": {
+				"found": [
+					"Identity Provider Redirector"
+				],
+				"missing": []
+			},
+			"store-tokens": {
+				"found": [
+					"Advanced settings",
+					"Store tokens"
+				],
+				"missing": []
+			},
+			"stored-tokens-readable": {
+				"found": [
+					"Advanced settings",
+					"Stored tokens readable"
+				],
+				"missing": []
+			},
+			"allow-external-tokens": {
+				"found": [
+					"Capability config",
+					"Allow retrieve external tokens"
+				],
+				"missing": []
+			}
+		}
+	}
+}
