@@ -1,5 +1,5 @@
 {
-	"the-old-way": "Why not just give the app my password?|What came before, and what everything else here is for.|4|3",
+	"the-old-way": "Why not just give the app my password?|What came before, and what most of this is for.|4|3",
 	"what-is-an-identity-provider": "What is an identity provider, and an issuer?|The place you log in, and how everything else knows which one it is.|12|4",
 	"what-is-a-token": "What is a token?|What the app gets instead of your password.|12|4",
 	"how-access-works": "How does an app get access?|An app acts for a user, without ever seeing their password.|12|4",

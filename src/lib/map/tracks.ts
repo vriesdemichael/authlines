@@ -59,10 +59,10 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'the-old-way',
 					answer:
-						'That is how it used to work. The app kept your password and sent it with every call, so it could do anything you can, and if it leaked, so did your password.',
-					startsAtTheBeginning: 'It is only four messages, so its start is its answer.',
+						'That is how it used to work. The app kept your password and sent it with every call, so it could do anything you can with that account, and if it was broken into, your password went with it.',
+					startsAtTheBeginning: 'It is only four steps, so its start is its answer.',
 					title: 'Why not just give the app my password?',
-					summary: 'What came before, and what everything else here is for.',
+					summary: 'What came before, and what most of this is for.',
 					preset: 'the-old-way',
 					alsoAskedAs: [
 						'log in with google',
@@ -125,6 +125,7 @@ export const mapTracks: readonly MapTrack[] = [
 				}),
 				node({
 					id: 'who-logged-in',
+					alsoAskedAs: ['log in with google', 'sign in with google', 'what is openid connect for'],
 					answer:
 						'OAuth alone gives the app access, and defines no way to tell it who logged in. A token may name them, but it is meant for the API. OpenID Connect adds an ID token, made for the app to read.',
 					title: 'How does an app know who logged in?',

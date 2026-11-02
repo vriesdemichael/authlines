@@ -566,7 +566,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		notOnOffer: true,
 		summary:
 			'What came before: the app asks for the password, keeps it, and sends it with every call.',
-		why: 'An app that logs in as you has your password, can do anything you can, and leaks it if it is broken into. Everything else here exists so that it does not have to.',
+		why: 'An app that logs in as you has your password, can do anything you can with that account, and gives it up if it is broken into. Most of what is here exists so that it does not have to.',
 		sources: [
 			{
 				source: 'rfc6749',

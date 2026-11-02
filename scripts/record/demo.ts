@@ -293,6 +293,7 @@ interface Tokens {
 
 export class Demo {
 	current: Run | null = null;
+	#keptLogin = { username: '', password: '' };
 
 	/** What came before: no identity provider, only the app taking the password from a form. */
 	async theOldWay(run: Run) {
@@ -735,12 +736,17 @@ export class Demo {
 			// The old way: it takes the password, and from then on logs in as the user with it.
 			if (url.pathname === '/old-way/login') {
 				const form = new URLSearchParams(await readBody(request));
+				// It keeps it, as the step says, because it needs it for this call and every one after.
+				this.#keptLogin = {
+					username: form.get('username') ?? '',
+					password: form.get('password') ?? ''
+				};
 				const { status } = await call(
 					this.#run,
 					['old-way-call', 'old-way-answer'],
 					'GET',
 					`${API}/old-way/resource`,
-					{ authorization: passwordAuth(form.get('username') ?? '', form.get('password') ?? '') }
+					{ authorization: passwordAuth(this.#keptLogin.username, this.#keptLogin.password) }
 				);
 				response.writeHead(status === 200 ? 200 : 500, { 'content-type': 'text/plain' });
 				response.end(status === 200 ? 'Logged in' : 'Failed');

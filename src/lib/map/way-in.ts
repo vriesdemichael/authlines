@@ -4,7 +4,7 @@
  * once someone has seen what it is for.
  */
 export const wayIn = {
-	lead: 'You have probably clicked a button like “Log in with Google”. Here is what that kind of button saved you from, and how it works, one message at a time.',
+	lead: 'You have probably clicked a button like “Log in with Google”. A button like that can keep your password from the app. Here is why that matters, and how, one message at a time.',
 	/** The question on the map that shows the old way, which is what the screen opens with. */
 	node: 'the-old-way',
 	/** All of it can be read from here, and the API has the password too. */
@@ -14,11 +14,11 @@ export const wayIn = {
 	switch: 'Log in where your account is',
 	off: {
 		title: 'The old way: the app asks for your password',
-		says: 'It keeps your password and sends it with every call. So it can do anything you can, and if it leaks, so does your password.'
+		says: 'It keeps your password and sends it with every call. So it can do anything you can with that account, and if the app is broken into, your password goes with it.'
 	},
 	on: {
 		title: 'Now your password stays where your account is',
-		says: 'It goes there, and the app never sees it. The app gets something else instead: a token, which is good for certain things and runs out. Many buttons like “Log in with ...” are built on this, and it is called OAuth.',
+		says: 'It goes to an identity provider, which holds your account, and not to the app. The app gets a token instead, which is good for certain things and runs out. This is OAuth. Many “Log in with ...” buttons are built on it, and add a way to tell the app who you are.',
 		link: 'Follow it, one message at a time'
 	}
 } as const;

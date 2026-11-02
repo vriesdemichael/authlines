@@ -49,7 +49,7 @@ export const sources: Record<SourceId, SourceDef> = {
 		title: "The 'Basic' HTTP Authentication Scheme",
 		status: 'Proposed Standard, September 2015.',
 		summary:
-			'The oldest way to log in over HTTP: the username and password, joined with a colon and Base64-encoded, sent along with the request. Base64 is not encryption, so it says this is only safe over a connection that is.',
+			'A way to send a username and password with an HTTP request, joined with a colon and Base64-encoded. Base64 is not encryption, so it calls this cleartext, and says not to protect anything sensitive with it without something like HTTPS.',
 		url: 'https://www.rfc-editor.org/rfc/rfc7617.html',
 		textFile: 'rfc7617.txt'
 	},
