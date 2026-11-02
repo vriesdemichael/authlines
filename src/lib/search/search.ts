@@ -168,8 +168,24 @@ function allEntries(): Entry[] {
 			explained
 		);
 		const text = [...term.words, ...(term.alsoCalled ?? [])].join(' ');
+		const elsewhere = term.opens && flows[term.opens.flow];
+		const firstSettings =
+			elsewhere && normalize({ ...defaultSettings, ...elsewhere.presets[0].settings }).settings;
 		entries.push({
-			result: resultAt('word', term.name, meaningOf(term), state),
+			result:
+				elsewhere && firstSettings && term.opens
+					? {
+							kind: 'word',
+							title: term.name,
+							says: meaningOf(term),
+							flow: elsewhere.id,
+							query: serializeState(elsewhere, {
+								...stateIn(elsewhere, 'flow', firstSettings, term.opens.step),
+								mode: 'simple',
+								explained
+							})
+						}
+					: resultAt('word', term.name, meaningOf(term), state),
 			title: `${term.name} ${text}`,
 			text: term.explains,
 			exactly: [term.name, ...term.words, ...(term.alsoCalled ?? [])].map(lower)

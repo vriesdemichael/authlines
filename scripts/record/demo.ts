@@ -182,6 +182,7 @@ interface Discovered {
 	issuer: string;
 	authorization_endpoint: string;
 	token_endpoint: string;
+	device_authorization_endpoint?: string;
 	userinfo_endpoint?: string;
 	end_session_endpoint?: string;
 	introspection_endpoint?: string;
@@ -454,6 +455,57 @@ export class Demo {
 			resource,
 			this.#authorization('GET', resource, tokens.access_token)
 		);
+		if (answer.status !== 200) throw new Error(`The API refused: ${answer.text}`);
+	}
+
+	/**
+	 * An app nothing can call. It shows two things and asks until someone is done, and the login is
+	 * whatever the browser does in the meantime, which never touches this app.
+	 */
+	async onADevice(run: Run, someoneLogsIn: (address: string, userCode: string) => Promise<void>) {
+		this.#key = null;
+		const url = this.#server.token_endpoint;
+		const started = await call(
+			run,
+			['request', 'response'],
+			'POST',
+			this.#server.device_authorization_endpoint ?? '',
+			{},
+			{ client_id: run.clientId, ...(run.settings.oidc ? { scope: 'openid' } : {}) }
+		);
+		const codes = jsonOf<{
+			device_code: string;
+			user_code: string;
+			verification_uri: string;
+			interval: number;
+		}>(started.text);
+		const asking = {
+			grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+			device_code: codes.device_code,
+			client_id: run.clientId
+		};
+		const notYet = await call(run, ['poll', 'pending'], 'POST', url, {}, asking);
+		if (jsonOf<Tokens>(notYet.text).error !== 'authorization_pending') {
+			throw new Error(`Expected to be told not yet: ${notYet.text}`);
+		}
+		await someoneLogsIn(codes.verification_uri, codes.user_code);
+		await new Promise((resolve) => setTimeout(resolve, codes.interval * 1000));
+		const result = await call(run, ['poll-again', 'token-response'], 'POST', url, {}, asking);
+		const tokens = jsonOf<Tokens>(result.text);
+		if (!tokens.access_token) throw new Error(`No token: ${result.text}`);
+		if (run.settings.oidc) {
+			const problem = idTokenProblem(tokens.id_token, {
+				issuer: this.#server.issuer,
+				clientId: run.clientId,
+				nonce: null,
+				keys: await keysAt(this.#server.jwks_uri)
+			});
+			if (problem) throw new Error(`The ID token: ${problem}`);
+		}
+		const resource = `${API}/resource`;
+		const answer = await call(run, ['api-request', 'api-response'], 'GET', resource, {
+			authorization: `Bearer ${tokens.access_token}`
+		});
 		if (answer.status !== 200) throw new Error(`The API refused: ${answer.text}`);
 	}
 

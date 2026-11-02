@@ -33,6 +33,7 @@ export type ConsolePage =
 	| 'provider-settings'
 	| 'realm-settings'
 	| 'realm-sessions'
+	| 'realm-tokens'
 	| 'browser-flow';
 
 export interface ConsolePlace {
@@ -728,9 +729,79 @@ export const noUserNoteDefs: readonly NoteDef[] = [
 	}
 ];
 
+/** About the flow on a device. What backs these is beside its own recordings. */
+export const deviceNoteDefs: readonly NoteDef[] = [
+	{
+		id: 'device-grant',
+		steps: ['device-request', 'device-create-client'],
+		title: 'OAuth 2.0 Device Authorization Grant',
+		text: 'Off on a new client. Without it, the first request gets 400 with unauthorized_client, and a description saying the flow is disabled for the client.',
+		place: clientSettings('Capability config', 'OAuth 2.0 Device Authorization Grant'),
+		backedBy: {
+			question: 'deviceGrantOff',
+			shows: { before: { status: 200 }, after: { status: 400, error: 'unauthorized_client' } }
+		}
+	},
+	{
+		id: 'device-always-asks',
+		steps: ['device-consent-page'],
+		title: 'It always asks here',
+		text: 'This server shows this page whatever Consent required says on the client. It names the client and what it would get, and does not say that a device is being connected, which the spec recommends. So what a client is called matters here.',
+		seen: 'Went through it on a real server, with Consent required off and on.',
+		backedBy: {
+			question: 'deviceConsent',
+			shows: { consentRequiredOff: { asked: true }, consentRequiredOn: { asked: true } }
+		}
+	},
+	{
+		id: 'device-full-address',
+		steps: ['device-response'],
+		title: 'The full address skips the code',
+		text: 'Someone opening verification_uri_complete here is not asked for the code and is not shown it. The spec says a server should show it, so the user can compare it with the device. That leaves the page that asks as all that stops a code somebody sent.',
+		seen: 'Opened the full address on a real server, and looked at each page up to the end.',
+		backedBy: {
+			question: 'deviceFullAddress',
+			shows: { asksForTheCode: false, showsTheCode: false, stillAsksToAgree: true }
+		}
+	},
+	{
+		id: 'device-timings',
+		steps: ['device-response'],
+		title: 'OAuth 2.0 Device Code Lifespan',
+		text: 'Ten minutes on this server unless set, with 5 seconds between asking. Both are in the realm’s token settings, and a client can have its own. A shorter life limits what a code sent to someone is worth, and leaves less time to find a phone.',
+		place: {
+			page: 'realm-tokens',
+			path: ['Realm settings', 'Tokens', 'OAuth 2.0 Device Code Lifespan'],
+			shows: ['OAuth 2.0 Device Code Lifespan', 'OAuth 2.0 Device Polling Interval']
+		},
+		backedBy: {
+			question: 'deviceTimings',
+			shows: {
+				byDefault: { expiresIn: 600, interval: 5 },
+				setOnTheClient: { expiresIn: 60, interval: 1 }
+			}
+		}
+	},
+	{
+		id: 'device-wrong-client',
+		steps: ['device-poll-again'],
+		title: 'Only the client that started it',
+		text: 'Another client sending this device code gets invalid_grant, and the code stays good for the one that started it. Used once, it stops working: the same request again gets invalid_grant too.',
+		seen: 'Tried a device code from another client, and the same one twice.',
+		backedBy: {
+			question: 'deviceCodeUse',
+			shows: {
+				fromAnotherClient: { status: 400, error: 'invalid_grant' },
+				usedTwice: { status: 400, error: 'invalid_grant' }
+			}
+		}
+	}
+];
+
 const notesOfFlow: Readonly<Record<string, readonly NoteDef[]>> = {
 	'authorization-code': noteDefs,
-	'client-credentials': noUserNoteDefs
+	'client-credentials': noUserNoteDefs,
+	device: deviceNoteDefs
 };
 
 /** The notes on a step of this base flow, in these settings. */

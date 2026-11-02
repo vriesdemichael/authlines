@@ -116,7 +116,7 @@
 	});
 	const loadRecording = (preset: string) => fetchRecording(`/recordings/${base.id}/${preset}.json`);
 	const pageImage = (shot: string) =>
-		asset(`/recordings/${base.id}/pages/${shot}.jpg` as Parameters<typeof asset>[0]);
+		asset(`/recordings/pages/${shot}.jpg` as Parameters<typeof asset>[0]);
 
 	const flowChoices = Object.values(flows).map((other) => ({
 		id: other.id,

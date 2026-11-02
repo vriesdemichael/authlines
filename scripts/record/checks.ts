@@ -86,7 +86,8 @@ export function idTokenProblem(
 		return 'issued to another app';
 	}
 	if (hasExpired(jwt.claims, now)) return 'expired';
-	if (jwt.claims.nonce !== expected.nonce) return 'from another login';
+	// A flow that sends none has nothing to compare, and a token claiming one is not from this login.
+	if ((jwt.claims.nonce ?? null) !== expected.nonce) return 'from another login';
 	return null;
 }
 

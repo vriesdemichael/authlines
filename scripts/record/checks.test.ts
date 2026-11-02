@@ -95,6 +95,17 @@ describe('what the demo app checks in an ID token', () => {
 		expect(problem(server.token({ ...claims, nonce: 'another-login' }))).toBe('from another login');
 	});
 
+	it('takes none where none was sent, and refuses one that came anyway', () => {
+		const unasked = (token: string) =>
+			idTokenProblem(
+				token,
+				{ issuer: ISSUER, clientId: 'demo-app', nonce: null, keys: [server.jwk] },
+				NOW
+			);
+		expect(unasked(server.token({ ...claims, nonce: undefined }))).toBeNull();
+		expect(unasked(server.token(claims))).toBe('from another login');
+	});
+
 	it('takes an audience that is one of several, if it says this app is who it was issued to', () => {
 		const aud = ['another-app', 'demo-app'];
 		expect(problem(server.token({ ...claims, aud, azp: 'demo-app' }))).toBeNull();

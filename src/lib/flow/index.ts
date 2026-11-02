@@ -2,6 +2,8 @@ import { authorizationCode } from '#lib/flow/authorization-code.ts';
 import { authorizationCodeSetup } from '#lib/flow/authorization-code-setup.ts';
 import { clientCredentials } from '#lib/flow/client-credentials.ts';
 import { clientCredentialsSetup } from '#lib/flow/client-credentials-setup.ts';
+import { device } from '#lib/flow/device.ts';
+import { deviceSetup } from '#lib/flow/device-setup.ts';
 import type { BaseFlow, Preset } from '#lib/flow/model.ts';
 import { settingIds } from '#lib/flow/settings.ts';
 
@@ -182,7 +184,37 @@ export const clientCredentialsBase: BaseFlow = {
 	]
 };
 
+export const deviceBase: BaseFlow = {
+	id: device.id,
+	diagrams: { flow: device, setup: deviceSetup },
+	settings: ['oidc'],
+	notHere: {
+		consent: 'It always asks here. The spec says a server should, and this one did either way.',
+		clientType:
+			'Recorded with no secret, because software on someone’s own device generally cannot keep one. An app that had one would send it each time as well.',
+		pkce: 'No code goes through a browser here. The device code goes straight to the app, so there is nothing for it to protect.',
+		attacker:
+			'No code goes through a browser to steal. The trick here is a different one, and the page that asks the user to agree is where it gets stopped.',
+		broker: ONLY_RECORDED_THERE,
+		sso: ONLY_RECORDED_THERE,
+		refresh: ONLY_RECORDED_THERE,
+		logout: ONLY_RECORDED_THERE,
+		apiToken: ONLY_RECORDED_THERE,
+		binding: ONLY_RECORDED_THERE,
+		dpopNonce: ONLY_RECORDED_THERE
+	},
+	presets: [
+		{ id: 'on-a-device', title: 'An app on a device', settings: {} },
+		{
+			id: 'on-a-device-oidc',
+			title: 'An app on a device, with who logged in',
+			settings: { oidc: true }
+		}
+	]
+};
+
 export const flows: Record<string, BaseFlow> = {
 	[authorizationCodeBase.id]: authorizationCodeBase,
-	[clientCredentialsBase.id]: clientCredentialsBase
+	[clientCredentialsBase.id]: clientCredentialsBase,
+	[deviceBase.id]: deviceBase
 };

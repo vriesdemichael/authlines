@@ -19,6 +19,60 @@ const ERRORS = 'src/lib/search/errors.ts';
 export const breakages = [
 	// What a sceptical reader found.
 	{
+		name: 'device: the browser is given the code that gets the tokens',
+		file: 'src/lib/flow/device.ts',
+		from: "name: 'user_code',\n\t\t\t\t\tplace: 'memory',\n\t\t\t\t\tartifact: 'user-code',",
+		to: "name: 'user_code',\n\t\t\t\t\tplace: 'memory',\n\t\t\t\t\tartifact: 'device-code',"
+	},
+	{
+		name: 'device: says a different answer than the server gave',
+		file: 'src/lib/flow/device.ts',
+		from: "{ name: 'error=authorization_pending', place: 'body' },",
+		to: "{ name: 'error=slow_down', place: 'body' },"
+	},
+	{
+		name: 'device: the app and the browser are drawn as talking',
+		file: 'src/lib/flow/device.ts',
+		from: "to: 'browser',\n\t\t\tkind: 'human',",
+		to: "to: 'browser',\n\t\t\tkind: 'request',"
+	},
+	{
+		name: 'device: an error nobody said',
+		file: 'src/lib/search/errors.ts',
+		from: "text: 'slow_down',",
+		to: "text: 'slowdown',"
+	},
+	{
+		name: 'device: a note says what the server did not',
+		file: NOTES,
+		from: 'byDefault: { expiresIn: 600, interval: 5 },',
+		to: 'byDefault: { expiresIn: 300, interval: 5 },'
+	},
+	{
+		name: 'device: a setting vanishes without saying why',
+		file: 'src/lib/flow/index.ts',
+		from: "consent: 'It always asks here.",
+		to: "consenting: 'It always asks here."
+	},
+	{
+		name: 'device: the address after a redirect is lost',
+		file: 'src/lib/recordings/address.ts',
+		from: 'return message?.url ?? message?.headers.location ?? null;',
+		to: 'return message?.url ?? null;'
+	},
+	{
+		name: 'device: a token with a nonce nobody sent is taken',
+		file: 'scripts/record/checks.ts',
+		from: "if ((jwt.claims.nonce ?? null) !== expected.nonce) return 'from another login';",
+		to: "if (expected.nonce && jwt.claims.nonce !== expected.nonce) return 'from another login';"
+	},
+	{
+		name: 'device: the check needs a nonce that never comes',
+		file: 'scripts/record/checks.ts',
+		from: "if ((jwt.claims.nonce ?? null) !== expected.nonce) return 'from another login';",
+		to: "if (jwt.claims.nonce !== expected.nonce) return 'from another login';"
+	},
+	{
 		name: 'expert: a date from another recording',
 		file: 'src/lib/recordings/known.ts',
 		from: 'return (preset && recordedIndex.recordedOn?.[preset.id]) ?? recordedIndex.recordedAt;',

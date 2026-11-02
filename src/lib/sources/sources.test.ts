@@ -38,7 +38,9 @@ describe('the RFC files', () => {
 		'rfc9449.txt': '3842c58e1f6043389416023b9bb8d765048266024982fbbd90640e05943f4e13',
 		// These two on 2026-11-01.
 		'rfc7636.txt': '1972e5d81cbaba7066cfd46374207bc2b4546b085ed5dd9b034e79e023e0ca31',
-		'rfc9700.txt': '9919d061d40a97886ca866b51c69389b6c81c65cd4b979056c14fdbebfcf622a'
+		'rfc9700.txt': '9919d061d40a97886ca866b51c69389b6c81c65cd4b979056c14fdbebfcf622a',
+		// This one on 2026-11-02.
+		'rfc8628.txt': 'ebd3c37415aa665b55b412fccd9571943e8dbd3f2bf0b18fee4924264252decd'
 	};
 
 	it.each(Object.entries(published))('%s is byte for byte what was published', (file, hash) => {

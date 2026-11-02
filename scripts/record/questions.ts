@@ -14,6 +14,8 @@ import {
 	KEYCLOAK,
 	LOCAL_REALM,
 	SERVICE_CLIENT,
+	DEVICE_CLIENT,
+	DEVICE_GRANT_ON,
 	PASSWORD,
 	PKCE_CLIENT,
 	PUBLIC_CLIENT,
@@ -669,6 +671,218 @@ export async function questionsWithNoUser(admin: Admin) {
 			after: { gotRefreshToken: Boolean(withRefresh.json.refresh_token) }
 		}
 	};
+}
+
+/** What a server does in the device flow, including what is not on the way a run goes. */
+export async function questionsOnADevice(browser: Browser, admin: Admin) {
+	const endpoint = `${KEYCLOAK}/realms/${LOCAL_REALM}/protocol/openid-connect`;
+	const onClients = `/realms/${LOCAL_REALM}/clients`;
+	const send = async (url: string, values: Record<string, string>, headers = {}) => {
+		const response = await fetch(url, {
+			method: 'POST',
+			headers: { 'content-type': 'application/x-www-form-urlencoded', ...headers },
+			body: new URLSearchParams(values).toString()
+		});
+		return {
+			status: response.status,
+			json: (await response.json()) as Record<string, string & number>
+		};
+	};
+	const start = (clientId: string, headers = {}) =>
+		send(`${endpoint}/auth/device`, { client_id: clientId }, headers);
+	const ask = (clientId: string, deviceCode: string, headers = {}) =>
+		send(
+			`${endpoint}/token`,
+			{
+				grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+				device_code: deviceCode,
+				client_id: clientId
+			},
+			headers
+		);
+	const wait = (seconds: number) => new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+	const made: string[] = [];
+	const clientWith = async (overrides: Record<string, unknown>) => {
+		const clientId = `demo-try-${random().slice(0, 8)}`;
+		await admin.call('POST', onClients, {
+			clientId,
+			publicClient: true,
+			standardFlowEnabled: false,
+			...overrides
+		});
+		const [found] = await admin.call<{ id: string }[]>('GET', `${onClients}?clientId=${clientId}`);
+		made.push(found.id);
+		return clientId;
+	};
+
+	/** What someone sees going through it, as far as this says, in the words on each page. */
+	const goThrough = async (
+		address: string,
+		userCode: string | null,
+		answer: 'accept' | 'cancel' = 'accept'
+	) => {
+		const context = await browser.newContext();
+		const page = await context.newPage();
+		const said = async () => (await page.locator('body').innerText()).replace(/\s+/g, ' ');
+		await page.goto(address);
+		const asksForTheCode = (await page.locator('[name="device_user_code"]').count()) > 0;
+		let pages = await said();
+		if (asksForTheCode && userCode) {
+			await page.fill('[name="device_user_code"]', userCode);
+			await page.click('[type="submit"]');
+			pages += ` ${await said()}`;
+		}
+		const toLogIn = (await page.locator('#username').count()) > 0;
+		if (toLogIn) {
+			await page.fill('#username', USERNAME);
+			await page.fill('#password', PASSWORD);
+			await page.click('#kc-login');
+			await page.locator('[name="accept"]').waitFor();
+			pages += ` ${await said()}`;
+		}
+		const asked = (await page.locator('[name="accept"]').count()) > 0;
+		if (asked) {
+			await page.locator(`[name="${answer}"]`).click();
+			await page
+				.getByText(/Device Login/)
+				.first()
+				.waitFor();
+			pages += ` ${await said()}`;
+		}
+		await context.close();
+		return { asksForTheCode, asked, pages };
+	};
+
+	const on = await start(DEVICE_CLIENT);
+	const off = await start(await clientWith({}));
+	const first = await ask(DEVICE_CLIENT, on.json.device_code);
+	const tooSoon = await ask(DEVICE_CLIENT, on.json.device_code);
+
+	await goThrough(on.json.verification_uri, on.json.user_code);
+	await wait(on.json.interval);
+	const fromAnotherClient = await ask(
+		await clientWith({ attributes: DEVICE_GRANT_ON }),
+		on.json.device_code
+	);
+	const got = await ask(DEVICE_CLIENT, on.json.device_code);
+	await wait(on.json.interval);
+	const usedTwice = await ask(DEVICE_CLIENT, on.json.device_code);
+
+	const consentOn = await clientWith({ attributes: DEVICE_GRANT_ON, consentRequired: true });
+	const withConsent = await start(consentOn);
+	const asksAnyway = await start(DEVICE_CLIENT);
+
+	const full = await start(DEVICE_CLIENT);
+	const throughFull = await goThrough(full.json.verification_uri_complete, null);
+
+	const denied = await start(DEVICE_CLIENT);
+	await goThrough(denied.json.verification_uri, denied.json.user_code, 'cancel');
+	await wait(denied.json.interval);
+	const afterNo = await ask(DEVICE_CLIENT, denied.json.device_code);
+
+	const quick = await clientWith({
+		attributes: { ...DEVICE_GRANT_ON, 'oauth2.device.code.lifespan': '1' }
+	});
+	const running = await start(quick);
+	await wait(2);
+	const ranOut = await ask(quick, running.json.device_code);
+	const tooLate = await goThrough(running.json.verification_uri, running.json.user_code);
+
+	const set = await start(
+		await clientWith({
+			attributes: {
+				...DEVICE_GRANT_ON,
+				'oauth2.device.code.lifespan': '60',
+				'oauth2.device.polling.interval': '1'
+			}
+		})
+	);
+
+	const withSecret = await clientWith({
+		attributes: DEVICE_GRANT_ON,
+		publicClient: false,
+		clientAuthenticatorType: 'client-secret',
+		secret: CLIENT_SECRET
+	});
+	const basic = {
+		authorization: `Basic ${Buffer.from(`${withSecret}:${CLIENT_SECRET}`).toString('base64')}`
+	};
+	const noSecret = await start(withSecret);
+	const itsSecret = await start(withSecret, basic);
+	const askedWithNoSecret = await ask(withSecret, itsSecret.json.device_code);
+	const askedWithItsSecret = await ask(withSecret, itsSecret.json.device_code, basic);
+
+	const answers = {
+		deviceGrantOff: {
+			before: { status: on.status },
+			after: {
+				status: off.status,
+				error: off.json.error,
+				description: off.json.error_description
+			}
+		},
+		devicePolling: {
+			first: first.json.error,
+			description: first.json.error_description,
+			tooSoon: tooSoon.json.error
+		},
+		deviceConsent: {
+			consentRequiredOff: {
+				asked: (await goThrough(asksAnyway.json.verification_uri, asksAnyway.json.user_code)).asked
+			},
+			consentRequiredOn: {
+				asked: (await goThrough(withConsent.json.verification_uri, withConsent.json.user_code))
+					.asked
+			}
+		},
+		deviceFullAddress: {
+			asksForTheCode: throughFull.asksForTheCode,
+			showsTheCode: throughFull.pages.includes(full.json.user_code),
+			stillAsksToAgree: throughFull.asked
+		},
+		deviceDenied: {
+			status: afterNo.status,
+			error: afterNo.json.error,
+			description: afterNo.json.error_description
+		},
+		deviceExpired: {
+			status: ranOut.status,
+			error: ranOut.json.error,
+			description: ranOut.json.error_description,
+			onThePage: tooLate.pages.includes('The code has expired.') ? 'The code has expired.' : null
+		},
+		deviceWrongCode: {
+			onThePage: (await goThrough(on.json.verification_uri, 'WRON-GCOD')).pages.includes(
+				'Invalid code, please try again.'
+			)
+				? 'Invalid code, please try again.'
+				: null
+		},
+		deviceTimings: {
+			byDefault: { expiresIn: on.json.expires_in, interval: on.json.interval },
+			setOnTheClient: { expiresIn: set.json.expires_in, interval: set.json.interval }
+		},
+		deviceCodeUse: {
+			fromAnotherClient: { status: fromAnotherClient.status, error: fromAnotherClient.json.error },
+			thenItsOwn: { status: got.status, gotTokens: Boolean(got.json.access_token) },
+			usedTwice: {
+				status: usedTwice.status,
+				error: usedTwice.json.error,
+				description: usedTwice.json.error_description
+			}
+		},
+		deviceWithSecret: {
+			startedWithNoSecret: { status: noSecret.status, error: noSecret.json.error },
+			startedWithItsSecret: { status: itsSecret.status },
+			askedWithNoSecret: { status: askedWithNoSecret.status, error: askedWithNoSecret.json.error },
+			askedWithItsSecret: {
+				status: askedWithItsSecret.status,
+				error: askedWithItsSecret.json.error
+			}
+		}
+	};
+	for (const id of made) await admin.call('DELETE', `${onClients}/${id}`);
+	return answers;
 }
 
 export async function questionsWithApiV1(browser: Browser, demo: Demo, admin: Admin) {

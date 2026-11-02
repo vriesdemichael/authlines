@@ -26,6 +26,8 @@ export interface Term {
 	vendor?: boolean;
 	/** A part of the diagram itself, which lights up as it is explained. */
 	part?: boolean;
+	/** About a flow other than the one with a login, so that is where looking for it goes. */
+	opens?: { flow: string; step: string };
 }
 
 const flowAt = (step: string, settings?: Partial<Settings>): TermPlace => ({
@@ -410,6 +412,47 @@ const list: readonly Term[] = [
 			"A random value the app sends with the login and checks when the user comes back, so nobody can slip an answer into this user's login. It does not stop someone starting a login in their own browser and handing the app a stolen code, which takes PKCE or a nonce. Those can also do what state does.",
 		alsoCalled: ['CSRF protection'],
 		at: flowAt('authorize')
+	},
+	{
+		id: 'device-flow',
+		name: 'Device flow',
+		words: ['device flow', 'device authorization grant', 'device code flow', 'device grant'],
+		explains:
+			'For an app with no good way to log anyone in, such as on a TV. It shows a short code, the user types that into a browser on another device and logs in there, and the app keeps asking until they are done.',
+		alsoCalled: ['device authorization grant', 'device code flow', 'RFC 8628'],
+		opens: { flow: 'device', step: 'device-request' }
+	},
+	{
+		id: 'device-code',
+		name: 'Device code',
+		words: ['device code', 'device codes', 'device_code'],
+		explains: '',
+		artifact: 'device-code',
+		opens: { flow: 'device', step: 'device-response' }
+	},
+	{
+		id: 'user-code',
+		name: 'User code',
+		words: ['user code', 'user codes', 'user_code'],
+		explains: '',
+		artifact: 'user-code',
+		opens: { flow: 'device', step: 'device-show-code' }
+	},
+	{
+		id: 'polling',
+		name: 'Polling',
+		words: ['polling', 'poll'],
+		explains:
+			'Asking the same thing again and again until the answer changes. An app does it when nothing can call it back.',
+		opens: { flow: 'device', step: 'device-poll' }
+	},
+	{
+		id: 'device-phishing',
+		name: 'Device code phishing',
+		words: ['device code phishing', 'device phishing', 'remote phishing'],
+		explains:
+			'Someone starts the device flow on a device of their own, and sends you the address and the code. If you log in and agree, they get the tokens, and you never gave away a password.',
+		opens: { flow: 'device', step: 'device-consent-page' }
 	},
 	{
 		id: 'code-injection',

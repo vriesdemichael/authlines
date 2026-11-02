@@ -65,6 +65,7 @@ body {
 [data-artifact='secret'],
 [data-artifact='verifier'],
 [data-artifact='challenge'],
+[data-artifact='user-code'],
 [data-artifact='proof'] {
 	--chip: var(--proves);
 	--chip-soft: var(--proves-soft);
@@ -75,6 +76,7 @@ body {
 [data-artifact='access-token'],
 [data-artifact='id-token'],
 [data-artifact='refresh-token'],
+[data-artifact='device-code'],
 [data-artifact='upstream-token'] {
 	--chip: var(--grants);
 	--chip-soft: var(--grants-soft);

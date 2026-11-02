@@ -591,6 +591,78 @@ export const mapTracks: readonly MapTrack[] = [
 				})
 			]
 		]
+	},
+	{
+		id: 'on-a-device',
+		title: 'When the app cannot log anyone in',
+		lead: 'Device flow: a TV, or a tool in a terminal, with the login on another device.',
+		chains: [
+			[
+				node({
+					id: 'device-flow',
+					flow: 'device',
+					preset: 'on-a-device',
+					step: 'device-show-code',
+					title: 'How do you log in on a TV, or in a terminal?',
+					summary: 'On something else, with a code the app shows.',
+					answer:
+						'The app gets a short code from the identity provider and shows it. The user types that into a browser on their phone and logs in there, while the app keeps asking whether they are done. The app never sees the password.'
+				}),
+				node({
+					id: 'device-two-codes',
+					flow: 'device',
+					preset: 'on-a-device',
+					step: 'device-response',
+					title: 'Why are there two codes?',
+					summary: 'One for a person, and one that gets the tokens.',
+					answer:
+						'The short one is for a person to read and type, and says which login this is. The long one stays with the app, and is what the tokens go to. So seeing the short one on a screen gets nobody a token.'
+				}),
+				node({
+					id: 'device-waiting',
+					flow: 'device',
+					preset: 'on-a-device',
+					step: 'device-pending',
+					title: 'What is the app doing while the user types?',
+					summary: 'Asking, again and again.',
+					answer:
+						'Asking the identity provider whether the user is done, every few seconds, and being told not yet. Nothing can call the app back, so the answer to one of its own questions is how it finds out.'
+				}),
+				node({
+					id: 'device-phishing',
+					flow: 'device',
+					preset: 'on-a-device',
+					step: 'device-consent-page',
+					title: 'Can someone trick me into approving their device?',
+					summary: 'Yes, by sending you their code.',
+					answer:
+						'Yes. They start this flow on a device of their own and send you the address and the code. If you log in and agree, the tokens go to them. The page asking you to agree is what stands in the way, so read which app it names.'
+				})
+			],
+			[
+				node({
+					id: 'device-pending-error',
+					flow: 'device',
+					preset: 'on-a-device',
+					mode: 'advanced',
+					step: 'device-pending',
+					title: 'Why do I get authorization_pending?',
+					summary: 'It is not a failure, whatever it looks like.',
+					answer:
+						'It is the ordinary answer until the user has finished: a 400, with this in place of tokens. Ask again after waiting as long as the interval said. Asking sooner gets slow_down, and the app has to wait longer from then on.'
+				}),
+				node({
+					id: 'device-who-logged-in',
+					flow: 'device',
+					preset: 'on-a-device-oidc',
+					step: 'device-check-id-token',
+					title: 'Can a device know who logged in?',
+					summary: 'The same way as anywhere, with an ID token.',
+					answer:
+						'Yes. The app adds openid to what it asks for at the start, and the last answer then has an ID token in it. It came straight from the identity provider, and the request did not send a nonce, so there is none to compare.'
+				})
+			]
+		]
 	}
 ];
 

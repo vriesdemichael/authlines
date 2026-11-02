@@ -10,7 +10,9 @@ export type ArtifactId =
 	| 'refresh-token'
 	| 'session'
 	| 'proof'
-	| 'upstream-token';
+	| 'upstream-token'
+	| 'device-code'
+	| 'user-code';
 
 export const artifacts: Readonly<
 	Record<ArtifactId, { label: string; short: string; explains: string }>
@@ -80,6 +82,18 @@ export const artifacts: Readonly<
 		short: 'upstream',
 		explains:
 			'A token the other provider issued, for calling that provider’s own APIs. It is not the token the app got from its own identity provider.'
+	},
+	'device-code': {
+		label: 'device code',
+		short: 'device code',
+		explains:
+			'A long random value the identity provider gives the app, and the app keeps. Once the user has agreed, whoever sends it gets the tokens, so it goes directly to the app and is not meant to be shown to anyone.'
+	},
+	'user-code': {
+		label: 'user code',
+		short: 'user code',
+		explains:
+			'A short code for a person to read off one device and type into another, which says which waiting app a login is for. It gets nobody a token, because the tokens go to whoever has the device code. That is also why typing in a code someone sent you is dangerous: they have the device code that goes with it.'
 	}
 };
 
@@ -128,7 +142,8 @@ const parameterWhy: Readonly<Record<string, string>> = {
 	'prompt=login': 'Says to ask for the password, even with a session.',
 	'prompt=none': 'Says not to show a form, whatever happens.',
 	error_description: 'What went wrong, in words for a person to read.',
-	keys: 'The public keys that check signatures.'
+	keys: 'The public keys that check signatures.',
+	device_authorization_endpoint: 'Where to ask for the two codes that start the device flow.'
 };
 
 /** Why a field is there: what the step says about it, or else what it always means. */
@@ -144,7 +159,10 @@ export const pageShots = [
 	'login-upstream',
 	'consent',
 	'wrong-redirect',
-	'logout-question'
+	'logout-question',
+	'device-code',
+	'device-consent',
+	'device-done'
 ] as const;
 export type ShotId = (typeof pageShots)[number];
 
