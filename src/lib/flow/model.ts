@@ -52,6 +52,8 @@ export interface FieldDef {
 	note?: string;
 	/** The credential or token this field carries, which the diagram draws on the message. */
 	artifact?: ArtifactId;
+	/** Drawn on the message under this name, for what looks like one of those and is not. */
+	chip?: string;
 	when?: Condition;
 }
 
@@ -217,6 +219,7 @@ export interface Field {
 	place: FieldDef['place'];
 	note?: string;
 	artifact?: ArtifactId;
+	chip?: string;
 	causes: SettingId[];
 	/** Differs from the base flow, so the diagram shows it on the message itself. */
 	changed: boolean;
@@ -339,6 +342,7 @@ export function evaluate(flow: DiagramDef, settings: Settings): DiagramView {
 					place: field.place,
 					note: field.note,
 					artifact: field.artifact,
+					chip: field.chip,
 					causes: causes(field.when, settings),
 					changed: !present(field.when, defaultSettings)
 				}))

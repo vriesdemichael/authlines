@@ -21,7 +21,7 @@ const apiV2 = is('upstreamTokens', 'v2');
 export const authorizationCodeSetup: DiagramDef = {
 	id: 'authorization-code-setup',
 	title: 'Setting up the authorization code flow',
-	caption: 'What people do before any user arrives.',
+	caption: 'What people do first.',
 	summary:
 		'What people do before any user arrives, so the app and the identity provider know each other.',
 	intro:

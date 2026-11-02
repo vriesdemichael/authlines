@@ -491,6 +491,14 @@
 		font-size: 12.5px;
 	}
 
+	.pitfall img {
+		display: block;
+		width: 100%;
+		height: auto;
+		margin-top: 6px;
+		border-radius: 6px;
+	}
+
 	.pitfall summary {
 		cursor: pointer;
 		font-weight: 600;

@@ -14,9 +14,9 @@
 	"pkce": "How does PKCE work?|The app proves it started this login, with a value that was never in a redirect.|14|4",
 	"pkce-stops-it": "What does PKCE do to the attacker?|The same attempt, a different answer, and a cost that remains.|13|5",
 	"stolen-from-a-secret": "Can a code be stolen from an app with a secret?|They get the code, but cannot trade it. That is not the end of it.|15|5",
-	"pkce-with-a-secret": "Does an app with a secret need PKCE too?|Why current advice says yes, even when a stolen code is not enough alone.|14|4",
+	"pkce-with-a-secret": "Does an app with a secret need PKCE too?|Why current advice says yes, even when a stolen code is not enough alone.|16|5",
 	"both-protections": "What does an attacker get against both?|A secret and PKCE together, against the same attempt.|17|5",
-	"stolen-code-at-the-app": "What if they hand the stolen code to the real app?|Why an app with a secret needs PKCE too.|16|5",
+	"pkce-on-the-wire": "What does PKCE add to the requests?|A verifier, and a fingerprint of it.|14|4",
 	"pkce-at-the-app": "What stops them handing it to the real app?|The code is tied to the login it came from.|17|5",
 	"nonce-at-the-app": "Does a nonce stop it as well?|Yes, if the app checks it, and later.|17|5",
 	"stolen-refresh-token": "What is a stolen refresh token worth?|More than the access token, and a new one coming back may not stop it.|23|4",
@@ -45,7 +45,7 @@
 	"refresh-token-reuse": "Why do I get Maximum allowed refresh token reuse exceeded?|A refresh token was used twice, and that ended things for this app.|23|4",
 	"what-is-in-my-token": "Why does my access token say that?|Open it, and see which setting put each thing there.|12|4",
 	"everything": "What does it all look like at once?|As much as fits together, to see how far one diagram stretches.|30|5",
-	"no-user": "What if no user is involved?|An app acts for itself, with no browser and no login.|5|3",
+	"no-user": "What if no user is involved?|A nightly job, or one service calling another: machine to machine, with no browser and no login.|5|3",
 	"no-user-no-refresh": "Why is there no refresh token for a service?|It has its secret, so it can just ask again.|5|3",
 	"no-user-with-a-key": "Can a token for a service be tied to a key?|DPoP works the same with no user.|6|3"
 }

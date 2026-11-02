@@ -116,6 +116,12 @@ test.describe('what a person sees in their browser', () => {
 		await expect(shot).toBeVisible();
 		await expect(shot).toHaveAttribute('src', /wrong-redirect\.jpg/);
 		await expect(shot).toHaveAttribute('alt', /error page/);
+		const inside = await shot.evaluate((image) => {
+			const box = image.getBoundingClientRect();
+			const around = image.closest('details')!.getBoundingClientRect();
+			return box.left >= around.left && box.right <= around.right;
+		});
+		expect(inside).toBe(true);
 	});
 
 	test('leaves that out too, with the notes off', async ({ page }) => {

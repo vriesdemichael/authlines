@@ -166,7 +166,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		default: false,
 		summary:
 			'The app proves it started this login, so a stolen code is no use alone. Current advice is to have it on, and a public client must.',
-		why: 'The code goes through the browser, where other software can get at it. An app with a secret can at least prove who it is. An app with none has nothing else to show that it is the one that asked, so whoever holds the code gets the tokens. With PKCE the code only works together with a value that was never in a redirect.',
+		why: 'The code goes through the browser, where other software can get at it. An app with none has nothing else to show that it is the one that asked, so whoever holds the code gets the tokens. An app with a secret can prove who it is, and someone can still hand it the stolen code to trade for them. With PKCE the code only works together with a value that was never in a redirect, from the login the code came from.',
 		simple: {
 			label: 'Protect against a stolen code',
 			summary:

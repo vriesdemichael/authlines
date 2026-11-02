@@ -252,12 +252,14 @@
 		setup: hrefFor(withDiagram(base, appState, 'setup', stepIn.setup))
 	});
 	// At the end of the setup, the way on is the flow it was for, and not some other question.
+	// What the first diagram is called, in the middle of a sentence.
+	const flowName = $derived((base.diagrams.flow.named ?? 'The user flow').replace(/^The/, 'the'));
 	const wayOn = $derived(
 		appState.diagram === 'setup'
 			? {
-					label: 'On to the user flow',
-					title: 'The user flow',
-					summary: 'What happens when a user arrives, now that this is set up.',
+					label: `On to ${flowName}`,
+					title: `${flowName[0].toUpperCase()}${flowName.slice(1)}`,
+					summary: `${base.diagrams.flow.caption.replace(/\.$/, '')}, now that this is set up.`,
 					href: hrefs.flow
 				}
 			: onward
@@ -271,7 +273,7 @@
 	const elsewhere = $derived(
 		last.elsewhere
 			? {
-					text: `It changes the ${otherDiagram === 'flow' ? 'user flow' : 'setup'}.`,
+					text: `It changes ${otherDiagram === 'flow' ? flowName : 'the setup'}.`,
 					href: hrefs[otherDiagram]
 				}
 			: null

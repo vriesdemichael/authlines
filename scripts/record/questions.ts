@@ -647,7 +647,18 @@ export async function questionsWithNoUser(admin: Admin) {
 		serviceAccountsEnabled: true,
 		attributes: { 'client_credentials.use_refresh_token': 'true' }
 	});
+	const withOpenId = await token(
+		LOCAL_REALM,
+		{ grant_type: 'client_credentials', scope: 'openid' },
+		{
+			authorization: `Basic ${Buffer.from(`${SERVICE_CLIENT}:${CLIENT_SECRET}`).toString('base64')}`
+		}
+	);
 	return {
+		idTokenWhenAsked: {
+			withoutAsking: Boolean(on.json.id_token),
+			askedForOpenId: Boolean(withOpenId.json.id_token)
+		},
 		serviceAccountsOff: {
 			before: { status: on.status },
 			after: { status: off.status, error: off.json.error },

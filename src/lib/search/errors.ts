@@ -10,6 +10,8 @@ export interface KnownError {
 	means: string;
 	step: string;
 	settings: Partial<Settings>;
+	/** The base flow it is on, where that is not the one with a login. */
+	flow?: string;
 }
 
 const stolenFromPublicWithPkce: Partial<Settings> = {
@@ -80,6 +82,14 @@ export const knownErrors: readonly KnownError[] = [
 		means: 'The verifier sent does not match the challenge from the login.',
 		step: 'handed-token-response',
 		settings: { attacker: true, attackerUses: 'real-app', pkce: true }
+	},
+	{
+		text: 'unauthorized_client',
+		means:
+			'This client is not allowed to do this. With no user, that usually means it was not set up to act for itself.',
+		step: 'service-token-request',
+		settings: {},
+		flow: 'client-credentials'
 	},
 	{
 		text: 'unauthorized_client',

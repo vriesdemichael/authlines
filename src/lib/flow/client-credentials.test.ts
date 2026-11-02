@@ -51,24 +51,33 @@ describe('the client credentials flow', () => {
 		}
 	});
 
-	it('holds what it says about each message to the recording', () => {
+	it('holds what it says about each message to the recording, in both diagrams', () => {
 		for (const { recording, settings } of recordings) {
-			for (const step of evaluate(flow, settings).steps) {
-				const message = recording.messages.find(({ step: recorded }) => recorded === step.id);
-				if (!message) continue;
-				for (const { name, place } of step.fields) {
-					if (place === 'header') {
-						const header = name.split(':')[0].toLowerCase();
-						expect(Object.keys(message.headers), `${step.id} ${name}`).toContain(header);
-					}
-					if (place === 'body') {
-						const [key, value] = name.split('=');
-						const body = message.body as Record<string, unknown>;
-						expect(Object.keys(body), `${step.id} ${name}`).toContain(key);
-						if (value) expect(body[key], `${step.id} ${name}`).toBe(value);
+			for (const diagram of Object.values(base.diagrams)) {
+				for (const step of evaluate(diagram, settings).steps) {
+					const message = recording.messages.find(({ step: recorded }) => recorded === step.id);
+					if (!message) continue;
+					for (const { name, place } of step.fields) {
+						if (place === 'header') {
+							const header = name.split(':')[0].toLowerCase();
+							expect(Object.keys(message.headers), `${step.id} ${name}`).toContain(header);
+						}
+						if (place === 'body') {
+							const [key, value] = name.split('=');
+							const body = message.body as Record<string, unknown>;
+							expect(Object.keys(body), `${step.id} ${name}`).toContain(key);
+							if (value) expect(body[key], `${step.id} ${name}`).toBe(value);
+						}
 					}
 				}
 			}
+		}
+	});
+
+	it('does not say the answer is about a user, and neither does what comes back', () => {
+		for (const { recording } of recordings) {
+			const answer = recording.messages.find(({ step }) => step === 'service-api-response');
+			expect(JSON.stringify(answer?.body)).not.toMatch(/\buser\b/);
 		}
 	});
 
@@ -163,6 +172,13 @@ describe('the client credentials flow', () => {
 		expect(answers.refreshForClientCredentials.before.gotRefreshToken).toBe(false);
 		expect(answers.refreshForClientCredentials.after.gotRefreshToken).toBe(true);
 		expect(answers.serviceAccountsOff.name).toBe('service-account-demo-service');
+		expect(answers.idTokenWhenAsked).toEqual({ withoutAsking: false, askedForOpenId: true });
+		const saidAbout = notesFor(base.id, 'service-token-response', defaultSettings);
+		expect(saidAbout.map(({ id }) => id)).toContain('id-token-for-client-credentials');
+		const said = evaluate(flow, defaultSettings).steps.find(
+			({ id }) => id === 'service-token-response'
+		);
+		expect(said?.concept).toContain('nothing asked for one');
 		const looked = answers.console as Record<string, { missing: string[] }>;
 		for (const note of ['service-accounts', 'refresh-for-client-credentials']) {
 			expect(looked[note].missing, note).toEqual([]);

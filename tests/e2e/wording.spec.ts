@@ -47,6 +47,13 @@ test.describe('whose words the diagram is in', () => {
 		await expect(detail(page)).not.toContainText('relying party');
 	});
 
+	test('leaves no gap before a comma after a word that explains itself', async ({ page }) => {
+		await open(page, 'mode=simple&say=specs&step=callback');
+		const said = await detail(page).innerText();
+		expect(said).toContain('the secret,');
+		expect(said).not.toMatch(/\s[,.;:]/);
+	});
+
 	test('follows the mode until someone chooses, and then stays', async ({ page }) => {
 		await open(page, 'mode=simple');
 		await expect(words(page)).toHaveValue('plain');

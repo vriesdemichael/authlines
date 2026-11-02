@@ -64,6 +64,14 @@ test.describe('a stolen code handed to the real app', () => {
 		await expect(detail(page)).toContainText('real user’s login');
 	});
 
+	test('shows on the arrow what the refusal is about, for someone new as well', async ({
+		page
+	}) => {
+		await open(page, 'mode=simple&attacker=1&uses=real-app&pkce=1&step=handed-token-request');
+		await expect(page.getByTestId('diagram').getByText('their verifier')).toBeVisible();
+		await expect(page.getByTestId('diagram').getByText('their challenge')).toBeVisible();
+	});
+
 	test('leaves the real user with an error, whichever way it went', async ({ page }) => {
 		for (const search of ['', '&pkce=1', '&oidc=1']) {
 			await open(page, `mode=simple&attacker=1&uses=real-app${search}`);
@@ -92,7 +100,7 @@ test.describe('a stolen code handed to the real app', () => {
 	});
 
 	for (const [id, step] of [
-		['stolen-code-at-the-app', 'attacker-handed-answer'],
+		['pkce-with-a-secret', 'attacker-handed-answer'],
 		['pkce-at-the-app', 'handed-token-response'],
 		['nonce-at-the-app', 'handed-nonce-check']
 	]) {

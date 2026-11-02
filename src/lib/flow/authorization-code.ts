@@ -122,7 +122,7 @@ export const authorizationCode: DiagramDef = {
 			role: 'Has a copy of the code',
 			icon: 'attacker',
 			concept:
-				"Someone who can see the redirects that go through the browser, but is not the app. On a phone that can be another app claiming the same address, which gets the code first. A log or a history that keeps addresses usually sees it too late, because a code works once. Something running inside the app's own page sees far more than this, and no setting here stops that.",
+				"Someone who can read the redirects that go through the browser, but is not the app. Someone who can also change a request can swap in a challenge or a nonce of their own, and then neither stops them. On a phone that can be another app claiming the same address, which gets the code first. A log or a history that keeps addresses usually sees it too late, because a code works once. Something running inside the app's own page sees far more than this, and no setting here stops that.",
 			when: attacker
 		},
 		{
@@ -633,6 +633,15 @@ export const authorizationCode: DiagramDef = {
 			id: 'redirect-with-code',
 			cites: [
 				{
+					source: 'rfc9207',
+					why: 'This is what defines iss in this redirect, as a way to tell which server answered.'
+				},
+				{
+					source: 'rfc9700',
+					section: '2.1',
+					why: 'Section 2.1 says an app that can talk to more than one server has to defend against mix-up, and that it should do so with iss.'
+				},
+				{
 					source: 'rfc9700',
 					section: '4.4',
 					why: 'Section 4.4 is the mix-up attack, where an app that uses more than one provider is tricked into sending a code from one to another. Its countermeasure is to check who answered, which is what iss is for.'
@@ -672,6 +681,13 @@ export const authorizationCode: DiagramDef = {
 		},
 		{
 			id: 'attacker-steals-code',
+			cites: [
+				{
+					source: 'rfc9700',
+					section: '4.5.4',
+					why: 'Section 4.5.4 is the limit of all this. Someone who can only read what goes by is stopped by PKCE or a nonce. Someone who can also change the request can make them match, and it says so.'
+				}
+			],
 			from: 'browser',
 			to: 'attacker',
 			kind: 'request',
@@ -733,6 +749,7 @@ export const authorizationCode: DiagramDef = {
 					name: 'code_challenge',
 					place: 'query',
 					note: 'For the login they started, and not the real user’s',
+					chip: 'their challenge',
 					when: pkce
 				},
 				{
@@ -742,7 +759,13 @@ export const authorizationCode: DiagramDef = {
 					when: pkce
 				},
 				{ name: 'scope', place: 'query', when: oidc },
-				{ name: 'nonce', place: 'query', note: 'For the login they started', when: oidc }
+				{
+					name: 'nonce',
+					place: 'query',
+					note: 'For the login they started',
+					chip: 'their nonce',
+					when: oidc
+				}
 			]
 		},
 		{
@@ -799,6 +822,7 @@ export const authorizationCode: DiagramDef = {
 					name: 'code_verifier',
 					place: 'body',
 					note: 'For the login they started, and not the real user’s',
+					chip: 'their verifier',
 					when: pkce
 				}
 			]

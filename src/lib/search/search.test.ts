@@ -49,6 +49,35 @@ describe('what people bring', () => {
 		if (title) expect(match?.title).toBe(title);
 	});
 
+	it('finds what a pitfall on the other flow says', () => {
+		const found = search('wants its own name in the token');
+		expect(found.results[0]?.flow).toBe('client-credentials');
+	});
+
+	it.each(['client credentials', 'service account', 'nightly job', 'machine to machine'])(
+		'%s finds the flow with no user',
+		(query) => {
+			const found = search(query);
+			expect(found.notHereYet).toBeNull();
+			expect(found.results.some(({ flow }) => flow === 'client-credentials')).toBe(true);
+		}
+	);
+
+	it('says first what unauthorized_client means, which is what the spec says it means', () => {
+		const [first, second] = search('unauthorized_client').results;
+		expect(first.flow).toBe('client-credentials');
+		expect(first.says).toContain('not allowed');
+		expect(second.kind).toBe('error');
+		expect(second.flow).toBe('authorization-code');
+	});
+
+	it.each(['injection', 'authorization code injection', 'RFC 9207', 'mix-up'])(
+		'%s finds something, in the words the specs use',
+		(query) => {
+			expect(search(query).results.length, query).toBeGreaterThan(0);
+		}
+	);
+
 	it('never says a flow that is here is not', () => {
 		for (const base of Object.values(flows)) {
 			const title = base.diagrams.flow.title.toLowerCase();
@@ -141,10 +170,14 @@ describe('what a real server said', () => {
 	it.each(knownErrors.map((known) => [known.text, known] as const))(
 		'%s opens the state that shows it',
 		(text, known) => {
-			const result = first(text);
-			const state = parseState(base, 'flow', result.query);
+			const flow = flows[known.flow ?? base.id];
+			const result = search(text).results.find(
+				(candidate) => candidate.kind === 'error' && candidate.flow === flow.id
+			);
+			expect(result).toBeDefined();
+			const state = parseState(flow, 'flow', result!.query);
 			expect(state.step).toBe(known.step);
-			const view = evaluate(base.diagrams.flow, state.settings);
+			const view = evaluate(flow.diagrams.flow, state.settings);
 			expect(view.steps.some((step) => step.id === known.step)).toBe(true);
 		}
 	);

@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { settingDefs, settingIds } from '#lib/flow/settings.ts';
 import { splitRfc } from '#lib/sources/rfc.ts';
-import { authorizationCodeBase } from '#lib/flow/index.ts';
+import { authorizationCodeBase, flows } from '#lib/flow/index.ts';
 import {
 	nameSources,
 	originalUrl,
@@ -16,6 +16,11 @@ import {
 const refs: { setting: string; ref: SourceRef }[] = [
 	...settingIds.flatMap((setting) => settingDefs[setting].sources.map((ref) => ({ setting, ref }))),
 	...nameSources.map((ref) => ({ setting: 'what things are called', ref })),
+	...Object.values(flows).flatMap((base) =>
+		Object.values(base.diagrams).flatMap(({ steps }) =>
+			steps.flatMap((step) => (step.cites ?? []).map((ref) => ({ setting: step.id, ref })))
+		)
+	),
 	...Object.values(authorizationCodeBase.diagrams).flatMap(({ lifelines }) =>
 		lifelines.flatMap((line) =>
 			(line.knownAs ?? []).map(({ source }) => ({ setting: line.id, ref: source }))

@@ -17,6 +17,25 @@ const LEFT = 'src/lib/flow/left-to-you.ts';
 const ERRORS = 'src/lib/search/errors.ts';
 
 export const breakages = [
+	// What a sceptical reader found.
+	{
+		name: 'expert: a date from another recording',
+		file: 'src/lib/recordings/known.ts',
+		from: 'return (preset && recordedIndex.recordedOn?.[preset.id]) ?? recordedIndex.recordedAt;',
+		to: 'return recordedIndex.recordedAt;'
+	},
+	{
+		name: 'expert: what the refusal is about is not on the arrow',
+		file: LAYOUT,
+		from: '.map((field) => (field.chip ? { name: field.chip, mark: true } : field));',
+		to: ';'
+	},
+	{
+		name: 'expert: their verifier passes for the real one',
+		file: AC,
+		from: "chip: 'their verifier',",
+		to: "artifact: 'verifier',"
+	},
 	// A stolen code handed to the real app.
 	{
 		name: 'injection: says it works with PKCE on',
@@ -369,8 +388,8 @@ export const breakages = [
 	{
 		name: 'sso: the app is said to have the session',
 		file: AC,
-		from: "{ name: 'grant_type=authorization_code', place: 'body' },\n\t\t\t\t{ name: 'code', place: 'body', artifact: 'code' },\n\t\t\t\t{ name: 'redirect_uri', place: 'body' },\n\t\t\t\t{\n\t\t\t\t\tname: 'Authorization: Basic',\n\t\t\t\t\tplace: 'header',\n\t\t\t\t\tnote: 'The client ID and secret',\n\t\t\t\t\tartifact: 'secret'\n\t\t\t\t}",
-		to: "{ name: 'grant_type=authorization_code', place: 'body' },\n\t\t\t\t{ name: 'code', place: 'body', artifact: 'code' },\n\t\t\t\t{ name: 'redirect_uri', place: 'body' },\n\t\t\t\t{\n\t\t\t\t\tname: 'Authorization: Basic',\n\t\t\t\t\tplace: 'header',\n\t\t\t\t\tnote: 'The client ID and secret',\n\t\t\t\t\tartifact: 'session'\n\t\t\t\t}"
+		from: "concept: 'With its own client ID and secret.',\n\t\t\tfields: [\n\t\t\t\t{ name: 'grant_type=authorization_code', place: 'body' },\n\t\t\t\t{ name: 'code', place: 'body', artifact: 'code' },\n\t\t\t\t{ name: 'redirect_uri', place: 'body' },\n\t\t\t\t{\n\t\t\t\t\tname: 'Authorization: Basic',\n\t\t\t\t\tplace: 'header',\n\t\t\t\t\tnote: 'The client ID and secret',\n\t\t\t\t\tartifact: 'secret'",
+		to: "concept: 'With its own client ID and secret.',\n\t\t\tfields: [\n\t\t\t\t{ name: 'grant_type=authorization_code', place: 'body' },\n\t\t\t\t{ name: 'code', place: 'body', artifact: 'code' },\n\t\t\t\t{ name: 'redirect_uri', place: 'body' },\n\t\t\t\t{\n\t\t\t\t\tname: 'Authorization: Basic',\n\t\t\t\t\tplace: 'header',\n\t\t\t\t\tnote: 'The client ID and secret',\n\t\t\t\t\tartifact: 'session'"
 	},
 	{
 		name: 'sso: the login comes back without being asked',
@@ -537,8 +556,8 @@ export const breakages = [
 	{
 		name: 'notes: for the wrong client type',
 		file: NOTES,
-		from: 'server standing in for one, which needs nothing here.",\n\t\twhen: not(confidential),',
-		to: 'server standing in for one, which needs nothing here.",\n\t\twhen: confidential,'
+		from: 'which needs nothing here.",\n\t\twhen: not(confidential),',
+		to: 'which needs nothing here.",\n\t\twhen: confidential,'
 	},
 	{
 		name: 'notes: words swapped between PKCE on and off',
@@ -895,6 +914,13 @@ export const breakages = [
 		file: 'src/lib/search/search.ts',
 		from: 'const fields = (step.fields ?? [])',
 		to: 'const fields = shown.fields'
+	},
+
+	{
+		name: 'search: a pitfall cannot be found',
+		file: 'src/lib/search/search.ts',
+		from: "const pitfall = shown.pitfall ? `${shown.pitfall.title} ${shown.pitfall.text}` : '';",
+		to: "const pitfall = '';"
 	},
 
 	// What the screen says after moving.
