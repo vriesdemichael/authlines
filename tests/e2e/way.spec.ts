@@ -41,7 +41,7 @@ test.describe('the question someone came with', () => {
 	test('is marked on the map on the way back', async ({ page }) => {
 		await openNode(page, 'what-is-in-my-token');
 		await page.getByTestId('next').click();
-		await page.getByRole('link', { name: 'Authlines Map', exact: true }).click();
+		await page.getByRole('link', { name: 'Map', exact: true }).click();
 		const marked = page.getByTestId('node-what-is-in-my-token');
 		await expect(marked).toHaveAttribute('aria-current', 'location');
 		await expect(marked).toBeInViewport();

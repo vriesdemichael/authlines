@@ -15,6 +15,8 @@
 		step?: string | null;
 		href: string;
 		flip?: { on: boolean; onflip: (on: boolean) => void } | null;
+		startHref?: string;
+		onstart?: () => void;
 	}
 
 	// The query string does not exist while prerendering, so where someone came from is marked after.
@@ -31,6 +33,13 @@
 	const onTheWayIn = $derived(showing === THE_WAY_IN);
 	let settling: ReturnType<typeof setTimeout> | undefined;
 
+	// Pointing at a question replaces the first screen, so there is always a way back to it.
+	function backToTheStart() {
+		clearTimeout(settling);
+		showing = THE_WAY_IN;
+		flipped = false;
+	}
+
 	function point(node: MapNode) {
 		clearTimeout(settling);
 		// Moving over the one that is on show is nobody asking for anything new.
@@ -45,8 +54,6 @@
 
 	onMount(() => {
 		mounted = true;
-		const cameFrom = nodeNamed(page.url.searchParams.get('at') ?? '');
-		if (cameFrom) showing = cameFrom;
 		// After the page can be used, and not at all where there is no room for it beside the map.
 		if (window.matchMedia('(min-width: 1100px)').matches) {
 			import('#lib/components/LivingDiagram.svelte').then((module) => {
@@ -69,6 +76,9 @@
 
 	// After the navigation, which otherwise puts the page back at the top.
 	afterNavigate(async () => {
+		// Where someone came from, or the start, including when Back brings them to it.
+		showing = nodeNamed(page.url.searchParams.get('at') ?? '') ?? THE_WAY_IN;
+		flipped = false;
 		await tick();
 		document.querySelector('[aria-current="location"]')?.scrollIntoView({ block: 'center' });
 	});
@@ -86,7 +96,11 @@
 	<div class="home">
 		<!-- Leaving, on the way to the diagram, is not asking for what the mouse last crossed. -->
 		<div class="questions" role="presentation" onpointerleave={() => clearTimeout(settling)}>
-			<h1><Mark size={24} />{SITE_NAME}</h1>
+			<h1>
+				<a href={resolve('/')} data-testid="home-start" onclick={backToTheStart}>
+					<Mark size={24} />{SITE_NAME}
+				</a>
+			</h1>
 			<p class="headline">Flip one thing. Watch the login change.</p>
 			<p class="lead">{wayIn.lead}</p>
 			<button
@@ -122,6 +136,8 @@
 					step={onTheWayIn ? (flipped ? wayIn.flipsTo.step : wayIn.step) : null}
 					href={hrefOf(onTheWayIn ? FLIPS_TO : showing)}
 					flip={onTheWayIn ? { on: flipped, onflip: (on) => (flipped = on) } : null}
+					startHref={resolve('/')}
+					onstart={backToTheStart}
 				/>
 			</div>
 		{/if}
@@ -167,10 +183,15 @@
 		min-width: 0;
 	}
 
-	h1 {
+	h1 a {
 		display: flex;
 		align-items: center;
 		gap: 10px;
+		color: inherit;
+		text-decoration: none;
+	}
+
+	h1 {
 		margin: 0 0 14px;
 		font-size: 17px;
 		font-weight: 600;

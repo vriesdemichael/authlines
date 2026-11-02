@@ -56,7 +56,7 @@ test.describe('something failing to load', () => {
 		await page.route('**/_app/immutable/nodes/**', (route) =>
 			blocked ? route.abort() : route.continue()
 		);
-		await page.getByRole('link', { name: 'Authlines Map', exact: true }).click();
+		await page.getByRole('link', { name: 'Map', exact: true }).click();
 		const message = page.getByTestId('error-message');
 		await expect(message).toContainText('That did not load');
 		await expect(message).not.toContainText('There is no page here');
