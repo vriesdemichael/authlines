@@ -228,7 +228,7 @@ export const authorizationCode: DiagramDef = {
 			concept: [
 				{
 					when: inPage,
-					text: 'The page loads, from wherever it is served. That place has no part in what follows, because from here on the app is the page.'
+					text: 'The page loads, from wherever it is served, and from here on the app is the page. That place still matters: it serves the scripts, so whoever controls it controls the app, and it is sent the address the login comes back to, with the code in it.'
 				},
 				{ text: 'The user wants something from the app, and the app needs them logged in first.' }
 			],

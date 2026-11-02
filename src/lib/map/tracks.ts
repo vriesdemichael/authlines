@@ -499,14 +499,13 @@ export const mapTracks: readonly MapTrack[] = [
 					title: 'An app that runs in the browser',
 					summary:
 						'A single-page app, in React, say. No secret to keep, so PKCE protects the code. The tokens then live in the page, which is the harder problem.',
-					mode: 'advanced',
 					preset: 'browser-app',
-					step: 'token-request'
+					step: 'token-response'
 				}),
 				node({
 					id: 'tokens-in-the-browser',
 					answer:
-						'A script in the page can read any storage there. A worker can keep tokens from it, but it can often start a login of its own for new ones. So for business apps, or anything sensitive or personal, current advice is a server behind the app that keeps them.',
+						'A script in the page can read any storage there. A worker can keep tokens from that script, but the script can often start a login of its own for new ones. So for business apps, or anything personal, current advice is a server behind the app that keeps them.',
 					title: 'Where should an app in the browser keep its tokens?',
 					summary:
 						'localStorage, sessionStorage or memory: none of them fully stops a script in the page. A backend for frontend keeps tokens out of it, though a script can still act through the open page.',

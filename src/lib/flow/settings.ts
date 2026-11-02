@@ -547,7 +547,8 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 						is('apiToken', 'good'),
 						is('address', 'registered')
 					),
-					because: 'An app in the page is only drawn with no secret, in the plain case.'
+					because:
+						'An app in the page is only drawn in the plain case so far, with none of these on.'
 				}
 			}
 		]
