@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { settingDefs, settingIds, type SettingDef } from '../../src/lib/flow/settings.ts';
 import { originalUrl, sources } from '../../src/lib/sources/sources.ts';
@@ -106,6 +107,22 @@ test.describe('the text of an RFC', () => {
 			expect(published).toContain('IETF Trust');
 		});
 	}
+
+	test('opens at the section when the text is there at once, as when it was read before', async ({
+		page
+	}) => {
+		const body = readFileSync('static/rfc/rfc9449.txt', 'utf8');
+		await page.route('**/rfc/**', (route) =>
+			route.fulfill({ status: 200, contentType: 'text/plain', body })
+		);
+		await open(page, 'binding=dpop');
+		await opener(page, 'dpopNonce', 'rfc9449').click();
+		const part = page.locator('[data-section="8"]').locator('b');
+		await expect(part).toBeInViewport();
+		// And stays there, once the dialog has been drawn.
+		await page.waitForTimeout(500);
+		await expect(part).toBeInViewport({ timeout: 500 });
+	});
 
 	test('opens at the section the source names', async ({ page }) => {
 		await open(page, 'binding=dpop');
