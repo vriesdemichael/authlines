@@ -16,6 +16,7 @@
 		"format:check": "prettier --check .",
 		"test:unit": "vitest run",
 		"test:e2e": "playwright test",
+		"test:visual:where": "node scripts/where-screenshots-changed.mjs",
 		"test:visual:update": "node scripts/in-ci-image.mjs pnpm exec playwright test tests/e2e/visual.spec.ts --project=chromium --update-snapshots=all",
 		"record": "node scripts/record/index.ts",
 		"storybook": "storybook dev -p 6006 --disable-telemetry",

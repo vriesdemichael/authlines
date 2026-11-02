@@ -135,7 +135,8 @@
 	function chipText(id: SettingId) {
 		const def = defOf(id);
 		if (def.kind === 'toggle') return def.label;
-		return `${def.label}: ${def.options.find((option) => option.value === settings[id])?.label}`;
+		const option = def.options.find((candidate) => candidate.value === settings[id]);
+		return option?.plainly ?? `${def.label}: ${option?.label}`;
 	}
 </script>
 
@@ -294,7 +295,7 @@
 						type="button"
 						class="remove"
 						data-remove={id}
-						aria-label={`Turn off ${defOf(id).label}`}
+						aria-label={`Remove: ${chipText(id)}`}
 						onclick={() => turnOff(id)}
 					>
 						×

@@ -258,9 +258,10 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'stolen-code',
 					answer:
-						'With no secret and no PKCE, whoever has the code gets the tokens, because nothing in the request shows it is not the real app.',
+						'This app has no secret and no PKCE, so whoever has the code gets the tokens. Nothing in the request shows it is not the real app.',
 					title: 'What if someone steals the code?',
-					summary: 'Watch them take it as it crosses the browser, and get the tokens.',
+					summary:
+						'From an app with no secret: watch them take it as it crosses the browser, and get the tokens.',
 					preset: 'attack-public',
 					step: 'attacker-steals-code'
 				}),

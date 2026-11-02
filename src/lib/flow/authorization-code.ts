@@ -1058,7 +1058,7 @@ export const authorizationCode: DiagramDef = {
 			concept: [
 				{
 					when: attackerWins,
-					text: 'The identity provider has no way to tell. They now hold what the app was supposed to get, including a refresh token, which gets them new access tokens without the user, and nothing has told the user.'
+					text: 'This app has no secret, and nothing ties the code to it, so the identity provider has no way to tell. They now hold what the app was supposed to get, including a refresh token, which gets them new access tokens without the user, and nothing has told the user.'
 				},
 				{
 					when: stoppedByPkce,
