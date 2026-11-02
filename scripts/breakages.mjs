@@ -17,6 +17,13 @@ const LEFT = 'src/lib/flow/left-to-you.ts';
 const ERRORS = 'src/lib/search/errors.ts';
 
 export const breakages = [
+	// What a claims audit found in words written the same day.
+	{
+		name: 'old way: the app says it never sees the password it was just given',
+		file: 'src/lib/flow/old-way.ts',
+		from: 'app: "The application the user wants to use. Here it is given the user\'s password.",',
+		to: 'app: "The application the user wants to use. It never sees the user\'s password.",'
+	},
 	// What a sceptical reader found.
 	{
 		name: 'device: the code, which reads as the other flow’s',

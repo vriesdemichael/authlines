@@ -42,7 +42,7 @@ const list: readonly Term[] = [
 		name: 'HTTP Basic',
 		words: ['HTTP Basic', 'Basic auth', 'basic authentication'],
 		explains:
-			'The oldest way to log in over HTTP: the username and password go along with each request, encoded in a way anyone can read back.',
+			'A way to send a username and password with each HTTP request, encoded so anyone can read them back. At the token step, an app sends its client ID and secret the same way.',
 		at: flowAt('old-way-call', { oldWay: true })
 	},
 	{

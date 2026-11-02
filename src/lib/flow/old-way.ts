@@ -19,9 +19,9 @@ const flowSteps: readonly StepDef[] = [
 		plain: 'The user gives the app their password',
 		label: 'POST /login',
 		concept:
-			'The app wants something from another service, such as your calendar. So it asks for the username and password of your account there, on a form of its own, and you have to trust it with them.',
+			'The app wants something from another service, drawn here as the API, such as your calendar. So it asks for the username and password of your account there, on a form of its own, and you have to trust it with them.',
 		inPractice:
-			'Do not build this for someone else’s account. It is here to show what the rest of this is for.',
+			'Do not build this for an account at another service. It is here to show what most of this is for.',
 		fields: [{ name: 'username and password', place: 'body', artifact: 'password' }]
 	},
 	{
@@ -54,7 +54,7 @@ const flowSteps: readonly StepDef[] = [
 			{
 				source: 'rfc7617',
 				section: '2',
-				why: 'Section 2 is this scheme: the username and password joined with a colon, in Base64, which anyone can read back.'
+				why: 'Section 2 is this scheme: the username and password joined with a colon, in Base64. Section 4 calls that cleartext.'
 			},
 			{
 				source: 'rfc6749',
@@ -109,7 +109,9 @@ function withTheOldWay(
 	steps: readonly StepDef[],
 	part: PartDef,
 	intro: string,
-	gone: readonly string[]
+	gone: readonly string[],
+	/** What a party is here, where what it is otherwise would deny what is on the diagram. */
+	concepts: Readonly<Record<string, string>>
 ): DiagramDef {
 	return {
 		...flow,
@@ -117,6 +119,12 @@ function withTheOldWay(
 		lifelines: flow.lifelines.map((line) => ({
 			...line,
 			when: gone.includes(line.id) ? unlessOldWay(line.when) : line.when,
+			concept: concepts[line.id]
+				? [
+						{ when: oldWay, text: concepts[line.id] },
+						...(typeof line.concept === 'string' ? [{ text: line.concept }] : line.concept)
+					]
+				: line.concept,
 			startsWith: line.startsWith?.map((held) => ({ ...held, when: unlessOldWay(held.when) }))
 		})),
 		parts: [part, ...flow.parts],
@@ -137,7 +145,11 @@ export const withTheOldWayInTheFlow = (flow: DiagramDef) =>
 			from: 'old-way-form'
 		},
 		'An app wants to do something for a user, such as read their calendar. Before there was anything better, it asked for the password. Press Next to follow it, one message at a time.',
-		['idp']
+		['idp'],
+		{
+			app: "The application the user wants to use. Here it is given the user's password.",
+			api: 'What the app wants to call on behalf of the user. Here it decides from the password.'
+		}
 	);
 
 export const withTheOldWayInTheSetup = (flow: DiagramDef) =>
@@ -150,5 +162,8 @@ export const withTheOldWayInTheSetup = (flow: DiagramDef) =>
 			from: 'old-way-nothing-to-set-up'
 		},
 		'With the old way there is no setup to speak of, which is part of why it was common.',
-		['idp', 'idp-admin', 'api']
+		['idp', 'idp-admin', 'api'],
+		{
+			app: 'The application. Here there is nothing to set up, because it logs in as the user.'
+		}
 	);
