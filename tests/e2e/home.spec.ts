@@ -78,10 +78,13 @@ test.describe('what is on show', () => {
 	const cutOff = (page: Page) =>
 		living(page).evaluate((section) => {
 			const view = section.querySelector('.scroller')!.getBoundingClientRect();
-			return [...section.querySelectorAll('[data-step] line, [data-step] .label')]
-				.map((part) => ({ part, box: part.getBoundingClientRect() }))
-				.filter(({ box }) => box.top < view.top - 1 || box.bottom > view.bottom + 1)
-				.map(({ part }) => part.closest('[data-step]')!.getAttribute('data-step'));
+			return (
+				[...section.querySelectorAll('[data-step] line, [data-step] .label')]
+					.map((part) => ({ part, box: part.getBoundingClientRect() }))
+					// A text box is taller than its letters, more so in Firefox.
+					.filter(({ box }) => box.top < view.top - 4 || box.bottom > view.bottom + 4)
+					.map(({ part }) => part.closest('[data-step]')!.getAttribute('data-step'))
+			);
 		});
 
 	for (const [width, height] of [
