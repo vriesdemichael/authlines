@@ -75,6 +75,22 @@ test.describe('searching', () => {
 		await expect(page.getByTestId('answer')).toBeVisible();
 	});
 
+	for (const error of [
+		'unauthorized_client',
+		'invalid_grant',
+		'access_denied',
+		'{"error":"unauthorized_client","error_description":"Invalid client or Invalid client credentials"}'
+	]) {
+		test(`lists what it found for ${error.slice(0, 32)}, which more than one flow has`, async ({
+			page
+		}) => {
+			await start(page);
+			await input(page).fill(error);
+			await expect(results(page).first()).toBeVisible();
+			await expect(status(page)).toContainText(`${await results(page).count()} result`);
+		});
+	}
+
 	test('says so when something is not here yet', async ({ page }) => {
 		await start(page);
 		await input(page).fill('saml');

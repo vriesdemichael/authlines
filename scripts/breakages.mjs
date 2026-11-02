@@ -49,6 +49,12 @@ export const breakages = [
 		to: 'view: undefined,'
 	},
 	{
+		name: 'search: two results from two flows are taken for one',
+		file: 'src/lib/search/search.ts',
+		from: '`${flow}:${kind}:${title}:${query}`;',
+		to: '`${kind}:${title}:${query}`;'
+	},
+	{
 		name: 'device: the browser is given the code that gets the tokens',
 		file: 'src/lib/flow/device.ts',
 		from: "name: 'user_code',\n\t\t\t\t\tplace: 'memory',\n\t\t\t\t\tartifact: 'user-code',",

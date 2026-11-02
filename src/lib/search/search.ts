@@ -35,6 +35,10 @@ export interface Result {
 	query: string;
 }
 
+/** What makes a result this one and no other, in the list as well as in finding them. */
+export const resultKey = ({ flow, kind, title, query }: Result) =>
+	`${flow}:${kind}:${title}:${query}`;
+
 export interface Found {
 	results: Result[];
 	/** Asked about something this application does not cover yet. */
@@ -385,7 +389,7 @@ export function search(query: string): Found {
 
 	const seen = new Set<string>();
 	const results = [...longestFirst, ...partOfAnError, ...others].filter((result) => {
-		const key = `${result.flow}:${result.kind}:${result.title}:${result.query}`;
+		const key = resultKey(result);
 		if (seen.has(key)) return false;
 		seen.add(key);
 		return true;
