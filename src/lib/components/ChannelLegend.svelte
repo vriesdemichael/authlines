@@ -20,7 +20,6 @@
 			{channels[channel].label}
 		</li>
 	{/each}
-	<li class="held seen-note">Chips under a name: what it has seen so far</li>
 </ul>
 
 <style>
@@ -32,7 +31,6 @@
 		margin: 0;
 		padding: 6px 12px;
 		list-style: none;
-		border-top: 1px solid var(--line);
 		color: var(--muted);
 		font-size: 11.5px;
 	}

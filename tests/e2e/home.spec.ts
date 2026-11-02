@@ -1,9 +1,9 @@
 import { gzipSync } from 'node:zlib';
 import { expect, test, type Page } from '@playwright/test';
 import { mapNodes } from '../../src/lib/map/tracks.ts';
+import { onTheMap } from './helpers.ts';
 
 const living = (page: Page) => page.getByTestId('living');
-const stop = (page: Page, id: string) => page.getByTestId(`node-${id}`);
 
 async function openHome(page: Page) {
 	await page.setViewportSize({ width: 1400, height: 900 });
@@ -28,7 +28,7 @@ test.describe('the living diagram, with no input', () => {
 
 	test('does not move by itself once someone has pointed at something', async ({ page }) => {
 		await openHome(page);
-		await stop(page, 'pkce').hover();
+		await (await onTheMap(page, 'pkce')).hover();
 		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
 		await page.waitForTimeout(3000);
 		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
@@ -44,7 +44,7 @@ test.describe('the first screen', () => {
 
 	test('stops saying what changed, because nothing else will', async ({ page }) => {
 		await openHome(page);
-		await stop(page, 'pkce').hover();
+		await (await onTheMap(page, 'pkce')).hover();
 		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
 		await expect(page.locator('.row.fresh').first()).toBeAttached();
 		await expect(page.locator('.row.fresh')).toHaveCount(0, { timeout: 5000 });
@@ -64,7 +64,7 @@ test.describe('pointing at a question', () => {
 	test('moves the diagram to it, and leaves the address alone', async ({ page }) => {
 		await openHome(page);
 		const before = page.url();
-		await stop(page, 'stolen-code').hover();
+		await (await onTheMap(page, 'stolen-code')).hover();
 		await expect(living(page)).toHaveAttribute('data-node', 'stolen-code');
 		await expect(page.locator('[data-lifeline="attacker"]')).toBeVisible();
 		await expect(page.getByTestId('living-answer')).toContainText(
@@ -76,21 +76,21 @@ test.describe('pointing at a question', () => {
 	test('from the keyboard does the same', async ({ page }) => {
 		await openHome(page);
 		const before = page.url();
-		await stop(page, 'pkce').focus();
+		await (await onTheMap(page, 'pkce')).focus();
 		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
 		expect(page.url()).toBe(before);
 	});
 
 	test('marks the one on show, and only that one', async ({ page }) => {
 		await openHome(page);
-		await stop(page, 'pkce').hover();
+		await (await onTheMap(page, 'pkce')).hover();
 		await expect(page.locator('.stop.showing')).toHaveCount(1);
-		await expect(stop(page, 'pkce')).toHaveClass(/showing/);
+		await expect(await onTheMap(page, 'pkce')).toHaveClass(/showing/);
 	});
 
 	test('can be opened, by the question or the link under the diagram', async ({ page }) => {
 		await openHome(page);
-		await stop(page, 'pkce').hover();
+		await (await onTheMap(page, 'pkce')).hover();
 		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
 		await page.getByTestId('living-open').click();
 		await expect(page).toHaveURL(/pkce\/$/);
@@ -108,7 +108,7 @@ test.describe('coming back', () => {
 		await page.setViewportSize({ width: 1400, height: 900 });
 		await page.goto('./?at=pkce');
 		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
-		await expect(stop(page, 'pkce')).toHaveAttribute('aria-current', 'location');
+		await expect(await onTheMap(page, 'pkce')).toHaveAttribute('aria-current', 'location');
 	});
 });
 
@@ -118,7 +118,7 @@ test.describe('without room for it', () => {
 		await page.goto('./');
 		await page.locator('main[data-ready="true"]').waitFor();
 		await expect(living(page)).toHaveCount(0);
-		await expect(stop(page, 'pkce')).toContainText(
+		await expect(await onTheMap(page, 'pkce')).toContainText(
 			mapNodes.find(({ id }) => id === 'pkce')!.summary
 		);
 	});
@@ -129,7 +129,7 @@ test.describe('without JavaScript', () => {
 		const context = await browser.newContext({ javaScriptEnabled: false });
 		const page = await context.newPage();
 		await page.goto('./');
-		await expect(page.getByTestId('map').getByRole('link')).toHaveCount(mapNodes.length);
+		await expect(page.getByTestId('map').locator('a')).toHaveCount(mapNodes.length);
 		await context.close();
 	});
 });

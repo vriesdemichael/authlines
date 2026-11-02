@@ -1,7 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 import { flows } from '../../src/lib/flow/index.ts';
 import { mapNodes, nodeSearch, nodeState, nodeView } from '../../src/lib/map/nodes.ts';
-import { expectMatchesModel, FLOW_PATH, open, visibleStepIds, watchForErrors } from './helpers.ts';
+import {
+	expectMatchesModel,
+	FLOW_PATH,
+	onTheMap,
+	open,
+	visibleStepIds,
+	watchForErrors
+} from './helpers.ts';
 
 /** A click before the page has hydrated is a full page load, which is not what this is testing. */
 async function openMap(page: Page) {
@@ -40,8 +47,7 @@ test.describe('the map', () => {
 	}) => {
 		await page.goto('./');
 		await expect(page.getByRole('heading', { level: 2, name: 'Start here' })).toBeVisible();
-		const links = page.getByTestId('map').getByRole('link');
-		await expect(links).toHaveCount(mapNodes.length);
+		await expect(page.getByTestId('map').locator('a')).toHaveCount(mapNodes.length);
 	});
 
 	test('works from the keyboard', async ({ page }) => {
@@ -49,7 +55,7 @@ test.describe('the map', () => {
 		await page.keyboard.press('Tab');
 		await expect(page.getByTestId('open-search')).toBeFocused();
 		await page.keyboard.press('Tab');
-		await expect(page.getByTestId('map-jump').getByRole('link').first()).toBeFocused();
+		await expect(page.locator('.track summary').first()).toBeFocused();
 		await nodeLink(page, mapNodes[0].id).focus();
 		await page.keyboard.press('Enter');
 		await expect(page).toHaveURL(new RegExp(`${mapNodes[0].id}/$`));
@@ -67,7 +73,7 @@ test.describe('every node', () => {
 		test(`${node.id} opens the application at its exact state`, async ({ page }) => {
 			const check = watchForErrors(page);
 			await openMap(page);
-			await nodeLink(page, node.id).click();
+			await (await onTheMap(page, node.id)).click();
 			await page.locator('.workspace[data-ready="true"]').waitFor();
 			await expectMatchesModel(page, nodeSearch(node), node.diagram, flows[node.flow]);
 			await expect(page.locator(`[data-mode="${node.mode}"]`)).toHaveAttribute(

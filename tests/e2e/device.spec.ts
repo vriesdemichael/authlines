@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { onTheMap } from './helpers.ts';
 
 const PATH = 'device/';
 
@@ -62,7 +63,7 @@ test.describe('a flow on two devices', () => {
 		await openIt(page, 'step=device-consent-page');
 		await detail(page).getByText('What if someone sent them that code?').click();
 		await expect(detail(page)).toContainText('the tokens go to whoever started it');
-		await detail(page).getByText('Which spec says so?').click();
+		await openIt(page, 'mode=advanced&step=device-consent-page');
 		await expect(detail(page)).toContainText('RFC 8628');
 	});
 
@@ -84,11 +85,10 @@ test.describe('a flow on two devices', () => {
 	});
 
 	test('says why the rest is not here', async ({ page }) => {
-		await openIt(page);
+		await openIt(page, 'mode=advanced');
 		const list = page.getByTestId('not-here');
 		await expect(list.locator('[data-not-here="consent"]')).toContainText('asks here anyway');
 		await expect(list.locator('[data-not-here="attacker"]')).toContainText('not drawn');
-		await openIt(page, 'mode=advanced');
 		await expect(list.locator('[data-not-here="clientType"]')).toContainText('no secret');
 	});
 
@@ -131,7 +131,7 @@ test.describe('from the map', () => {
 	test('a question opens it where the answer can be seen', async ({ page }) => {
 		await page.goto('./');
 		await page.locator('main[data-ready="true"]').waitFor();
-		await page.getByTestId('node-device-flow').click();
+		await (await onTheMap(page, 'device-flow')).click();
 		await expect(page).toHaveURL(/device\/device-flow/);
 		await page.locator('.workspace[data-ready="true"]').waitFor();
 		await expect(page.getByTestId('answer')).toContainText('short code');

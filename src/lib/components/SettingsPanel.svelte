@@ -90,11 +90,7 @@
 	}
 
 	const simple = $derived(mode === 'simple');
-	const notOffered = $derived(
-		(Object.keys(notApplicable) as SettingId[]).filter(
-			(id) => !simple || simpleSettingIds.includes(id)
-		)
-	);
+	const notOffered = $derived(simple ? [] : (Object.keys(notApplicable) as SettingId[]));
 	const offered = $derived(
 		(simple ? simpleSettingIds.filter((id) => !notHere.includes(id)) : settingIds).filter(
 			(id) => available.includes(id) && isOffered(id, settings)
@@ -138,7 +134,7 @@
 {/if}
 {#each offered as id (id)}
 	{@const def = defOf(id)}
-	<section data-setting={id} aria-describedby={`about-${id}`}>
+	<section data-setting={id} class:beside-the-switch={simple} aria-describedby={`about-${id}`}>
 		{#if def.kind === 'toggle'}
 			{@const blocked = blockedBy(id, true)}
 			<label
@@ -214,7 +210,7 @@
 					aria-label={`Why ${simple ? (def.simple?.label ?? def.label) : def.label}?`}
 					onclick={() => onexplain?.(id)}
 				>
-					Why?
+					{simple ? '?' : 'Why?'}
 				</button>
 			</li>
 			{#if !simple}
@@ -301,6 +297,46 @@
 <p class="said" role="status" data-testid="preview-said">{previewed?.says ?? ''}</p>
 
 <style>
+	/* A row for each "Why?" is five more things to read, so in simple mode it is a mark beside the switch. */
+	.beside-the-switch {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		column-gap: 8px;
+		align-items: center;
+	}
+
+	.beside-the-switch > :global(*) {
+		grid-column: 1 / -1;
+	}
+
+	.beside-the-switch > .toggle {
+		grid-column: 1;
+	}
+
+	.beside-the-switch > .more {
+		grid-row: 1;
+		grid-column: 2;
+		margin: 0;
+	}
+
+	.beside-the-switch > .more .link {
+		display: block;
+		width: 18px;
+		height: 18px;
+		border: 1px solid var(--line);
+		border-radius: 50%;
+		color: var(--muted);
+		font-size: 11px;
+		line-height: 16px;
+		text-align: center;
+		text-decoration: none;
+	}
+
+	.beside-the-switch > .more .link:hover {
+		border-color: var(--accent);
+		color: var(--accent);
+	}
+
 	/* Nothing comes before it when no setting is on offer, so it needs no line to set it apart. */
 	.not-here {
 		border-top: 0;

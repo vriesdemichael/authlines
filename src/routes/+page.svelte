@@ -27,6 +27,8 @@
 	let waiting: ReturnType<typeof setTimeout> | undefined;
 
 	function point(node: MapNode) {
+		// Moving over the one that is on show is nobody asking for anything new.
+		if (node === showing && step === null) return;
 		pointed = true;
 		clearTimeout(waiting);
 		// So that passing over a question on the way to another does not set the diagram off.
@@ -92,10 +94,8 @@
 			<h1><Mark size={24} />{SITE_NAME}</h1>
 			<p class="headline">Flip one thing. Watch the login change.</p>
 			<p class="lead">
-				OAuth and OpenID Connect on one living diagram, with its messages recorded from a real
-				Keycloak, a free identity provider you can run yourself. The specs are the same elsewhere,
-				though the wording of errors, token formats and defaults are Keycloak's own. Pick a question
-				and follow it, one message at a time. New to this? Start with the first one.
+				OAuth and OpenID Connect on one diagram, recorded from a real server. Pick a question and
+				follow it, one message at a time.
 			</p>
 			<button
 				type="button"
@@ -114,7 +114,9 @@
 				onpoint={point}
 			/>
 			<p class="source" data-testid="source-link">
-				Open source. See
+				Recorded from Keycloak, a free identity provider you can run yourself. The specs are the
+				same elsewhere, though the wording of errors, token formats and defaults are Keycloak's own.
+				Open source: see
 				<a href="https://github.com/vriesdemichael/authlines" rel="external"
 					>the code, the recordings and how they are checked</a
 				>.
@@ -151,7 +153,7 @@
 	/* The room is only there on a wide screen, and the map is a plain list on anything else. */
 	@media (min-width: 1100px) {
 		.home {
-			grid-template-columns: 420px minmax(0, 1fr);
+			grid-template-columns: 440px minmax(0, 1fr);
 		}
 	}
 
@@ -206,8 +208,8 @@
 
 	.lead {
 		max-width: 680px;
-		margin: 0 0 16px;
+		margin: 0 0 18px;
 		color: var(--muted);
-		font-size: 14.5px;
+		font-size: 15.5px;
 	}
 </style>

@@ -36,7 +36,14 @@
 		type BaseFlow,
 		type DiagramId
 	} from '#lib/flow/model.ts';
-	import { settingDefs, type SettingId, type Settings } from '#lib/flow/settings.ts';
+	import {
+		defaultSettings,
+		settingDefs,
+		settingIds,
+		simpleSettingIds,
+		type SettingId,
+		type Settings
+	} from '#lib/flow/settings.ts';
 	import {
 		nextStep,
 		previousStep,
@@ -210,6 +217,14 @@
 	const current = $derived(steps[position]);
 	const holdings = $derived(holdingsAt(view, appState.step));
 	const channelsHere = $derived([...new Set(steps.map((step) => step.channel))]);
+	// Simple mode is the diagram and the step. Each thing it leaves out is one press of Advanced away,
+	// and still there if an address or a question has it on, so nobody is left with no way back.
+	const simple = $derived(appState.mode === 'simple');
+	const nothingOnOffer = $derived(
+		simple &&
+			!base.settings.some((id) => simpleSettingIds.includes(id)) &&
+			settingIds.every((id) => appState.settings[id] === defaultSettings[id])
+	);
 	const origin = $derived(provenance(base, flow, appState.settings));
 
 	let statusLine = $state<HTMLElement>();
@@ -586,12 +601,28 @@
 	}
 </script>
 
+{#snippet recorded()}
+	{#if origin.recorded}
+		{origin.onlyItsHttp ? 'Its HTTP was recorded from' : 'Recorded from'}
+		{#if !appState.serverNotes}
+			a real server
+		{:else if simple}
+			a real server, Keycloak {origin.keycloak},
+		{:else}
+			Keycloak {origin.keycloak}
+		{/if}
+		on {origin.date}.
+	{:else}
+		Recorded message by message, with other settings, not these together.
+	{/if}
+{/snippet}
+
 <svelte:window {onkeydown} onpointerdown={() => (tabbedIn = false)} />
 
 <div
 	class="workspace"
 	data-testid="workspace"
-	class:settings-hidden={appState.settingsHidden}
+	class:settings-hidden={appState.settingsHidden || nothingOnOffer}
 	class:whole={appState.whole}
 	class:settings-open={settingsOpen}
 	data-ready={animate}
@@ -620,31 +651,25 @@
 			mode={appState.mode}
 			onchange={(mode) => onnavigate(withMode(appState, mode), 'push')}
 		/>
-		<WordsSwitch
-			current={wording}
-			serverNotes={appState.serverNotes}
-			onchange={(chosen) => onnavigate(withWording(appState, chosen), 'push')}
-		/>
-		<p class="status" data-testid="provenance">
-			<span class="what" bind:this={statusLine} title={statusLine?.textContent?.trim()}>
-				Prototype.
-				{#if appState.mode === 'advanced'}
+		{#if !simple || appState.wording}
+			<WordsSwitch
+				current={wording}
+				serverNotes={appState.serverNotes}
+				onchange={(chosen) => onnavigate(withWording(appState, chosen), 'push')}
+			/>
+		{/if}
+		<p class="status">
+			{#if !simple}
+				<span
+					class="what"
+					data-testid="provenance"
+					bind:this={statusLine}
+					title={statusLine?.textContent?.trim()}
+				>
 					{#if question}{flow.title}.{/if} Based on {origin.specs.join(', ')}.
-				{/if}
-				{#if origin.recorded}
-					{origin.onlyItsHttp ? 'Its HTTP was recorded from' : 'Recorded from'}
-					{#if !appState.serverNotes}
-						a real server
-					{:else if appState.mode === 'simple'}
-						a real server, Keycloak {origin.keycloak},
-					{:else}
-						Keycloak {origin.keycloak}
-					{/if}
-					on {origin.date}.
-				{:else}
-					Recorded message by message, with other settings, not these together.
-				{/if}
-			</span>
+					{@render recorded()}
+				</span>
+			{/if}
 			<button
 				type="button"
 				class="quiet"
@@ -654,17 +679,19 @@
 			>
 				Search
 			</button>
-			<button
-				type="button"
-				class="quiet"
-				data-testid="server-notes-quick"
-				onclick={() =>
-					appState.serverNotes
-						? explainTerm('keycloak')
-						: onnavigate(withServerNotes(appState, true), 'push')}
-			>
-				{appState.serverNotes ? 'What is Keycloak?' : 'Show the server notes'}
-			</button>
+			{#if !simple}
+				<button
+					type="button"
+					class="quiet"
+					data-testid="server-notes-quick"
+					onclick={() =>
+						appState.serverNotes
+							? explainTerm('keycloak')
+							: onnavigate(withServerNotes(appState, true), 'push')}
+				>
+					{appState.serverNotes ? 'What is Keycloak?' : 'Show the server notes'}
+				</button>
+			{/if}
 		</p>
 	</header>
 
@@ -674,7 +701,7 @@
 	</p>
 
 	<aside class="settings" aria-label="Settings">
-		{#if flowChoices.length > 1}
+		{#if !simple && flowChoices.length > 1}
 			<FlowSwitch flows={flowChoices} current={base.id} onchange={(id) => onflow?.(id)} />
 		{/if}
 		<SettingsPanel
@@ -700,10 +727,12 @@
 			<DiagramSwitch
 				current={appState.diagram}
 				{hrefs}
-				caption={say(flow.caption)}
+				caption={simple ? '' : say(flow.caption)}
 				flowName={base.diagrams.flow.named}
 			/>
-			<EyesSwitch {parties} current={appState.eyes} onchange={seeAs} />
+			{#if !simple || appState.eyes}
+				<EyesSwitch {parties} current={appState.eyes} onchange={seeAs} />
+			{/if}
 			<button
 				type="button"
 				class="quiet"
@@ -712,17 +741,28 @@
 			>
 				How to read this
 			</button>
-			<button
-				type="button"
-				class="quiet"
-				data-testid="whole-flow"
-				onclick={() => onnavigate(withWhole(appState, !appState.whole), 'push')}
-			>
-				{appState.whole ? 'Back to the step' : 'See the whole flow'}
-			</button>
-			<button type="button" class="quiet" data-testid="settings-toggle" onclick={toggleSettings}>
-				{settingsShown ? 'Hide settings' : 'Show settings'}
-			</button>
+			{#if !simple || appState.whole}
+				<button
+					type="button"
+					class="quiet"
+					data-testid="whole-flow"
+					onclick={() => onnavigate(withWhole(appState, !appState.whole), 'push')}
+				>
+					{appState.whole ? 'Back to the step' : 'See the whole flow'}
+				</button>
+			{/if}
+			{#if !nothingOnOffer}
+				<!-- Only needed in simple mode where the settings do not fit, or someone hid them. -->
+				<button
+					type="button"
+					class="quiet"
+					class:only-narrow={simple && !appState.settingsHidden}
+					data-testid="settings-toggle"
+					onclick={toggleSettings}
+				>
+					{settingsShown ? 'Hide settings' : 'Show settings'}
+				</button>
+			{/if}
 		</div>
 		<div class="canvas" bind:clientWidth={canvasWidth} bind:clientHeight={canvasHeight}>
 			<!-- Two diagrams, not two states of one, so switching does not animate. -->
@@ -748,6 +788,22 @@
 		</div>
 		<div class="legend">
 			<ChannelLegend present={channelsHere} />
+			{#if simple}
+				<p class="recorded">
+					<span data-testid="provenance">{@render recorded()}</span>
+					<button
+						type="button"
+						class="quiet"
+						data-testid="server-notes-quick"
+						onclick={() =>
+							appState.serverNotes
+								? explainTerm('keycloak')
+								: onnavigate(withServerNotes(appState, true), 'push')}
+					>
+						{appState.serverNotes ? 'What is Keycloak?' : 'Show the server notes'}
+					</button>
+				</p>
+			{/if}
 		</div>
 	</main>
 
@@ -828,7 +884,6 @@
 			{elsewhere}
 			changed={last.setting}
 			onshowadded={showAdded}
-			onexplainartifact={(id) => explain({ kind: 'artifact', id })}
 			onterm={explainTerm}
 			{notes}
 			serverNamed={appState.serverNotes}
@@ -1054,6 +1109,26 @@
 		font-size: 12px;
 		text-decoration: underline;
 		white-space: nowrap;
+	}
+
+	.legend {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 4px 16px;
+		border-top: 1px solid var(--line);
+	}
+
+	.recorded {
+		margin: 0 12px 0 auto;
+		color: var(--muted);
+		font-size: 12px;
+	}
+
+	@media (min-width: 1024px) {
+		.only-narrow {
+			display: none;
+		}
 	}
 
 	.above {

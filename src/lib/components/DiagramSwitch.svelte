@@ -29,7 +29,9 @@
 			{diagram.label}
 		</a>
 	{/each}
-	<p title={caption}>{caption}</p>
+	{#if caption}
+		<p title={caption}>{caption}</p>
+	{/if}
 </nav>
 
 <style>

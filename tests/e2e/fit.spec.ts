@@ -76,7 +76,7 @@ for (const [width, height] of SIZES) {
 		});
 
 		test('the settings can be reached and put away', async ({ page }) => {
-			await openAt(page, width, height, 'mode=simple');
+			await openAt(page, width, height, 'mode=advanced');
 			const toggle = page.getByTestId('settings-toggle');
 			const settings = page.getByRole('complementary', { name: 'Settings' });
 			if (await settings.isVisible()) await toggle.click();
@@ -160,7 +160,7 @@ test.describe('resizing', () => {
 
 test.describe('someone presenting', () => {
 	test('gets the room back by hiding the settings', async ({ page }) => {
-		await openAt(page, 1440, 900, 'mode=simple');
+		await openAt(page, 1440, 900, 'mode=advanced');
 		const width = () => page.locator('.body').evaluate((svg) => svg.getBoundingClientRect().width);
 		const before = await width();
 		await page.getByTestId('settings-toggle').click();
@@ -171,7 +171,7 @@ test.describe('someone presenting', () => {
 test.describe('text that does not fit', () => {
 	test('can be read in full', async ({ page }) => {
 		await page.setViewportSize({ width: 900, height: 700 });
-		await page.goto(`${FLOW_PATH}how-access-works/`);
+		await page.goto(`${FLOW_PATH}how-access-works/?mode=advanced`);
 		await expect(page.getByTestId('title')).toHaveAttribute('title', 'How does an app get access?');
 		await expect(page.locator('.what')).toHaveAttribute('title', /Recorded from/);
 	});

@@ -14,11 +14,10 @@ test.describe('a claim on a step', () => {
 		await expect(cite(page, 'rfc9700')).toHaveText('RFC 9700 §4.2.4');
 	});
 
-	test('is one click away for someone new, and not in the way', async ({ page }) => {
+	test('is not in the way of someone new, and is there in advanced mode', async ({ page }) => {
 		await open(page, 'mode=simple&step=redirect-to-idp');
-		await expect(cites(page)).not.toHaveAttribute('open', '');
-		await expect(cite(page, 'rfc9700')).toBeHidden();
-		await cites(page).locator('summary').click();
+		await expect(cites(page)).toHaveCount(0);
+		await open(page, 'mode=advanced&step=redirect-to-idp');
 		await expect(cite(page, 'rfc9700')).toBeVisible();
 	});
 

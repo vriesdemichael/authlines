@@ -7,7 +7,7 @@ const detail = (page: Page) => page.getByTestId('step-detail');
 
 test.describe('whose words the diagram is in', () => {
 	test('changes the names in place, and no step', async ({ page }) => {
-		await open(page, 'mode=simple&step=authorize');
+		await open(page, 'mode=advanced&step=authorize');
 		await expect(head(page, 'app')).toContainText('App');
 		await expect(head(page, 'idp')).toContainText('Identity provider');
 		const before = await visibleStepIds(page);
@@ -28,7 +28,7 @@ test.describe('whose words the diagram is in', () => {
 	});
 
 	test('goes in what the step says too', async ({ page }) => {
-		await open(page, 'mode=simple&step=token-request');
+		await open(page, 'mode=advanced&step=token-request');
 		await expect(detail(page)).toContainText('The app');
 		await words(page).selectOption('specs');
 		await expect(detail(page)).toContainText('The client');
@@ -58,7 +58,7 @@ test.describe('whose words the diagram is in', () => {
 		page
 	}) => {
 		await open(page, 'mode=simple');
-		await expect(words(page)).toHaveValue('plain');
+		await expect(words(page)).toHaveCount(0);
 		await page.locator('[data-mode="advanced"]').click();
 		await expect(words(page)).toHaveValue('plain');
 		await expect(head(page, 'app')).toContainText('App');
@@ -80,9 +80,9 @@ test.describe('whose words the diagram is in', () => {
 	});
 
 	test('goes with the notes about that server (ADR-015)', async ({ page }) => {
-		await open(page, 'mode=simple&say=keycloak');
+		await open(page, 'mode=advanced&say=keycloak');
 		await expect(words(page).locator('option')).toHaveCount(3);
-		await open(page, 'mode=simple&say=keycloak&keycloak=off');
+		await open(page, 'mode=advanced&say=keycloak&keycloak=off');
 		await expect(words(page).locator('option')).toHaveCount(2);
 		await expect(words(page)).toHaveValue('plain');
 		await expect(head(page, 'idp')).not.toContainText('Keycloak');
@@ -166,7 +166,7 @@ test.describe('whose words the diagram is in', () => {
 	}
 
 	test('takes one name away and brings the other back', async ({ page }) => {
-		await open(page, 'mode=simple');
+		await open(page, 'mode=advanced');
 		await page.evaluate(() => {
 			(window as unknown as { seen: string[] }).seen = [];
 			const seen = (window as unknown as { seen: string[] }).seen;

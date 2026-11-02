@@ -126,14 +126,6 @@ test.describe('asking what something is', () => {
 		await expect(page.getByTestId('explanation-seen-by')).not.toContainText('API');
 	});
 
-	test('so does what a step carries, which a keyboard can reach', async ({ page }) => {
-		await visit(page, `${FLOW_PATH}?step=submit-credentials`);
-		const carried = page.getByTestId('step-carried').getByRole('button');
-		await expect(carried).toHaveText('password');
-		await carried.click();
-		await expect(explanation(page)).toContainText('the app never sees it');
-	});
-
 	test('a setting says what problem it solves, and where to read more', async ({ page }) => {
 		await visit(page);
 		await page.locator('[data-why="oidc"]').click();

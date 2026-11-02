@@ -45,7 +45,7 @@ test.describe('in front of a room', () => {
 	});
 
 	test('choosing who with a pointer leaves the keys to the steps', async ({ page }) => {
-		await open(page, 'mode=simple&step=authorize');
+		await open(page, 'mode=advanced&step=authorize');
 		const list = page.getByTestId('eyes');
 		await list.dispatchEvent('pointerdown');
 		await list.focus();
@@ -60,7 +60,7 @@ test.describe('in front of a room', () => {
 		page
 	}) => {
 		await page.setViewportSize({ width: 1280, height: 720 });
-		await open(page, 'mode=simple');
+		await open(page, 'mode=advanced');
 		const width = () =>
 			page.getByTestId('diagram').evaluate((diagram) => diagram.getBoundingClientRect().width);
 		const before = await width();
@@ -110,7 +110,7 @@ test.describe('someone on another provider', () => {
 
 	test('is told on the home screen that this is not only about one product', async ({ page }) => {
 		await page.goto('./');
-		await expect(page.locator('.lead').first()).toContainText('The specs are the same elsewhere');
+		await expect(page.getByTestId('source-link')).toContainText('The specs are the same elsewhere');
 	});
 
 	test('is told what in a message is the server’s own', async ({ page }) => {

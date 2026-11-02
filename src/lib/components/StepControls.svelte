@@ -98,8 +98,6 @@
 	<Timeline {parts} {current} {onjump} waiting={playing ? playingFor : null} />
 	{#if answerAt !== null}
 		<Execute {answerAt} {onexecute} />
-	{:else}
-		<span class="hint">Arrow keys work too</span>
 	{/if}
 </div>
 
@@ -154,19 +152,12 @@
 	}
 
 	@media (max-width: 767px) {
-		.controls :global([data-testid='timeline']),
-		.hint {
+		.controls :global([data-testid='timeline']) {
 			display: none;
 		}
 
 		.controls {
 			flex-wrap: wrap;
 		}
-	}
-
-	.hint {
-		color: var(--muted);
-		font-size: 12px;
-		white-space: nowrap;
 	}
 </style>

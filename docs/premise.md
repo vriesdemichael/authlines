@@ -152,10 +152,12 @@ Three things follow:
 
 | | Simple mode (the default) | Advanced mode |
 |---|---|---|
+| On screen | The diagram, the step, and what moves it | Also the flow picker, whose words these are, seeing it as one party, the whole flow, where it was recorded and what is not here |
 | Settings on offer | A few, in plain language | All of them, with Keycloak feature flags as badges |
-| Each step shows | The concept and why it happens | Parameters and raw request and response |
+| Each step shows | The concept and why it happens, with what someone has to do closed until they ask | Parameters and raw request and response, how it travels, which spec says so, and notes on the server |
 | `Execute` | Not offered, because it shows values and simple mode shows none | Only where it adds something (section 5.6) |
 
+- **Decided: simple has to look much emptier than advanced.** The maintainer's judgement on 2026-11-02 was "very busy and cluttered with little difference between simple and advanced mode". Each thing simple mode leaves out stays one press of Advanced away, and stays on screen if an address or a question has it on, so there is always a way back. New controls go in advanced first.
 - Default to simple. A meta-analysis of 60 experiments found novices gain from high assistance (d = 0.505) and experts from low (d = −0.428), with help for novices the stronger effect. It did not test this kind of mode, so this is reasoning from adjacent evidence.
 - A step can also expand for more detail within a mode. That supplements the modes and does not replace them. A pitfall works this way: at the redirect URI check, "What if the address does not match?" opens to say what happens, with Keycloak's real error.
 - **Proposed: simple mode offers five settings,** which is the most it should: "Know who logged in", "Ask the user to agree", "Protect against a stolen code", "Show someone stealing the code" and "Log in with another provider". Each explains the problem it solves when turned on. On the setup, only the ones that change something you can see there are on offer, because a switch that visibly does nothing reads as broken. Everything on screen can be asked about: selecting a lifeline, a token or a setting's "Why?" explains it and says who has seen it so far, and any term in the text can be selected and points at its place on the diagram ([ADR-016](adr/016-a-word-on-screen-explains-itself.md)).
@@ -205,7 +207,7 @@ Three things follow:
 
 **Built this way, for the maintainer to overrule:**
 
-- The map is the home screen.
+- The map is the home screen. **Decided:** it has to be readable at a glance, after the maintainer found it "a hard to read roadmap", so one part is open at a time, and the rest say what they are about and how many questions they have.
 - A node is a named state, not a page: it opens the application screen at a base flow, settings, mode and step. So variants still never get a new page, and adding a toggle adds a node.
 - A node is named for a question someone brings, such as "What if someone steals the code?", not for a feature, because people arrive with a problem and the feature's name is what they are trying to learn.
 - A question says its answer in a sentence or two straight away, and opens on the step where it can be seen, or says why it starts at the beginning. Someone who wants the walk can rewind with one click, and someone who flips a switch keeps a way back to the question.
@@ -317,6 +319,7 @@ An order for later releases. **Proposed**, and expected to change.
 | User federation | Modifier | Adds a server-side lookup, no redirect |
 | PAR | Modifier | Adds a back-channel push and changes the front channel |
 | Bearer, DPoP or mTLS | Exclusive | Cross-cutting, and DPoP adds a nonce retry |
+| Many customers, each with a provider, and SAML | **Decided, in scope** ([#118](https://github.com/vriesdemichael/authlines/issues/118)) | Routing a user to their company, SAML as the upstream, and someone leaving. What a customer's IT asks about |
 | Token exchange | Later | `token-exchange-standard:v2`, internal-to-internal only |
 | Device, built | Base flow | A person carries a short code to another device, and the app keeps asking with a long one. Someone sending you their code is in words on the page that stops it, and not drawn |
 | Client credentials, built | Base flow | No browser and no user. The token request is all there is, and there is no refresh token |

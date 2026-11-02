@@ -121,12 +121,12 @@ test.describe('the end of a flow', () => {
 
 test.describe('what is on every step', () => {
 	test('says how a message travels when that changes, and not on every step', async ({ page }) => {
-		await open(page, 'mode=simple');
+		await open(page, 'mode=advanced');
 		await expect(page.getByTestId('channel-why')).toBeVisible();
 		await page.keyboard.press('ArrowRight');
 		await expect(page.getByTestId('step-channel')).toContainText('Through the browser');
 		await expect(page.getByTestId('channel-why')).toHaveCount(0);
-		await open(page, 'mode=simple&step=token-request');
+		await open(page, 'mode=advanced&step=token-request');
 		await expect(page.getByTestId('step-channel')).toContainText('Direct');
 		await expect(page.getByTestId('channel-why')).toBeVisible();
 	});
@@ -229,12 +229,6 @@ test.describe('a token', () => {
 });
 
 test.describe('the map', () => {
-	test('can jump to a part of it', async ({ page }) => {
-		await page.goto('./');
-		await page.getByTestId('map-jump').getByRole('link', { name: 'Under the hood' }).click();
-		await expect(page.getByTestId('node-redirect-uri-error')).toBeInViewport();
-	});
-
 	test('says which questions open in advanced mode, in those words', async ({ page }) => {
 		await page.goto('./');
 		await expect(page.getByTestId('node-redirect-uri-error')).toContainText('Advanced');
