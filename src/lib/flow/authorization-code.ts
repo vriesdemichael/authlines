@@ -1633,7 +1633,13 @@ export const authorizationCode: DiagramDef = {
 				},
 				{ text: 'The app has what it came for, and the user never gave it their password.' }
 			],
-			inPractice: 'What it answers is up to whoever built that API, which may be you.',
+			inPractice: [
+				{
+					when: apiRefuses,
+					text: 'Read the WWW-Authenticate header on the answer first: it says what kind of token the API wants, and what was wrong with this one, if there was one. A new token of the same kind only helps if this one ran out.'
+				},
+				{ text: 'What it answers is up to whoever built that API, which may be you.' }
+			],
 			fields: [
 				{
 					name: 'WWW-Authenticate',

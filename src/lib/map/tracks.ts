@@ -151,26 +151,6 @@ export const mapTracks: readonly MapTrack[] = [
 					step: 'authorize'
 				}),
 				node({
-					id: 'login-required',
-					answer:
-						'The app sent prompt=none, which says not to show a form, and the user would have to log in, usually because this browser has no session. It is how an app checks quietly whether someone is logged in.',
-					title: 'Why do I get login_required?',
-					summary: 'Someone would have to log in, and the server was told not to ask.',
-					preset: 'sso-fresh',
-					step: 'second-redirect-with-code'
-				}),
-				node({
-					id: 'refresh-token-reuse',
-					answer:
-						'A refresh token that had already been used was sent again, by someone with a copy or by the app itself, and this server lets each one work only once. It also stopped the newest one, so the app has to start a new login.',
-					title: 'Why do I get Maximum allowed refresh token reuse exceeded?',
-					summary: 'A refresh token was used twice, and that ended things for this app.',
-					preset: 'refresh-ends',
-					step: 'refresh-again-response'
-				})
-			],
-			[
-				node({
 					id: 'why-401',
 					answer:
 						'The API does not accept the token: it is missing, expired, changed, from another issuer, or for someone else. A new token can help, if the reason is that it ran out.',
@@ -214,6 +194,26 @@ export const mapTracks: readonly MapTrack[] = [
 					summary: 'It has to be for this API, which takes setting up at the identity provider.',
 					preset: 'api-elsewhere',
 					step: 'api-response'
+				})
+			],
+			[
+				node({
+					id: 'login-required',
+					answer:
+						'The app sent prompt=none, which says not to show a form, and the user would have to log in, usually because this browser has no session. It is how an app checks quietly whether someone is logged in.',
+					title: 'Why do I get login_required?',
+					summary: 'Someone would have to log in, and the server was told not to ask.',
+					preset: 'sso-fresh',
+					step: 'second-redirect-with-code'
+				}),
+				node({
+					id: 'refresh-token-reuse',
+					answer:
+						'A refresh token that had already been used was sent again, by someone with a copy or by the app itself, and this server lets each one work only once. It also stopped the newest one, so the app has to start a new login.',
+					title: 'Why do I get Maximum allowed refresh token reuse exceeded?',
+					summary: 'A refresh token was used twice, and that ended things for this app.',
+					preset: 'refresh-ends',
+					step: 'refresh-again-response'
 				})
 			]
 		]

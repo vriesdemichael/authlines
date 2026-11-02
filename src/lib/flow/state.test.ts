@@ -103,7 +103,7 @@ describe('the URL', () => {
 							follow: onOff ? 'code' : null,
 							wording: onOff ? ('specs' as const) : null,
 							list: onOff,
-							labels: false,
+							labels: onOff,
 							whole: onOff,
 							raw: onOff
 						};

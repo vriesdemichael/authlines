@@ -87,7 +87,8 @@ test.describe('something failing to load', () => {
 		await expect(status).toContainText('did not load', { timeout: 5000 });
 		await expect(status).not.toContainText('Getting ready');
 		await page.unroute('**/_app/immutable/chunks/**');
-		await page.getByTestId('search-again').click();
+		// Or the old page is still there to say it is ready.
+		await Promise.all([page.waitForEvent('load'), page.getByTestId('search-again').click()]);
 		await page.locator('main[data-ready="true"]').waitFor();
 		await page.getByTestId('open-search').click();
 		await page.getByTestId('search-input').fill('refresh');
