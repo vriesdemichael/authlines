@@ -2,6 +2,7 @@
 	import { tick } from 'svelte';
 	import { searchState } from '#lib/search/open.svelte.ts';
 	import type { Found, Result, ResultKind } from '#lib/search/search.ts';
+	import { resultKey } from '#lib/search/result-key.ts';
 
 	interface Props {
 		hrefOf: (result: Result) => string;
@@ -150,7 +151,7 @@
 		{/if}
 
 		<ul id="search-results">
-			{#each found.results as result, index (`${result.kind}:${result.title}:${result.query}`)}
+			{#each found.results as result, index (resultKey(result))}
 				<li>
 					<a
 						href={hrefOf(result)}

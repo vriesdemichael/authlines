@@ -5,6 +5,7 @@ import { parseState } from '#lib/flow/state.ts';
 import { evaluate } from '#lib/flow/model.ts';
 import type { Recording } from '#lib/recordings/format.ts';
 import { knownErrors } from '#lib/search/errors.ts';
+import { resultKey } from '#lib/search/result-key.ts';
 import { search } from '#lib/search/search.ts';
 
 /** The demo API's words, which nobody else's server will say. */
@@ -94,6 +95,14 @@ describe('what people bring', () => {
 		);
 		expect(error?.view).toBe(view);
 		expect(parseState(flows.device, 'flow', error!.query).mode).toBe(mode);
+	});
+
+	it('gives every result a key of its own, because the list cannot draw two the same', () => {
+		for (const { text } of knownErrors) {
+			const keys = search(text).results.map(resultKey);
+			expect(new Set(keys).size, text).toBe(keys.length);
+		}
+		expect(search('unauthorized_client').results.length).toBeGreaterThan(2);
 	});
 
 	it('finds what a pitfall on the other flow says', () => {

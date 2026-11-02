@@ -20,6 +20,7 @@ import { notesFor } from '#lib/keycloak/notes.ts';
 import { mapNodes, nodeSettings } from '#lib/map/nodes.ts';
 import { settingsOf } from '#lib/recordings/known.ts';
 import { knownErrors, notHereYet } from '#lib/search/errors.ts';
+import { resultKey } from '#lib/search/result-key.ts';
 
 export type ResultKind = 'error' | 'question' | 'word' | 'setting' | 'step' | 'note';
 
@@ -385,7 +386,7 @@ export function search(query: string): Found {
 
 	const seen = new Set<string>();
 	const results = [...longestFirst, ...partOfAnError, ...others].filter((result) => {
-		const key = `${result.flow}:${result.kind}:${result.title}:${result.query}`;
+		const key = resultKey(result);
 		if (seen.has(key)) return false;
 		seen.add(key);
 		return true;
