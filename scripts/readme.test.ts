@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { SITE_URL } from '#lib/site.ts';
 
 const README = readFileSync('README.md', 'utf8');
 const { scripts } = JSON.parse(readFileSync('package.json', 'utf8')) as {
@@ -17,6 +18,10 @@ describe('the README', () => {
 		].filter((target) => !target.startsWith('http'));
 		expect(targets.length).toBeGreaterThan(0);
 		expect(targets.filter((target) => !existsSync(target))).toEqual([]);
+	});
+
+	it('links to the site where it is', () => {
+		expect(README).toContain(`[Open Authlines](${SITE_URL}/)`);
 	});
 
 	it('only names commands that are there', () => {
