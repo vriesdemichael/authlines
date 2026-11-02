@@ -1,8 +1,9 @@
 /** What this is called, on screen and in what a shared link shows. */
 export const SITE_NAME = 'Authlines';
 
-/** Where the site lives, for what has to be a whole address. Moving it means changing this. */
-export const SITE_URL = 'https://vriesdemichael.github.io/authlines';
+// On its own, so that a script run with plain Node can read it without Vite's import.meta.env.
+export { SITE_URL } from '#lib/site-url.ts';
+import { SITE_URL } from '#lib/site-url.ts';
 
 /** Whether search engines may index this build. Only production can say so, and only on request. */
 export const INDEXABLE = import.meta.env.VITE_INDEXABLE === 'true';
