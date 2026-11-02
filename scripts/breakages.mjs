@@ -123,20 +123,20 @@ export const breakages = [
 	{
 		name: 'device: says the user said no with a different error than the server gave',
 		file: 'src/lib/flow/device.ts',
-		from: "{ name: 'error=access_denied', place: 'body' },",
-		to: "{ name: 'error=expired_token', place: 'body' },"
+		from: "label: '400 access_denied',\n\t\t\tconcept:\n\t\t\t\t'This is how the app finds out",
+		to: "label: '400 expired_token',\n\t\t\tconcept:\n\t\t\t\t'This is how the app finds out"
 	},
 	{
 		name: 'device: tokens still come after the user said no',
 		file: 'src/lib/flow/device.ts',
-		from: "id: 'device-token-response',\n\t\t\twhen: agrees,",
-		to: "id: 'device-token-response',\n\t\t\twhen: someoneComes,"
+		from: "id: 'device-token-response',\n\t\t\twhen: all(agrees, theRealApp),",
+		to: "id: 'device-token-response',\n\t\t\twhen: all(someoneComes, theRealApp),"
 	},
 	{
 		name: 'device: how it ends goes on the flows it does not belong to',
 		file: 'src/lib/flow/settings.ts',
-		from: "onlyOn: 'device',",
-		to: ''
+		from: "default: 'agrees',\n\t\tonlyOn: 'device',",
+		to: "default: 'agrees',"
 	},
 	{
 		name: 'device: the browser is given the code that gets the tokens',
@@ -147,14 +147,14 @@ export const breakages = [
 	{
 		name: 'device: says a different answer than the server gave',
 		file: 'src/lib/flow/device.ts',
-		from: "{ name: 'error=authorization_pending', place: 'body' },",
-		to: "{ name: 'error=slow_down', place: 'body' },"
+		from: "label: '400 authorization_pending',\n\t\t\tconcept:\n\t\t\t\t'On the wire",
+		to: "label: '400 slow_down',\n\t\t\tconcept:\n\t\t\t\t'On the wire"
 	},
 	{
 		name: 'device: the app and the browser are drawn as talking',
 		file: 'src/lib/flow/device.ts',
-		from: "to: 'browser',\n\t\t\tkind: 'human',",
-		to: "to: 'browser',\n\t\t\tkind: 'request',"
+		from: "from: 'app',\n\t\t\tto: 'browser',\n\t\t\tkind: 'human',",
+		to: "from: 'app',\n\t\t\tto: 'browser',\n\t\t\tkind: 'request',"
 	},
 	{
 		name: 'device: an error nobody said',

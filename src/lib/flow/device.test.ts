@@ -326,6 +326,18 @@ describe('the device flow', () => {
 		});
 	});
 
+	it('says on an arrow what the server said, and not something else', () => {
+		for (const { recording, settings } of recordings) {
+			for (const step of evaluate(flow, settings).steps) {
+				const said = /^(\d{3})(?: (\w+_\w+))?/.exec(step.label);
+				if (!said) continue;
+				const message = recording.messages.find(({ step: id }) => id === step.id);
+				expect(message?.status, step.id).toBe(Number(said[1]));
+				if (said[2]) expect(bodyOf(recording, step.id).error, step.id).toBe(said[2]);
+			}
+		}
+	});
+
 	it('has no part for what did not happen', () => {
 		const partsWhen = (deviceEnds: Settings['deviceEnds']) =>
 			evaluate(flow, { ...defaultSettings, deviceEnds }).parts.map(({ label }) => label);
