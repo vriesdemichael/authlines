@@ -148,7 +148,7 @@ export const mapTracks: readonly MapTrack[] = [
 					summary:
 						'Cross-site request forgery, or CSRF: someone slipping their own answer into your login.',
 					answer:
-						'The specs say it stops someone slipping their own answer into your login, which would leave you in their account. The app makes up a value and checks it comes back. That attack is not drawn here, and stopping a stolen code takes PKCE.'
+						'The specs say it stops someone slipping their own answer into your login, leaving you in their account. The app makes up a value and checks it comes back. PKCE or a nonce also do this. That is not drawn here, and state does not stop a stolen code.'
 				}),
 				node({
 					id: 'what-iss-does',
@@ -158,14 +158,14 @@ export const mapTracks: readonly MapTrack[] = [
 					title: 'What is iss doing in the address?',
 					summary: 'It says which server answered.',
 					answer:
-						'It says which server the answer came from. An app that uses more than one provider can check it, so that it does not send a code from one to another, which the specs call a mix-up attack. That attack is not drawn here.'
+						'It says which server the answer came from. An app that uses more than one provider has to guard against sending a code from one to another, the mix-up attack, and RFC 9700 says this is how. That attack is not drawn here.'
 				})
 			],
 			[
 				node({
 					id: 'no-secret',
 					answer:
-						'An app in a browser or on a phone cannot keep a secret, because what is on someone’s device can be read there. So its token request shows nothing about which app sent it, unless PKCE does.',
+						'An app in a browser or on a phone cannot keep a secret, because what is on someone’s device can be read there. So nothing in its token request proves which app sent it. PKCE only proves it comes from whoever started this login.',
 					title: 'What is different about an app with no secret?',
 					summary: 'An app in a browser or on a phone cannot keep one, so what proves who it is?',
 					preset: 'public',
@@ -214,11 +214,11 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'pkce-with-a-secret',
 					answer:
-						'Yes. A secret stops someone trading a stolen code themselves, and PKCE also stops them handing it to the real app. Current advice is to have both.',
+						'Yes. A secret stops someone trading a stolen code themselves. They can still start a login of their own and hand the code to the real app, which trades it with its secret and logs them in. PKCE is what stops that.',
 					title: 'Does an app with a secret need PKCE too?',
 					summary: 'Why current advice says yes, even when a stolen code is not enough alone.',
-					preset: 'pkce',
-					step: 'token-request'
+					preset: 'attack-at-the-app',
+					step: 'attacker-handed-answer'
 				}),
 				node({
 					id: 'both-protections',
@@ -232,13 +232,14 @@ export const mapTracks: readonly MapTrack[] = [
 			],
 			[
 				node({
-					id: 'stolen-code-at-the-app',
-					preset: 'attack-at-the-app',
-					step: 'attacker-handed-answer',
-					title: 'What if they hand the stolen code to the real app?',
-					summary: 'Why an app with a secret needs PKCE too.',
+					id: 'pkce-on-the-wire',
+					preset: 'pkce',
+					step: 'token-request',
+					mode: 'advanced',
+					title: 'What does PKCE add to the requests?',
+					summary: 'A verifier, and a fingerprint of it.',
 					answer:
-						'Then the secret does not help, because the real app is the one using it. They start a login of their own, give the app the stolen code, and the app logs them in as the real user. The state matches, because it is their own.'
+						'A random verifier made for each login. A fingerprint of it goes in the redirect as the challenge, and the verifier itself goes in this request, so the server can check that the two match.'
 				}),
 				node({
 					id: 'pkce-at-the-app',
@@ -553,7 +554,7 @@ export const mapTracks: readonly MapTrack[] = [
 	{
 		id: 'no-user',
 		title: 'When there is no user',
-		lead: 'One service calling another, with nobody logging in.',
+		lead: 'Client credentials: one service calling another, with nobody logging in.',
 		chains: [
 			[
 				node({
@@ -561,7 +562,8 @@ export const mapTracks: readonly MapTrack[] = [
 					flow: 'client-credentials',
 					preset: 'as-itself',
 					title: 'What if no user is involved?',
-					summary: 'An app acts for itself, with no browser and no login.',
+					summary:
+						'A nightly job, or one service calling another: machine to machine, with no browser and no login.',
 					answer:
 						'Then the app asks for a token with its own secret, with no browser and nobody logging in. It gets an access token, and calls the API with that.',
 					startsAtTheBeginning: 'It is the whole flow, so its start is its answer.'

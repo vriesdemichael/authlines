@@ -80,7 +80,7 @@ const list: readonly Term[] = [
 		name: 'Client',
 		words: ['client', 'clients', 'relying party', 'relying parties'],
 		explains:
-			'What the specs call the app, because it is a client of the identity provider. It has nothing to do with the user’s computer.',
+			'What the specs call the app, because it is a client of the identity provider. It has nothing to do with the user’s computer. The same program can be a client when it calls something, and a resource server when it is called.',
 		alsoCalled: ['app', 'relying party, in OpenID Connect'],
 		at: { diagram: 'flow', lifeline: 'app' }
 	},
@@ -98,16 +98,16 @@ const list: readonly Term[] = [
 		name: 'User agent',
 		words: ['user agent', 'user-agent'],
 		explains:
-			'What the specs call the browser, or whatever else carries messages for the user. This site says the browser in all three, because the specs do too.',
+			'What the specs call the browser, or whatever else carries messages for the user. The head of its column says so in the specs’ words, and the text goes on saying the browser, because the specs do too.',
 		alsoCalled: ['browser'],
 		at: { diagram: 'flow', lifeline: 'browser' }
 	},
 	{
 		id: 'iss',
 		name: 'iss',
-		words: ['iss'],
+		words: ['iss', 'RFC 9207', 'mix-up', 'mix-up attack'],
 		explains:
-			'Says which server an answer came from. An app that uses more than one can check it, so that it does not take the answer from one for the answer from another.',
+			'Says which server an answer came from, as RFC 9207 defines it. An app that uses more than one has to guard against taking the answer from one for the answer from another, which is the mix-up attack, and RFC 9700 says to use this.',
 		at: flowAt('callback')
 	},
 	{
@@ -407,9 +407,17 @@ const list: readonly Term[] = [
 		name: 'State',
 		words: ['state'],
 		explains:
-			"A random value the app sends with the login and checks when the user comes back, so nobody can slip an answer into this user's login. It does not stop someone starting a login in their own browser and handing the app a stolen code, which takes PKCE.",
+			"A random value the app sends with the login and checks when the user comes back, so nobody can slip an answer into this user's login. It does not stop someone starting a login in their own browser and handing the app a stolen code, which takes PKCE or a nonce. Those can also do what state does.",
 		alsoCalled: ['CSRF protection'],
 		at: flowAt('authorize')
+	},
+	{
+		id: 'code-injection',
+		name: 'Code injection',
+		words: ['injection', 'code injection', 'authorization code injection'],
+		explains:
+			'Getting an app to trade a stolen code for you, by handing it to the app in a login of your own. Its secret does not help, because the app is the one using it. PKCE or a nonce stop it.',
+		at: flowAt('attacker-hands-code', { attacker: true, attackerUses: 'real-app' })
 	},
 	{
 		id: 'csrf',

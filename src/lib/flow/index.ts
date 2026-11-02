@@ -162,7 +162,7 @@ export const clientCredentialsBase: BaseFlow = {
 	notHere: {
 		oidc: 'It says who logged in, and here nobody does.',
 		consent: 'There is no user to ask.',
-		clientType: 'This only works for an app that can keep a secret, because that is all it has.',
+		clientType: 'This only works for an app that can prove who it is, with a secret or a key.',
 		pkce: 'There is no code to protect.',
 		attacker: 'There is no code to steal.',
 		broker: 'There is no login to hand to anyone.',

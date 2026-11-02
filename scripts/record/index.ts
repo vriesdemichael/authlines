@@ -18,7 +18,7 @@ import {
 	type Response
 } from '@playwright/test';
 import { authorizationCodeBase as base, clientCredentialsBase } from '#lib/flow/index.ts';
-import { pagesGone, whatChanged } from '#lib/recordings/check.ts';
+import { evidenceDifferences, pagesGone, whatChanged } from '#lib/recordings/check.ts';
 import { defaultSettings, flagsInSettings, normalize, type Settings } from '#lib/flow/settings.ts';
 import type { ShotId } from '#lib/flow/vocabulary.ts';
 import type { FlagStatus, Recording, RecordingIndex } from '#lib/recordings/format.ts';
@@ -340,7 +340,11 @@ async function recordOnlyWithNoUser() {
 		);
 		const index = JSON.parse(readFileSync(INDEX, 'utf8')) as RecordingIndex;
 		const flows = { ...index.flows, ...writeWithNoUser(recordings) };
-		writeFileSync(INDEX, `${JSON.stringify({ ...index, flows }, null, '\t')}\n`);
+		const recordedOn = {
+			...index.recordedOn,
+			...Object.fromEntries(recordings.map(({ preset, recordedAt }) => [preset, recordedAt]))
+		};
+		writeFileSync(INDEX, `${JSON.stringify({ ...index, recordedOn, flows }, null, '\t')}\n`);
 	} finally {
 		demo.stop();
 		stopKeycloak();
@@ -400,6 +404,7 @@ async function recordOnlyPresets(ids: readonly string[]) {
 		const recordedAt = new Date().toISOString().slice(0, 10);
 		const index = JSON.parse(readFileSync(INDEX, 'utf8')) as RecordingIndex;
 		const steps = new Set(index.flows[base.id].steps);
+		const recordedOn = { ...index.recordedOn };
 		for (const id of ids) {
 			const preset = presets.find((candidate) => candidate.id === id);
 			if (!preset) throw new Error(`No named state ${id}`);
@@ -414,10 +419,11 @@ async function recordOnlyPresets(ids: readonly string[]) {
 				messages: run.messages
 			};
 			writeFileSync(`${FOLDER}/${id}.json`, `${JSON.stringify(recording, null, '\t')}\n`);
+			recordedOn[id] = recordedAt;
 		}
 		const flow = { presets: presets.map(({ id }) => id), steps: [...steps].sort() };
 		const flows = { ...index.flows, [base.id]: flow };
-		writeFileSync(INDEX, `${JSON.stringify({ ...index, flows }, null, '\t')}\n`);
+		writeFileSync(INDEX, `${JSON.stringify({ ...index, recordedOn, flows }, null, '\t')}\n`);
 	} finally {
 		await browser.close();
 		demo.stop();
@@ -459,6 +465,7 @@ async function main() {
 	const recordedAt = new Date().toISOString().slice(0, 10);
 	const recordings: Recording[] = [];
 	let withNoUser: Recording[] = [];
+	let noUserAnswers: Record<string, unknown> = {};
 	const answers: Record<string, unknown> = {};
 	let flags: Record<string, FlagStatus> = {};
 	const inConsole: Record<string, unknown> = {};
@@ -497,6 +504,10 @@ async function main() {
 			await setUpFor(admin, BROKERED_REALM, forQuestions);
 			if (!features.length) {
 				withNoUser = await recordWithNoUser(demo, keycloak, recordedAt);
+				noUserAnswers = {
+					...(await questionsWithNoUser(admin)),
+					console: await lookInConsole(browser, admin, [], noUserNoteDefs)
+				};
 				pagesSeen = await capturePages(browser, admin, !checking);
 			}
 			Object.assign(inConsole, await lookInConsole(browser, admin, features));
@@ -534,7 +545,8 @@ async function main() {
 					flags: { committed: committedIndex.flags, now: flags },
 					answers
 				}),
-				...pagesGone(pagesSeen)
+				...pagesGone(pagesSeen),
+				...evidenceDifferences(noUserAnswers, noUserNoteDefs)
 			];
 			failed = changes.length > 0;
 			console.log(
@@ -552,6 +564,10 @@ async function main() {
 			const others = JSON.parse(readFileSync(INDEX, 'utf8')) as RecordingIndex;
 			const index = indexOf(recordings, keycloak, recordedAt, flags);
 			const noUser = writeWithNoUser(withNoUser);
+			write(`static/recordings/${clientCredentialsBase.id}/questions.json`, {
+				keycloak,
+				answers: noUserAnswers
+			});
 			write(INDEX, { ...index, flows: { ...others.flows, ...index.flows, ...noUser } });
 		}
 	} finally {

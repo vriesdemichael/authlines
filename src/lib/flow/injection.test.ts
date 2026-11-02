@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { layoutDiagram } from '#lib/diagram/layout.ts';
 import { authorizationCode as flow } from '#lib/flow/authorization-code.ts';
 import { evaluate } from '#lib/flow/model.ts';
 import { allValidSettings, defaultSettings, normalize, type Settings } from '#lib/flow/settings.ts';
@@ -100,6 +101,20 @@ describe('a stolen code handed to the real app', () => {
 		expect(
 			normalize({ ...noSecret.settings, attackerUses: 'real-app' }).settings.attackerUses
 		).toBe('themselves');
+	});
+
+	it('draws on the arrow what the refusal is about, without saying it is the real one', () => {
+		const sent = step({ pkce: true }, 'handed-token-request');
+		const verifier = sent?.fields.find(({ name }) => name === 'code_verifier');
+		expect(verifier?.chip).toBe('their verifier');
+		expect(verifier?.artifact).toBeUndefined();
+		const started = step({ pkce: true }, 'attacker-sent-to-login');
+		expect(started?.fields.find(({ name }) => name === 'code_challenge')?.chip).toBe(
+			'their challenge'
+		);
+		const layout = layoutDiagram(evaluate(flow, settings({ pkce: true })), 'simple');
+		const chips = layout.chips.filter((chip) => chip.step === 'handed-token-request');
+		expect(chips.map(({ text }) => text)).toContain('their verifier');
 	});
 
 	it('goes through a browser, theirs, which is what the arrows say', () => {

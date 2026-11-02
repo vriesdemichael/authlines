@@ -1,6 +1,10 @@
 {
 	"keycloak": "26.8.1",
 	"answers": {
+		"idTokenWhenAsked": {
+			"withoutAsking": false,
+			"askedForOpenId": true
+		},
 		"serviceAccountsOff": {
 			"before": {
 				"status": 200

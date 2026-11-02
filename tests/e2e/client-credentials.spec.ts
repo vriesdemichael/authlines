@@ -38,6 +38,21 @@ test.describe('a flow with no user', () => {
 		await expect(page.getByTestId('diagram-switch')).not.toContainText('User flow');
 	});
 
+	test('does not send someone on to a user flow, when there is no user', async ({ page }) => {
+		await openIt(page, 'step=service-keys', `${PATH}setup/`);
+		await expect(page.getByTestId('step-detail')).not.toContainText('user flow');
+		await expect(page.getByTestId('step-detail')).toContainText('The flow');
+		await expect(page.getByTestId('step-detail')).toContainText('What happens with no user');
+	});
+
+	test('says what the setup is missing without it, where the client is created', async ({
+		page
+	}) => {
+		await openIt(page, 'mode=advanced&step=service-create-client', `${PATH}setup/`);
+		await expect(page.getByTestId('step-detail')).toContainText('may act for itself');
+		await expect(page.getByTestId('step-detail')).toContainText('Service account roles');
+	});
+
 	test('has a setup of its own, with no address to list', async ({ page }) => {
 		await openIt(page, '', `${PATH}setup/`);
 		await expect(page.locator('.workspace')).toHaveAttribute('data-diagram', 'setup');
@@ -55,7 +70,7 @@ test.describe('a flow with no user', () => {
 
 		await openIt(page, 'mode=advanced');
 		await expect(list.locator('[data-not-here="logout"]')).toContainText('no login to end');
-		await expect(list.locator('[data-not-here="clientType"]')).toContainText('keep a secret');
+		await expect(list.locator('[data-not-here="clientType"]')).toContainText('prove who it is');
 	});
 
 	test('has nothing to say on the other flow about what is not here', async ({ page }) => {

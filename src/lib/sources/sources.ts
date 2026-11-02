@@ -3,6 +3,7 @@ export type SourceId =
 	| 'rfc6750'
 	| 'rfc7636'
 	| 'rfc9449'
+	| 'rfc9207'
 	| 'rfc9700'
 	| 'oidc-core'
 	| 'oidc-rp-logout'
@@ -66,6 +67,14 @@ export const sources: Record<SourceId, SourceDef> = {
 			'Ties a token to a key. The app proves it holds a private key by sending a signed JWT in a DPoP header, and the server binds the tokens it issues to the matching public key. The aim is that a leaked or stolen token cannot be used without the key. It works at the application level, so it also suits apps in a browser, where binding through TLS does not work.',
 		url: 'https://www.rfc-editor.org/rfc/rfc9449.html',
 		textFile: 'rfc9449.txt'
+	},
+	rfc9207: {
+		label: 'RFC 9207',
+		title: 'OAuth 2.0 Authorization Server Issuer Identification',
+		status: 'Proposed Standard, March 2022.',
+		summary:
+			'Adds iss to the answer that comes back through the browser, naming the server that sent it. An app that uses more than one server can check that against the one it sent the user to, which counters mix-up attacks.',
+		url: 'https://www.rfc-editor.org/rfc/rfc9207.html'
 	},
 	rfc9700: {
 		label: 'RFC 9700',

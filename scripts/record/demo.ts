@@ -20,6 +20,7 @@ import {
 	REDIRECT_URI,
 	SECOND_APP,
 	SECOND_CLIENT,
+	SERVICE_CLIENT,
 	SECOND_REDIRECT_URI,
 	UPSTREAM_REALM
 } from './keycloak.ts';
@@ -713,7 +714,14 @@ export class Demo {
 				return;
 			}
 			response.writeHead(200, { 'content-type': 'application/json' });
-			response.end(JSON.stringify({ resource: 'something only this user may see' }));
+			response.end(
+				JSON.stringify({
+					resource:
+						this.current?.clientId === SERVICE_CLIENT
+							? 'something only this app may see'
+							: 'something only this user may see'
+				})
+			);
 		});
 
 		// Keycloak's calls to the upstream IdP pass through here on their way to the same Keycloak.

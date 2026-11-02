@@ -687,9 +687,9 @@ export const noteDefs: readonly NoteDef[] = [
 export const noUserNoteDefs: readonly NoteDef[] = [
 	{
 		id: 'service-accounts',
-		steps: ['service-token-request'],
+		steps: ['service-token-request', 'service-create-client'],
 		title: 'Service account roles',
-		text: 'An app can only do this with this on, and without it the server refuses. Keycloak then keeps an account for the app, named service-account- and its client ID, and that is who the token says it is about. So it has a sub and a preferred_username, though no person is involved.',
+		text: 'An app can only do this with this on. Without it the server answers 401 with unauthorized_client. Keycloak then keeps an account for the app, named service-account- and its client ID, and that is who the token says it is about. So it has a sub and a preferred_username, though no person is involved.',
 		place: clientSettings('Capability config', 'Service account roles'),
 		backedBy: {
 			question: 'serviceAccountsOff',
@@ -698,6 +698,17 @@ export const noUserNoteDefs: readonly NoteDef[] = [
 				after: { status: 401, error: 'unauthorized_client' },
 				name: 'service-account-demo-service'
 			}
+		}
+	},
+	{
+		id: 'id-token-for-client-credentials',
+		steps: ['service-token-response'],
+		title: 'An ID token, if asked for',
+		text: 'Asked for the openid scope, this server sends an ID token here too, about its account for the app. OpenID Connect defines an ID token for a login, so do not count on it elsewhere.',
+		seen: 'Asked a real server for a token, with and without the openid scope.',
+		backedBy: {
+			question: 'idTokenWhenAsked',
+			shows: { withoutAsking: false, askedForOpenId: true }
 		}
 	},
 	{

@@ -1,6 +1,12 @@
 import { terms, type Term } from '#lib/flow/glossary.ts';
 import { authorizationCodeBase as base, flows } from '#lib/flow/index.ts';
-import { evaluate, type BaseFlow, type DiagramId } from '#lib/flow/model.ts';
+import {
+	evaluate,
+	type BaseFlow,
+	type DiagramId,
+	type DiagramView,
+	type StepDef
+} from '#lib/flow/model.ts';
 import {
 	defaultSettings,
 	normalize,
@@ -33,6 +39,13 @@ export interface Found {
 	results: Result[];
 	/** Asked about something this application does not cover yet. */
 	notHereYet: string | null;
+}
+
+/** All the fields, including those only some settings bring, because that is what someone looks for. */
+function saidAt(step: StepDef, shown: DiagramView['steps'][number]): string {
+	const fields = (step.fields ?? []).map((field) => `${field.name} ${field.note ?? ''}`).join(' ');
+	const pitfall = shown.pitfall ? `${shown.pitfall.title} ${shown.pitfall.text}` : '';
+	return `${shown.concept} ${shown.inPractice ?? ''} ${pitfall} ${fields}`;
 }
 
 interface Entry {
@@ -177,6 +190,20 @@ function allEntries(): Entry[] {
 	}
 
 	for (const other of otherFlows) {
+		const start = normalize({ ...defaultSettings, ...other.presets[0].settings }).settings;
+		const first = other.diagrams.flow.steps[0].id;
+		const shownFirst = evaluate(other.diagrams.flow, start).steps[0].id;
+		entries.push({
+			result: {
+				kind: 'step',
+				title: other.diagrams.flow.title,
+				says: other.diagrams.flow.summary,
+				flow: other.id,
+				query: serializeState(other, stateIn(other, 'flow', start, shownFirst ?? first))
+			},
+			title: other.diagrams.flow.title,
+			text: `${other.diagrams.flow.summary} ${other.diagrams.flow.intro}`
+		});
 		for (const diagram of ['flow', 'setup'] as const) {
 			for (const step of other.diagrams[diagram].steps) {
 				const settings = normalize({ ...defaultSettings, ...other.presets[0].settings }).settings;
@@ -184,9 +211,6 @@ function allEntries(): Entry[] {
 					(candidate) => candidate.id === step.id
 				);
 				if (!shown) continue;
-				const fields = (step.fields ?? [])
-					.map((field) => `${field.name} ${field.note ?? ''}`)
-					.join(' ');
 				const state = stateIn(other, diagram, settings, step.id);
 				entries.push({
 					result: {
@@ -198,8 +222,22 @@ function allEntries(): Entry[] {
 						query: serializeState(other, state)
 					},
 					title: `${shown.plain} ${shown.label}`,
-					text: `${shown.concept} ${shown.inPractice ?? ''} ${fields}`
+					text: saidAt(step, shown)
 				});
+				for (const note of notesFor(other.id, step.id, settings)) {
+					entries.push({
+						result: {
+							kind: 'note',
+							title: note.title,
+							says: shown.plain,
+							flow: other.id,
+							view: diagram === 'setup' ? 'setup' : undefined,
+							query: serializeState(other, state)
+						},
+						title: note.title,
+						text: note.text
+					});
+				}
 			}
 		}
 	}
@@ -210,16 +248,11 @@ function allEntries(): Entry[] {
 			if (!settings) continue;
 			const shown = evaluate(base.diagrams[diagram], settings).steps.find((s) => s.id === step.id);
 			if (!shown) continue;
-			// All of them, including those only some settings bring, because that is what someone looks for.
-			const fields = (step.fields ?? [])
-				.map((field) => `${field.name} ${field.note ?? ''}`)
-				.join(' ');
 			const state = stateAt(diagram, settings, step.id, 'advanced');
-			const pitfall = shown.pitfall ? `${shown.pitfall.title} ${shown.pitfall.text}` : '';
 			entries.push({
 				result: resultAt('step', shown.plain, shown.label, state),
 				title: `${shown.plain} ${shown.label}`,
-				text: `${shown.concept} ${shown.inPractice ?? ''} ${pitfall} ${fields}`
+				text: saidAt(step, shown)
 			});
 			for (const note of notesFor(base.id, step.id, settings)) {
 				entries.push({
@@ -239,6 +272,17 @@ function index() {
 	cached ??= {
 		entries: allEntries(),
 		errors: knownErrors.map((known) => {
+			if (known.flow) {
+				const other = flows[known.flow];
+				const settings = normalize({ ...defaultSettings, ...known.settings }).settings;
+				return {
+					kind: 'error' as const,
+					title: known.text,
+					says: known.means,
+					flow: other.id,
+					query: serializeState(other, stateIn(other, 'flow', settings, known.step))
+				};
+			}
 			const state = stateAt('flow', known.settings, known.step, 'advanced');
 			const result = resultAt('error', known.text, known.means, state);
 			// On the address of a question about this very error, which says at the top what it means.

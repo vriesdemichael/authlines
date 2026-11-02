@@ -6,7 +6,7 @@ import { apiWords, appWords, idpWords } from '#lib/flow/parties.ts';
 export const clientCredentialsSetup: DiagramDef = {
 	id: 'client-credentials-setup',
 	title: 'Setting up the client credentials flow',
-	caption: 'What people do before the first call.',
+	caption: 'What people do first.',
 	summary:
 		'What people do before the first call, so the app and the identity provider know each other.',
 	intro:
@@ -100,10 +100,15 @@ export const clientCredentialsSetup: DiagramDef = {
 			plain: 'Create the client',
 			label: 'Create the client',
 			concept:
-				'The admin enters those values in the admin console. From here on, the identity provider knows this app.',
+				'The admin enters those values in the admin console, and allows this app to ask for tokens for itself. From here on, the identity provider knows it.',
 			fields: [
 				{ name: 'client_id', place: 'setting' },
-				{ name: 'client_secret', place: 'setting', artifact: 'secret' }
+				{ name: 'client_secret', place: 'setting', artifact: 'secret' },
+				{
+					name: 'may act for itself',
+					place: 'setting',
+					note: 'Without this it can ask, and it is refused'
+				}
 			]
 		},
 		{
@@ -114,7 +119,7 @@ export const clientCredentialsSetup: DiagramDef = {
 			plain: 'Hand over the client ID and secret',
 			label: 'Hand over client ID and secret',
 			concept:
-				'The admin passes the client ID and secret back to the app team. With no user, the secret is all that says this is the app.',
+				'The admin passes the client ID and secret back to the app team. With no user, that secret is what says this is the app.',
 			inPractice: 'Keep the secret out of your code and your repository, as you would a password.',
 			fields: [
 				{ name: 'client_id', place: 'setting' },
@@ -214,7 +219,7 @@ export const clientCredentialsSetup: DiagramDef = {
 					text: 'Setup is done. See what happens when the app makes its first call'
 				}
 			],
-			fields: [{ name: 'service-keys', place: 'body' }]
+			fields: [{ name: 'keys', place: 'body' }]
 		}
 	]
 };

@@ -503,7 +503,9 @@ export function layoutDiagram(
 
 /** A setting's change and a credential or token go on the message. The rest is in the detail. */
 function chipsOn(step: DiagramView['steps'][number]) {
-	const onMessage: Field[] = step.fields.filter((field) => field.changed || field.artifact);
+	const onMessage: Field[] = step.fields
+		.filter((field) => field.changed || field.artifact || field.chip)
+		.map((field) => (field.chip ? { name: field.chip, mark: true } : field));
 	// Something a real server did not do should not look the same as what it did.
 	if (step.specOnly) onMessage.push({ name: 'spec only', mark: true });
 	return onMessage;

@@ -400,6 +400,20 @@ describe('every base flow', () => {
 	);
 });
 
+describe('the date of a recording', () => {
+	it('is what the recording itself says, whichever day it was made', () => {
+		for (const base of Object.values(flows)) {
+			for (const preset of base.presets) {
+				const { recordedAt } = JSON.parse(
+					readFileSync(`static/recordings/${base.id}/${preset.id}.json`, 'utf8')
+				) as Recording;
+				const settings = normalize({ ...defaultSettings, ...preset.settings }).settings;
+				expect(provenance(base, base.diagrams.flow, settings).date, preset.id).toBe(recordedAt);
+			}
+		}
+	});
+});
+
 describe('the files', () => {
 	it('are one per named state, and the answers to the open questions', () => {
 		const files = readdirSync(FOLDER)

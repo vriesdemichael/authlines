@@ -30,6 +30,11 @@ export function nearestRecordings(base: BaseFlow, settings: Settings, count = 2)
 		.slice(0, count);
 }
 
+const dateOf = (base: BaseFlow, settings: Settings) => {
+	const preset = recordingFor(base, settings);
+	return (preset && recordedIndex.recordedOn?.[preset.id]) ?? recordedIndex.recordedAt;
+};
+
 export type Known =
 	| { kind: 'recorded'; by: 'server' | 'demo'; keycloak: string; date: string }
 	| { kind: 'copied'; text: string }
@@ -51,7 +56,7 @@ export function knownFrom(base: BaseFlow, step: Step, settings: Settings): Known
 		kind: 'recorded',
 		by: SERVERS.has(step.from) || SERVERS.has(step.to) ? 'server' : 'demo',
 		keycloak: recordedIndex.keycloak,
-		date: recordedIndex.recordedAt
+		date: dateOf(base, settings)
 	};
 }
 
@@ -67,6 +72,6 @@ export function provenance(base: BaseFlow, flow: DiagramDef, settings: Settings)
 		// People talking cannot be recorded, so a diagram with them can claim its HTTP and no more.
 		onlyItsHttp: flow.steps.some((step) => step.kind === 'human'),
 		keycloak: recordedIndex.keycloak,
-		date: recordedIndex.recordedAt
+		date: dateOf(base, settings)
 	};
 }

@@ -1,6 +1,27 @@
 {
 	"keycloak": "26.8.1",
 	"recordedAt": "2026-11-01",
+	"flags": {
+		"dpop": {
+			"type": "DEFAULT",
+			"enabled": true
+		},
+		"identity-brokering-api:v1": {
+			"type": "DEFAULT",
+			"enabled": true
+		},
+		"identity-brokering-api:v2": {
+			"type": "DISABLED_BY_DEFAULT",
+			"enabled": false
+		}
+	},
+	"recordedOn": {
+		"attack-at-the-app-oidc": "2026-11-02",
+		"attack-at-the-app-pkce": "2026-11-02",
+		"attack-at-the-app": "2026-11-02",
+		"as-itself-dpop": "2026-11-02",
+		"as-itself": "2026-11-02"
+	},
 	"flows": {
 		"authorization-code": {
 			"presets": [
@@ -133,20 +154,6 @@
 				"service-token-request",
 				"service-token-response"
 			]
-		}
-	},
-	"flags": {
-		"dpop": {
-			"type": "DEFAULT",
-			"enabled": true
-		},
-		"identity-brokering-api:v1": {
-			"type": "DEFAULT",
-			"enabled": true
-		},
-		"identity-brokering-api:v2": {
-			"type": "DISABLED_BY_DEFAULT",
-			"enabled": false
 		}
 	}
 }

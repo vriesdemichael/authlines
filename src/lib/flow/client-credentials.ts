@@ -14,7 +14,7 @@ export const clientCredentials: DiagramDef = {
 	id: 'client-credentials',
 	title: 'Client credentials flow',
 	named: 'The flow',
-	caption: 'What happens when no user is involved.',
+	caption: 'What happens with no user.',
 	summary: 'An app gets access for itself, with no user and no browser.',
 	intro:
 		'Some apps act for nobody: a nightly job, or one service calling another. There is no user to log in and no browser to go through, so the app asks for a token with its own secret. Press Next to follow it, one message at a time.',
@@ -78,6 +78,13 @@ export const clientCredentials: DiagramDef = {
 		},
 		{
 			id: 'service-token-request',
+			cites: [
+				{
+					source: 'rfc9700',
+					section: '2.5',
+					why: 'Section 2.5 recommends proving who a client is with a key, such as mutual TLS or a signed JWT, over a shared secret.'
+				}
+			],
 			from: 'app',
 			to: 'idp',
 			kind: 'request',
@@ -91,14 +98,14 @@ export const clientCredentials: DiagramDef = {
 			practice: [example('openidClient', true, 'with its client credentials grant')],
 			pitfall: {
 				title: 'What if this secret gets out?',
-				text: 'Whoever has it can get tokens as this app, and there is no user who would notice. So it is kept out of the code, and changed now and then.'
+				text: 'Whoever has it can get tokens as this app, and there is no user who would notice. So it is kept out of the code, and changed now and then. A key the server never sees is stronger than a shared secret, and current advice recommends one, though not every provider offers it.'
 			},
 			fields: [
 				{ name: 'grant_type=client_credentials', place: 'body' },
 				{
 					name: 'Authorization: Basic',
 					place: 'header',
-					note: 'The client ID and secret',
+					note: 'The client ID and secret, joined with a colon and Base64-encoded',
 					artifact: 'secret'
 				},
 				{
@@ -125,7 +132,7 @@ export const clientCredentials: DiagramDef = {
 			plain: 'An access token',
 			label: 'Access token',
 			concept:
-				'An access token is all there is. There is no ID token because nobody logged in, and no refresh token because it would add nothing: when this one runs out, the app asks again with its secret.',
+				'An access token is all there is. There is no ID token, because nothing asked for one and nobody logged in for it to be about, and no refresh token, because it would add nothing: when this one runs out, the app asks again with its secret.',
 			inPractice:
 				'A library takes this. Keep it and use it until it runs out, because asking for a new one for each call makes every call slower.',
 			fields: [
@@ -194,6 +201,10 @@ export const clientCredentials: DiagramDef = {
 				example('springSecurity', true, 'can check the proof', dpop),
 				example('jose', true, 'when you pass it the issuer and audience', bearer)
 			],
+			pitfall: {
+				title: 'What if the API wants its own name in the token?',
+				text: 'Then this app’s tokens have to carry it, or an API that checks the audience refuses them. How depends on the provider: some take it in the request for the token, and some set it up on their side, so ask whoever runs it.'
+			},
 			links: [
 				{
 					diagram: 'setup',
