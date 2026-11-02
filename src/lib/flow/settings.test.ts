@@ -10,7 +10,7 @@ import {
 	settingDefs,
 	settingIds,
 	settingsIn,
-	sharedSettingIds,
+	codeFlowSettingIds,
 	simpleSettingIds,
 	unavailable,
 	all,
@@ -40,7 +40,7 @@ describe('what a setting says for itself', () => {
 	});
 
 	it('is in plain words for the few simple mode offers', () => {
-		expect(simpleSettingIds.filter((id) => sharedSettingIds.includes(id))).toEqual([
+		expect(simpleSettingIds.filter((id) => codeFlowSettingIds.includes(id))).toEqual([
 			'oidc',
 			'consent',
 			'pkce',
@@ -64,6 +64,8 @@ describe('constraints', () => {
 		// Only where there is a secret to get around, so oidc x pkce.
 		const handedToTheApp = 2 * 2;
 		const withConsent = 2;
+		// It stops before the rest would matter, so OpenID Connect x client x PKCE.
+		const withAddressRefused = 2 * 2 * 2;
 		// On the plain flow only, so client type and PKCE, with each way an API can say no.
 		const withApiAnswers = 2 * 2 * 5;
 		// On the plain flow too, but with OpenID Connect and consent, and two answers to using one twice.
@@ -78,6 +80,7 @@ describe('constraints', () => {
 		expect(allValidSettings().every((settings) => Object.isFrozen(settings))).toBe(true);
 		expect(allValidSettings()).toHaveLength(
 			withConsent * (2 * 2 * (bearer + dpop + dpopWithNonce) + withAttacker + handedToTheApp) +
+				withAddressRefused +
 				withApiAnswers +
 				withRefresh +
 				withASecondApp +

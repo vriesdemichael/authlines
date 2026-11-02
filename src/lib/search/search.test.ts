@@ -290,7 +290,7 @@ describe('what a real server said', () => {
 		const error = first('Invalid parameter: redirect_uri');
 		expect(error.kind).toBe('error');
 		expect(error.view).toBe('redirect-uri-error');
-		expect(parseState(base, 'flow', error.query).step).toBe('authorize');
+		expect(parseState(base, 'flow', error.query).step).toBe('address-refused');
 	});
 
 	it('says what a word means, wherever that is defined', () => {

@@ -86,6 +86,13 @@ describe('the map', () => {
 		expect(jargon.map((node) => node.id)).toEqual([]);
 	});
 
+	it('draws the most common error where it happens, and nothing after it', () => {
+		const node = mapNodes.find(({ id }) => id === 'redirect-uri-error')!;
+		const steps = nodeView(node).steps.map(({ id }) => id);
+		expect(steps.at(-1)).toBe('address-refused');
+		expect(steps).not.toContain('login-page');
+	});
+
 	it('has what someone runs into early where they would look, for someone new', () => {
 		const questions = wrong.chains.flat();
 		expect(questions.map((node) => node.id)).toEqual(

@@ -252,7 +252,7 @@ describe.each(asCases)('the recording of %s', (preset, recording) => {
 		const challenge = carried(authorize).query.get('code_challenge');
 		if (!recording.settings.pkce) {
 			expect(challenge).toBeNull();
-			expect(body.code_verifier).toBeUndefined();
+			expect(body?.code_verifier).toBeUndefined();
 			return;
 		}
 		const worked = createHash('sha256').update(body.code_verifier).digest('base64url');
@@ -293,7 +293,9 @@ describe.each(asCases)('the recording of %s', (preset, recording) => {
 	it('was made with the settings of its named state', () => {
 		const wanted = base.presets.find((p) => p.id === preset)!;
 		const expected = normalize({ ...defaultSettings, ...wanted.settings }).settings;
-		for (const id of base.settings) expect(recording.settings[id], id).toEqual(expected[id]);
+		for (const id of base.settings) {
+			expect(recording.settings[id] ?? defaultSettings[id], id).toEqual(expected[id]);
+		}
 	});
 });
 

@@ -14,6 +14,8 @@ OIDC, DPoP with a nonce retry, brokering with its nested flow, and stored upstre
 
 This also held for another base flow. Client credentials has no browser and no user, and it is the same kind of data on the same renderer. A base flow says which settings it has, and why the others are not there. Step ids stay unique across flows, so an id only ever means one thing.
 
+A step can be the last one, when a server stops the flow there, so that a refusal does not need a condition on everything after it.
+
 ## Not chosen
 
 - **`alt` frames or a tree of branches**: DPoP touches several steps and has no single place to branch.

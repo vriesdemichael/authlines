@@ -147,8 +147,8 @@ export const mapTracks: readonly MapTrack[] = [
 						'The address the app sent is not one registered for this client, so the server refuses before anyone logs in. It has to match what was registered, and current advice is an exact match.',
 					title: 'Why do I get Invalid parameter: redirect_uri?',
 					summary: 'Where the address is checked, and where it was registered.',
-					preset: 'oauth',
-					step: 'authorize'
+					preset: 'address-refused',
+					step: 'address-refused'
 				}),
 				node({
 					id: 'why-401',

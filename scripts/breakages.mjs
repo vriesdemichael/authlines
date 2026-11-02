@@ -115,6 +115,12 @@ export const breakages = [
 		to: "when: is('deviceEnds', 'says-no'),\n\t\t\t\t\tbecause: 'They are the one"
 	},
 	{
+		name: 'model: a flow goes on after the server stopped it',
+		file: MODEL,
+		from: 'const stopsAt = here.findIndex((step) => step.last);',
+		to: 'const stopsAt = -1;'
+	},
+	{
 		name: 'device: says the user said no with a different error than the server gave',
 		file: 'src/lib/flow/device.ts',
 		from: "{ name: 'error=access_denied', place: 'body' },",

@@ -135,6 +135,8 @@ export interface StepDef {
 	channel?: Channel;
 	/** What stops existing here, so that nobody holds it any more. */
 	ends?: readonly ArtifactId[];
+	/** Nothing comes after this one, whatever else is on, because the server stopped it here. */
+	last?: boolean;
 	/** What this means for someone building an app: who writes this part, and what is left to them. */
 	inPractice?: Text;
 	/** What comes up here and is bigger than anything on the diagram. Said after that. */
@@ -307,46 +309,45 @@ function partsOf(flow: DiagramDef, steps: readonly Step[]): Part[] {
 }
 
 export function evaluate(flow: DiagramDef, settings: Settings): DiagramView {
-	const steps: Step[] = flow.steps
-		.filter((step) => present(step.when, settings))
-		.map((step) => ({
-			id: step.id,
-			from: step.from,
-			to: step.to,
-			kind: step.kind,
-			ends: step.ends ?? [],
-			channel: channelOf(flow, step),
-			plain: resolveText(step.plain, settings),
-			label: resolveText(step.label, settings),
-			concept: resolveText(step.concept, settings),
-			group: step.group,
-			pitfall: step.pitfall && resolvePitfall(step.pitfall, settings),
-			page: step.page,
-			cites: (step.cites ?? []).filter((cite) => present(cite.when, settings)),
-			inPractice:
-				[step.inPractice && resolveText(step.inPractice, settings), step.largerJob]
-					.filter(Boolean)
-					.join(' ') || undefined,
-			largerJob: step.largerJob,
-			practice: (step.practice ?? []).filter((example) => present(example.when, settings)),
-			links: (step.links ?? []).filter((link) => present(link.when, settings)),
-			execute:
-				step.execute && present(step.execute.when, settings) ? step.execute.answer : undefined,
-			specOnly: step.specOnly,
-			recordedAs: step.recordedAs,
-			causes: causes(step.when, settings),
-			fields: (step.fields ?? [])
-				.filter((field) => present(field.when, settings))
-				.map((field) => ({
-					name: field.name,
-					place: field.place,
-					note: field.note,
-					artifact: field.artifact,
-					chip: field.chip,
-					causes: causes(field.when, settings),
-					changed: !present(field.when, defaultSettings)
-				}))
-		}));
+	const here = flow.steps.filter((step) => present(step.when, settings));
+	const stopsAt = here.findIndex((step) => step.last);
+	const steps: Step[] = (stopsAt < 0 ? here : here.slice(0, stopsAt + 1)).map((step) => ({
+		id: step.id,
+		from: step.from,
+		to: step.to,
+		kind: step.kind,
+		ends: step.ends ?? [],
+		channel: channelOf(flow, step),
+		plain: resolveText(step.plain, settings),
+		label: resolveText(step.label, settings),
+		concept: resolveText(step.concept, settings),
+		group: step.group,
+		pitfall: step.pitfall && resolvePitfall(step.pitfall, settings),
+		page: step.page,
+		cites: (step.cites ?? []).filter((cite) => present(cite.when, settings)),
+		inPractice:
+			[step.inPractice && resolveText(step.inPractice, settings), step.largerJob]
+				.filter(Boolean)
+				.join(' ') || undefined,
+		largerJob: step.largerJob,
+		practice: (step.practice ?? []).filter((example) => present(example.when, settings)),
+		links: (step.links ?? []).filter((link) => present(link.when, settings)),
+		execute: step.execute && present(step.execute.when, settings) ? step.execute.answer : undefined,
+		specOnly: step.specOnly,
+		recordedAs: step.recordedAs,
+		causes: causes(step.when, settings),
+		fields: (step.fields ?? [])
+			.filter((field) => present(field.when, settings))
+			.map((field) => ({
+				name: field.name,
+				place: field.place,
+				note: field.note,
+				artifact: field.artifact,
+				chip: field.chip,
+				causes: causes(field.when, settings),
+				changed: !present(field.when, defaultSettings)
+			}))
+	}));
 
 	return {
 		lifelines: flow.lifelines

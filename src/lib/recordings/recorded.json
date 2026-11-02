@@ -30,12 +30,14 @@
 		"on-a-device-sent": "2026-11-02",
 		"on-a-device-sent-says-no": "2026-11-02",
 		"on-a-device-sent-runs-out": "2026-11-02",
-		"on-a-device-read": "2026-11-02"
+		"on-a-device-read": "2026-11-02",
+		"address-refused": "2026-11-02"
 	},
 	"flows": {
 		"authorization-code": {
 			"presets": [
 				"oauth",
+				"address-refused",
 				"api-no-token",
 				"api-expired",
 				"api-changed",
@@ -73,6 +75,7 @@
 				"everything"
 			],
 			"steps": [
+				"address-refused",
 				"api-refused",
 				"api-request",
 				"api-request-again",

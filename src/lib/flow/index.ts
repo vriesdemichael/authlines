@@ -5,10 +5,15 @@ import { clientCredentialsSetup } from '#lib/flow/client-credentials-setup.ts';
 import { device } from '#lib/flow/device.ts';
 import { deviceSetup } from '#lib/flow/device-setup.ts';
 import type { BaseFlow, Preset } from '#lib/flow/model.ts';
-import { sharedSettingIds } from '#lib/flow/settings.ts';
+import { codeFlowSettingIds } from '#lib/flow/settings.ts';
 
 const presets: readonly Preset[] = [
 	{ id: 'oauth', title: 'OAuth', settings: {} },
+	{
+		id: 'address-refused',
+		title: 'An address that was not registered',
+		settings: { address: 'other' }
+	},
 	{ id: 'api-no-token', title: 'The API sent no token', settings: { apiToken: 'none' } },
 	{ id: 'api-expired', title: 'The API sent an expired token', settings: { apiToken: 'expired' } },
 	{ id: 'api-changed', title: 'The API sent a changed token', settings: { apiToken: 'changed' } },
@@ -156,7 +161,7 @@ const presets: readonly Preset[] = [
 export const authorizationCodeBase: BaseFlow = {
 	id: authorizationCode.id,
 	diagrams: { flow: authorizationCode, setup: authorizationCodeSetup },
-	settings: sharedSettingIds,
+	settings: codeFlowSettingIds,
 	presets
 };
 

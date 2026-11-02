@@ -156,7 +156,7 @@
 			{#if blocked}<p class="because" data-testid="blocked-because">{blocked}</p>{/if}
 		{:else}
 			<fieldset>
-				<legend>{def.label}</legend>
+				<legend>{simple ? (def.simple?.label ?? def.label) : def.label}</legend>
 				{#each def.options as option (option.value)}
 					{@const blocked = blockedBy(id, option.value)}
 					<label
@@ -309,13 +309,15 @@
 		grid-column: 1 / -1;
 	}
 
-	.beside-the-switch > .toggle {
+	.beside-the-switch > .toggle,
+	.beside-the-switch > fieldset {
 		grid-column: 1;
 	}
 
 	.beside-the-switch > .more {
 		grid-row: 1;
 		grid-column: 2;
+		align-self: start;
 		margin: 0;
 	}
 

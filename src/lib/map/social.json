@@ -7,7 +7,7 @@
 	"single-sign-on": "What is single sign-on? Why don't I log in twice?|A second app, the same login, and no password.|20|5",
 	"getting-to-know-each-other": "How do an app and a provider get to know each other?|What people have to do before anyone can log in.|9|5",
 	"adding-login": "I have to add login to an app. What do I do?|The part you do once, which part of your code is left, and what a library does. An app with no browser takes the device flow.|9|5",
-	"redirect-uri-error": "Why do I get Invalid parameter: redirect_uri?|Where the address is checked, and where it was registered.|12|4",
+	"redirect-uri-error": "Why do I get Invalid parameter: redirect_uri?|Where the address is checked, and where it was registered.|4|4",
 	"why-401": "Why did my API say 401?|It does not accept the token, for one of several reasons that look the same.|12|4",
 	"401-or-403": "What is the difference between 401 and 403?|One is about the token, and the other about what it allows.|12|4",
 	"api-no-token": "What does an API say to a call with no token?|Which kind of token it wants, and no error.|12|4",

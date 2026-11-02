@@ -19,6 +19,7 @@ export interface Settings {
 	logout: boolean;
 	deviceEnds: 'agrees' | 'says-no' | 'runs-out';
 	deviceAttack: 'nobody' | 'sends-code' | 'reads-code';
+	address: 'registered' | 'other';
 }
 
 export type SettingId = keyof Settings;
@@ -503,6 +504,40 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			sayWhenBlocked: true
 		}
 	},
+	address: {
+		kind: 'choice',
+		label: 'The address the app asks for',
+		param: 'address',
+		default: 'registered',
+		onlyOn: 'authorization-code',
+		summary:
+			'Where the user should be sent back to, and what happens when that is not an address registered for this app.',
+		why: 'The identity provider only sends a code to an address it knows for this app. Otherwise anyone could start a login and ask for the code to be sent to them.',
+		sources: [
+			{
+				source: 'rfc9700',
+				section: '2.1',
+				why: 'Section 2.1 says a server must compare the address by exact match, because a loose comparison is how codes end up with someone else.'
+			}
+		],
+		options: [
+			{ value: 'registered', label: 'One that was registered' },
+			{ value: 'other', label: 'One that was not' }
+		],
+		requires: {
+			when: all(
+				is('binding', 'bearer'),
+				is('broker', false),
+				is('attacker', false),
+				is('consent', false),
+				is('sso', false),
+				is('refresh', false),
+				is('logout', false),
+				is('apiToken', 'good')
+			),
+			because: 'It stops before any of those would matter.'
+		}
+	},
 	deviceEnds: {
 		kind: 'choice',
 		label: 'How it ends',
@@ -562,10 +597,10 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 
 export const settingIds = Object.keys(settingDefs) as SettingId[];
 
-/** All but those that belong to one flow. */
-export const sharedSettingIds = settingIds.filter((id) => {
+/** What the first flow has: all but what belongs to another one. */
+export const codeFlowSettingIds = settingIds.filter((id) => {
 	const def: SettingDef = settingDefs[id];
-	return !def.onlyOn;
+	return !def.onlyOn || def.onlyOn === 'authorization-code';
 });
 
 /** The few that simple mode offers. The rest stay on as chips if someone turned them on (ADR-004). */
@@ -653,9 +688,9 @@ let everyValid: readonly Readonly<Settings>[] | undefined;
  * try at least double with each setting, so the list for all of them is worked out once, and shared.
  */
 export function allValidSettings(
-	ids: readonly SettingId[] = sharedSettingIds
+	ids: readonly SettingId[] = codeFlowSettingIds
 ): readonly Readonly<Settings>[] {
-	if (ids !== sharedSettingIds) return validCombinations(ids);
+	if (ids !== codeFlowSettingIds) return validCombinations(ids);
 	everyValid ??= Object.freeze(validCombinations(ids).map((settings) => Object.freeze(settings)));
 	return everyValid;
 }

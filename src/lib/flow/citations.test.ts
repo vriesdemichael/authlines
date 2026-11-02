@@ -39,6 +39,8 @@ function* everyStep() {
  */
 const CITED: readonly [step: string, SourceId, section: string, phrase: string][] = [
 	['authorize', 'rfc6749', '4.1.2.1', 'MUST NOT automatically redirect'],
+	['address-refused', 'rfc6749', '4.1.2.1', 'MUST NOT automatically redirect'],
+	['address-refused', 'rfc9700', '2.1', 'exact string matching'],
 	['authorize', 'rfc9700', '2.1', 'exact string matching'],
 	['authorize', 'rfc7636', '4.2', 'code_challenge = code_verifier'],
 	['authorize', 'rfc9700', '2.1.1', 'S256 is the only such method'],

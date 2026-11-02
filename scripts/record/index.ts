@@ -132,6 +132,9 @@ function classifyResponse(url: URL, status: number, location: string | null): st
 		return steps[url.pathname] ?? null;
 	}
 	if (url.pathname.endsWith('/protocol/openid-connect/logout')) return 'logout-redirect-back';
+	if (url.pathname === `/realms/${LOCAL_REALM}/protocol/openid-connect/auth` && status === 400) {
+		return 'address-refused';
+	}
 	if (location?.startsWith(REDIRECT_URI)) return 'redirect-with-code';
 	if (location?.includes(`/realms/${UPSTREAM_REALM}/protocol/openid-connect/auth`)) {
 		return 'redirect-to-upstream';
@@ -260,6 +263,12 @@ async function login(browser: Browser, run: Run) {
 	watch(page, run, cookies);
 
 	await page.goto(APP);
+	if (run.settings.address === 'other') {
+		await page.getByText('Invalid parameter: redirect_uri').waitFor();
+		await Promise.all(cookies);
+		await context.close();
+		return;
+	}
 	await page.locator('#username').waitFor();
 	await page.fill('#username', USERNAME);
 	await page.fill('#password', PASSWORD);
