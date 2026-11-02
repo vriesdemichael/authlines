@@ -91,6 +91,36 @@ export const breakages = [
 		to: ''
 	},
 	{
+		name: 'state: every label does not survive a link',
+		file: STATE,
+		from: "if (state.labels) params.set(LABELS_PARAM, '1');",
+		to: ''
+	},
+	{
+		name: 'map: an everyday error opens in advanced mode again',
+		file: 'src/lib/map/tracks.ts',
+		from: "title: 'Why did my API say 401?',",
+		to: "title: 'Why did my API say 401?',\n\t\t\t\t\tmode: 'advanced',"
+	},
+	{
+		name: 'device: says the user said no with a different error than the server gave',
+		file: 'src/lib/flow/device.ts',
+		from: "{ name: 'error=access_denied', place: 'body' },",
+		to: "{ name: 'error=expired_token', place: 'body' },"
+	},
+	{
+		name: 'device: tokens still come after the user said no',
+		file: 'src/lib/flow/device.ts',
+		from: "id: 'device-token-response',\n\t\t\twhen: agrees,",
+		to: "id: 'device-token-response',\n\t\t\twhen: someoneComes,"
+	},
+	{
+		name: 'device: how it ends goes on the flows it does not belong to',
+		file: 'src/lib/flow/settings.ts',
+		from: "onlyOn: 'device',",
+		to: ''
+	},
+	{
 		name: 'device: the browser is given the code that gets the tokens',
 		file: 'src/lib/flow/device.ts',
 		from: "name: 'user_code',\n\t\t\t\t\tplace: 'memory',\n\t\t\t\t\tartifact: 'user-code',",

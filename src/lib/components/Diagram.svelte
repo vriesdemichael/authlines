@@ -28,6 +28,8 @@
 		animate?: boolean;
 		/** What is being explained, to light up where it is. */
 		lit?: Lit | null;
+		/** The words of what is ahead too, when someone asked to see them. */
+		allLabels?: boolean;
 		/** What each lifeline has seen, up to the current step. */
 		holdings?: Readonly<Record<string, readonly ArtifactId[]>>;
 		/** The step whose message is on its way, when someone just sent it. */
@@ -53,6 +55,7 @@
 		fresh = new Set(),
 		animate = true,
 		lit = null,
+		allLabels = false,
 		holdings = {},
 		sending = null,
 		landing = new Set(),
@@ -188,6 +191,7 @@
 <div
 	class="diagram"
 	class:whole={frame.whole}
+	class:all-labels={allLabels}
 	data-testid="diagram"
 	data-animating={animating}
 	data-lit={lit?.part}
@@ -764,6 +768,7 @@
 
 	/* Someone asked to see all of the shape. */
 	.whole .row.future .label,
+	.all-labels .row.future .label,
 	.row.future:hover .label,
 	.row.future:focus-visible .label,
 	.row.fresh .label {

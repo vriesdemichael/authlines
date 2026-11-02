@@ -231,7 +231,7 @@ test.describe('a token', () => {
 test.describe('the map', () => {
 	test('says which questions open in advanced mode, in those words', async ({ page }) => {
 		await page.goto('./');
-		await expect(page.getByTestId('node-redirect-uri-error')).toContainText('Advanced');
+		await expect(page.getByTestId('node-on-the-wire')).toContainText('Advanced');
 		await expect(page.getByTestId('node-how-access-works')).not.toContainText('Advanced');
 	});
 });

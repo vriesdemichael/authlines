@@ -55,7 +55,8 @@
 	"device-two-codes": "Why are there two codes?|One for a person, and one that gets the tokens.|18|4",
 	"device-waiting": "What is the app doing while the user types?|Asking, again and again, which is called polling.|18|4",
 	"device-phishing": "Can someone trick me into approving their device?|Yes, by sending you their code. It is called device code phishing.|18|4",
-	"device-no-answer": "What if the user says no, or never finishes?|The app gets an error, and stops asking.|18|4",
+	"device-no-answer": "What if the user says no?|The app is told the next time it asks, and stops.|15|4",
+	"device-ran-out": "What if the user never comes?|The codes run out, and the app is told when it next asks.|8|4",
 	"device-pending-error": "Why do I get authorization_pending?|It is not a failure, whatever it looks like.|18|4",
 	"device-who-logged-in": "Can a device know who logged in?|Usually, with an ID token.|19|4"
 }

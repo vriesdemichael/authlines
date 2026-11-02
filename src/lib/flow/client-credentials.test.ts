@@ -8,6 +8,7 @@ import {
 	defaultSettings,
 	normalize,
 	settingDefs,
+	type SettingDef,
 	settingIds,
 	settingsIn
 } from '#lib/flow/settings.ts';
@@ -115,7 +116,9 @@ describe('the client credentials flow', () => {
 	it('says why each setting is not here, or needs one that is not', () => {
 		for (const id of settingIds) {
 			if (base.settings.includes(id) || base.notHere?.[id]) continue;
-			const needs = settingDefs[id].requires;
+			const def: SettingDef = settingDefs[id];
+			if (def.onlyOn && def.onlyOn !== base.id) continue;
+			const needs = def.requires;
 			expect(needs, `${id} is neither here nor says why`).toBeDefined();
 			expect(
 				settingsIn(needs!.when).some((other) => !base.settings.includes(other)),

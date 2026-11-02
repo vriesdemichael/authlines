@@ -27,7 +27,7 @@ const STABLE_NODES = [
 	{ id: 'getting-to-know-each-other', step: 'register-client', stepCount: 9, mode: 'simple' },
 	{ id: 'stolen-code', step: 'attacker-steals-code', stepCount: 14, mode: 'simple' },
 	{ id: 'pkce', step: 'make-verifier', stepCount: 14, mode: 'simple' },
-	{ id: 'redirect-uri-error', step: 'authorize', stepCount: 12, mode: 'advanced' }
+	{ id: 'redirect-uri-error', step: 'authorize', stepCount: 12, mode: 'simple' }
 ];
 
 test.describe('the map', () => {
@@ -113,6 +113,16 @@ test.describe('every node', () => {
 });
 
 test.describe('the address of a node', () => {
+	test('that used to say advanced mode still says it', async ({ page }) => {
+		await page.goto(`${pathOf('why-401')}?mode=advanced`);
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		await expect(page.locator('[data-mode="advanced"]')).toHaveAttribute('aria-pressed', 'true');
+		await expect(page.locator('[data-state="current"]')).toHaveAttribute(
+			'data-step',
+			'api-response'
+		);
+	});
+
 	for (const { id, step, stepCount, mode } of STABLE_NODES) {
 		test(`${id} keeps opening the same state`, async ({ page }) => {
 			await page.goto(pathOf(id));

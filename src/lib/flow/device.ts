@@ -1,9 +1,13 @@
 import type { DiagramDef, FieldDef } from '#lib/flow/model.ts';
 import { example } from '#lib/flow/libraries.ts';
 import { apiWords, appWords, browserWords, idpWords } from '#lib/flow/parties.ts';
-import { is } from '#lib/flow/settings.ts';
+import { all, is, not } from '#lib/flow/settings.ts';
 
 const oidc = is('oidc', true);
+const agrees = is('deviceEnds', 'agrees');
+const saysNo = is('deviceEnds', 'says-no');
+const runsOut = is('deviceEnds', 'runs-out');
+const someoneComes = not(runsOut);
 
 const DEVICE_GRANT = 'urn:ietf:params:oauth:grant-type:device_code';
 
@@ -252,7 +256,19 @@ export const device: DiagramDef = {
 			]
 		},
 		{
+			id: 'device-time-passes',
+			when: runsOut,
+			from: 'app',
+			to: 'app',
+			kind: 'time',
+			plain: 'Later, the codes run out',
+			label: 'Later: expires_in has passed',
+			concept:
+				'Nobody came. Nothing tells the app, and the user may not know there was anything to do. In this recording the codes were set to last 2 seconds, so that a real run could get here.'
+		},
+		{
 			id: 'device-open-page',
+			when: someoneComes,
 			from: 'browser',
 			to: 'idp',
 			kind: 'request',
@@ -263,6 +279,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-code-page',
+			when: someoneComes,
 			from: 'idp',
 			to: 'browser',
 			kind: 'response',
@@ -278,6 +295,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-submit-code',
+			when: someoneComes,
 			cites: [
 				{
 					source: 'rfc8628',
@@ -307,6 +325,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-login-page',
+			when: someoneComes,
 			cites: [
 				{
 					source: 'rfc8628',
@@ -330,6 +349,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-submit-credentials',
+			when: someoneComes,
 			cites: [
 				{
 					source: 'rfc8628',
@@ -348,6 +368,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-consent-page',
+			when: someoneComes,
 			cites: [
 				{
 					source: 'rfc8628',
@@ -382,6 +403,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-consent-grant',
+			when: agrees,
 			from: 'browser',
 			to: 'idp',
 			kind: 'request',
@@ -403,7 +425,47 @@ export const device: DiagramDef = {
 			]
 		},
 		{
+			id: 'device-consent-deny',
+			when: saysNo,
+			from: 'browser',
+			to: 'idp',
+			kind: 'request',
+			plain: 'The user says no',
+			label: 'Refuse access',
+			concept:
+				'The user says no, and the identity provider marks the waiting login as refused. The app is still asking, and does not know yet.',
+			fields: [
+				{
+					name: 'cancel',
+					place: 'body',
+					note: 'How this form says no, which is up to the server'
+				},
+				{
+					name: 'code',
+					place: 'body',
+					note: "The server's own login session, and neither of the two codes in this flow"
+				}
+			]
+		},
+		{
+			id: 'device-denied-page',
+			when: saysNo,
+			from: 'idp',
+			to: 'browser',
+			kind: 'response',
+			plain: 'It says the device was not connected',
+			label: '302 to a page saying so',
+			page: {
+				address: 'device-denied-page',
+				shows: "The identity provider's own page, saying the user refused to connect the device.",
+				shot: 'device-denied'
+			},
+			concept:
+				'The browser’s part is over. It got no token, and nothing on this page reaches the device, so the app can only find out by asking.'
+		},
+		{
 			id: 'device-done-page',
+			when: agrees,
 			from: 'idp',
 			to: 'browser',
 			kind: 'response',
@@ -433,13 +495,62 @@ export const device: DiagramDef = {
 			kind: 'request',
 			plain: 'The app asks again',
 			label: 'POST /token',
-			execute: { answer: 'device-token-response' },
+			execute: { answer: 'device-token-response', when: agrees },
 			concept:
 				'The same request as every other time, with the same device code. It never went near the browser or the user, and whoever sends it as this app gets what comes next.',
 			fields: asking
 		},
 		{
+			id: 'device-denied-response',
+			cites: [
+				{
+					source: 'rfc8628',
+					section: '3.5',
+					why: 'Section 3.5 defines this answer, and says any error other than the two that mean carry on means stop asking.'
+				}
+			],
+			when: saysNo,
+			from: 'idp',
+			to: 'app',
+			kind: 'response',
+			plain: 'The user said no',
+			label: '400 access_denied',
+			concept:
+				'This is how the app finds out, and the only way. It stops asking and tells the user. Trying again takes new codes, once the user asks to.',
+			inPractice:
+				'A library hands you this as an error. What the user sees next is your code, so say what happened and how to try again.',
+			fields: [
+				{ name: 'error=access_denied', place: 'body' },
+				{ name: 'error_description', place: 'body' }
+			]
+		},
+		{
+			id: 'device-expired-response',
+			cites: [
+				{
+					source: 'rfc8628',
+					section: '3.5',
+					why: 'Section 3.5 defines this answer, and says an app may start again but should wait for the user before it does.'
+				}
+			],
+			when: runsOut,
+			from: 'idp',
+			to: 'app',
+			kind: 'response',
+			plain: 'Too late',
+			label: '400 expired_token',
+			concept:
+				'The app is told the next time it asks. It stops asking and tells the user. It should not start again by itself, because that would keep asking on behalf of someone who has gone: new codes wait for the user to ask.',
+			inPractice:
+				'A library hands you this as an error, or stops by itself once the codes run out. What the user sees next is your code.',
+			fields: [
+				{ name: 'error=expired_token', place: 'body' },
+				{ name: 'error_description', place: 'body' }
+			]
+		},
+		{
 			id: 'device-token-response',
+			when: agrees,
 			cites: [
 				{
 					source: 'rfc8628',
@@ -483,7 +594,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-check-id-token',
-			when: oidc,
+			when: all(oidc, agrees),
 			from: 'app',
 			to: 'app',
 			kind: 'internal',
@@ -502,6 +613,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-api-request',
+			when: agrees,
 			from: 'app',
 			to: 'api',
 			kind: 'request',
@@ -515,6 +627,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-check-token',
+			when: agrees,
 			from: 'api',
 			to: 'api',
 			kind: 'internal',
@@ -549,6 +662,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-api-response',
+			when: agrees,
 			from: 'api',
 			to: 'app',
 			kind: 'response',

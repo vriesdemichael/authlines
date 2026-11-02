@@ -3,6 +3,7 @@
 	import ChannelLegend from '#lib/components/ChannelLegend.svelte';
 	import Diagram from '#lib/components/Diagram.svelte';
 	import DiagramSwitch from '#lib/components/DiagramSwitch.svelte';
+	import ExplainDialog from '#lib/components/ExplainDialog.svelte';
 	import Explanation from '#lib/components/Explanation.svelte';
 	import EyesSwitch from '#lib/components/EyesSwitch.svelte';
 	import FlowSwitch from '#lib/components/FlowSwitch.svelte';
@@ -54,6 +55,7 @@
 		withEyes,
 		withList,
 		withRaw,
+		withLabels,
 		withWhole,
 		refFor,
 		withWording,
@@ -379,6 +381,18 @@
 		onnavigate(withExplained(appState, explained), 'push');
 	const explanation = $derived(explanationOf(appState, view, holdings));
 	const lit = $derived(litBy(appState, view));
+	// Away from what it is about, so that it can still be seen. Otherwise it can be in the middle.
+	const sideFor = $derived.by(() => {
+		if (lit?.part) return 'right';
+		const line =
+			lit?.lifeline ?? (appState.explained?.kind === 'lifeline' ? appState.explained.id : null);
+		const row = lit?.step ? layout.rows.find((candidate) => candidate.id === lit.step) : null;
+		const x = row
+			? (row.x1 + row.x2) / 2
+			: layout.lanes.find((candidate) => candidate.id === line)?.x;
+		if (x === undefined) return null;
+		return x > layout.width / 2 ? 'left' : 'right';
+	});
 	const showing = $derived(stateShowing(base, appState));
 	const explainTerm = (id: string) => explain({ kind: 'term', id });
 	// The setting an open explanation is about is where its sources should open from.
@@ -557,12 +571,10 @@
 
 	function onkeydown(event: KeyboardEvent) {
 		if (event.key === 'Tab') tabbedIn = true;
+		// What is open on top has these keys, and closes itself.
+		if (window.document.querySelector('dialog[open]')) return;
 		// With a modifier these belong to the browser, such as Alt+Left and Shift+End.
 		if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-		if (event.key === 'Escape' && appState.source) {
-			closeSource();
-			return;
-		}
 		if (event.key === 'Escape' && appState.list) {
 			closeList();
 			return;
@@ -575,13 +587,9 @@
 			onnavigate(withWhole(appState, false), 'push');
 			return;
 		}
-		if (event.key === 'Escape' && appState.explained) {
-			explain(null);
-			return;
-		}
 		const target = event.target as HTMLElement;
 		// A switch has no use for these keys, and keeps the focus after it is clicked.
-		const typing = 'input:not([type="checkbox"]), select, textarea, [data-testid="source-panel"]';
+		const typing = 'input:not([type="checkbox"]), select, textarea';
 		const isPageKey = event.key.startsWith('Page');
 		// A list would change on a page key, without anyone having asked for that.
 		if (target.closest(typing) && !(isPageKey && target.closest('select'))) return;
@@ -622,7 +630,8 @@
 <div
 	class="workspace"
 	data-testid="workspace"
-	class:settings-hidden={appState.settingsHidden || nothingOnOffer}
+	class:settings-hidden={appState.settingsHidden}
+	class:no-panel={nothingOnOffer}
 	class:whole={appState.whole}
 	class:settings-open={settingsOpen}
 	data-ready={animate}
@@ -700,6 +709,28 @@
 		diagram.
 	</p>
 
+	{#if !nothingOnOffer}
+		<!-- At the side the settings are on, and in one place, so it can be pressed twice. -->
+		<button
+			type="button"
+			class="settings-toggle"
+			class:rail={!settingsShown || settingsDoNotFit}
+			data-testid="settings-toggle"
+			aria-expanded={settingsShown}
+			onclick={toggleSettings}
+		>
+			<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+				<path
+					d={settingsShown ? 'M8 2 L4 6 L8 10' : 'M4 2 L8 6 L4 10'}
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.5"
+				/>
+			</svg>
+			<span>{settingsShown ? 'Hide settings' : 'Show settings'}</span>
+		</button>
+	{/if}
+
 	<aside class="settings" aria-label="Settings">
 		{#if !simple && flowChoices.length > 1}
 			<FlowSwitch flows={flowChoices} current={base.id} onchange={(id) => onflow?.(id)} />
@@ -751,17 +782,17 @@
 					{appState.whole ? 'Back to the step' : 'See the whole flow'}
 				</button>
 			{/if}
-			{#if !nothingOnOffer}
-				<!-- Only needed in simple mode where the settings do not fit, or someone hid them. -->
-				<button
-					type="button"
-					class="quiet"
-					class:only-narrow={simple && !appState.settingsHidden}
-					data-testid="settings-toggle"
-					onclick={toggleSettings}
-				>
-					{settingsShown ? 'Hide settings' : 'Show settings'}
-				</button>
+			{#if (!simple || appState.labels) && !appState.whole}
+				<label class="quiet every-label">
+					<input
+						type="checkbox"
+						data-testid="every-label"
+						checked={appState.labels}
+						onchange={(event) =>
+							onnavigate(withLabels(appState, event.currentTarget.checked), 'push')}
+					/>
+					Show every label
+				</label>
 			{/if}
 		</div>
 		<div class="canvas" bind:clientWidth={canvasWidth} bind:clientHeight={canvasHeight}>
@@ -775,6 +806,7 @@
 					quick={previewedLast}
 					{holdings}
 					{lit}
+					allLabels={appState.labels}
 					{sending}
 					{landing}
 					eyes={appState.eyes}
@@ -839,27 +871,6 @@
 				onterm={explainTerm}
 				serverNamed={appState.serverNotes}
 				onlist={questionOffersList ? openList : null}
-			/>
-		{/if}
-		{#if explanation}
-			<Explanation
-				{...explanation}
-				onpart={explainTerm}
-				seeIt={showing ? hrefFor(showing) : null}
-				onleaveout={explanation.aboutTheServer
-					? () => onnavigate(withServerNotes(withExplained(appState, null), false), 'push')
-					: null}
-				onseeonly={explanation.party
-					? () => seeAs(appState.eyes === explanation.party ? null : explanation.party!)
-					: null}
-				seeingOnly={appState.eyes === explanation.party}
-				onfollow={explanation.follows
-					? () => follow(appState.follow === explanation.follows ? null : explanation.follows!)
-					: null}
-				following={appState.follow === explanation.follows}
-				onclose={() => explain(null)}
-				onexplainartifact={(id) => explain({ kind: 'artifact', id })}
-				onopensource={(ref) => onnavigate(withSourceOpen(appState, explainedSetting, ref), 'push')}
 			/>
 		{/if}
 		<StepDetail
@@ -991,9 +1002,50 @@
 			/>
 		</div>
 	{/if}
+	{#if explanation}
+		<ExplainDialog label={explanation.title} side={sideFor} onclose={() => explain(null)}>
+			<Explanation
+				{...explanation}
+				onpart={explainTerm}
+				seeIt={showing ? hrefFor(showing) : null}
+				onleaveout={explanation.aboutTheServer
+					? () => onnavigate(withServerNotes(withExplained(appState, null), false), 'push')
+					: null}
+				onseeonly={explanation.party
+					? () =>
+							onnavigate(
+								withEyes(
+									withExplained(appState, null),
+									appState.eyes === explanation.party ? null : explanation.party!
+								),
+								'push'
+							)
+					: null}
+				seeingOnly={appState.eyes === explanation.party}
+				onfollow={explanation.follows
+					? () =>
+							onnavigate(
+								withFollow(
+									withExplained(appState, null),
+									appState.follow === explanation.follows ? null : explanation.follows!
+								),
+								'push'
+							)
+					: null}
+				following={appState.follow === explanation.follows}
+				onclose={() => explain(null)}
+				onexplainartifact={(id) => explain({ kind: 'artifact', id })}
+				onopensource={(ref) => onnavigate(withSourceOpen(appState, explainedSetting, ref), 'push')}
+			/>
+		</ExplainDialog>
+	{/if}
 	{#if openSource && openWhy}
-		<div class="source" class:wide={sources[openSource.id].textFile}>
-			{#key `${openSource.setting}:${openSource.id}`}
+		{#key `${openSource.setting}:${openSource.id}`}
+			<ExplainDialog
+				label={`Source: ${sources[openSource.id].label}`}
+				wide={Boolean(sources[openSource.id].textFile)}
+				onclose={closeSource}
+			>
 				<SourcePanel
 					source={sources[openSource.id]}
 					why={openWhy}
@@ -1002,8 +1054,8 @@
 					onsection={(section) => onnavigate(withSourceSection(appState, section), 'replace')}
 					onclose={closeSource}
 				/>
-			{/key}
-		</div>
+			</ExplainDialog>
+		{/key}
 	{/if}
 </div>
 
@@ -1100,6 +1152,57 @@
 		white-space: nowrap;
 	}
 
+	.quiet.every-label {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		text-decoration: none;
+	}
+
+	.quiet.every-label input {
+		margin: 0;
+	}
+
+	.settings-toggle {
+		grid-area: settings;
+		z-index: 3;
+		display: flex;
+		align-items: flex-start;
+		align-self: start;
+		justify-self: start;
+		gap: 6px;
+		padding: 10px 10px 4px;
+		border: 0;
+		border-radius: 0;
+		background: none;
+		color: var(--muted);
+		font-size: 12px;
+		line-height: 12px;
+		white-space: nowrap;
+	}
+
+	.settings-toggle svg {
+		flex: none;
+	}
+
+	.settings-toggle:hover {
+		color: var(--fg);
+	}
+
+	/* All the height of the page, so there is no missing it, in the room of one column of a row. */
+	.settings-toggle.rail {
+		flex-direction: column;
+		align-self: stretch;
+		justify-self: stretch;
+		gap: 8px;
+		border-right: 1px solid var(--line);
+	}
+
+	.settings-toggle.rail span {
+		align-self: center;
+		writing-mode: vertical-rl;
+	}
+
 	.quiet {
 		flex: none;
 		padding: 0;
@@ -1123,12 +1226,6 @@
 		margin: 0 12px 0 auto;
 		color: var(--muted);
 		font-size: 12px;
-	}
-
-	@media (min-width: 1024px) {
-		.only-narrow {
-			display: none;
-		}
 	}
 
 	.above {
@@ -1155,7 +1252,7 @@
 	}
 
 	.settings-hidden {
-		grid-template-columns: 0 minmax(0, 1fr) 330px;
+		grid-template-columns: 33px minmax(0, 1fr) 330px;
 	}
 
 	.settings-hidden .settings {
@@ -1166,7 +1263,15 @@
 		grid-area: settings;
 		overflow-y: auto;
 		border-right: 1px solid var(--line);
-		padding: 14px 16px;
+		padding: 34px 16px 14px;
+	}
+
+	.workspace.no-panel {
+		grid-template-columns: 0 minmax(0, 1fr) 330px;
+	}
+
+	.no-panel .settings {
+		display: none;
 	}
 
 	.diagram {
@@ -1244,7 +1349,7 @@
 	.workspace.whole :global(.seen-note),
 	.workspace.whole .settings,
 	.workspace.whole .detail,
-	.workspace.whole [data-testid='settings-toggle'] {
+	.workspace.whole .settings-toggle {
 		display: none;
 	}
 
@@ -1256,7 +1361,7 @@
 	@media (max-width: 1239px) {
 		.workspace,
 		.settings-hidden {
-			grid-template-columns: 0 minmax(0, 1fr) 330px;
+			grid-template-columns: 33px minmax(0, 1fr) 330px;
 		}
 
 		.settings,
@@ -1270,6 +1375,7 @@
 			z-index: 2;
 			justify-self: start;
 			width: 260px;
+			padding-top: 14px;
 			background: var(--bg);
 			box-shadow: 8px 0 24px rgb(0 0 0 / 0.12);
 		}
@@ -1280,11 +1386,15 @@
 		.workspace,
 		.settings-hidden {
 			grid-template:
-				'header' auto
-				'diagram' minmax(0, 1fr)
-				'detail' minmax(96px, 30%)
-				'controls' auto
-				/ minmax(0, 1fr);
+				'header header' auto
+				'settings diagram' minmax(0, 1fr)
+				'settings detail' minmax(96px, 30%)
+				'settings controls' auto
+				/ 33px minmax(0, 1fr);
+		}
+
+		.workspace.no-panel:not(.whole) {
+			grid-template-columns: 0 minmax(0, 1fr);
 		}
 
 		.detail {
@@ -1298,7 +1408,7 @@
 
 		.source {
 			grid-row: 2 / 5;
-			grid-column: 1;
+			grid-column: 1 / -1;
 		}
 	}
 
@@ -1337,7 +1447,8 @@
 
 		.name,
 		.status,
-		.diagram {
+		.diagram,
+		.settings-toggle {
 			display: none;
 		}
 
@@ -1368,6 +1479,7 @@
 
 		.settings {
 			order: 3;
+			padding-top: 14px;
 			border-right: 0;
 			border-top: 1px solid var(--line);
 			overflow-y: visible;
@@ -1401,6 +1513,7 @@
 		}
 
 		.settings,
+		.settings-toggle,
 		footer,
 		.source:not([data-list-open]),
 		.narrow-note {

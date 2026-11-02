@@ -24,7 +24,9 @@
 		"on-a-device": "2026-11-02",
 		"on-a-device-oidc": "2026-11-02",
 		"refresh-public-ends": "2026-11-02",
-		"api-no-token": "2026-11-02"
+		"api-no-token": "2026-11-02",
+		"on-a-device-says-no": "2026-11-02",
+		"on-a-device-runs-out": "2026-11-02"
 	},
 	"flows": {
 		"authorization-code": {
@@ -163,17 +165,23 @@
 		"device": {
 			"presets": [
 				"on-a-device",
-				"on-a-device-oidc"
+				"on-a-device-oidc",
+				"on-a-device-says-no",
+				"on-a-device-runs-out"
 			],
 			"steps": [
 				"device-api-request",
 				"device-api-response",
 				"device-code-page",
+				"device-consent-deny",
 				"device-consent-grant",
 				"device-consent-page",
+				"device-denied-page",
+				"device-denied-response",
 				"device-discover",
 				"device-discovery-document",
 				"device-done-page",
+				"device-expired-response",
 				"device-fetch-keys",
 				"device-keys",
 				"device-login-page",

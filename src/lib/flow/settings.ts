@@ -17,6 +17,7 @@ export interface Settings {
 	sso: boolean;
 	ssoAsks: 'remembered' | 'insists' | 'fresh';
 	logout: boolean;
+	deviceEnds: 'agrees' | 'says-no' | 'runs-out';
 }
 
 export type SettingId = keyof Settings;
@@ -67,6 +68,8 @@ interface SettingBase {
 	why: string;
 	/** Present when simple mode offers this setting, in words that need no explaining first. */
 	simple?: { label: string; summary: string };
+	/** The only base flow it means anything on, so that no other flow has to test its combinations. */
+	onlyOn?: string;
 	sources: readonly SourceRef[];
 	requires?: Requirement;
 }
@@ -498,10 +501,38 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			because: 'It is part of OpenID Connect, and this shows the plain case.',
 			sayWhenBlocked: true
 		}
+	},
+	deviceEnds: {
+		kind: 'choice',
+		label: 'How it ends',
+		param: 'ends',
+		default: 'agrees',
+		onlyOn: 'device',
+		summary:
+			'Whether the user agrees, says no, or never comes. The app only finds out from the answer the next time it asks.',
+		why: 'The app cannot see the other device, so an error on the next call is all it ever gets. These two are ordinary ways for this to end, and an app has to handle them as that.',
+		sources: [
+			{
+				source: 'rfc8628',
+				section: '3.5',
+				why: 'Section 3.5 lists access_denied and expired_token, and says that any error other than the two that mean carry on means stop asking.'
+			}
+		],
+		options: [
+			{ value: 'agrees', label: 'The user agrees' },
+			{ value: 'says-no', label: 'The user says no' },
+			{ value: 'runs-out', label: 'The codes run out' }
+		]
 	}
 };
 
 export const settingIds = Object.keys(settingDefs) as SettingId[];
+
+/** All but those that belong to one flow. */
+export const sharedSettingIds = settingIds.filter((id) => {
+	const def: SettingDef = settingDefs[id];
+	return !def.onlyOn;
+});
 
 /** The few that simple mode offers. The rest stay on as chips if someone turned them on (ADR-004). */
 export const simpleSettingIds = settingIds.filter((id) => settingDefs[id].simple);
@@ -588,9 +619,9 @@ let everyValid: readonly Readonly<Settings>[] | undefined;
  * try at least double with each setting, so the list for all of them is worked out once, and shared.
  */
 export function allValidSettings(
-	ids: readonly SettingId[] = settingIds
+	ids: readonly SettingId[] = sharedSettingIds
 ): readonly Readonly<Settings>[] {
-	if (ids !== settingIds) return validCombinations(ids);
+	if (ids !== sharedSettingIds) return validCombinations(ids);
 	everyValid ??= Object.freeze(validCombinations(ids).map((settings) => Object.freeze(settings)));
 	return everyValid;
 }

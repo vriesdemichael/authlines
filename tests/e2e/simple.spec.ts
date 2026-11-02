@@ -134,11 +134,10 @@ test.describe('asking what something is', () => {
 		await expect(page.getByTestId('source-panel')).toBeVisible();
 	});
 
-	test('a link can open with it, and it survives stepping', async ({ page }) => {
-		await visit(page, `${FLOW_PATH}?explain=artifact.code`);
+	test('a link can open with it, on the step it names', async ({ page }) => {
+		await visit(page, `${FLOW_PATH}?explain=artifact.code&step=callback`);
 		await expect(explanation(page)).toContainText('one-time ticket');
-		await page.getByTestId('next').click();
-		await expect(explanation(page)).toBeVisible();
+		await expect(page.locator('[data-state="current"]')).toHaveAttribute('data-step', 'callback');
 	});
 
 	test('a link naming something unknown opens nothing', async ({ page }) => {

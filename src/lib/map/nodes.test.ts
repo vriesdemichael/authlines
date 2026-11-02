@@ -19,6 +19,7 @@ import {
 } from '#lib/map/nodes.ts';
 
 const asCases = mapNodes.map((node) => [node.id, node] as const);
+const wrong = mapTracks.find((track) => track.id === 'when-it-goes-wrong')!;
 
 describe('the map', () => {
 	it('has unique IDs, which cannot be taken for a diagram', () => {
@@ -79,14 +80,26 @@ describe('the map', () => {
 	it('speaks plainly where it is meant for someone new', () => {
 		const wire = /\b(GET|POST|302|client_id|redirect_uri|scope|nonce|IdP)\b/;
 		const simple = mapNodes.filter((node) => node.mode === 'simple');
-		const jargon = simple.filter((node) => wire.test(node.title));
+		// An error is said as it is on someone's screen, because that is how they recognise it.
+		const errors = new Set(wrong.chains.flat());
+		const jargon = simple.filter((node) => !errors.has(node) && wire.test(node.title));
 		expect(jargon.map((node) => node.id)).toEqual([]);
+	});
+
+	it('has what someone runs into early where they would look, for someone new', () => {
+		const questions = wrong.chains.flat();
+		expect(questions.map((node) => node.id)).toEqual(
+			expect.arrayContaining(['redirect-uri-error', 'why-401', '401-or-403'])
+		);
+		for (const node of questions) expect(node.mode, node.id).toBe('simple');
+		const hood = mapTracks.find((track) => track.id === 'under-the-hood')!;
+		for (const node of hood.chains.flat()) expect(node.title, node.id).not.toMatch(/why do i get/i);
 	});
 });
 
 describe.each(asCases)('the node %s', (_, node) => {
 	it('is a state the application can be in', () => {
-		expect(allValidSettings()).toContainEqual(nodeSettings(node));
+		expect(allValidSettings(flows[node.flow].settings)).toContainEqual(nodeSettings(node));
 		const steps = nodeView(node).steps.map((step) => step.id);
 		if (node.step) expect(steps).toContain(node.step);
 	});

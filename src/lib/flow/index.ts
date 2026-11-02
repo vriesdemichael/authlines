@@ -5,7 +5,7 @@ import { clientCredentialsSetup } from '#lib/flow/client-credentials-setup.ts';
 import { device } from '#lib/flow/device.ts';
 import { deviceSetup } from '#lib/flow/device-setup.ts';
 import type { BaseFlow, Preset } from '#lib/flow/model.ts';
-import { settingIds } from '#lib/flow/settings.ts';
+import { sharedSettingIds } from '#lib/flow/settings.ts';
 
 const presets: readonly Preset[] = [
 	{ id: 'oauth', title: 'OAuth', settings: {} },
@@ -156,7 +156,7 @@ const presets: readonly Preset[] = [
 export const authorizationCodeBase: BaseFlow = {
 	id: authorizationCode.id,
 	diagrams: { flow: authorizationCode, setup: authorizationCodeSetup },
-	settings: settingIds,
+	settings: sharedSettingIds,
 	presets
 };
 
@@ -194,7 +194,7 @@ export const clientCredentialsBase: BaseFlow = {
 export const deviceBase: BaseFlow = {
 	id: device.id,
 	diagrams: { flow: device, setup: deviceSetup },
-	settings: ['oidc'],
+	settings: ['oidc', 'deviceEnds'],
 	notHere: {
 		consent:
 			'It asks here anyway. The spec says a server should, and the one recorded did every time, with that setting off and on.',
@@ -217,6 +217,16 @@ export const deviceBase: BaseFlow = {
 			id: 'on-a-device-oidc',
 			title: 'An app on a device, with who logged in',
 			settings: { oidc: true }
+		},
+		{
+			id: 'on-a-device-says-no',
+			title: 'An app on a device, and the user says no',
+			settings: { deviceEnds: 'says-no' }
+		},
+		{
+			id: 'on-a-device-runs-out',
+			title: 'An app on a device, and the codes run out',
+			settings: { deviceEnds: 'runs-out' }
 		}
 	]
 };

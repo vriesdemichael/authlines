@@ -292,9 +292,8 @@ describe.each(asCases)('the recording of %s', (preset, recording) => {
 
 	it('was made with the settings of its named state', () => {
 		const wanted = base.presets.find((p) => p.id === preset)!;
-		expect(recording.settings).toEqual(
-			normalize({ ...defaultSettings, ...wanted.settings }).settings
-		);
+		const expected = normalize({ ...defaultSettings, ...wanted.settings }).settings;
+		for (const id of base.settings) expect(recording.settings[id], id).toEqual(expected[id]);
 	});
 });
 

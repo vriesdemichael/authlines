@@ -136,6 +136,89 @@ export const mapTracks: readonly MapTrack[] = [
 		]
 	},
 	{
+		id: 'when-it-goes-wrong',
+		title: 'When something goes wrong',
+		lead: 'An error on your screen, and what it means.',
+		chains: [
+			[
+				node({
+					id: 'redirect-uri-error',
+					answer:
+						'The address the app sent is not one registered for this client, so the server refuses before anyone logs in. It has to match what was registered, and current advice is an exact match.',
+					title: 'Why do I get Invalid parameter: redirect_uri?',
+					summary: 'Where the address is checked, and where it was registered.',
+					preset: 'oauth',
+					step: 'authorize'
+				}),
+				node({
+					id: 'why-401',
+					answer:
+						'The API does not accept the token: it is missing, expired, changed, from another issuer, or for someone else. A new token can help, if the reason is that it ran out.',
+					title: 'Why did my API say 401?',
+					summary: 'It does not accept the token, for one of several reasons that look the same.',
+					preset: 'api-expired',
+					step: 'api-response'
+				}),
+				node({
+					id: '401-or-403',
+					answer:
+						'A 401 means the API does not accept the token. A 403 means it does and still refuses, often because the token does not allow this, so a new token of the same kind usually will not help.',
+					title: 'What is the difference between 401 and 403?',
+					summary: 'One is about the token, and the other about what it allows.',
+					preset: 'api-no-scope',
+					step: 'api-response'
+				}),
+				node({
+					id: 'api-no-token',
+					answer:
+						'A 401, with WWW-Authenticate saying which kind of token it wants. There is no error in it, because there was no token to be wrong.',
+					title: 'What does an API say to a call with no token?',
+					summary: 'Which kind of token it wants, and no error.',
+					preset: 'api-no-token',
+					step: 'api-response'
+				}),
+				node({
+					id: 'api-changed',
+					answer:
+						'The API refuses it, because the signature no longer matches. Anyone can read a token like this and change it, but only the identity provider can sign one.',
+					title: 'What if someone changes what a token says?',
+					summary: 'Anyone can read one, and nobody else can sign it.',
+					preset: 'api-changed',
+					step: 'api-response'
+				}),
+				node({
+					id: 'api-elsewhere',
+					answer:
+						'Because it does not name this API. Its signature is good and it has not expired, but a token meant for one API should not open every other one.',
+					title: 'Why does my API refuse a token that is still good?',
+					summary: 'It has to be for this API, which takes setting up at the identity provider.',
+					preset: 'api-elsewhere',
+					step: 'api-response'
+				})
+			],
+			[
+				node({
+					id: 'login-required',
+					answer:
+						'The app sent prompt=none, which says not to show a form, and the user would have to log in, usually because this browser has no session. It is how an app checks quietly whether someone is logged in.',
+					title: 'Why do I get login_required?',
+					summary: 'Someone would have to log in, and the server was told not to ask.',
+					preset: 'sso-fresh',
+					step: 'second-redirect-with-code'
+				}),
+				node({
+					id: 'refresh-token-reuse',
+					answer:
+						'A refresh token that had already been used was sent again, by someone with a copy or by the app itself, and this server lets each one work only once. It also stopped the newest one, so the app has to start a new login.',
+					title: 'Why do I get Maximum allowed refresh token reuse exceeded?',
+					summary: 'A refresh token was used twice, and that ended things for this app.',
+					preset: 'refresh-ends',
+					step: 'refresh-again-response'
+				})
+			]
+		]
+	},
+	{
 		id: 'safe',
 		title: 'Keeping it safe',
 		lead: 'What can go wrong, and what stops it.',
@@ -438,6 +521,16 @@ export const mapTracks: readonly MapTrack[] = [
 					summary: 'Then it is not a secret, and anyone can read it.',
 					preset: 'browser-app',
 					step: 'token-request'
+				}),
+				node({
+					id: 'force-a-login',
+					answer:
+						'Send prompt=login with the request. The identity provider shows the form, though it knows the browser. To be sure it happened, check auth_time in the ID token, if it has one: a provider only has to send it when the app asks for it.',
+					title: 'How do I make someone log in again?',
+					summary: 'A session is usually good enough. One parameter says not this time.',
+					mode: 'advanced',
+					preset: 'sso-insists',
+					step: 'second-authorize'
 				})
 			]
 		]
@@ -445,60 +538,8 @@ export const mapTracks: readonly MapTrack[] = [
 	{
 		id: 'under-the-hood',
 		title: 'Under the hood',
-		lead: 'For when you are looking at the real thing and something is off.',
+		lead: 'What really happens, for when you want to see it.',
 		chains: [
-			[
-				node({
-					id: 'why-401',
-					answer:
-						'The API does not accept the token: it is missing, expired, changed, from another issuer, or for someone else. A new token can help, if the reason is that it ran out.',
-					title: 'Why did my API say 401?',
-					summary: 'It does not accept the token, for one of several reasons that look the same.',
-					mode: 'advanced',
-					preset: 'api-expired',
-					step: 'api-response'
-				}),
-				node({
-					id: '401-or-403',
-					answer:
-						'A 401 means the API does not accept the token. A 403 means it does and still refuses, often because the token does not allow this, so a new token of the same kind usually will not help.',
-					title: 'What is the difference between 401 and 403?',
-					summary: 'One is about the token, and the other about what it allows.',
-					mode: 'advanced',
-					preset: 'api-no-scope',
-					step: 'api-response'
-				}),
-				node({
-					id: 'api-no-token',
-					answer:
-						'A 401, with WWW-Authenticate saying which kind of token it wants. There is no error in it, because there was no token to be wrong.',
-					title: 'What does an API say to a call with no token?',
-					summary: 'Which kind of token it wants, and no error.',
-					mode: 'advanced',
-					preset: 'api-no-token',
-					step: 'api-response'
-				}),
-				node({
-					id: 'api-changed',
-					answer:
-						'The API refuses it, because the signature no longer matches. Anyone can read a token like this and change it, but only the identity provider can sign one.',
-					title: 'What if someone changes what a token says?',
-					summary: 'Anyone can read one, and nobody else can sign it.',
-					mode: 'advanced',
-					preset: 'api-changed',
-					step: 'api-response'
-				}),
-				node({
-					id: 'api-elsewhere',
-					answer:
-						'Because it does not name this API. Its signature is good and it has not expired, but a token meant for one API should not open every other one.',
-					title: 'Why does my API refuse a token that is still good?',
-					summary: 'It has to be for this API, which takes setting up at the identity provider.',
-					mode: 'advanced',
-					preset: 'api-elsewhere',
-					step: 'api-response'
-				})
-			],
 			[
 				node({
 					id: 'on-the-wire',
@@ -511,16 +552,6 @@ export const mapTracks: readonly MapTrack[] = [
 					step: 'token-request'
 				}),
 				node({
-					id: 'redirect-uri-error',
-					answer:
-						'The address the app sent is not one registered for this client, so the server refuses before anyone logs in. It has to match what was registered, and current advice is an exact match.',
-					title: 'Why do I get Invalid parameter: redirect_uri?',
-					summary: 'Where the address is checked, and where it was registered.',
-					mode: 'advanced',
-					preset: 'oauth',
-					step: 'authorize'
-				}),
-				node({
 					id: 'two-apps-one-login',
 					answer:
 						'They share the session on the identity provider, and nothing else. Each gets tokens of its own, and here the two ID tokens name the same session and login time, and a different app.',
@@ -529,36 +560,6 @@ export const mapTracks: readonly MapTrack[] = [
 					mode: 'advanced',
 					preset: 'sso-oidc',
 					step: 'second-token-response'
-				}),
-				node({
-					id: 'force-a-login',
-					answer:
-						'Send prompt=login with the request. The identity provider shows the form, though it knows the browser. To be sure it happened, check auth_time in the ID token, if it has one: a provider only has to send it when the app asks for it.',
-					title: 'How do I make someone log in again?',
-					summary: 'A session is usually good enough. One parameter says not this time.',
-					mode: 'advanced',
-					preset: 'sso-insists',
-					step: 'second-authorize'
-				}),
-				node({
-					id: 'login-required',
-					answer:
-						'The app sent prompt=none, which says not to show a form, and the user would have to log in, usually because this browser has no session. It is how an app checks quietly whether someone is logged in.',
-					title: 'Why do I get login_required?',
-					summary: 'Someone would have to log in, and the server was told not to ask.',
-					mode: 'advanced',
-					preset: 'sso-fresh',
-					step: 'second-redirect-with-code'
-				}),
-				node({
-					id: 'refresh-token-reuse',
-					answer:
-						'A refresh token that had already been used was sent again, by someone with a copy or by the app itself, and this server lets each one work only once. It also stopped the newest one, so the app has to start a new login.',
-					title: 'Why do I get Maximum allowed refresh token reuse exceeded?',
-					summary: 'A refresh token was used twice, and that ended things for this app.',
-					mode: 'advanced',
-					preset: 'refresh-ends',
-					step: 'refresh-again-response'
 				}),
 				node({
 					id: 'what-is-in-my-token',
@@ -675,12 +676,24 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'device-no-answer',
 					flow: 'device',
-					preset: 'on-a-device',
-					step: 'device-token-response',
-					title: 'What if the user says no, or never finishes?',
-					summary: 'The app gets an error, and stops asking.',
+					preset: 'on-a-device-says-no',
+					mode: 'advanced',
+					step: 'device-denied-response',
+					title: 'What if the user says no?',
+					summary: 'The app is told the next time it asks, and stops.',
 					answer:
-						'Then this last answer is an error and not what is drawn here: access_denied if they said no, and expired_token if the codes ran out. The app stops asking, and trying again takes new codes, once the user asks to.'
+						'The app only finds out the next time it asks: a 400 with access_denied. It stops asking and tells the user. Trying again takes new codes, once the user asks to.'
+				}),
+				node({
+					id: 'device-ran-out',
+					flow: 'device',
+					preset: 'on-a-device-runs-out',
+					mode: 'advanced',
+					step: 'device-expired-response',
+					title: 'What if the user never comes?',
+					summary: 'The codes run out, and the app is told when it next asks.',
+					answer:
+						'The codes only last so long. The next time the app asks after that, it gets a 400 with expired_token, stops asking, and tells the user. Trying again takes new codes, once the user asks to.'
 				}),
 				node({
 					id: 'device-pending-error',

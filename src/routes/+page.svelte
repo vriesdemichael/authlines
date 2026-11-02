@@ -19,20 +19,22 @@
 	// The same step on both, so what moves is what that one setting does and nothing else.
 	const SAME_STEP = 'token-response';
 	const BY_ITSELF_AFTER_MS = 2000;
-	const SETTLE_MS = 120;
+	const SETTLE_MS = 300;
 
 	let showing = $state(THE_PLAIN_FLOW);
 	let step = $state<string | null>(SAME_STEP);
 	let pointed = false;
-	let waiting: ReturnType<typeof setTimeout> | undefined;
+	let settling: ReturnType<typeof setTimeout> | undefined;
+	let byItself: ReturnType<typeof setTimeout> | undefined;
 
 	function point(node: MapNode) {
+		clearTimeout(settling);
 		// Moving over the one that is on show is nobody asking for anything new.
 		if (node === showing && step === null) return;
 		pointed = true;
-		clearTimeout(waiting);
-		// So that passing over a question on the way to another does not set the diagram off.
-		waiting = setTimeout(() => {
+		// So that passing over a question on the way to another does not set the diagram off. Each move
+		// starts this again, so it takes resting on one, and not only crossing it slowly.
+		settling = setTimeout(() => {
 			showing = node;
 			step = null;
 		}, SETTLE_MS);
@@ -52,14 +54,17 @@
 				Living = module.default as typeof Living;
 				if (pointed || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 				// It moves once by itself, to show what this is, and then never again.
-				waiting = setTimeout(() => {
+				byItself = setTimeout(() => {
 					if (pointed) return;
 					showing = WITH_ONE_THING_ON;
 					step = null;
 				}, BY_ITSELF_AFTER_MS);
 			});
 		}
-		return () => clearTimeout(waiting);
+		return () => {
+			clearTimeout(settling);
+			clearTimeout(byItself);
+		};
 	});
 
 	const current = $derived(mounted ? page.url.searchParams.get('at') : null);
@@ -90,7 +95,8 @@
 
 <main data-ready={mounted}>
 	<div class="home">
-		<div class="questions">
+		<!-- Leaving, on the way to the diagram, is not asking for what the mouse last crossed. -->
+		<div class="questions" role="presentation" onpointerleave={() => clearTimeout(settling)}>
 			<h1><Mark size={24} />{SITE_NAME}</h1>
 			<p class="headline">Flip one thing. Watch the login change.</p>
 			<p class="lead">
@@ -123,7 +129,8 @@
 			</p>
 		</div>
 		{#if Living}
-			<div class="beside">
+			<!-- Someone looking at it does not want it to change. -->
+			<div class="beside" role="presentation" onpointerenter={() => (pointed = true)}>
 				<Living node={showing} {step} href={hrefOf(showing)} />
 			</div>
 		{/if}

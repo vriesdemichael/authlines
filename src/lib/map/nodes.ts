@@ -31,6 +31,7 @@ export function nodeState(of: MapNode): AppState {
 		follow: null,
 		wording: null,
 		list: false,
+		labels: false,
 		whole: false,
 		raw: false
 	};

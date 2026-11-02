@@ -163,7 +163,8 @@ export const pageShots = [
 	'logout-question',
 	'device-code',
 	'device-consent',
-	'device-done'
+	'device-done',
+	'device-denied'
 ] as const;
 export type ShotId = (typeof pageShots)[number];
 

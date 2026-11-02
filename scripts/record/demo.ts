@@ -488,8 +488,18 @@ export class Demo {
 		if (jsonOf<Tokens>(notYet.text).error !== 'authorization_pending') {
 			throw new Error(`Expected to be told not yet: ${notYet.text}`);
 		}
-		await someoneLogsIn(codes.verification_uri, codes.user_code);
+		const { deviceEnds } = run.settings;
+		if (deviceEnds !== 'runs-out') await someoneLogsIn(codes.verification_uri, codes.user_code);
 		await new Promise((resolve) => setTimeout(resolve, codes.interval * 1000));
+		if (deviceEnds !== 'agrees') {
+			const expected = deviceEnds === 'says-no' ? 'access_denied' : 'expired_token';
+			const answer = deviceEnds === 'says-no' ? 'denied-response' : 'expired-response';
+			const said = await call(run, ['poll-again', answer], 'POST', url, {}, asking);
+			if (jsonOf<Tokens>(said.text).error !== expected) {
+				throw new Error(`Expected ${expected}: ${said.text}`);
+			}
+			return;
+		}
 		const result = await call(run, ['poll-again', 'token-response'], 'POST', url, {}, asking);
 		const tokens = jsonOf<Tokens>(result.text);
 		if (!tokens.access_token) throw new Error(`No token: ${result.text}`);

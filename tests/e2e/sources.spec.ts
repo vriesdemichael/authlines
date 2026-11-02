@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
-import { settingDefs, settingIds } from '../../src/lib/flow/settings.ts';
+import { settingDefs, settingIds, type SettingDef } from '../../src/lib/flow/settings.ts';
 import { originalUrl, sources } from '../../src/lib/sources/sources.ts';
 import { currentSearch, expectMatchesModel, open, watchForErrors } from './helpers.ts';
 
@@ -31,7 +32,13 @@ test.describe('a source', () => {
 			test(`${setting} opens ${ref.source}`, async ({ page }) => {
 				const check = watchForErrors(page);
 				const source = sources[ref.source];
-				await open(page, onOffer(setting));
+				const { onlyOn }: SettingDef = settingDefs[setting];
+				if (onlyOn) {
+					await page.goto(`${onlyOn}/?mode=advanced`);
+					await page.locator('.workspace[data-ready="true"]').waitFor();
+				} else {
+					await open(page, onOffer(setting));
+				}
 				await opener(page, setting, ref.source).click();
 
 				await expect(panel(page).getByRole('heading', { level: 2 })).toHaveText(source.title);
@@ -62,14 +69,15 @@ test.describe('a source', () => {
 		await expectMatchesModel(page, 'source=rfc6749&for=client&section=2.1');
 	});
 
-	test('does not stop the diagram from working', async ({ page }) => {
+	test('leaves the diagram working when it closes', async ({ page }) => {
 		await open(page, 'source=rfc6749&for=client');
+		await page.getByTestId('source-close').click();
+		await expect(panel(page)).toHaveCount(0);
 		await page.getByTestId('next').click();
 		await expect(page.locator('[data-state="current"]')).toHaveAttribute(
 			'data-step',
 			'redirect-to-idp'
 		);
-		await expect(panel(page)).toBeVisible();
 	});
 });
 
@@ -99,6 +107,22 @@ test.describe('the text of an RFC', () => {
 			expect(published).toContain('IETF Trust');
 		});
 	}
+
+	test('opens at the section when the text is there at once, as when it was read before', async ({
+		page
+	}) => {
+		const body = readFileSync('static/rfc/rfc9449.txt', 'utf8');
+		await page.route('**/rfc/**', (route) =>
+			route.fulfill({ status: 200, contentType: 'text/plain', body })
+		);
+		await open(page, 'binding=dpop');
+		await opener(page, 'dpopNonce', 'rfc9449').click();
+		const part = page.locator('[data-section="8"]').locator('b');
+		await expect(part).toBeInViewport();
+		// And stays there, once the dialog has been drawn.
+		await page.waitForTimeout(500);
+		await expect(part).toBeInViewport({ timeout: 500 });
+	});
 
 	test('opens at the section the source names', async ({ page }) => {
 		await open(page, 'binding=dpop');
@@ -132,27 +156,17 @@ test.describe('the text of an RFC', () => {
 	});
 });
 
-test.describe('moving on with a source open', () => {
+test.describe('going to another part of a source', () => {
 	test('neither reloads the text nor loses the place in it', async ({ page }) => {
 		const requests = rfcRequests(page);
 		await open(page, 'binding=dpop');
 		await opener(page, 'dpopNonce', 'rfc9449').click();
 		const part = page.locator('[data-section="8"]').locator('b');
 		await expect(part).toBeInViewport();
-		const scroller = page.locator('[data-testid="source-panel"]').locator('..');
-		await scroller.evaluate((element) => element.scrollBy(0, 1500));
-		const scrolled = await scroller.evaluate((element) => element.scrollTop);
-
-		await page.getByTestId('next').click();
-		await expect(page.locator('[data-state="current"]')).toHaveAttribute(
-			'data-step',
-			'generate-key'
-		);
-		await page.locator('[data-setting="oidc"] input').check();
-		await expect.poll(() => currentSearch(page)).toContain('oidc=1');
-
+		await page.getByTestId('source-sections').selectOption('4');
+		await expect.poll(() => currentSearch(page)).toContain('section=4');
+		await expect(page.locator('[data-section="4"]').locator('b')).toBeInViewport();
 		expect(requests).toHaveLength(1);
-		expect(await scroller.evaluate((element) => element.scrollTop)).toBe(scrolled);
 	});
 });
 

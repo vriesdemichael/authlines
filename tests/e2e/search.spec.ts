@@ -12,6 +12,38 @@ const start = async (page: Page) => {
 	await expect(input(page)).toBeFocused();
 };
 
+test.describe('the keys for it', () => {
+	test("Ctrl+F opens it, and pressed again it is the browser's own", async ({ page }) => {
+		await page.goto('./');
+		await page.locator('main[data-ready="true"]').waitFor();
+		await page.evaluate(() => {
+			const seen: boolean[] = [];
+			(window as unknown as { taken: boolean[] }).taken = seen;
+			addEventListener('keydown', (event) => {
+				if (event.key === 'f') seen.push(event.defaultPrevented);
+			});
+		});
+		const taken = () => page.evaluate(() => (window as unknown as { taken: boolean[] }).taken);
+		await page.keyboard.press('ControlOrMeta+f');
+		await expect(input(page)).toBeFocused();
+		await expect(status(page)).toContainText("the browser's own find");
+		expect(await taken()).toEqual([true]);
+
+		await page.keyboard.press('ControlOrMeta+f');
+		await expect.poll(taken).toEqual([true, false]);
+		await expect(input(page)).toBeHidden();
+	});
+
+	test('Ctrl+F is left to the browser over an open RFC, which has its own text', async ({
+		page
+	}) => {
+		await open(page, 'source=rfc6749&for=client&section=2.1');
+		await expect(page.getByTestId('source-text')).toBeVisible();
+		await page.keyboard.press('ControlOrMeta+f');
+		await expect(input(page)).toBeHidden();
+	});
+});
+
 test.describe('what a result does', () => {
 	test('a word opens where someone is, and leaves the flow as it was', async ({ page }) => {
 		await open(page, 'mode=simple&oidc=1&step=callback');

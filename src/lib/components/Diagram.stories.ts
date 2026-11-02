@@ -59,6 +59,12 @@ export const ARefusalOnItsWay: Story = {
 	}
 };
 
+export const EveryLabel: Story = {
+	args: {
+		allLabels: true
+	}
+};
+
 export const TheWholeFlow: Story = {
 	args: {
 		layout: layoutDiagram(

@@ -108,6 +108,9 @@ test.describe('getting there', () => {
 		await page.locator('[data-chip^="callback"][data-artifact="code"]').click();
 		await page.getByTestId('follow-it').click();
 		await expect(page).toHaveURL(/follow=code/);
+		// Out of the way, because what it changed is on the diagram.
+		await expect(page.getByTestId('explanation')).toHaveCount(0);
+		await page.locator('[data-chip^="callback"][data-artifact="code"]').click();
 		await expect(page.getByTestId('follow-it')).toHaveText('Stop following');
 		await page.getByTestId('follow-it').focus();
 		await page.keyboard.press('Enter');
