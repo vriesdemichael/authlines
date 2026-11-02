@@ -675,12 +675,24 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'device-no-answer',
 					flow: 'device',
-					preset: 'on-a-device',
-					step: 'device-token-response',
-					title: 'What if the user says no, or never finishes?',
-					summary: 'The app gets an error, and stops asking.',
+					preset: 'on-a-device-says-no',
+					mode: 'advanced',
+					step: 'device-denied-response',
+					title: 'What if the user says no?',
+					summary: 'The app is told the next time it asks, and stops.',
 					answer:
-						'Then this last answer is an error and not what is drawn here: access_denied if they said no, and expired_token if the codes ran out. The app stops asking, and trying again takes new codes, once the user asks to.'
+						'The app only finds out the next time it asks: a 400 with access_denied. It stops asking and tells the user. Trying again takes new codes, once the user asks to.'
+				}),
+				node({
+					id: 'device-ran-out',
+					flow: 'device',
+					preset: 'on-a-device-runs-out',
+					mode: 'advanced',
+					step: 'device-expired-response',
+					title: 'What if the user never comes?',
+					summary: 'The codes run out, and the app is told when it next asks.',
+					answer:
+						'The codes only last so long. The next time the app asks after that, it gets a 400 with expired_token, stops asking, and tells the user. Trying again takes new codes, once the user asks to.'
 				}),
 				node({
 					id: 'device-pending-error',

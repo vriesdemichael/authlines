@@ -76,6 +76,35 @@ test.describe('a flow on two devices', () => {
 		await expect(detail(page)).toContainText('ID token');
 	});
 
+	test('offers how it ends in advanced mode only, and draws each', async ({ page }) => {
+		await openIt(page, 'mode=simple');
+		await expect(page.locator('[data-setting="deviceEnds"]')).toHaveCount(0);
+
+		await openIt(page, 'mode=advanced');
+		await page.locator('[data-setting="deviceEnds"] input[value="says-no"]').check();
+		await expect(page).toHaveURL(/ends=says-no/);
+		await page.goto(`${PATH}?mode=advanced&ends=says-no&step=device-denied-response`);
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		await expect(page.getByTestId('payload')).toContainText('access_denied');
+		await expect(page.locator('[data-step="device-api-request"]')).toHaveCount(0);
+
+		await page.goto(`${PATH}?mode=advanced&ends=runs-out&step=device-expired-response`);
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		await expect(page.getByTestId('payload')).toContainText('expired_token');
+		await expect(page.locator('[data-step="device-open-page"]')).toHaveCount(0);
+	});
+
+	test('pasting expired_token opens the refusal, and not a success', async ({ page }) => {
+		await page.goto('./');
+		await page.locator('main[data-ready="true"]').waitFor();
+		await page.getByTestId('open-search').click();
+		await page.getByTestId('search-input').fill('expired_token');
+		await page.getByTestId('search').locator('[data-result]').first().click();
+		await expect(page).toHaveURL(/device-ran-out/);
+		await expect(page.getByTestId('payload')).toContainText('expired_token');
+		await expect(page.getByTestId('payload')).not.toContainText('access_token');
+	});
+
 	test('has a setup of its own, with no address and no secret', async ({ page }) => {
 		await openIt(page, '', `${PATH}setup/`);
 		await expect(page.locator('.workspace')).toHaveAttribute('data-diagram', 'setup');

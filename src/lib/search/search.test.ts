@@ -86,8 +86,8 @@ describe('what people bring', () => {
 	});
 
 	it.each([
-		['expired_token', 'device-no-answer', 'simple'],
-		['access_denied', 'device-no-answer', 'simple'],
+		['expired_token', 'device-ran-out', 'advanced'],
+		['access_denied', 'device-no-answer', 'advanced'],
 		['slow_down', 'device-pending-error', 'advanced']
 	])('%s opens on the question that says what it means', (query, view, mode) => {
 		const error = search(query).results.find(

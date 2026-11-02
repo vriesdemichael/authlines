@@ -204,7 +204,14 @@ export const deviceSetup: DiagramDef = {
 			inPractice:
 				'A library or a gateway takes these two values, and checks the rest. Do not leave out the audience, which it may let you do.',
 			practice: [example('jose', true, 'when you pass it the issuer and audience')],
-			links: [{ diagram: 'flow', step: 'device-check-token', text: 'See where these get checked' }],
+			links: [
+				{
+					diagram: 'flow',
+					step: 'device-check-token',
+					text: 'See where these get checked',
+					when: is('deviceEnds', 'agrees')
+				}
+			],
 			fields: [
 				{ name: 'issuer', place: 'setting' },
 				{ name: 'audience', place: 'setting', note: 'The name a token has to carry for this API' }

@@ -6,6 +6,7 @@ import { evaluate, holdingsAt } from '#lib/flow/model.ts';
 import {
 	allValidSettings,
 	defaultSettings,
+	type Settings,
 	normalize,
 	settingDefs,
 	settingIds,
@@ -234,6 +235,43 @@ describe('the device flow', () => {
 			mapNodes.filter((node) => node.flow === base.id).map(({ preset }) => preset)
 		);
 		expect(base.presets.filter(({ id }) => !used.has(id))).toEqual([]);
+	});
+
+	it('draws the two other ways it ends, each from what a real server answered', () => {
+		const said = (id: string) => recordings.find(({ preset }) => preset.id === id)!;
+		const no = said('on-a-device-says-no');
+		expect(bodyOf(no.recording, 'device-denied-response').error).toBe('access_denied');
+		expect(bodyOf(no.recording, 'device-consent-deny')).toHaveProperty('cancel');
+		const noSteps = evaluate(flow, no.settings).steps.map(({ id }) => id);
+		expect(noSteps).toContain('device-consent-deny');
+		expect(noSteps).not.toContain('device-token-response');
+		expect(noSteps).not.toContain('device-api-request');
+		expect(noSteps.at(-1)).toBe('device-denied-response');
+		expect(holdingsAt(evaluate(flow, no.settings), 'device-denied-response').app).not.toContain(
+			'access-token'
+		);
+
+		const late = said('on-a-device-runs-out');
+		expect(bodyOf(late.recording, 'device-response').expires_in).toBe(2);
+		expect(bodyOf(late.recording, 'device-expired-response').error).toBe('expired_token');
+		const lateSteps = evaluate(flow, late.settings).steps.map(({ id }) => id);
+		expect(lateSteps).not.toContain('device-open-page');
+		expect(lateSteps).toContain('device-time-passes');
+		expect(lateSteps.at(-1)).toBe('device-expired-response');
+	});
+
+	it('has no part for what did not happen', () => {
+		const partsWhen = (deviceEnds: Settings['deviceEnds']) =>
+			evaluate(flow, { ...defaultSettings, deviceEnds }).parts.map(({ label }) => label);
+		expect(partsWhen('agrees')).toEqual(['Ask', 'Wait', 'Log in', 'Collect', 'Use']);
+		expect(partsWhen('says-no')).toEqual(['Ask', 'Wait', 'Log in', 'Collect']);
+		expect(partsWhen('runs-out')).toEqual(['Ask', 'Wait', 'Collect']);
+	});
+
+	it('offers how it ends in advanced mode only, and on this flow only', () => {
+		expect(settingDefs.deviceEnds.simple).toBeUndefined();
+		expect(settingDefs.deviceEnds.onlyOn).toBe(base.id);
+		expect(authorizationCodeBase.settings).not.toContain('deviceEnds');
 	});
 
 	it('claims a recording for what was recorded, and not for what people did', () => {

@@ -86,7 +86,7 @@ describe('the map', () => {
 
 describe.each(asCases)('the node %s', (_, node) => {
 	it('is a state the application can be in', () => {
-		expect(allValidSettings()).toContainEqual(nodeSettings(node));
+		expect(allValidSettings(flows[node.flow].settings)).toContainEqual(nodeSettings(node));
 		const steps = nodeView(node).steps.map((step) => step.id);
 		if (node.step) expect(steps).toContain(node.step);
 	});

@@ -46,6 +46,8 @@ export const SERVICE_CLIENT = 'demo-service';
 export const DEVICE_CLIENT = 'demo-device';
 /** What turns the flow on for one client. It is off on a new one (questions.json). */
 export const DEVICE_GRANT_ON = { 'oauth2.device.authorization.grant.enabled': 'true' };
+/** The same, with codes that do not last, so that a run can get to them running out. */
+export const QUICK_DEVICE_CLIENT = 'demo-device-quick';
 export const SECOND_REDIRECT_URI = `${SECOND_APP}/callback`;
 export const BACKCHANNEL_URL = 'http://host.docker.internal:9103/backchannel';
 export const API_CLIENT = 'demo-api';
@@ -207,6 +209,11 @@ export async function setUpRealms(admin: Admin) {
 		...client(DEVICE_CLIENT, { publicClient: true }),
 		standardFlowEnabled: false,
 		attributes: DEVICE_GRANT_ON
+	});
+	await admin.call('POST', `/realms/${LOCAL_REALM}/clients`, {
+		...client(QUICK_DEVICE_CLIENT, { publicClient: true }),
+		standardFlowEnabled: false,
+		attributes: { ...DEVICE_GRANT_ON, 'oauth2.device.code.lifespan': '2' }
 	});
 	await admin.call(
 		'POST',

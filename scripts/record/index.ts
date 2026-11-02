@@ -42,6 +42,7 @@ import {
 	SECOND_REDIRECT_URI,
 	SERVICE_CLIENT,
 	DEVICE_CLIENT,
+	QUICK_DEVICE_CLIENT,
 	setUpFor,
 	setUpRealms,
 	startKeycloak,
@@ -151,22 +152,26 @@ const SESSION_COOKIE = /(?:^|\n|; )(KEYCLOAK_IDENTITY=[^\n]*)/;
 
 /** Which step a message is, going by what it is about, for a login that goes somewhere else. */
 const onADevice = {
-	request(url: URL, method: string): string | null {
+	request(url: URL, method: string, saysNo: boolean): string | null {
 		if (url.pathname === `/realms/${LOCAL_REALM}/device`) {
 			return method === 'GET' ? 'open-page' : 'submit-code';
 		}
 		if (method !== 'POST') return null;
 		if (url.pathname.endsWith('/login-actions/authenticate')) return 'submit-credentials';
-		if (url.pathname.endsWith('/login-actions/consent')) return 'consent-grant';
+		if (url.pathname.endsWith('/login-actions/consent')) {
+			return saysNo ? 'consent-deny' : 'consent-grant';
+		}
 		return null;
 	},
-	response(url: URL, method: string): string | null {
+	response(url: URL, method: string, saysNo: boolean): string | null {
 		if (url.pathname === `/realms/${LOCAL_REALM}/device`) {
 			return method === 'GET' ? 'code-page' : 'login-page';
 		}
 		if (method !== 'POST') return null;
 		if (url.pathname.endsWith('/login-actions/authenticate')) return 'consent-page';
-		if (url.pathname.endsWith('/login-actions/consent')) return 'done-page';
+		if (url.pathname.endsWith('/login-actions/consent')) {
+			return saysNo ? 'denied-page' : 'done-page';
+		}
 		return null;
 	}
 };
@@ -179,7 +184,11 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 		if (!isDocument(request) || !inBrowser(request.url())) return;
 		const message = requestMessage(
 			device
-				? onADevice.request(new URL(request.url()), request.method())
+				? onADevice.request(
+						new URL(request.url()),
+						request.method(),
+						run.settings.deviceEnds === 'says-no'
+					)
 				: classifyRequest(new URL(request.url())),
 			request.method(),
 			request.url(),
@@ -201,7 +210,11 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 		if (!isDocument(response.request()) || !inBrowser(response.url())) return;
 		const headers = response.headers();
 		const step = device
-			? onADevice.response(new URL(response.url()), response.request().method())
+			? onADevice.response(
+					new URL(response.url()),
+					response.request().method(),
+					run.settings.deviceEnds === 'says-no'
+				)
 			: classifyResponse(new URL(response.url()), response.status(), headers.location ?? null);
 		const message = responseMessage(step, response.status(), headers);
 		run.messages.push(message);
@@ -360,8 +373,13 @@ async function logInElsewhere(browser: Browser, run: Run, address: string, userC
 	await page.fill('#username', USERNAME);
 	await page.fill('#password', PASSWORD);
 	await page.click('#kc-login');
-	await page.locator('[name="accept"]').click();
-	await page.getByText('Device Login Successful').waitFor();
+	if (run.settings.deviceEnds === 'says-no') {
+		await page.locator('[name="cancel"]').click();
+		await page.getByText('Consent denied').waitFor();
+	} else {
+		await page.locator('[name="accept"]').click();
+		await page.getByText('Device Login Successful').waitFor();
+	}
 	await Promise.all(cookies);
 	await context.close();
 }
@@ -373,7 +391,7 @@ async function recordDevice(browser: Browser, demo: Demo, keycloak: string, reco
 		const run: Run = {
 			settings,
 			realm: LOCAL_REALM,
-			clientId: DEVICE_CLIENT,
+			clientId: settings.deviceEnds === 'runs-out' ? QUICK_DEVICE_CLIENT : DEVICE_CLIENT,
 			clientSecret: null,
 			messages: []
 		};

@@ -115,24 +115,24 @@ export const knownErrors: readonly KnownError[] = [
 	{
 		text: 'expired_token',
 		means: 'The codes ran out before the user finished. Trying again takes new ones.',
-		step: 'device-token-response',
-		settings: {},
+		step: 'device-expired-response',
+		settings: { deviceEnds: 'runs-out' },
 		flow: 'device',
-		question: 'device-no-answer'
+		question: 'device-ran-out'
 	},
 	{
 		text: 'Device code is expired',
 		means: 'The codes ran out before the user finished. Trying again takes new ones.',
-		step: 'device-token-response',
-		settings: {},
+		step: 'device-expired-response',
+		settings: { deviceEnds: 'runs-out' },
 		flow: 'device',
-		question: 'device-no-answer'
+		question: 'device-ran-out'
 	},
 	{
 		text: 'The end user denied the authorization request',
 		means: 'The user said no on the other device, so the app stops asking.',
-		step: 'device-token-response',
-		settings: {},
+		step: 'device-denied-response',
+		settings: { deviceEnds: 'says-no' },
 		flow: 'device',
 		question: 'device-no-answer'
 	},
@@ -225,8 +225,8 @@ export const knownErrors: readonly KnownError[] = [
 	{
 		text: 'access_denied',
 		means: 'The user said no on the other device, so the app stops asking.',
-		step: 'device-token-response',
-		settings: {},
+		step: 'device-denied-response',
+		settings: { deviceEnds: 'says-no' },
 		flow: 'device',
 		question: 'device-no-answer'
 	},

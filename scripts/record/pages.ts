@@ -141,6 +141,13 @@ export async function capturePages(
 			await typeACode(page)
 		)();
 	});
+	await capture('device-denied', async (page) => {
+		await (
+			await typeACode(page)
+		)();
+		await page.locator('[name="cancel"]').click();
+		await page.getByText('Consent denied').waitFor();
+	});
 	await capture('device-done', async (page) => {
 		await (
 			await typeACode(page)
