@@ -256,7 +256,13 @@ describe('which recording goes with which settings', () => {
 			'oidc-pkce'
 		);
 		expect(
-			recordingFor(base, { ...defaultSettings, oidc: true, pkce: true, clientType: 'public' })?.id
+			recordingFor(base, {
+				...defaultSettings,
+				appRuns: 'page',
+				oidc: true,
+				pkce: true,
+				clientType: 'public'
+			})?.id
 		).toBe('browser-app');
 	});
 });

@@ -95,5 +95,6 @@
 	"handed-token-response",
 	"handed-nonce-check",
 	"attacker-handed-answer",
-	"address-refused"
+	"address-refused",
+	"page-goes-to-log-in"
 ]

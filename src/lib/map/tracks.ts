@@ -510,7 +510,7 @@ export const mapTracks: readonly MapTrack[] = [
 					title: 'Where should an app in the browser keep its tokens?',
 					summary:
 						'localStorage, sessionStorage or memory: none of them fully stops a script in the page. A backend for frontend keeps tokens out of it, though a script can still act through the open page.',
-					preset: 'browser-app',
+					preset: 'in-the-page',
 					step: 'token-response'
 				}),
 				node({

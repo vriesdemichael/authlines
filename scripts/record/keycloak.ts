@@ -303,7 +303,7 @@ export async function setUpFor(
 	admin: Admin,
 	realm: string,
 	settings: Pick<Settings, 'clientType' | 'consent' | 'upstreamTokens'> &
-		Partial<Pick<Settings, 'apiToken' | 'refresh' | 'reuse' | 'logout'>>
+		Partial<Pick<Settings, 'appRuns' | 'apiToken' | 'refresh' | 'reuse' | 'logout'>>
 ) {
 	const onClients = `/realms/${realm}/clients`;
 	const [old] = await admin.call<{ id: string }[]>(
@@ -315,6 +315,7 @@ export async function setUpFor(
 		'POST',
 		onClients,
 		client(CONFIDENTIAL_CLIENT, {
+			...(settings.appRuns === 'page' ? { webOrigins: [APP] } : {}),
 			...(settings.clientType === 'public' ? { publicClient: true } : confidential),
 			// Set when a client is created through this API, this also turns off Full scope allowed, and
 			// the token has no roles and no audience. Turned on afterwards, as anyone does it in the

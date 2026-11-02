@@ -14,7 +14,7 @@ OIDC, DPoP with a nonce retry, brokering with its nested flow, and stored upstre
 
 This also held for another base flow. Client credentials has no browser and no user, and it is the same kind of data on the same renderer. A base flow says which settings it has, and why the others are not there. Step ids stay unique across flows, so an id only ever means one thing.
 
-A step can be the last one, when a server stops the flow there, so that a refusal does not need a condition on everything after it.
+A step can be the last one, when a server stops the flow there, so that a refusal does not need a condition on everything after it. A lifeline can join another, when one runs inside the other, so that every arrow moves with it and what they carry ends up there, with no second version of each step.
 
 ## Not chosen
 

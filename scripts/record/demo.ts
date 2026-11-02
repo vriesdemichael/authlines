@@ -41,7 +41,13 @@ function withMoreInIt(token: string) {
 const b64 = (value: string | Buffer) => Buffer.from(value).toString('base64url');
 
 const KEPT_REQUEST_HEADERS = ['authorization', 'content-type', 'dpop', 'accept'];
-const KEPT_RESPONSE_HEADERS = ['location', 'content-type', 'www-authenticate', 'dpop-nonce'];
+const KEPT_RESPONSE_HEADERS = [
+	'access-control-allow-origin',
+	'location',
+	'content-type',
+	'www-authenticate',
+	'dpop-nonce'
+];
 
 function kept(headers: Headers | Record<string, string>, names: string[]) {
 	const get = (name: string) =>
@@ -99,6 +105,64 @@ export function responseMessage(
 		headers: shown,
 		...parseBody(shown['content-type'] ?? null, body)
 	};
+}
+
+/** The whole of an app that runs in the page, as a library would do it for you. */
+function appInThePage(
+	run: Run,
+	server: { authorization_endpoint: string; token_endpoint: string; userinfo_endpoint?: string }
+) {
+	const values = {
+		authorize: server.authorization_endpoint,
+		token: server.token_endpoint,
+		userinfo: server.userinfo_endpoint,
+		client: run.clientId,
+		back: REDIRECT_URI,
+		api: `${API}/resource`,
+		oidc: run.settings.oidc
+	};
+	return `<!doctype html><title>An app in the page</title><body><script type="module">
+const { authorize, token, userinfo, client, back, api, oidc } = ${JSON.stringify(values)};
+const url = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes)))
+	.replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
+const random = () => url(crypto.getRandomValues(new Uint8Array(32)));
+const said = (text) => { document.body.innerHTML = '<h1>' + text + '</h1>'; };
+try {
+	if (location.pathname === '/') {
+		const verifier = random();
+		const state = random();
+		sessionStorage.setItem('login', JSON.stringify({ verifier, state }));
+		const challenge = url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
+		const query = new URLSearchParams({
+			response_type: 'code', client_id: client, redirect_uri: back, state,
+			code_challenge: challenge, code_challenge_method: 'S256',
+			...(oidc ? { scope: 'openid', nonce: random() } : {})
+		});
+		location.assign(authorize + '?' + query);
+	} else {
+		const { verifier, state } = JSON.parse(sessionStorage.getItem('login'));
+		const answer = new URLSearchParams(location.search);
+		if (answer.get('state') !== state) throw new Error('An answer to something this app did not ask.');
+		const tokens = await (await fetch(token, {
+			method: 'POST',
+			headers: { 'content-type': 'application/x-www-form-urlencoded' },
+			body: new URLSearchParams({
+				grant_type: 'authorization_code', code: answer.get('code'), redirect_uri: back,
+				client_id: client, code_verifier: verifier
+			})
+		})).json();
+		if (!tokens.access_token) throw new Error(JSON.stringify(tokens));
+		const headers = { authorization: 'Bearer ' + tokens.access_token };
+		if (oidc) await (await fetch(userinfo, { headers })).text();
+		const called = await fetch(api, { headers });
+		await called.text();
+		if (!called.ok) throw new Error('The API said ' + called.status);
+		said('Logged in');
+	}
+} catch (error) {
+	said('Failed: ' + error);
+}
+</script>`;
 }
 
 export interface Run {
@@ -632,6 +696,15 @@ export class Demo {
 	async start() {
 		const app = createServer(async (request, response) => {
 			const url = new URL(request.url ?? '/', APP);
+			// An app in the page: the same page for both addresses, and all it does it does from there.
+			if (
+				this.current?.settings.appRuns === 'page' &&
+				(url.pathname === '/' || url.pathname === '/callback')
+			) {
+				response.writeHead(200, { 'content-type': 'text/html' });
+				response.end(appInThePage(this.current, this.#server));
+				return;
+			}
 			if (url.pathname === '/') {
 				const run = this.#run;
 				const { settings } = run;
@@ -712,6 +785,15 @@ export class Demo {
 
 		// A 200 from here has to mean it looked, because the diagram says it does.
 		const api = createServer(async (request, response) => {
+			// A page has to be let in, by the browser's rules, and the answer has to say so.
+			if (request.headers.origin) {
+				response.setHeader('access-control-allow-origin', request.headers.origin);
+				if (request.method === 'OPTIONS') {
+					response.writeHead(204, { 'access-control-allow-headers': 'authorization' });
+					response.end();
+					return;
+				}
+			}
 			// With nothing to be wrong, there is no error to name (RFC 6750 section 3.1).
 			if (!request.headers.authorization) {
 				response.writeHead(401, { 'www-authenticate': 'Bearer' });

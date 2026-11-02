@@ -128,6 +128,8 @@ function classifyResponse(url: URL, status: number, location: string | null): st
 		return 'second-login-page';
 	}
 	if (url.origin === APP) {
+		// An app in the page answers with itself, and the redirect is done from there.
+		if (status !== 302) return null;
 		const steps: Record<string, string> = { '/': 'redirect-to-idp', '/logout': 'logout-redirect' };
 		return steps[url.pathname] ?? null;
 	}
@@ -210,6 +212,47 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 			})
 		);
 	});
+	// What a page calls by itself, for an app that runs there.
+	const fromThePage: Record<string, [string, string]> = {
+		'/protocol/openid-connect/token': ['token-request', 'token-response'],
+		'/protocol/openid-connect/userinfo': ['userinfo-request', 'userinfo-response'],
+		'/resource': ['api-request', 'api-response']
+	};
+	const calledFromThePage = (request: Request) => {
+		if (request.resourceType() !== 'fetch') return null;
+		const { pathname } = new URL(request.url());
+		const key = Object.keys(fromThePage).find((end) => pathname.endsWith(end));
+		return key ? fromThePage[key] : null;
+	};
+	page.on('request', (request) => {
+		const steps = calledFromThePage(request);
+		if (!steps) return;
+		const at = run.messages.push(requestMessage(steps[0], request.method(), request.url(), {})) - 1;
+		cookies.push(
+			request.allHeaders().then((headers) => {
+				const message = requestMessage(
+					steps[0],
+					request.method(),
+					request.url(),
+					headers,
+					request.postData() ?? ''
+				);
+				// Only here does it mean anything: a form the server sent says only that it has none.
+				message.headers.origin = headers.origin;
+				run.messages[at] = message;
+			})
+		);
+	});
+	page.on('response', (response: Response) => {
+		const steps = calledFromThePage(response.request());
+		if (!steps) return;
+		const at = run.messages.push(responseMessage(steps[1], response.status(), {})) - 1;
+		cookies.push(
+			Promise.all([response.allHeaders(), response.text()]).then(([headers, text]) => {
+				run.messages[at] = responseMessage(steps[1], response.status(), headers, text);
+			})
+		);
+	});
 	page.on('response', (response: Response) => {
 		if (!isDocument(response.request()) || !inBrowser(response.url())) return;
 		const headers = response.headers();
@@ -277,7 +320,10 @@ async function login(browser: Browser, run: Run) {
 		// The same button id, on the page that asks.
 		await page.locator('[name="accept"]').click();
 	}
-	await page.getByRole('heading', { name: /Logged in|Refused|Failed/ }).waitFor();
+	await page
+		.getByRole('heading', { name: /Logged in|Refused|Failed/ })
+		.waitFor({ timeout: 30_000 });
+	await Promise.all(cookies);
 	const outcome = await page.locator('body').innerText();
 	if (outcome.includes('Failed')) throw new Error(`Login failed: ${outcome}`);
 	if (run.settings.sso) await logInToSecondApp(browser, context, run, cookies);

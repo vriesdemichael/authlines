@@ -90,7 +90,12 @@ const presets: readonly Preset[] = [
 	{
 		id: 'browser-app',
 		title: 'An app in the browser',
-		settings: { oidc: true, clientType: 'public', pkce: true }
+		settings: { appRuns: 'page', oidc: true, clientType: 'public', pkce: true }
+	},
+	{
+		id: 'in-the-page',
+		title: 'An app in the page',
+		settings: { appRuns: 'page', clientType: 'public', pkce: true }
 	},
 	{
 		id: 'attack-public',

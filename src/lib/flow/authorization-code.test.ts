@@ -12,11 +12,13 @@ import {
 import { authorizationCodeBase as base } from '#lib/flow/index.ts';
 import {
 	allValidSettings,
+	change,
 	defaultSettings,
 	normalize,
 	unavailable,
 	type Settings
 } from '#lib/flow/settings.ts';
+import { parseState } from '#lib/flow/state.ts';
 import type { ArtifactId } from '#lib/flow/vocabulary.ts';
 import shippedStepIds from '#lib/flow/shipped-step-ids.json';
 import questions from '../../../static/recordings/authorization-code/questions.json';
@@ -250,6 +252,8 @@ describe('how a message travels', () => {
 				const browser = step.from === 'browser' || step.to === 'browser';
 				// Someone's own browser, which is not the one on this diagram.
 				const theirs = step.from === 'attacker' || step.to === 'attacker';
+				// An app in the page thinking to itself, which goes nowhere.
+				if (step.kind === 'internal') continue;
 				if (browser) expect(step.channel, step.id).toBe('front');
 				else if (!theirs) expect(step.channel, step.id).not.toBe('front');
 			}
@@ -278,19 +282,69 @@ describe('who has seen what', () => {
 
 	it('keeps the password from the app, whatever the settings', () => {
 		for (const settings of allValidSettings()) {
-			expect(heldAtEnd(settings).app).not.toContain('password');
+			if (settings.appRuns !== 'page') expect(heldAtEnd(settings).app).not.toContain('password');
 			expect(heldAtEnd(settings).api).not.toContain('password');
 		}
 	});
 
 	it('keeps tokens from the browser, because they never go through it', () => {
 		for (const settings of allValidSettings()) {
+			if (settings.appRuns === 'page') continue;
 			const browser = heldAtEnd(settings).browser;
 			expect(browser).not.toContain('access-token');
 			// Logging out is the one exception, and the step says so: the app sends it to say who this is.
 			if (!settings.logout) expect(browser).not.toContain('id-token');
 			expect(browser).not.toContain('secret');
 		}
+	});
+
+	describe('with the app in the page', () => {
+		const inPage = {
+			...defaultSettings,
+			appRuns: 'page',
+			clientType: 'public',
+			pkce: true
+		} as const;
+
+		it('is one place with the browser, and keeps its arrows', () => {
+			const page = evaluate(flow, inPage);
+			expect(page.lifelines.map(({ id }) => id)).not.toContain('app');
+			expect(page.steps.filter(({ from, to }) => from === 'app' || to === 'app')).toEqual([]);
+			const trade = page.steps.find(({ id }) => id === 'token-request')!;
+			expect(trade.from).toBe('browser');
+			expect(trade.channel).toBe('front');
+		});
+
+		it('has the tokens end up there, because for this kind of app they do', () => {
+			const held = holdingsAt(evaluate(flow, inPage), 'token-response').browser;
+			expect(held).toContain('access-token');
+			expect(held).toContain('verifier');
+			expect(held).not.toContain('secret');
+		});
+
+		it('does not call a redirect a redirect when no server answered', () => {
+			const ids = evaluate(flow, inPage).steps.map(({ id }) => id);
+			expect(ids).toContain('page-goes-to-log-in');
+			expect(ids).not.toContain('redirect-to-idp');
+			expect(ids).toContain('redirect-with-code');
+		});
+
+		it('says the password does not reach the app, though the browser holds it', () => {
+			const line = evaluate(flow, inPage).lifelines.find(({ id }) => id === 'browser')!;
+			expect(line.concept).toMatch(/still does not reach the app/);
+			expect(line.plainName).toBe('Browser and app');
+		});
+
+		it('brings with it what it takes, for someone who only knows where their app runs', () => {
+			const { settings } = change(defaultSettings, 'appRuns', 'page');
+			expect(settings.clientType).toBe('public');
+			expect(settings.pkce).toBe(true);
+			expect(change(settings, 'appRuns', 'server').settings.clientType).toBe('confidential');
+		});
+
+		it('leaves an address that asks for a public client as it was', () => {
+			expect(parseState(base, 'flow', 'client=public').settings.appRuns).toBe('server');
+		});
 	});
 
 	it('does show the code to the browser, which is why a code is worth little alone', () => {
@@ -509,7 +563,7 @@ describe('PKCE', () => {
 		for (const settings of allValidSettings()) {
 			const flowView = evaluate(flow, settings);
 			const held = holdingsAt(flowView, flowView.steps.at(-1)!.id);
-			expect(held.browser).not.toContain('verifier');
+			if (settings.appRuns !== 'page') expect(held.browser).not.toContain('verifier');
 			if (settings.pkce) expect(held.browser).toContain('challenge');
 		}
 	});

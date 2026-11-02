@@ -13,6 +13,7 @@ const states: readonly [string, string, 'flow' | 'setup'][] = [
 	['simple-token-response', 'mode=simple&oidc=1&step=token-response', 'flow'],
 	['simple-explanation', 'mode=simple&step=callback&explain=artifact.code', 'flow'],
 	['address-refused', 'mode=simple&address=other&step=address-refused', 'flow'],
+	['app-in-the-page', 'mode=simple&runs=page&client=public&pkce=1&step=token-response', 'flow'],
 	['every-label', 'labels=1&step=callback', 'flow'],
 	['every-label-setup', 'labels=1&step=hand-over-credentials', 'setup'],
 	['settings-put-away', 'settings=off&step=callback', 'flow'],

@@ -10,8 +10,9 @@ export function bothOf(flow: DiagramDef, before: DiagramView, after: DiagramView
 		a: readonly T[],
 		b: readonly T[]
 	): T[] =>
-		order.flatMap(
-			({ id }) => b.find((item) => item.id === id) ?? a.find((item) => item.id === id) ?? []
+		// One place each, though a lifeline can be there twice, with a different name in each state.
+		[...new Set(order.map(({ id }) => id))].flatMap(
+			(id) => b.find((item) => item.id === id) ?? a.find((item) => item.id === id) ?? []
 		);
 	return {
 		steps: merged(flow.steps, before.steps, after.steps),

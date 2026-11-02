@@ -20,6 +20,7 @@ export interface Settings {
 	deviceEnds: 'agrees' | 'says-no' | 'runs-out';
 	deviceAttack: 'nobody' | 'sends-code' | 'reads-code';
 	address: 'registered' | 'other';
+	appRuns: 'server' | 'page';
 }
 
 export type SettingId = keyof Settings;
@@ -89,6 +90,8 @@ export interface KeycloakFlag {
 }
 
 export interface OptionDef<V extends string = string> {
+	/** What choosing this brings with it. */
+	sets?: Partial<Settings>;
 	value: V;
 	label: string;
 	requires?: Requirement;
@@ -504,6 +507,51 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			sayWhenBlocked: true
 		}
 	},
+	appRuns: {
+		kind: 'choice',
+		label: 'Where the app runs',
+		param: 'runs',
+		default: 'server',
+		onlyOn: 'authorization-code',
+		simple: {
+			label: 'Where does your app run?',
+			summary:
+				'In the page, the tokens end up in the browser, where any script in it can reach them.'
+		},
+		summary:
+			'On a server of its own, or in the page in the user’s browser. In the page there is nowhere to keep a secret, and the tokens end up in the browser.',
+		why: 'The rest of this flow is careful to keep the tokens away from the browser. An app that runs in the page is in the browser, so that care stops at its door, and what can reach the page can reach them.',
+		sources: [
+			{
+				source: 'rfc10017',
+				section: '6.3.4.3',
+				why: 'Section 6.3.4.3 says an app keeping tokens in the browser is not recommended for business apps, sensitive apps and those handling personal data.'
+			}
+		],
+		options: [
+			{ value: 'server', label: 'On a server', sets: { clientType: 'confidential' } },
+			{
+				value: 'page',
+				label: 'In the page, in the browser',
+				sets: { clientType: 'public', pkce: true },
+				requires: {
+					when: all(
+						is('clientType', 'public'),
+						is('binding', 'bearer'),
+						is('broker', false),
+						is('attacker', false),
+						is('consent', false),
+						is('sso', false),
+						is('refresh', false),
+						is('logout', false),
+						is('apiToken', 'good'),
+						is('address', 'registered')
+					),
+					because: 'An app in the page is only drawn with no secret, in the plain case.'
+				}
+			}
+		]
+	},
 	address: {
 		kind: 'choice',
 		label: 'The address the app asks for',
@@ -663,8 +711,13 @@ export function normalize(settings: Settings): { settings: Settings; resets: Res
 	return { settings: next, resets };
 }
 
+/** What choosing this brings with it, because someone who knows where their app runs should not also have to know these. */
+export function setsWith<K extends SettingId>(id: K, value: Settings[K]): Partial<Settings> {
+	return optionOf(id, value)?.sets ?? {};
+}
+
 export function change<K extends SettingId>(settings: Settings, id: K, value: Settings[K]) {
-	return normalize({ ...settings, [id]: value });
+	return normalize({ ...settings, ...setsWith(id, value), [id]: value });
 }
 
 function valuesOf(id: SettingId): readonly (boolean | string)[] {
