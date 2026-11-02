@@ -6,65 +6,54 @@
 	import LearningMap from '#lib/components/LearningMap.svelte';
 	import Mark from '#lib/components/Mark.svelte';
 	import { mapNodes, mapTracks, type MapNode } from '#lib/map/tracks.ts';
+	import { wayIn } from '#lib/map/way-in.ts';
 	import { searchState } from '#lib/search/open.svelte.ts';
 	import { sharingTags, SITE_NAME } from '#lib/site.ts';
 
+	interface LivingProps {
+		node: MapNode;
+		step?: string | null;
+		href: string;
+		flip?: { on: boolean; onflip: (on: boolean) => void } | null;
+	}
+
 	// The query string does not exist while prerendering, so where someone came from is marked after.
 	let mounted = $state(false);
-	let Living = $state<Component<{ node: MapNode; step?: string | null; href: string }>>();
+	let Living = $state<Component<LivingProps>>();
 	const nodeNamed = (id: string) => mapNodes.find((node) => node.id === id);
-	const THE_PLAIN_FLOW = nodeNamed('how-access-works')!;
-	const WITH_ONE_THING_ON = nodeNamed('who-logged-in')!;
-
-	// The same step on both, so what moves is what that one setting does and nothing else.
-	const SAME_STEP = 'token-response';
-	const BY_ITSELF_AFTER_MS = 2000;
+	// Someone who knows none of the words starts with this, and flips it themselves (#150).
+	const THE_WAY_IN = nodeNamed(wayIn.node)!;
+	const FLIPS_TO = nodeNamed(wayIn.flipsTo.node)!;
 	const SETTLE_MS = 300;
 
-	let showing = $state(THE_PLAIN_FLOW);
-	let step = $state<string | null>(SAME_STEP);
-	let pointed = false;
+	let showing = $state.raw(THE_WAY_IN);
+	let flipped = $state(false);
+	const onTheWayIn = $derived(showing === THE_WAY_IN);
 	let settling: ReturnType<typeof setTimeout> | undefined;
-	let byItself: ReturnType<typeof setTimeout> | undefined;
 
 	function point(node: MapNode) {
 		clearTimeout(settling);
 		// Moving over the one that is on show is nobody asking for anything new.
-		if (node === showing && step === null) return;
-		pointed = true;
+		if (node === showing) return;
 		// So that passing over a question on the way to another does not set the diagram off. Each move
 		// starts this again, so it takes resting on one, and not only crossing it slowly.
 		settling = setTimeout(() => {
 			showing = node;
-			step = null;
+			flipped = false;
 		}, SETTLE_MS);
 	}
 
 	onMount(() => {
 		mounted = true;
 		const cameFrom = nodeNamed(page.url.searchParams.get('at') ?? '');
-		if (cameFrom) {
-			pointed = true;
-			showing = cameFrom;
-			step = null;
-		}
+		if (cameFrom) showing = cameFrom;
 		// After the page can be used, and not at all where there is no room for it beside the map.
 		if (window.matchMedia('(min-width: 1100px)').matches) {
 			import('#lib/components/LivingDiagram.svelte').then((module) => {
 				Living = module.default as typeof Living;
-				if (pointed || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-				// It moves once by itself, to show what this is, and then never again.
-				byItself = setTimeout(() => {
-					if (pointed) return;
-					showing = WITH_ONE_THING_ON;
-					step = null;
-				}, BY_ITSELF_AFTER_MS);
 			});
 		}
-		return () => {
-			clearTimeout(settling);
-			clearTimeout(byItself);
-		};
+		return () => clearTimeout(settling);
 	});
 
 	const current = $derived(mounted ? page.url.searchParams.get('at') : null);
@@ -99,10 +88,7 @@
 		<div class="questions" role="presentation" onpointerleave={() => clearTimeout(settling)}>
 			<h1><Mark size={24} />{SITE_NAME}</h1>
 			<p class="headline">Flip one thing. Watch the login change.</p>
-			<p class="lead">
-				OAuth and OpenID Connect on one diagram, recorded from a real server. Pick a question and
-				follow it, one message at a time.
-			</p>
+			<p class="lead">{wayIn.lead}</p>
 			<button
 				type="button"
 				class="search"
@@ -130,9 +116,13 @@
 			</p>
 		</div>
 		{#if Living}
-			<!-- Someone looking at it does not want it to change. -->
-			<div class="beside" role="presentation" onpointerenter={() => (pointed = true)}>
-				<Living node={showing} {step} href={hrefOf(showing)} />
+			<div class="beside">
+				<Living
+					node={onTheWayIn && flipped ? FLIPS_TO : showing}
+					step={onTheWayIn ? (flipped ? wayIn.flipsTo.step : wayIn.step) : null}
+					href={hrefOf(onTheWayIn ? FLIPS_TO : showing)}
+					flip={onTheWayIn ? { on: flipped, onflip: (on) => (flipped = on) } : null}
+				/>
 			</div>
 		{/if}
 	</div>

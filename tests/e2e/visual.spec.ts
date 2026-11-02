@@ -10,6 +10,7 @@ test.skip(
 
 const states: readonly [string, string, 'flow' | 'setup'][] = [
 	['simple-first-step', 'mode=simple', 'flow'],
+	['the-old-way', 'mode=simple&oldway=1&step=old-way-answer', 'flow'],
 	['simple-token-response', 'mode=simple&oidc=1&step=token-response', 'flow'],
 	['simple-explanation', 'mode=simple&step=callback&explain=artifact.code', 'flow'],
 	['address-refused', 'mode=simple&address=other&step=address-refused', 'flow'],

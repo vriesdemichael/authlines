@@ -4,7 +4,8 @@ import { authorizationCodeBase as base, flows } from '#lib/flow/index.ts';
 import { parseState } from '#lib/flow/state.ts';
 import { evaluate } from '#lib/flow/model.ts';
 import type { Recording } from '#lib/recordings/format.ts';
-import { knownErrors } from '#lib/search/errors.ts';
+import { terms } from '#lib/flow/glossary.ts';
+import { knownErrors, notHereYet } from '#lib/search/errors.ts';
 import { resultKey } from '#lib/search/result-key.ts';
 import { search } from '#lib/search/search.ts';
 
@@ -348,5 +349,38 @@ describe('every result', () => {
 
 	it('are few enough to read', () => {
 		expect(search('token').results.length).toBeLessThanOrEqual(8);
+	});
+});
+
+describe('the words someone has', () => {
+	it.each([
+		['log in with google', 'Why not just give the app my password?'],
+		['sign in with google', 'Why not just give the app my password?'],
+		['why oauth', 'Why not just give the app my password?'],
+		['basic auth', 'HTTP Basic'],
+		['brokering', 'How do you log in with another provider?'],
+		['identity brokering', 'How do you log in with another provider?'],
+		['external idp', 'How do you log in with another provider?'],
+		['token brokering', "How does the app call the other provider's API?"],
+		['upstream token', "How does the app call the other provider's API?"],
+		['what is oauth', 'OAuth'],
+		['what is an identity provider', 'Identity provider'],
+		['what is an issuer?', 'Issuer']
+	])('finds what is built from "%s"', (query, title) => {
+		expect(search(query).results.map((result) => result.title)).toContain(title);
+	});
+
+	it.each(Object.values(terms).filter((term) => !term.part))(
+		'puts $name first when someone asks what it is',
+		(term) => {
+			expect(search(`what is ${term.name}`).results[0].title).toBe(term.name);
+		}
+	);
+
+	// What is not here says so, and may not hide what is: it stops looking at the first of these.
+	it('names only what has nothing here', () => {
+		for (const topic of notHereYet) {
+			expect(search(topic).notHereYet, topic).toBe(topic);
+		}
 	});
 });

@@ -282,9 +282,17 @@ describe('who has seen what', () => {
 
 	it('keeps the password from the app, whatever the settings', () => {
 		for (const settings of allValidSettings()) {
+			if (settings.oldWay) continue;
 			if (settings.appRuns !== 'page') expect(heldAtEnd(settings).app).not.toContain('password');
 			expect(heldAtEnd(settings).api).not.toContain('password');
 		}
+	});
+
+	it('gives the password to the app and the API in the old way, and no one else has anything', () => {
+		const held = heldAtEnd({ ...defaultSettings, oldWay: true });
+		expect(held.app).toEqual(['password']);
+		expect(held.api).toEqual(['password']);
+		expect(held.idp).toBeUndefined();
 	});
 
 	it('keeps tokens from the browser, because they never go through it', () => {

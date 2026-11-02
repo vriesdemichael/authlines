@@ -102,6 +102,8 @@ test.describe('every node', () => {
 			await context.close();
 		});
 
+		// One that opens with an explanation is only that question while it is open, and that is on top.
+		if (node.explains) continue;
 		test(`${node.id} says where you are when you go back to the map`, async ({ page }) => {
 			await page.goto(pathOf(node.id));
 			await page.locator('.workspace[data-ready="true"]').waitFor();

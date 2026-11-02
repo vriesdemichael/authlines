@@ -353,6 +353,12 @@ async function record(
 ) {
 	const settings = normalize({ ...defaultSettings, ...preset.settings }).settings;
 	const run = runFor(settings);
+	if (settings.oldWay) {
+		demo.current = run;
+		await demo.theOldWay(run);
+		demo.current = null;
+		return run;
+	}
 	await setUpFor(admin, run.realm, settings);
 
 	// Setup's one HTTP exchange. Everything else in setup is people, or the admin calls in keycloak.ts.

@@ -78,6 +78,8 @@ describe('constraints', () => {
 		const withASecondApp = 2 * 2 * (1 + 3);
 		// With OpenID Connect, on the plain flow, and with or without a second app to tell.
 		const withLogout = 2 * 2 * 2;
+		// On its own, because nothing else here means anything without an identity provider.
+		const theOldWay = 1;
 		expect(allValidSettings()).toBe(allValidSettings());
 		expect(Object.isFrozen(allValidSettings())).toBe(true);
 		expect(allValidSettings().every((settings) => Object.isFrozen(settings))).toBe(true);
@@ -88,7 +90,8 @@ describe('constraints', () => {
 				withApiAnswers +
 				withRefresh +
 				withASecondApp +
-				withLogout
+				withLogout +
+				theOldWay
 		);
 	});
 

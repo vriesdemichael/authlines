@@ -35,7 +35,8 @@
 		evaluate,
 		holdingsAt,
 		type BaseFlow,
-		type DiagramId
+		type DiagramId,
+		introOf
 	} from '#lib/flow/model.ts';
 	import {
 		defaultSettings,
@@ -394,7 +395,9 @@
 		appState.explained?.kind === 'setting' ? appState.explained.id : null
 	);
 	// Someone with a question has its answer, which already says what this would.
-	const intro = $derived(position === 0 && !questionAnswer ? say(flow.intro) : null);
+	const intro = $derived(
+		position === 0 && !questionAnswer ? say(introOf(flow, appState.settings)) : null
+	);
 	// Said once, on the step someone enters it by, and the first step has more to say than this.
 	const partWhy = $derived(
 		position > 0 ? spoken.parts.find((part) => part.steps[0] === current.id)?.why : null
@@ -604,7 +607,9 @@
 </script>
 
 {#snippet recorded()}
-	{#if origin.recorded}
+	{#if origin.recorded && origin.noServer}
+		Recorded from a small demo app and API, on {origin.date}.
+	{:else if origin.recorded}
 		{origin.onlyItsHttp ? 'Its HTTP was recorded from' : 'Recorded from'}
 		{#if !appState.serverNotes}
 			a real server

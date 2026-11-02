@@ -1,3 +1,4 @@
+import { withTheOldWayInTheSetup } from '#lib/flow/old-way.ts';
 import type { DiagramDef } from '#lib/flow/model.ts';
 import { example } from '#lib/flow/libraries.ts';
 import { apiWords, appWords, idpWords, upstreamWords } from '#lib/flow/parties.ts';
@@ -22,7 +23,7 @@ const apiV2 = is('upstreamTokens', 'v2');
  * What happens before any user arrives. It has a diagram of its own, because no user does this: the
  * people on it do. Each person sits next to the system they look after.
  */
-export const authorizationCodeSetup: DiagramDef = {
+export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 	id: 'authorization-code-setup',
 	title: 'Setting up the authorization code flow',
 	caption: 'What people do first.',
@@ -334,4 +335,4 @@ export const authorizationCodeSetup: DiagramDef = {
 			fields: [{ name: 'keys', place: 'body' }]
 		}
 	]
-};
+});

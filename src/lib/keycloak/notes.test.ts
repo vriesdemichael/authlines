@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { authorizationCode as flow } from '#lib/flow/authorization-code.ts';
 import { authorizationCodeSetup as setup } from '#lib/flow/authorization-code-setup.ts';
-import { evaluate, type DiagramDef } from '#lib/flow/model.ts';
+import { evaluate, introsOf, type DiagramDef } from '#lib/flow/model.ts';
 import {
 	allValidSettings,
 	defaultSettings,
@@ -40,7 +40,7 @@ describe('the protocol layer', () => {
 			return [
 				diagram.title,
 				diagram.summary,
-				diagram.intro,
+				...introsOf(diagram),
 				...view.lifelines.flatMap((line) => [
 					line.name,
 					line.role,

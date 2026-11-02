@@ -38,6 +38,14 @@ const flowAt = (step: string, settings?: Partial<Settings>): TermPlace => ({
 
 const list: readonly Term[] = [
 	{
+		id: 'http-basic',
+		name: 'HTTP Basic',
+		words: ['HTTP Basic', 'Basic auth', 'basic authentication'],
+		explains:
+			'The oldest way to log in over HTTP: the username and password go along with each request, encoded in a way anyone can read back.',
+		at: flowAt('old-way-call', { oldWay: true })
+	},
+	{
 		id: 'oauth',
 		name: 'OAuth',
 		words: ['OAuth', 'OAuth 2.0'],

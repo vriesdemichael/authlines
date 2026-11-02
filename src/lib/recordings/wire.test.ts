@@ -99,6 +99,7 @@ describe.each(asCases)('the raw view of %s', (_, recording) => {
 	});
 
 	it('means what it says when the app looks up an address and then uses it', () => {
+		if (recording.settings.oldWay) return;
 		const document = messageOn(recording, 'discovery-document')?.body as Record<string, string>;
 		const authorize = messageOn(recording, 'authorize') as RecordedMessage;
 		expect(authorize.url?.startsWith(document.authorization_endpoint)).toBe(true);

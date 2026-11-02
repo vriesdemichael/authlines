@@ -26,7 +26,8 @@ test.describe('every named state, checked by an automated tool', () => {
 
 test.describe('by keyboard alone', () => {
 	test('the whole flow can be walked, from the map to the last step', async ({ page }) => {
-		const { steps } = evaluate(base.diagrams.flow, defaultSettings);
+		// The first question on the map is the old way.
+		const { steps } = evaluate(base.diagrams.flow, { ...defaultSettings, oldWay: true });
 		await page.goto('./');
 		// Past search and the heading of the part that is open, to the first question.
 		for (let i = 0; i < 3; i++) await page.keyboard.press('Tab');

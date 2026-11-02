@@ -11,7 +11,7 @@ test.describe('opening a question from the map', () => {
 	test('leaves a setting alone that lands under the mouse that clicked it', async ({ page }) => {
 		await page.goto('./');
 		await page.locator('main[data-ready="true"]').waitFor();
-		const question = page.getByTestId('node-how-access-works');
+		const question = page.getByTestId('node-the-old-way');
 		const box = (await question.boundingBox())!;
 		const at = { x: box.x + 60, y: box.y + box.height - 3 };
 		await page.mouse.click(at.x, at.y);

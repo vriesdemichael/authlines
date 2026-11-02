@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { diagramParts, isExplained, markTerms, terms, type Term } from '#lib/flow/glossary.ts';
 import { authorizationCodeBase as base } from '#lib/flow/index.ts';
-import { evaluate } from '#lib/flow/model.ts';
+import { evaluate, introsOf } from '#lib/flow/model.ts';
 import {
 	allValidSettings,
 	defaultSettings,
@@ -34,7 +34,7 @@ function simpleModeText(): string[] {
 			}
 		}
 	}
-	for (const diagram of diagrams) said.add(diagram.intro);
+	for (const diagram of diagrams) for (const intro of introsOf(diagram)) said.add(intro);
 	for (const id of simpleSettingIds) {
 		said.add(settingDefs[id].simple?.label ?? '');
 		said.add(settingDefs[id].simple?.summary ?? '');

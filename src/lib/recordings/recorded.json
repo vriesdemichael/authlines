@@ -33,12 +33,14 @@
 		"on-a-device-read": "2026-11-02",
 		"address-refused": "2026-11-02",
 		"browser-app": "2026-11-02",
-		"in-the-page": "2026-11-02"
+		"in-the-page": "2026-11-02",
+		"the-old-way": "2026-11-02"
 	},
 	"flows": {
 		"authorization-code": {
 			"presets": [
 				"oauth",
+				"the-old-way",
 				"address-refused",
 				"api-no-token",
 				"api-expired",
@@ -117,6 +119,9 @@
 				"logout-redirect",
 				"logout-redirect-back",
 				"logout-start",
+				"old-way-answer",
+				"old-way-call",
+				"old-way-form",
 				"open-app",
 				"real-app-refused",
 				"redirect-to-idp",

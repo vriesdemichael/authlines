@@ -96,5 +96,10 @@
 	"handed-nonce-check",
 	"attacker-handed-answer",
 	"address-refused",
-	"page-goes-to-log-in"
+	"page-goes-to-log-in",
+	"old-way-form",
+	"old-way-keep",
+	"old-way-call",
+	"old-way-answer",
+	"old-way-nothing-to-set-up"
 ]

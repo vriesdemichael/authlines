@@ -234,6 +234,8 @@ describe.each(asCases)('the recording of %s', (preset, recording) => {
 						(artifact === 'access-token' &&
 							recording.settings.apiToken === 'changed' &&
 							value.split('.').every((part, at) => at === 1 || text.includes(part))) ||
+						(artifact === 'password' &&
+							text.includes(Buffer.from(`alice:${value}`).toString('base64'))) ||
 						(artifact === 'secret' &&
 							(text.includes(basicAuthOf(value)) ||
 								text.includes(basicAuthOf(value, 'demo-app-two'))))
@@ -247,6 +249,7 @@ describe.each(asCases)('the recording of %s', (preset, recording) => {
 	});
 
 	it('has a challenge that really is the fingerprint of the verifier', () => {
+		if (recording.settings.oldWay) return;
 		const body = recorded.find((m) => m.step === 'token-request')?.body as Record<string, string>;
 		const authorize = recorded.find((m) => m.step === 'authorize')!;
 		const challenge = carried(authorize).query.get('code_challenge');

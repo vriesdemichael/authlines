@@ -24,7 +24,7 @@ export function nodeState(of: MapNode): AppState {
 		settings,
 		step: resolveStep(flow, evaluate(flow, settings), of.step ?? null),
 		source: null,
-		explained: null,
+		explained: of.explains ?? null,
 		serverNotes: true,
 		settingsHidden: false,
 		eyes: of.eyes ?? null,
@@ -68,6 +68,9 @@ export function nodeMatching(state: AppState): MapNode | null {
 			candidate.diagram === state.diagram &&
 			candidate.mode === state.mode &&
 			(candidate.eyes ?? null) === state.eyes &&
+			// A question that is what something is, is only that while the explanation is open.
+			(!candidate.explains ||
+				JSON.stringify(candidate.explains) === JSON.stringify(state.explained)) &&
 			sameSettings(nodeSettings(candidate), state.settings)
 	);
 	return same.find((candidate) => nodeState(candidate).step === state.step) ?? same[0] ?? null;

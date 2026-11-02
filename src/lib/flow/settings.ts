@@ -21,6 +21,7 @@ export interface Settings {
 	deviceAttack: 'nobody' | 'sends-code' | 'reads-code';
 	address: 'registered' | 'other';
 	appRuns: 'server' | 'page';
+	oldWay: boolean;
 }
 
 export type SettingId = keyof Settings;
@@ -71,6 +72,8 @@ interface SettingBase {
 	why: string;
 	/** Present when simple mode offers this setting, in words that need no explaining first. */
 	simple?: { label: string; summary: string };
+	/** Not a control of its own: a question or the first screen turns it on, and then it is a chip. */
+	notOnOffer?: boolean;
 	/** The only base flow it means anything on, so that no other flow has to test its combinations. */
 	onlyOn?: string;
 	sources: readonly SourceRef[];
@@ -553,6 +556,47 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				}
 			}
 		]
+	},
+	oldWay: {
+		kind: 'toggle',
+		label: 'The app has your password',
+		param: 'oldway',
+		default: false,
+		onlyOn: 'authorization-code',
+		notOnOffer: true,
+		summary:
+			'What came before: the app asks for the password, keeps it, and sends it with every call.',
+		why: 'An app that logs in as you has your password, can do anything you can, and leaks it if it is broken into. Everything else here exists so that it does not have to.',
+		sources: [
+			{
+				source: 'rfc6749',
+				section: '1',
+				why: 'Section 1 opens with what is wrong with this, and it is why OAuth exists.'
+			},
+			{
+				source: 'rfc7617',
+				section: '2',
+				why: 'Section 2 is the scheme the call to the API uses here.'
+			}
+		],
+		requires: {
+			when: all(
+				is('oidc', false),
+				is('consent', false),
+				is('clientType', 'confidential'),
+				is('pkce', false),
+				is('attacker', false),
+				is('binding', 'bearer'),
+				is('broker', false),
+				is('apiToken', 'good'),
+				is('refresh', false),
+				is('sso', false),
+				is('logout', false),
+				is('address', 'registered'),
+				is('appRuns', 'server')
+			),
+			because: 'That is about logging in somewhere else, and this is what came before it.'
+		}
 	},
 	address: {
 		kind: 'choice',
