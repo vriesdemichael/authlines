@@ -8,3 +8,9 @@ pre-commit:
     format:
       glob: '*.{ts,js,mjs,svelte,json,css,html,yml,yaml}'
       run: pnpm exec prettier --check {staged_files}
+
+# They take about 17 seconds, and a failing test has reached a pull request more than once without this.
+pre-push:
+  commands:
+    unit-tests:
+      run: pnpm exec vitest run --bail=1

@@ -90,6 +90,8 @@ export interface KeycloakFlag {
 }
 
 export interface OptionDef<V extends string = string> {
+	/** What it says as a chip in simple mode, where the setting is not on offer to explain it. */
+	plainly?: string;
 	/** What choosing this brings with it. */
 	sets?: Partial<Settings>;
 	value: V;
@@ -164,7 +166,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		],
 		options: [
 			{ value: 'confidential', label: 'Confidential' },
-			{ value: 'public', label: 'Public' }
+			{ value: 'public', label: 'Public', plainly: 'This app has no secret' }
 		]
 	},
 	pkce: {
@@ -547,8 +549,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 						is('apiToken', 'good'),
 						is('address', 'registered')
 					),
-					because:
-						'An app in the page is only drawn in the plain case so far, with none of these on.'
+					because: 'Not drawn with these settings yet.'
 				}
 			}
 		]

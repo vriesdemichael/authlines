@@ -25,6 +25,8 @@
 		layout: DiagramLayout;
 		currentStep: string;
 		fresh?: ReadonlySet<string>;
+		/** Someone just flipped a setting, so these rows go first, even over the current step. */
+		flipped?: ReadonlySet<string> | null;
 		animate?: boolean;
 		/** What is being explained, to light up where it is. */
 		lit?: Lit | null;
@@ -57,6 +59,7 @@
 		lit = null,
 		allLabels = false,
 		holdings = {},
+		flipped = null,
 		sending = null,
 		landing = new Set(),
 		eyes = null,
@@ -127,25 +130,41 @@
 		scroller?.querySelector(`[data-step="${CSS.escape(step)}"] .hit`)?.getBoundingClientRect() ??
 		null;
 
+	// A setting can change what is inside a message without changing the message's own words.
+	const freshRows = $derived(new Set([...fresh].map((id) => id.split(':')[0])));
+
 	/**
-	 * The current step stays on screen with room around it, whatever moved it there. So does what a
-	 * setting just added, if both fit, because a change nobody can see has not been shown.
+	 * The current step stays on screen with room around it, whatever moved it there. A setting that was
+	 * just flipped goes first, because a change nobody can see has not been shown, and someone who has
+	 * just flipped something is looking for what it did. The next step brings the current one back.
 	 */
 	function keepInView() {
 		const row = boxOf(currentStep);
 		if (!scroller || !row) return;
 		const view = scroller.getBoundingClientRect();
-		const added = layout.rows.flatMap((candidate) =>
-			fresh.has(candidate.id) ? (boxOf(candidate.id) ?? []) : []
-		);
-		// All of it if that fits. Otherwise what came before, because what is ahead is still to come.
-		const wanted = [added, added.filter((box) => box.top <= row.top), []]
-			.map((boxes) => ({
-				from: Math.min(row.top, ...boxes.map((box) => box.top)),
-				to: Math.max(row.bottom, ...boxes.map((box) => box.bottom))
-			}))
-			.find(({ from, to }) => to - from + TIGHT_ROOM * 2 <= view.height);
-		const { from, to } = wanted ?? { from: row.top, to: row.bottom };
+		const rows = (ids: ReadonlySet<string>) =>
+			layout.rows.flatMap((candidate) =>
+				ids.has(candidate.id) ? (boxOf(candidate.id) ?? []) : []
+			);
+		const span = (boxes: readonly DOMRect[]) => ({
+			from: Math.min(...boxes.map((box) => box.top)),
+			to: Math.max(...boxes.map((box) => box.bottom))
+		});
+		const fits = ({ from, to }: { from: number; to: number }) =>
+			to - from + TIGHT_ROOM * 2 <= view.height;
+		const changed = rows(freshRows);
+		const looked = flipped ? rows(flipped) : [];
+		const alone = looked.length ? span(looked) : null;
+		// All of it if that fits. After a flip, then what it changed with the current step, and then that
+		// alone, as much as fits from where it starts. Otherwise what came before with the current step,
+		// because what is ahead is still to come.
+		const { from, to } = [
+			span([...changed, row]),
+			alone ? span([...looked, row]) : span([...changed.filter((box) => box.top <= row.top), row]),
+			...(alone
+				? [{ from: alone.from, to: Math.min(alone.to, alone.from + view.height - TIGHT_ROOM * 2) }]
+				: [])
+		].find(fits) ?? { from: row.top, to: row.bottom };
 		const room = Math.max(0, Math.min(BREATHING_ROOM, (view.height - (to - from)) / 2));
 		if (from - room < view.top) scroller.scrollTop -= view.top - (from - room);
 		else if (to + room > view.bottom) scroller.scrollTop += to + room - view.bottom;

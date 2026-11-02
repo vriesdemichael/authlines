@@ -41,6 +41,8 @@ Something wrong, or a question missing? [Say what is wrong](https://github.com/v
 
 **The words are written.** An AI agent, Claude, writes the explanations, the words on the diagram and the code here. The maintainer decides what it should be and judges it once it is live ([how](docs/adr/001-an-agent-builds-and-the-maintainer-reviews.md)). A step that names a spec cites it, and [a test](src/lib/flow/citations.test.ts) checks that each cited RFC section contains a phrase chosen from it, not that the sentence is right. So check what you will rely on against the specs it links to.
 
+**Who has tried it.** The maintainer, and AI agents given a role and the address. As far as anyone knows, nobody else yet, so whether it works for people is still open.
+
 ### Where the recordings are
 
 In [`static/recordings/`](static/recordings/), with a folder for each flow and a JSON file for each set of settings recorded. `pages/` has pictures of the pages a person gets.

@@ -6,6 +6,8 @@ A larger new implementation that is not in an issue yet is discussed with the ma
 
 Everything a contributor needs is written down where an agent finds it, because a session keeps nothing: `CLAUDE.md` for working in this repository, the premise for intent, and these records for rules. When you find a convention that is written nowhere, propose a record.
 
+A reader is cited as what it was. An AI agent given a role is "an AI agent given the job of a product manager", and says what it had loaded, because agents here start with this project's instructions. Agents find bugs and false claims, and they know the words, so they do not stand in for a person on whether someone can follow this or wants it. An acceptance criterion about people is only met by people.
+
 A large build that goes the wrong way costs more to review than it would have cost to discuss.
 
 ## Not chosen

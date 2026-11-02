@@ -111,7 +111,6 @@ test.describe('showing what a setting added', () => {
 	test('brings it into view, in every browser', async ({ page }) => {
 		await openAt(page, 1280, 620, 'mode=advanced&step=api-response');
 		await page.getByRole('checkbox', { name: /PKCE/ }).click();
-		await page.getByTestId('change-show').click();
 		await expect(page.locator('[data-step="make-verifier"] .hit')).toBeInViewport();
 	});
 });

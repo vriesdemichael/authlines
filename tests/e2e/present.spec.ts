@@ -27,10 +27,9 @@ test.describe('in front of a room', () => {
 		await expect(stepAt(page)).not.toHaveAttribute('data-step', 'token-request');
 	});
 
-	test('a clicker goes on working after "Show it"', async ({ page }) => {
+	test('a clicker goes on working after a setting is flipped', async ({ page }) => {
 		await open(page, 'mode=simple&client=public&attacker=1&step=attacker-token-request');
 		await page.locator('[data-setting="pkce"] input').check();
-		await page.getByTestId('change-show').click();
 		const before = await stepAt(page).getAttribute('data-step');
 		await page.keyboard.press('PageDown');
 		await expect(stepAt(page)).not.toHaveAttribute('data-step', before!);

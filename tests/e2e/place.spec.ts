@@ -13,6 +13,16 @@ async function currentIsOnScreen(page: Page) {
 
 const expectOnScreen = (page: Page) => expect.poll(() => currentIsOnScreen(page)).toBe(true);
 
+/** Whether something a setting just changed can be seen, because that is what someone flipped it for. */
+const freshIsOnScreen = (page: Page) =>
+	page.locator('.scroller').evaluate((scroller) => {
+		const view = scroller.getBoundingClientRect();
+		return [...scroller.querySelectorAll('.row.fresh .hit')].some((hit) => {
+			const row = hit.getBoundingClientRect();
+			return row.top >= view.top - 1 && row.bottom <= view.bottom + 1;
+		});
+	});
+
 test.describe('the current step stays on screen', () => {
 	const sizes = [
 		{ width: 1440, height: 900 },
@@ -44,8 +54,6 @@ test.describe('the current step stays on screen', () => {
 				await expectOnScreen(page);
 				await page.locator('[data-setting="oidc"] input').check();
 				await expectOnScreen(page);
-				await page.locator('[data-setting="pkce"] input').check();
-				await expectOnScreen(page);
 			});
 		});
 	}
@@ -60,6 +68,8 @@ test.describe('the current step stays on screen', () => {
 			await open(page, 'step=api-response');
 			await page.locator('[data-setting="broker"] input').check();
 			await expect(page.getByTestId('diagram')).toHaveAttribute('data-animating', 'false');
+			await expect.poll(() => freshIsOnScreen(page)).toBe(true);
+			await page.getByTestId('back').click();
 			await expectOnScreen(page);
 		});
 	});
@@ -90,6 +100,32 @@ test.describe('what a setting adds', () => {
 		await page.locator('[data-setting="pkce"] input').check();
 	};
 
+	// The transition is the moment the idea lands or does not (premise 5.2), so it has to be in view.
+	test.describe('from the first step, on a small laptop', () => {
+		test.use({ viewport: { width: 1280, height: 720 } });
+
+		for (const setting of ['oidc', 'consent', 'pkce', 'attacker', 'broker']) {
+			test(`${setting} is on screen when it is flipped`, async ({ page }) => {
+				await open(page, 'mode=simple');
+				await page.locator(`[data-setting="${setting}"] input`).check();
+				await expect.poll(() => freshIsOnScreen(page)).toBe(true);
+			});
+		}
+
+		test('a choice that changes messages is on screen too', async ({ page }) => {
+			await open(page, 'mode=simple');
+			await page.locator('[data-setting="appRuns"] input[value="page"]').check();
+			await expect.poll(() => freshIsOnScreen(page)).toBe(true);
+		});
+
+		test('pointing at a switch moves nothing', async ({ page }) => {
+			await open(page, 'mode=simple');
+			await page.locator('[data-setting="oidc"] label').hover();
+			await page.waitForTimeout(300);
+			expect(await page.locator('.scroller').evaluate((scroller) => scroller.scrollTop)).toBe(0);
+		});
+	});
+
 	test.describe('on a tall screen', () => {
 		test.use({ viewport: { width: 1440, height: 1000 } });
 
@@ -103,11 +139,8 @@ test.describe('what a setting adds', () => {
 	test.describe('on a laptop', () => {
 		test.use({ viewport: { width: 1366, height: 768 } });
 
-		test('can be brought into view, without moving from the step', async ({ page }) => {
+		test('goes first, and the next step brings back where someone was', async ({ page }) => {
 			await flipPkceAtTheAttacker(page);
-			await expectOnScreen(page);
-			expect(await isOnScreen(page, 'make-verifier')).toBe(false);
-			await page.getByTestId('change-show').click();
 			await expect.poll(() => isOnScreen(page, 'make-verifier')).toBe(true);
 			await expect(page.locator('[data-state="current"]')).toHaveAttribute(
 				'data-step',
@@ -115,13 +148,6 @@ test.describe('what a setting adds', () => {
 			);
 			await page.getByTestId('next').click();
 			await expectOnScreen(page);
-		});
-
-		test('has nothing to show when nothing was added', async ({ page }) => {
-			await open(page, 'mode=simple&oidc=1&step=token-response');
-			await page.locator('[data-setting="oidc"] input').uncheck();
-			await expect(page.getByTestId('change-summary')).toContainText('removed');
-			await expect(page.getByTestId('change-show')).toHaveCount(0);
 		});
 	});
 });
