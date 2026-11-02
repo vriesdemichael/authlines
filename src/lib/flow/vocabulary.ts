@@ -87,13 +87,13 @@ export const artifacts: Readonly<
 		label: 'device code',
 		short: 'device code',
 		explains:
-			'A long random value the identity provider gives the app, and the app keeps. Once the user has agreed, whoever sends it gets the tokens, so it goes directly to the app and is not meant to be shown to anyone.'
+			'A long random value the identity provider gives the app, and the app keeps. Once the user has agreed, whoever sends it as this app gets the tokens, so it goes directly to the app and is not meant to be shown to anyone.'
 	},
 	'user-code': {
 		label: 'user code',
 		short: 'user code',
 		explains:
-			'A short code for a person to read off one device and type into another, which says which waiting app a login is for. It gets nobody a token, because the tokens go to whoever has the device code. That is also why typing in a code someone sent you is dangerous: they have the device code that goes with it.'
+			'A short code for a person to read off one device and type into another, which says which waiting app a login is for. Seeing it gets you no token, because the tokens go to whoever has the device code. It is not harmless, though. Someone who types it in first leaves the device logged in as them, and someone who sent you theirs gets the tokens when you type it in.'
 	}
 };
 

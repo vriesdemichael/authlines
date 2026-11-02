@@ -439,6 +439,30 @@ const list: readonly Term[] = [
 		opens: { flow: 'device', step: 'device-show-code' }
 	},
 	{
+		id: 'authorization-pending',
+		name: 'authorization_pending',
+		words: ['authorization_pending'],
+		explains:
+			'What the app is told while the user has not finished. On the wire it is an error, and here it means wait and ask again.',
+		opens: { flow: 'device', step: 'device-pending' }
+	},
+	{
+		id: 'slow-down',
+		name: 'slow_down',
+		words: ['slow_down'],
+		explains:
+			'What the app can be told if it asks too often. It has to wait 5 seconds longer from then on.',
+		opens: { flow: 'device', step: 'device-pending' }
+	},
+	{
+		id: 'expired-token',
+		name: 'expired_token',
+		words: ['expired_token'],
+		explains:
+			'What the app is told when the codes ran out before the user finished. It stops asking, and trying again takes new codes.',
+		opens: { flow: 'device', step: 'device-token-response' }
+	},
+	{
 		id: 'polling',
 		name: 'Polling',
 		words: ['polling', 'poll'],
@@ -451,7 +475,7 @@ const list: readonly Term[] = [
 		name: 'Device code phishing',
 		words: ['device code phishing', 'device phishing', 'remote phishing'],
 		explains:
-			'Someone starts the device flow on a device of their own, and sends you the address and the code. If you log in and agree, they get the tokens, and you never gave away a password.',
+			'Someone starts the device flow on a device of their own, and sends you the address and the user code. If you log in and agree, they get the tokens, and you never gave away a password.',
 		opens: { flow: 'device', step: 'device-consent-page' }
 	},
 	{

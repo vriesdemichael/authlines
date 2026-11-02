@@ -17,6 +17,14 @@ type Story = StoryObj<typeof meta>;
 
 export const WithTerms: Story = {};
 
+export const FollowedByAPeriod: Story = {
+	args: {
+		segments: markTerms([
+			'They send you the address and the user code. If you agree, they get it.'
+		])[0]
+	}
+};
+
 export const NothingToSelect: Story = {
 	args: { onterm: undefined }
 };

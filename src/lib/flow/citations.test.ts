@@ -80,6 +80,8 @@ const CITED: readonly [step: string, SourceId, section: string, phrase: string][
 	['device-consent-page', 'rfc8628', '5.4', 'authorizing a device'],
 	['device-token-response', 'rfc8628', '3.5', 'access_denied'],
 	['device-register', 'rfc8628', '5.6', 'treated as public clients'],
+	['device-show-code', 'rfc8628', '5.5', 'completing the authorization faster than the user'],
+	['device-submit-credentials', 'rfc8628', '5.3', 'address bar is wrong'],
 	['device-discovery-document', 'rfc8628', '4', 'device_authorization_endpoint']
 ];
 

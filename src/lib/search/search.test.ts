@@ -59,7 +59,14 @@ describe('what people bring', () => {
 		['in a terminal', 'device'],
 		['verification_uri', 'device'],
 		['urn:ietf:params:oauth:grant-type:device_code', 'device'],
-		['RFC 8628', 'device']
+		['RFC 8628', 'device'],
+		['phishing', 'device'],
+		['polling', 'device'],
+		['ssh', 'device'],
+		['command line tool', 'device'],
+		['headless server no browser', 'device'],
+		['user never finishes', 'device'],
+		['connection timeout', 'device']
 	])('%s finds the flow on a device', (query, flow) => {
 		const found = search(query);
 		expect(found.notHereYet, query).toBeNull();
@@ -67,6 +74,26 @@ describe('what people bring', () => {
 			found.results.some((result) => result.flow === flow),
 			query
 		).toBe(true);
+	});
+
+	it.each([
+		['phishing', 'device-phishing'],
+		['polling', 'device-waiting'],
+		['ssh', 'device-flow']
+	])('%s finds the question about it, and not only a word', (query, view) => {
+		expect(search(query).results.map((result) => result.view)).toContain(view);
+	});
+
+	it.each([
+		['expired_token', 'device-no-answer', 'simple'],
+		['access_denied', 'device-no-answer', 'simple'],
+		['slow_down', 'device-pending-error', 'advanced']
+	])('%s opens on the question that says what it means', (query, view, mode) => {
+		const error = search(query).results.find(
+			(result) => result.kind === 'error' && result.flow === 'device'
+		);
+		expect(error?.view).toBe(view);
+		expect(parseState(flows.device, 'flow', error!.query).mode).toBe(mode);
 	});
 
 	it('finds what a pitfall on the other flow says', () => {

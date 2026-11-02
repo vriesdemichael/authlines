@@ -29,7 +29,7 @@ test.describe('a flow on two devices', () => {
 	}) => {
 		await openIt(page, 'mode=advanced&step=device-show-code');
 		await expect(detail(page)).toContainText('People, not HTTP');
-		await expect(detail(page)).toContainText('Nothing is sent');
+		await expect(detail(page)).toContainText('No HTTP message here');
 		await expect(page.getByTestId('payload')).toHaveCount(0);
 	});
 
@@ -86,8 +86,8 @@ test.describe('a flow on two devices', () => {
 	test('says why the rest is not here', async ({ page }) => {
 		await openIt(page);
 		const list = page.getByTestId('not-here');
-		await expect(list.locator('[data-not-here="consent"]')).toContainText('always asks');
-		await expect(list.locator('[data-not-here="attacker"]')).toContainText('No code goes');
+		await expect(list.locator('[data-not-here="consent"]')).toContainText('asks here anyway');
+		await expect(list.locator('[data-not-here="attacker"]')).toContainText('not drawn');
 		await openIt(page, 'mode=advanced');
 		await expect(list.locator('[data-not-here="clientType"]')).toContainText('no secret');
 	});
@@ -145,6 +145,22 @@ test.describe('from the map', () => {
 		await page.getByTestId('search-input').fill('device flow');
 		await expect(page.getByTestId('search').locator('[data-result]').first()).toBeVisible();
 		await expect(page.getByTestId('search')).not.toContainText('does not cover');
+	});
+
+	test('a word followed by a period keeps it on its line', async ({ page }) => {
+		await page.goto('device/device-phishing/');
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		const answer = page.getByTestId('answer');
+		await expect(answer.locator('.together').filter({ hasText: /\.$/ }).first()).toBeVisible();
+		expect(await answer.locator('p').innerText()).not.toMatch(/\s[.,;:]/);
+	});
+
+	test('what the term means on this flow is this flow’s', async ({ page }) => {
+		await page.goto('device/device-phishing/');
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		await page.getByTestId('answer').locator('[data-term="user-code"]').click();
+		await expect(page.getByTestId('explanation')).toContainText('short code for a person');
+		await expect(page.getByTestId('explanation')).not.toContainText('one-time ticket');
 	});
 
 	test('pasting the error goes to where a real server said it', async ({ page }) => {

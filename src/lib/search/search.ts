@@ -291,12 +291,17 @@ function index() {
 			if (known.flow) {
 				const other = flows[known.flow];
 				const settings = normalize({ ...defaultSettings, ...known.settings }).settings;
+				const about = mapNodes.find((node) => node.id === known.question);
 				return {
 					kind: 'error' as const,
 					title: known.text,
 					says: known.means,
 					flow: other.id,
-					query: serializeState(other, stateIn(other, 'flow', settings, known.step))
+					view: about?.id,
+					query: serializeState(other, {
+						...stateIn(other, 'flow', settings, known.step),
+						mode: about?.mode ?? 'advanced'
+					})
 				};
 			}
 			const state = stateAt('flow', known.settings, known.step, 'advanced');
@@ -380,7 +385,7 @@ export function search(query: string): Found {
 
 	const seen = new Set<string>();
 	const results = [...longestFirst, ...partOfAnError, ...others].filter((result) => {
-		const key = `${result.kind}:${result.title}:${result.query}`;
+		const key = `${result.flow}:${result.kind}:${result.title}:${result.query}`;
 		if (seen.has(key)) return false;
 		seen.add(key);
 		return true;

@@ -386,7 +386,9 @@ async function recordDevice(browser: Browser, demo: Demo, keycloak: string, reco
 			...message,
 			step: message.step && `device-${message.step}`
 		}));
-		recordings.push({ preset: preset.id, keycloak, recordedAt, settings, messages });
+		// Not a setting on this flow, and not what the run's settings would otherwise say.
+		const asRun: Settings = { ...settings, clientType: 'public' };
+		recordings.push({ preset: preset.id, keycloak, recordedAt, settings: asRun, messages });
 	}
 	return recordings;
 }

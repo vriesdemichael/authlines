@@ -19,6 +19,36 @@ const ERRORS = 'src/lib/search/errors.ts';
 export const breakages = [
 	// What a sceptical reader found.
 	{
+		name: 'device: the code, which reads as the other flow’s',
+		file: 'src/lib/flow/device.ts',
+		from: 'this one asks for the user code first.',
+		to: 'this one asks for the code first.'
+	},
+	{
+		name: 'device: the app’s part of the list goes before anything runs',
+		file: 'src/lib/flow/left-to-you.ts',
+		from: "if (diagram === 'setup' && step.kind === 'human') return 'before';",
+		to: "if (step.kind === 'human') return 'before';"
+	},
+	{
+		name: 'device: the browser has the password from the start',
+		file: 'src/lib/flow/device.ts',
+		from: 'front: true,\n\t\t\tconcept:',
+		to: "front: true,\n\t\t\tstartsWith: [{ artifact: 'password' }],\n\t\t\tconcept:"
+	},
+	{
+		name: 'device: the two codes are not followed through the run',
+		file: 'src/lib/recordings/wire.ts',
+		from: "\t'device_code',\n",
+		to: ''
+	},
+	{
+		name: 'device: an error goes to the step alone, and not the question that says it',
+		file: 'src/lib/search/search.ts',
+		from: 'view: about?.id,',
+		to: 'view: undefined,'
+	},
+	{
 		name: 'device: the browser is given the code that gets the tokens',
 		file: 'src/lib/flow/device.ts',
 		from: "name: 'user_code',\n\t\t\t\t\tplace: 'memory',\n\t\t\t\t\tartifact: 'user-code',",
@@ -51,8 +81,8 @@ export const breakages = [
 	{
 		name: 'device: a setting vanishes without saying why',
 		file: 'src/lib/flow/index.ts',
-		from: "consent: 'It always asks here.",
-		to: "consenting: 'It always asks here."
+		from: "consent:\n\t\t\t'It asks here anyway.",
+		to: "consenting:\n\t\t\t'It asks here anyway."
 	},
 	{
 		name: 'device: the address after a redirect is lost',
@@ -162,8 +192,8 @@ export const breakages = [
 	{
 		name: 'threats: a flow that is here is said not to be',
 		file: ERRORS,
-		from: "	'device flow',",
-		to: "	'device flow',\n	'client credentials',"
+		from: "	'saml',",
+		to: "	'saml',\n	'client credentials',\n	'device flow',"
 	},
 	// All that is left to someone, in one list.
 	{
@@ -278,10 +308,10 @@ export const breakages = [
 	},
 	// What a person sees in their browser.
 	{
-		name: 'page: the address is taken from an answer and not what was asked for',
+		name: 'page: the address is taken from another step',
 		file: ADDRESS,
-		from: "message.step === step && message.direction === 'request'",
-		to: "message.step === step && message.direction === 'response'"
+		from: 'recording.messages.find((candidate) => candidate.step === step)',
+		to: 'recording.messages.find((candidate) => candidate.step !== step)'
 	},
 	{
 		name: 'page: nothing in an address is marked',

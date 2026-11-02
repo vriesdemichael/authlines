@@ -14,13 +14,17 @@
 		"devicePolling": {
 			"first": "authorization_pending",
 			"description": "The authorization request is still pending",
-			"tooSoon": "slow_down"
+			"tooSoon": "slow_down",
+			"afterWaiting": "authorization_pending"
 		},
 		"deviceConsent": {
 			"consentRequiredOff": {
 				"asked": true
 			},
 			"consentRequiredOn": {
+				"asked": true
+			},
+			"afterAgreeingBefore": {
 				"asked": true
 			}
 		},
@@ -32,13 +36,18 @@
 		"deviceDenied": {
 			"status": 400,
 			"error": "access_denied",
-			"description": "The end user denied the authorization request"
+			"description": "The end user denied the authorization request",
+			"leftASession": false,
+			"afterAgreeingLeftASession": true
 		},
 		"deviceExpired": {
 			"status": 400,
 			"error": "expired_token",
 			"description": "Device code is expired",
 			"onThePage": "The code has expired."
+		},
+		"deviceUsedCode": {
+			"onThePage": "Invalid code, please try again."
 		},
 		"deviceWrongCode": {
 			"onThePage": "Invalid code, please try again."
@@ -66,6 +75,22 @@
 				"status": 400,
 				"error": "invalid_grant",
 				"description": "Device code not valid"
+			},
+			"neverIssued": {
+				"status": 400,
+				"error": "invalid_grant",
+				"description": "Device code not valid"
+			},
+			"fromAnotherClientSaid": "unauthorized client"
+		},
+		"devicePkce": {
+			"startedWithAChallenge": {
+				"status": 200
+			},
+			"askedWithNoVerifier": {
+				"status": 400,
+				"error": "invalid_grant",
+				"description": "PKCE code verifier not specified"
 			}
 		},
 		"deviceWithSecret": {

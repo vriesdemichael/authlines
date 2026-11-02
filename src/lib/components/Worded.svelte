@@ -7,20 +7,34 @@
 	}
 
 	let { segments, onterm }: Props = $props();
+
+	const PUNCTUATION = /^[.,;:!?)]+/;
+	const marked = (index: number) => Boolean(segments[index]?.term && onterm);
+	/** A button can end a line, so what follows it straight away has to stay with it. */
+	const stuckTo = (index: number) =>
+		marked(index) && !marked(index + 1)
+			? (PUNCTUATION.exec(segments[index + 1]?.text ?? '')?.[0] ?? '')
+			: '';
 </script>
 
 {#each segments as segment, index (index)}
 	{#if segment.term && onterm}
 		{@const id = segment.term.id}
-		<button type="button" class="term" data-term={id} onclick={() => onterm(id)}>
-			{segment.text}
-		</button>
+		<span class="together"
+			><button type="button" class="term" data-term={id} onclick={() => onterm(id)}>
+				{segment.text}
+			</button>{stuckTo(index)}</span
+		>
 	{:else}
-		{segment.text}
+		{segment.text.slice(stuckTo(index - 1).length)}
 	{/if}
 {/each}
 
 <style>
+	.together {
+		white-space: nowrap;
+	}
+
 	/* Quiet, because a step can have several, and what it says matters more. */
 	.term {
 		display: inline;

@@ -749,16 +749,20 @@ export async function questionsOnADevice(browser: Browser, admin: Admin) {
 				.waitFor();
 			pages += ` ${await said()}`;
 		}
+		const cookies = await context.cookies();
 		await context.close();
-		return { asksForTheCode, asked, pages };
+		const session = cookies.some(({ name }) => name === 'KEYCLOAK_IDENTITY');
+		return { asksForTheCode, asked, pages, session };
 	};
 
 	const on = await start(DEVICE_CLIENT);
 	const off = await start(await clientWith({}));
 	const first = await ask(DEVICE_CLIENT, on.json.device_code);
 	const tooSoon = await ask(DEVICE_CLIENT, on.json.device_code);
+	await wait(on.json.interval);
+	const afterWaiting = await ask(DEVICE_CLIENT, on.json.device_code);
 
-	await goThrough(on.json.verification_uri, on.json.user_code);
+	const agreed = await goThrough(on.json.verification_uri, on.json.user_code);
 	await wait(on.json.interval);
 	const fromAnotherClient = await ask(
 		await clientWith({ attributes: DEVICE_GRANT_ON }),
@@ -767,16 +771,37 @@ export async function questionsOnADevice(browser: Browser, admin: Admin) {
 	const got = await ask(DEVICE_CLIENT, on.json.device_code);
 	await wait(on.json.interval);
 	const usedTwice = await ask(DEVICE_CLIENT, on.json.device_code);
+	const neverIssued = await ask(DEVICE_CLIENT, 'a-device-code-nobody-was-given');
+	const typedAgain = await goThrough(on.json.verification_uri, on.json.user_code);
+
+	const challenged = await send(`${endpoint}/auth/device`, {
+		client_id: DEVICE_CLIENT,
+		code_challenge: createHash('sha256').update('a-verifier-for-this-question').digest('base64url'),
+		code_challenge_method: 'S256'
+	});
+	await goThrough(challenged.json.verification_uri, challenged.json.user_code);
+	await wait(challenged.json.interval);
+	const noVerifier = await ask(DEVICE_CLIENT, challenged.json.device_code);
 
 	const consentOn = await clientWith({ attributes: DEVICE_GRANT_ON, consentRequired: true });
 	const withConsent = await start(consentOn);
 	const asksAnyway = await start(DEVICE_CLIENT);
+	const secondLogin = await goThrough(asksAnyway.json.verification_uri, asksAnyway.json.user_code);
+	const withConsentAsked = await goThrough(
+		withConsent.json.verification_uri,
+		withConsent.json.user_code
+	);
+	const withConsentAgain = await start(consentOn);
+	const withConsentAgainAsked = await goThrough(
+		withConsentAgain.json.verification_uri,
+		withConsentAgain.json.user_code
+	);
 
 	const full = await start(DEVICE_CLIENT);
 	const throughFull = await goThrough(full.json.verification_uri_complete, null);
 
 	const denied = await start(DEVICE_CLIENT);
-	await goThrough(denied.json.verification_uri, denied.json.user_code, 'cancel');
+	const saidNo = await goThrough(denied.json.verification_uri, denied.json.user_code, 'cancel');
 	await wait(denied.json.interval);
 	const afterNo = await ask(DEVICE_CLIENT, denied.json.device_code);
 
@@ -824,16 +849,13 @@ export async function questionsOnADevice(browser: Browser, admin: Admin) {
 		devicePolling: {
 			first: first.json.error,
 			description: first.json.error_description,
-			tooSoon: tooSoon.json.error
+			tooSoon: tooSoon.json.error,
+			afterWaiting: afterWaiting.json.error
 		},
 		deviceConsent: {
-			consentRequiredOff: {
-				asked: (await goThrough(asksAnyway.json.verification_uri, asksAnyway.json.user_code)).asked
-			},
-			consentRequiredOn: {
-				asked: (await goThrough(withConsent.json.verification_uri, withConsent.json.user_code))
-					.asked
-			}
+			consentRequiredOff: { asked: secondLogin.asked },
+			consentRequiredOn: { asked: withConsentAsked.asked },
+			afterAgreeingBefore: { asked: withConsentAgainAsked.asked }
 		},
 		deviceFullAddress: {
 			asksForTheCode: throughFull.asksForTheCode,
@@ -843,13 +865,20 @@ export async function questionsOnADevice(browser: Browser, admin: Admin) {
 		deviceDenied: {
 			status: afterNo.status,
 			error: afterNo.json.error,
-			description: afterNo.json.error_description
+			description: afterNo.json.error_description,
+			leftASession: saidNo.session,
+			afterAgreeingLeftASession: agreed.session
 		},
 		deviceExpired: {
 			status: ranOut.status,
 			error: ranOut.json.error,
 			description: ranOut.json.error_description,
 			onThePage: tooLate.pages.includes('The code has expired.') ? 'The code has expired.' : null
+		},
+		deviceUsedCode: {
+			onThePage: typedAgain.pages.includes('Invalid code, please try again.')
+				? 'Invalid code, please try again.'
+				: null
 		},
 		deviceWrongCode: {
 			onThePage: (await goThrough(on.json.verification_uri, 'WRON-GCOD')).pages.includes(
@@ -869,6 +898,20 @@ export async function questionsOnADevice(browser: Browser, admin: Admin) {
 				status: usedTwice.status,
 				error: usedTwice.json.error,
 				description: usedTwice.json.error_description
+			},
+			neverIssued: {
+				status: neverIssued.status,
+				error: neverIssued.json.error,
+				description: neverIssued.json.error_description
+			},
+			fromAnotherClientSaid: fromAnotherClient.json.error_description
+		},
+		devicePkce: {
+			startedWithAChallenge: { status: challenged.status },
+			askedWithNoVerifier: {
+				status: noVerifier.status,
+				error: noVerifier.json.error,
+				description: noVerifier.json.error_description
 			}
 		},
 		deviceWithSecret: {

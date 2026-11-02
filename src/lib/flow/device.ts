@@ -29,9 +29,9 @@ export const device: DiagramDef = {
 	title: 'Device flow',
 	named: 'The flow',
 	caption: 'What happens on two devices.',
-	summary: 'An app with no way to log anyone in, and a user who does that on another device.',
+	summary: 'An app with no good way to log anyone in, and a user who does that on another device.',
 	intro:
-		'Some apps have no good way to log anyone in: on a TV there is no keyboard, and in a terminal on a server there is no browser. So the user does it somewhere else, on their phone, and the app waits. Press Next to follow it, one message at a time.',
+		'Some apps have no good way to log anyone in: on a TV there is no keyboard, and in a terminal on a server there is no browser. So the user does it somewhere else, on their phone or laptop, and the app waits. An app that can open a browser should use that instead. Press Next to follow it, one message at a time.',
 	specs: ['rfc8628', 'rfc6749'],
 	lifelines: [
 		{
@@ -41,9 +41,8 @@ export const device: DiagramDef = {
 			...browserWords,
 			icon: 'browser',
 			front: true,
-			startsWith: [{ artifact: 'password' }],
 			concept:
-				'A browser on another device, usually the user’s phone. It never talks to the app and the app never talks to it, so nothing here can send one to the other.'
+				'A browser on another device, usually the user’s phone, or the laptop they are working from. It never talks to the app and the app never talks to it. All that goes between them is what the user carries.'
 		},
 		{
 			id: 'app',
@@ -52,7 +51,7 @@ export const device: DiagramDef = {
 			...appWords,
 			icon: 'app',
 			concept:
-				'An application on something that is no good for logging in: a TV, a printer, or a tool in a terminal. In OAuth’s terms it is the client. It can make calls, but nothing can call it, and it has no secret because software on someone’s own device generally cannot keep one.'
+				'An application on something that is no good for logging in: a TV, a printer, or a tool in a terminal with no browser to hand. In OAuth’s terms it is the client. It makes calls, and this flow does not need anything to be able to call it. It has no secret here, because software on someone’s own device generally cannot keep one.'
 		},
 		{
 			id: 'idp',
@@ -70,19 +69,19 @@ export const device: DiagramDef = {
 			...apiWords,
 			icon: 'api',
 			concept:
-				'What the app wants to call. It decides from the token whether to answer, and has no idea how the login went.'
+				'What the app wants to call. It decides from the token whether to answer, and does not need to know which flow got it.'
 		}
 	],
 	groups: [],
 	parts: [
 		{
 			label: 'Ask',
-			why: 'The app cannot send the user anywhere, so it asks for something to show them.',
+			why: 'The app has no good way to send the user anywhere, so it asks for something to show them.',
 			from: 'device-request'
 		},
 		{
 			label: 'Wait',
-			why: 'Nothing can tell the app when the user is done, so it keeps asking.',
+			why: 'Nothing here tells the app when the user is done, so it keeps asking.',
 			from: 'device-poll'
 		},
 		{
@@ -118,7 +117,7 @@ export const device: DiagramDef = {
 			label: 'POST /device_authorization',
 			execute: { answer: 'device-response' },
 			concept:
-				'The app cannot send the user anywhere: it has no browser to send them through, and nothing can call it back afterwards. So it asks the identity provider directly to start a login that someone will finish elsewhere.',
+				'The app has no good way to send the user through a browser, and this flow does not count on anything calling it back. So it asks the identity provider directly to start a login that someone will finish elsewhere.',
 			inPractice:
 				'A library does this. Start it when the user asks to log in and not when the app starts, because it sets off all the asking that follows.',
 			practice: [example('openidClient', true, 'with its device authorization grant')],
@@ -142,7 +141,7 @@ export const device: DiagramDef = {
 			plain: 'Two codes, and where to go',
 			label: '200 with two codes',
 			concept:
-				'The user code is short, for a person to read and type. The device code is long, and the app keeps it to itself. One says which login this is, and the other is what the tokens will go to, so seeing the first gets nobody a token.',
+				'The user code is short, for a person to read and type. The device code is long, and the app keeps it to itself. One says which login this is, and the other is what the tokens will go to. So someone who sees the first gets no token for themselves. They could still type it in before the user does, and then the device is logged in as them.',
 			inPractice:
 				'A library takes this. Show the user code and the address, and do not show the device code, which is not meant for the user.',
 			fields: [
@@ -157,7 +156,7 @@ export const device: DiagramDef = {
 				{
 					name: 'verification_uri_complete',
 					place: 'body',
-					note: 'The same address with the code in it, for a QR code'
+					note: 'The same address with the user code in it, for a QR code'
 				},
 				{ name: 'expires_in', place: 'body', note: 'How many seconds these two codes last' },
 				{ name: 'interval', place: 'body', note: 'How many seconds to wait between asking' }
@@ -169,12 +168,17 @@ export const device: DiagramDef = {
 				{
 					source: 'rfc8628',
 					section: '3.3',
-					why: 'Section 3.3 is this step: the app shows the code and the address, and the user goes there in a browser on another device.'
+					why: 'Section 3.3 is this step: the app shows the user code and the address, and the user goes there in a browser on another device.'
 				},
 				{
 					source: 'rfc8628',
 					section: '3.3.1',
 					why: 'Section 3.3.1 allows a QR code of the full address, and says the app must still show the user code.'
+				},
+				{
+					source: 'rfc8628',
+					section: '5.5',
+					why: 'Section 5.5 is someone who can see the screen finishing first, and says a device should take into account where it shows the user code.'
 				}
 			],
 			from: 'app',
@@ -183,9 +187,13 @@ export const device: DiagramDef = {
 			plain: 'The app shows an address and a code',
 			label: 'Show the address and user code',
 			concept:
-				'Nothing is sent. The app puts these on its screen, and the user carries them to a browser on another device, by reading and typing. That is all that joins the two, and it only goes one way.',
+				'No HTTP message here. The app shows these, usually on its screen, and the user carries them to a browser on another device, by typing them or with a QR code. That is all this flow needs to join the two, and it goes one way.',
 			inPractice:
-				'This part is your code: how it looks on your screen. A QR code of the full address saves the typing, and the code still has to be on screen.',
+				'This part is your code: how it looks on your screen. If the server sends a full address, a QR code of it saves the typing. The user code still has to be on screen, and the plain address should be too.',
+			pitfall: {
+				title: 'What if someone else can see the screen?',
+				text: 'They could type the user code in before the user does. They get no token for themselves, but the device ends up logged in as them. So it matters who can see it, wherever it is shown.'
+			},
 			fields: [
 				{ name: 'verification_uri', place: 'memory', note: 'On the screen, for the user to read' },
 				{
@@ -212,10 +220,10 @@ export const device: DiagramDef = {
 			label: 'POST /token',
 			execute: { answer: 'device-pending' },
 			concept:
-				'While the user does their part, the app asks the identity provider again and again, with the device code. Nothing can call it back, so asking is the only way it can find out. This one stands for all of those.',
+				'While the user does their part, the app asks the identity provider again and again, with the device code. The flow does not count on anything being able to call the app back, so asking is how it finds out. This one stands for all of those.',
 			inPractice:
 				'A library does this, and waits between calls as long as it was told. If nothing has happened when the codes run out, it stops.',
-			practice: [example('openidClient', true, 'and it keeps asking for you')],
+			practice: [example('openidClient', true, 'keeps asking for you')],
 			fields: asking
 		},
 		{
@@ -235,8 +243,8 @@ export const device: DiagramDef = {
 			concept:
 				'On the wire this is an error, and here it is the ordinary answer. It means the user has not finished, so the app waits as long as the interval said, and asks again.',
 			pitfall: {
-				title: 'What if it asks too fast?',
-				text: 'The answer is slow_down, and the app has to wait 5 seconds longer from then on. That and this answer are the only two that mean carry on: any other error means stop asking.'
+				title: 'What other answers can there be?',
+				text: 'If it asks too fast, the answer can be slow_down, and the app then has to wait 5 seconds longer from then on. That and this answer are the only two that mean carry on. Any other error means stop asking: access_denied if the user said no, and expired_token if the codes ran out. A connection timeout is not an answer, so the app asks less often and tries again.'
 			},
 			fields: [
 				{ name: 'error=authorization_pending', place: 'body' },
@@ -251,18 +259,18 @@ export const device: DiagramDef = {
 			plain: 'The user opens the address',
 			label: 'GET /device',
 			concept:
-				'On another device, usually their phone. It takes this address from the app’s screen, and from here on the app is not involved.'
+				'On another device, usually their phone, or the laptop they are working from. It takes this address from the app’s screen, and from here on the app is not involved.'
 		},
 		{
 			id: 'device-code-page',
 			from: 'idp',
 			to: 'browser',
 			kind: 'response',
-			plain: 'It asks for the code',
-			label: 'Page asking for the code',
+			plain: 'It asks for the user code',
+			label: 'Page asking for the user code',
 			page: {
 				address: 'device-open-page',
-				shows: "The identity provider's own page, asking for the code the device shows.",
+				shows: "The identity provider's own page, asking for the user code the device shows.",
 				shot: 'device-code'
 			},
 			concept:
@@ -280,20 +288,20 @@ export const device: DiagramDef = {
 			from: 'browser',
 			to: 'idp',
 			kind: 'request',
-			plain: 'The user types the code',
+			plain: 'The user types it in',
 			label: 'POST /device',
 			concept:
-				'Now the identity provider knows which login this is. The code is the only thing that has crossed from one device to the other.',
+				'Now the identity provider knows which login this is. The address and this code are all that have crossed from one device to the other.',
 			pitfall: {
 				title: 'What if someone guesses a code?',
-				text: 'A short code has few enough possibilities that a server should limit the tries. Someone who got one right could only approve it with their own account, so the device would end up logged in as them, and not the other way round.'
+				text: 'A short code has few enough possibilities that a server should limit the tries. Someone who got one right could only approve it with their own account, so the device would end up logged in as them, and not the other way round. That can still matter: what is done on the device lands in their account, and on some devices that account gets to control it.'
 			},
 			fields: [
 				{
 					name: 'device_user_code',
 					place: 'body',
 					artifact: 'user-code',
-					note: 'How this page sends the code, which is up to the server'
+					note: 'How this page sends the user code, which is up to the server'
 				}
 			]
 		},
@@ -303,7 +311,7 @@ export const device: DiagramDef = {
 				{
 					source: 'rfc8628',
 					section: '3.3',
-					why: 'Section 3.3 says the user has to go to the address and give the code at some stage, and leaves the rest of the order to the server.'
+					why: 'Section 3.3 says the user has to go to the address and give the user code at some stage, and leaves the rest of the order to the server.'
 				}
 			],
 			from: 'idp',
@@ -318,17 +326,24 @@ export const device: DiagramDef = {
 				marks: ['client_id']
 			},
 			concept:
-				'The same login as anywhere. The spec leaves the order to the server, and this one asks for the code first.'
+				'The same login as anywhere. The spec leaves the order to the server, and this one asks for the user code first.'
 		},
 		{
 			id: 'device-submit-credentials',
+			cites: [
+				{
+					source: 'rfc8628',
+					section: '5.3',
+					why: 'Section 5.3 says someone could end up on the login page of the wrong service, and that the address bar is their chance to notice.'
+				}
+			],
 			from: 'browser',
 			to: 'idp',
 			kind: 'request',
 			plain: 'The user enters their password',
 			label: 'Submit credentials',
 			concept:
-				'The user signs in at the identity provider, on a device of their own. The app sees none of this, which is what makes this flow fit for something you would not type a password into.',
+				'The user signs in at the identity provider, on a device of their own. The app sees none of this. That does not make a device you distrust safe: the address came from the device, so the address bar is worth a look.',
 			fields: [{ name: 'username and password', place: 'body', artifact: 'password' }]
 		},
 		{
@@ -350,6 +365,8 @@ export const device: DiagramDef = {
 			kind: 'response',
 			plain: 'What the app is asking for',
 			label: '302 to the page that asks',
+			inPractice:
+				'You cannot do much about this from your app, because it uses the app as it is meant to be used. Tell users only to enter a code they started themselves, keep the codes short-lived, and ask whoever runs the provider whether this page can say a device is being connected.',
 			page: {
 				address: 'device-consent-page',
 				shows:
@@ -357,10 +374,10 @@ export const device: DiagramDef = {
 				shot: 'device-consent'
 			},
 			concept:
-				'The identity provider says which app this is and what it would get, and asks the user to agree. It matters more here than anywhere, because it is the one place someone can notice that the code they were given is not for a device of theirs.',
+				'The identity provider says which app this is and what it would get, and asks the user to agree. It matters more here than anywhere, because it is the last place someone can notice that the user code they were given is not for a device of theirs.',
 			pitfall: {
 				title: 'What if someone sent them that code?',
-				text: 'Anyone can start this flow on a device of their own, and send someone the address and the code, in an email, say. If that person logs in and agrees, the tokens go to whoever started it, and no password was given away. This page is what stands in the way, so it should say that a device is being connected, and which.'
+				text: 'Anyone can start this flow on a device of their own, and send someone the address and the user code, in an email, say. If that person logs in and agrees, the tokens go to whoever started it, and no password was given away. This page is the last thing in the way, and it can name an app the user knows, because anyone can send that app’s client ID. So it should say a device is being connected, and ask whether it is theirs.'
 			}
 		},
 		{
@@ -377,6 +394,11 @@ export const device: DiagramDef = {
 					name: 'accept',
 					place: 'body',
 					note: 'How this form says yes, which is up to the server'
+				},
+				{
+					name: 'code',
+					place: 'body',
+					note: "The server's own login session, and neither of the two codes in this flow"
 				}
 			]
 		},
@@ -394,7 +416,7 @@ export const device: DiagramDef = {
 				shot: 'device-done'
 			},
 			concept:
-				'The browser’s part is over, and it never got a token. It gets a cookie, so the identity provider knows it next time, and a page telling the user to go back to the device. Nothing on that page reaches the device.',
+				'The browser’s part is over, and the tokens never come here. It gets a cookie, so the identity provider knows it next time, and a page telling the user to go back to the device. Nothing on that page reaches the device.',
 			fields: [
 				{
 					name: 'Set-Cookie',
@@ -413,7 +435,7 @@ export const device: DiagramDef = {
 			label: 'POST /token',
 			execute: { answer: 'device-token-response' },
 			concept:
-				'The same request as every other time, with the same device code. It never went near the browser or the user, and whoever holds it gets what comes next.',
+				'The same request as every other time, with the same device code. It never went near the browser or the user, and whoever sends it as this app gets what comes next.',
 			fields: asking
 		},
 		{
@@ -433,17 +455,17 @@ export const device: DiagramDef = {
 			concept: [
 				{
 					when: oidc,
-					text: 'The access token is for the API, and the ID token tells the app who logged in. The app never saw the password, and the browser never saw a token.'
+					text: 'The access token is for the API, and the ID token tells the app who logged in, which is whoever agreed on the other device. The app never saw the password, and the browser never saw a token.'
 				},
 				{
-					text: 'The access token lets the app call the API, and the refresh token gets a new one later without the user. The app never saw the password, and the browser never saw a token.'
+					text: 'The access token lets the app call the API, and a refresh token, where the server gives one, gets a new one later without the user. The app never saw the password, and the browser never saw a token.'
 				}
 			],
 			inPractice:
-				'A library takes these. Where they are kept is up to you, and on a device someone else owns, they can get at whatever is stored on it.',
+				'A library takes these. Where they are kept is up to you, and on a device someone else owns, they may be able to get at what is stored on it. A refresh token is what saves the user doing all this again, so how long it lasts is worth asking about.',
 			pitfall: {
-				title: 'What if the user says no, or never comes?',
-				text: 'Then the answer is an error and not tokens: access_denied if they said no, and expired_token if the codes ran out. Either way the app stops asking, and trying again takes new codes.'
+				title: 'What if the user says no, or never finishes?',
+				text: 'Then the answer is an error and not tokens: access_denied if they said no, and expired_token if the codes ran out. Either way the app stops asking, and trying again takes new codes, once the user asks to.'
 			},
 			fields: [
 				{ name: 'access_token', place: 'body', artifact: 'access-token' },
@@ -468,7 +490,7 @@ export const device: DiagramDef = {
 			plain: 'The app checks the ID token',
 			label: 'Check the ID token',
 			concept:
-				'The app checks who issued it, and that it is meant for this app. There is no nonce to compare here, because the request at the start did not send one, and the token came straight from the identity provider.',
+				'The app checks who issued it, and that it is meant for this app. There is no nonce to compare here, because the request at the start did not send one. A nonce is for catching a code slipped in through a browser, and nothing reaches this app through a browser.',
 			inPractice: 'A library does this, once you have given it the issuer and your client ID.',
 			practice: [example('openidClient', true, 'checks it when it takes the answer')],
 			fields: [
@@ -503,6 +525,10 @@ export const device: DiagramDef = {
 			inPractice:
 				'A library or a gateway does this, once you tell it the issuer and who tokens have to be for. Whether the scope covers this request is your code.',
 			practice: [example('jose', true, 'when you pass it the issuer and audience')],
+			pitfall: {
+				title: 'What if the API wants its own name in the token?',
+				text: 'Then this app’s tokens have to carry it, or an API that checks the audience refuses them. How depends on the provider: some take it in a request, and some set it up on their side, so ask whoever runs it.'
+			},
 			links: [
 				{
 					diagram: 'setup',

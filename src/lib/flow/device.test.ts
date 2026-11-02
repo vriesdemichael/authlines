@@ -15,6 +15,9 @@ import { parseState, stateInFlow } from '#lib/flow/state.ts';
 import { deviceNoteDefs, notesFor } from '#lib/keycloak/notes.ts';
 import { mapNodes } from '#lib/map/nodes.ts';
 import { addressAt } from '#lib/recordings/address.ts';
+import { traceRun } from '#lib/recordings/wire.ts';
+import { leftToYou } from '#lib/flow/left-to-you.ts';
+import { sayer } from '#lib/flow/wording.ts';
 import { evidenceDifferences } from '#lib/recordings/check.ts';
 import type { Recording } from '#lib/recordings/format.ts';
 import { knownFrom, provenance, recordingFor } from '#lib/recordings/known.ts';
@@ -110,6 +113,51 @@ describe('the device flow', () => {
 		expect(bodyOf(recording, 'device-submit-code').device_user_code).toBe(
 			bodyOf(recording, 'device-response').user_code
 		);
+	});
+
+	it('does not say a code on a screen is harmless, or that the page that asks is enough', () => {
+		expect(stepAt('device-response').concept).toContain('logged in as them');
+		expect(stepAt('device-show-code').pitfall?.text).toContain('logged in as them');
+		expect(stepAt('device-show-code').cites.map(({ section }) => section)).toContain('5.5');
+		expect(stepAt('device-consent-page').pitfall?.text).toContain('client ID');
+		const asked = answers.deviceConsent;
+		expect(asked.afterAgreeingBefore.asked).toBe(true);
+		expect(answers.devicePkce.askedWithNoVerifier.error).toBe('invalid_grant');
+	});
+
+	it('never says the code, which means the code of the other flow, and explains itself as that', () => {
+		const said = [
+			...Object.values(base.diagrams).flatMap(({ steps, intro, lifelines, parts }) => [
+				intro,
+				...lifelines.map(({ concept }) => concept),
+				...parts.map(({ why }) => why),
+				...steps
+			]),
+			...deviceNoteDefs,
+			...mapNodes.filter((node) => node.flow === base.id)
+		];
+		expect(JSON.stringify(said)).not.toMatch(/\bthe code\b|one-time code|authorization code/i);
+	});
+
+	it('says what is left to the app in the app’s part of the list', () => {
+		const groups = leftToYou(base, defaultSettings, sayer('plain')).groups;
+		const inTheApp = groups.find(({ id }) => id === 'app')?.items.map(({ step }) => step);
+		expect(inTheApp).toContain('device-show-code');
+		expect(inTheApp).toContain('device-consent-page');
+		const before = groups.find(({ id }) => id === 'before')?.items.map(({ step }) => step);
+		expect(before).toContain('device-register');
+		expect(before).not.toContain('device-show-code');
+	});
+
+	it('does not have the browser holding the password before it is sent', () => {
+		const view = evaluate(flow, defaultSettings);
+		expect(holdingsAt(view, 'device-show-code').browser).not.toContain('password');
+		expect(holdingsAt(view, 'device-submit-credentials').browser).toContain('password');
+	});
+
+	it('follows both codes through the run, as it does the other values', () => {
+		const names = traceRun(plainRun.recording).map(({ name }) => name);
+		expect(names).toEqual(expect.arrayContaining(['device_code', 'user_code', 'access_token']));
 	});
 
 	it('says what a real server said about asking too fast, and about not getting there', () => {

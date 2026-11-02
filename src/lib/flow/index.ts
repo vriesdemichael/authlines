@@ -156,6 +156,8 @@ export const authorizationCodeBase: BaseFlow = {
 };
 
 const ONLY_RECORDED_THERE = 'Only recorded on the authorization code flow so far.';
+/** No real server has asked for one, so this is the RFC's, and it is only on that flow's diagram. */
+const ONLY_DRAWN_THERE = 'Only drawn on the authorization code flow so far, from the RFC.';
 
 export const clientCredentialsBase: BaseFlow = {
 	id: clientCredentials.id,
@@ -172,7 +174,7 @@ export const clientCredentialsBase: BaseFlow = {
 		refresh: 'There is no refresh token. The app asks again with its secret.',
 		logout: 'There is no login to end.',
 		apiToken: ONLY_RECORDED_THERE,
-		dpopNonce: ONLY_RECORDED_THERE
+		dpopNonce: ONLY_DRAWN_THERE
 	},
 	presets: [
 		{ id: 'as-itself', title: 'An app acting for itself', settings: {} },
@@ -189,19 +191,20 @@ export const deviceBase: BaseFlow = {
 	diagrams: { flow: device, setup: deviceSetup },
 	settings: ['oidc'],
 	notHere: {
-		consent: 'It always asks here. The spec says a server should, and this one did either way.',
+		consent:
+			'It asks here anyway. The spec says a server should, and the one recorded did every time, with that setting off and on.',
 		clientType:
 			'Recorded with no secret, because software on someone’s own device generally cannot keep one. An app that had one would send it each time as well.',
-		pkce: 'No code goes through a browser here. The device code goes straight to the app, so there is nothing for it to protect.',
+		pkce: 'The code that gets the tokens goes straight to the app and never through a browser, so the theft PKCE is for does not happen here. RFC 8628 does not include it.',
 		attacker:
-			'No code goes through a browser to steal. The trick here is a different one, and the page that asks the user to agree is where it gets stopped.',
+			'The code that gets the tokens never goes through a browser, so that theft is not here. The tricks here are different, such as someone sending the user their code, and they are not drawn. The page that asks the user to agree is where someone can still stop that one.',
 		broker: ONLY_RECORDED_THERE,
 		sso: ONLY_RECORDED_THERE,
 		refresh: ONLY_RECORDED_THERE,
 		logout: ONLY_RECORDED_THERE,
 		apiToken: ONLY_RECORDED_THERE,
-		binding: ONLY_RECORDED_THERE,
-		dpopNonce: ONLY_RECORDED_THERE
+		binding: 'Not recorded on this flow so far.',
+		dpopNonce: ONLY_DRAWN_THERE
 	},
 	presets: [
 		{ id: 'on-a-device', title: 'An app on a device', settings: {} },

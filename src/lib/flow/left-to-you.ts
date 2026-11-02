@@ -30,9 +30,9 @@ const TITLES: Readonly<Record<LeftGroupId, string>> = {
 	wrong: 'What can go wrong'
 };
 
-/** Whose job a step is, going by who is doing it. */
-function jobOf(step: Step): LeftGroupId {
-	if (step.kind === 'human') return 'before';
+/** Whose job a step is, going by who is doing it, and an app showing something is the app's. */
+function jobOf(step: Step, diagram: DiagramId): LeftGroupId {
+	if (diagram === 'setup' && step.kind === 'human') return 'before';
 	return step.from === 'api' ? 'api' : 'app';
 }
 
@@ -52,7 +52,7 @@ export function leftToYou(base: BaseFlow, settings: Settings, say: Say): LeftToY
 			const item = { diagram, step: step.id, title: step.plain };
 			if (step.largerJob) larger = step.largerJob;
 			const text = step.inPractice?.replace(step.largerJob ?? '', '').trim();
-			if (text) groups[jobOf(step)].push({ ...item, text });
+			if (text) groups[jobOf(step, diagram)].push({ ...item, text });
 			if (step.pitfall) {
 				groups.wrong.push({ ...item, title: step.pitfall.title, text: step.pitfall.text });
 			}

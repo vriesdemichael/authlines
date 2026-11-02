@@ -246,11 +246,14 @@ Asked of Keycloak 26.8.1 on 2026-11-02, against RFC 8628 (August 2019). The answ
 - **Ten minutes and 5 seconds, unless set.** `expires_in` is 600 and `interval` is 5. A client's own attributes change both. The console has them under the realm's token settings.
 - **Asking too soon gets `slow_down`,** straight after `authorization_pending`. Waiting the interval gets `authorization_pending` again.
 - **The order is code, then login, then the page that asks.** The RFC's figure has the login first, and section 3.3 leaves the order to the server.
-- **It always asks.** The page appeared with Consent required off and on. It names the client and what it would get, and does not say a device is being connected, which section 5.4 recommends.
+- **It always asks.** The page appeared with Consent required off and on, and again for someone who had agreed before. It names the client and what it would get. It does not ask whether the device is theirs, or say which, as section 5.4 recommends. The page before it says Device Login, but the full address skips that one.
 - **The full address skips the code.** Opening `verification_uri_complete` goes straight to the login, and the code is neither asked for nor shown. Section 3.3.1 says a server should show it.
 - **The session cookie comes after agreeing.** Saying no leaves no `KEYCLOAK_IDENTITY` in the browser.
 - **A device code works once, for one client.** A second try and another client both get `invalid_grant`, and another client trying does not use it up.
 - **With a secret, both requests need it.** Either one without gets 401 `unauthorized_client`.
 - **An ID token here has no nonce,** because the request does not send one.
 
-What was not tried: DPoP, PKCE or a refresh on this flow, and whether a server limits tries at the user code, which section 5.1 recommends.
+- **It takes PKCE, which the RFC does not include.** A `code_challenge` on the first request gets a 200, and asking with no verifier gets `invalid_grant` with `PKCE code verifier not specified`.
+- **A used device code and one never given out get the same answer,** `invalid_grant` with `Device code not valid`. Another client gets `invalid_grant` with `unauthorized client`.
+
+What was not tried on this flow: DPoP, a refresh, and whether a server limits tries at the user code, which section 5.1 recommends.
