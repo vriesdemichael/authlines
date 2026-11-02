@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
 	import Execute from '#lib/components/Execute.svelte';
 	import Timeline from '#lib/components/Timeline.svelte';
 	import type { Part } from '#lib/flow/model.ts';
@@ -21,7 +20,7 @@
 		/** The step's answer, when running this step adds something. */
 		answerAt?: number | null;
 		onexecute?: () => void;
-		/** Where to go at the end, so the last step is not a dead end. */
+		/** Where to go from the end, beside Next, so the last step is not a dead end. */
 		onwardHref?: string | null;
 		onwardLabel?: string;
 	}
@@ -44,21 +43,6 @@
 		onwardLabel = 'Next question'
 	}: Props = $props();
 
-	// At the end Next becomes a link, and whoever pressed it should still be on the way forward.
-	let nextButton = $state<HTMLButtonElement>();
-	let onwardLink = $state<HTMLAnchorElement>();
-	let nextHadFocus = false;
-	$effect.pre(() => {
-		void position;
-		// Not tracked, because by the time the button has gone it is too late to ask.
-		const button = untrack(() => nextButton);
-		nextHadFocus = button !== undefined && document.activeElement === button;
-	});
-	$effect(() => {
-		if (onwardLink && nextHadFocus) onwardLink.focus();
-		nextHadFocus = false;
-	});
-
 	const atStart = $derived(!canGoBack);
 	const atEnd = $derived(position >= total);
 </script>
@@ -74,24 +58,23 @@
 	>
 		Back
 	</button>
+	<!-- Next stays Next, so that pressing it as often as someone likes never leaves the question. -->
+	<button
+		class="next"
+		class:invite={position === 1}
+		data-testid="next"
+		aria-disabled={atEnd}
+		onclick={() => {
+			if (!atEnd) onnext();
+		}}
+	>
+		Next
+	</button>
 	{#if atEnd && onwardHref}
 		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the route resolves it -->
-		<a class="next onward" href={onwardHref} data-testid="next-question" bind:this={onwardLink}>
+		<a class="next onward" href={onwardHref} data-testid="next-question">
 			{onwardLabel}
 		</a>
-	{:else}
-		<button
-			class="next"
-			class:invite={position === 1}
-			data-testid="next"
-			aria-disabled={atEnd}
-			bind:this={nextButton}
-			onclick={() => {
-				if (!atEnd) onnext();
-			}}
-		>
-			Next
-		</button>
 	{/if}
 	<button class="play" data-testid="play" onclick={onplay}>{playing ? 'Stop' : 'Play'}</button>
 	<span class="position" data-testid="position">Step {position} of {total}</span>
@@ -108,17 +91,21 @@
 		gap: 8px;
 	}
 
+	/* The same weight with nothing left to do, so that it stays exactly where it is. */
+	.next {
+		font-weight: 600;
+	}
+
 	.next:not([aria-disabled='true']) {
 		background: var(--accent);
 		border-color: var(--accent);
 		color: var(--on-tone);
-		font-weight: 600;
 	}
 
 	.onward {
-		padding: 6px 12px;
+		padding: 5px 14px;
 		border: 1px solid var(--accent);
-		border-radius: 6px;
+		border-radius: 7px;
 		white-space: nowrap;
 		text-decoration: none;
 	}

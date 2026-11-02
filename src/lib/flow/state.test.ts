@@ -13,6 +13,7 @@ import {
 	withDiagram,
 	withExplained,
 	withMode,
+	withServerNotes,
 	withSetting,
 	withSourceClosed,
 	withSourceOpen,
@@ -21,6 +22,20 @@ import {
 
 const onFlow = (search: string) => parseState(base, 'flow', search);
 const onSetup = (search: string) => parseState(base, 'setup', search);
+
+describe('the switch for the server notes', () => {
+	const start = parseState(base, 'flow', 'broker=1');
+	const open = (id: 'keycloak-brokering' | 'rfc6749') =>
+		({ ...start, source: { id, setting: null, section: null, fromStep: false } }) as AppState;
+
+	it('closes a source that is only about that server', () => {
+		expect(withServerNotes(open('keycloak-brokering'), false).source).toBeNull();
+	});
+
+	it('leaves a specification open', () => {
+		expect(withServerNotes(open('rfc6749'), false).source?.id).toBe('rfc6749');
+	});
+});
 
 describe('the URL', () => {
 	it('is empty for the default state of each diagram', () => {
@@ -52,6 +67,7 @@ describe('the URL', () => {
 						follow: null,
 						wording: null,
 						list: false,
+						labels: false,
 						whole: false,
 						raw: false
 					};
@@ -87,6 +103,7 @@ describe('the URL', () => {
 							follow: onOff ? 'code' : null,
 							wording: onOff ? ('specs' as const) : null,
 							list: onOff,
+							labels: false,
 							whole: onOff,
 							raw: onOff
 						};

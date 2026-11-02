@@ -65,6 +65,8 @@ export interface AppState {
 	wording: Wording | null;
 	/** All that is left to someone building this, in one list. */
 	list: boolean;
+	/** The words of every row, on the step someone is on, and with nothing else different. */
+	labels: boolean;
 	/** Every row at once, with the diagram given all the room, for a room full of people. */
 	whole: boolean;
 	/** Raw traffic large enough to read from the back of that room. */
@@ -79,6 +81,7 @@ const FOLLOW_PARAM = 'follow';
 const WORDING_PARAM = 'say';
 const FROM_A_STEP = 'step';
 const LIST_PARAM = 'list';
+const LABELS_PARAM = 'labels';
 const WHOLE_PARAM = 'whole';
 const RAW_PARAM = 'raw';
 
@@ -188,6 +191,7 @@ export function parseState(base: BaseFlow, onPath: DiagramId, search: string): A
 		follow: onTheWay(view, params.get(FOLLOW_PARAM)),
 		wording: parseWording(params),
 		list: params.get(LIST_PARAM) === '1',
+		labels: params.get(LABELS_PARAM) === '1',
 		whole: params.get(WHOLE_PARAM) === '1',
 		raw: params.get(RAW_PARAM) === '1'
 	};
@@ -216,6 +220,7 @@ export function serializeState(base: BaseFlow, state: AppState): string {
 	if (state.follow) params.set(FOLLOW_PARAM, state.follow);
 	if (state.wording) params.set(WORDING_PARAM, state.wording);
 	if (state.list) params.set(LIST_PARAM, '1');
+	if (state.labels) params.set(LABELS_PARAM, '1');
 	if (state.whole) params.set(WHOLE_PARAM, '1');
 	if (state.raw) params.set(RAW_PARAM, '1');
 	return params.toString();
@@ -246,6 +251,7 @@ export function presetSearch(base: BaseFlow, settings: Partial<Settings>): strin
 		follow: null,
 		wording: null,
 		list: false,
+		labels: false,
 		whole: false,
 		raw: false
 	});
@@ -348,6 +354,10 @@ export function stateInFlow(
 		eyes: null,
 		follow: null
 	};
+}
+
+export function withLabels(state: AppState, labels: boolean): AppState {
+	return { ...state, labels };
 }
 
 export function withWhole(state: AppState, whole: boolean): AppState {

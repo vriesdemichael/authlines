@@ -35,6 +35,66 @@ test.describe('the living diagram, with no input', () => {
 	});
 });
 
+test.describe('pointing at a question', () => {
+	test('waits for the mouse to rest', async ({ page }) => {
+		await openHome(page);
+		await page.evaluate(() => {
+			const state = window as unknown as { moved: number; changed: number };
+			addEventListener('pointermove', () => (state.moved = performance.now()), true);
+			new MutationObserver(() => (state.changed = performance.now())).observe(
+				document.querySelector('[data-testid="living"]')!,
+				{ attributes: true, attributeFilter: ['data-node'] }
+			);
+		});
+		await (await onTheMap(page, 'pkce')).hover();
+		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
+		const waited = await page.evaluate(() => {
+			const state = window as unknown as { moved: number; changed: number };
+			return state.changed - state.moved;
+		});
+		expect(waited).toBeGreaterThanOrEqual(250);
+	});
+
+	test('stays on its question when the mouse goes across to the diagram', async ({ page }) => {
+		await openHome(page);
+		const pkce = await onTheMap(page, 'pkce');
+		await pkce.hover();
+		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
+
+		// Over another question on the way, as a straight line from one to the other would be.
+		const other = page.locator('[data-testid^="node-"]:visible').first();
+		const crossed = (await other.boundingBox())!;
+		const there = (await living(page).boundingBox())!;
+		await page.mouse.move(crossed.x + 50, crossed.y + crossed.height / 2);
+		await page.mouse.move(there.x + there.width / 2, there.y + there.height / 2, { steps: 4 });
+		await page.waitForTimeout(800);
+		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
+	});
+
+	test('does not move by itself under a mouse that is on it', async ({ page }) => {
+		await page.emulateMedia({ reducedMotion: 'no-preference' });
+		await openHome(page);
+		const there = (await living(page).boundingBox())!;
+		await page.mouse.move(there.x + there.width / 2, there.y + there.height / 2);
+		await page.waitForTimeout(3000);
+		await expect(living(page)).toHaveAttribute('data-node', 'how-access-works');
+	});
+
+	test('still shows a question reached with the keyboard', async ({ page }) => {
+		await openHome(page);
+		const pkce = await onTheMap(page, 'pkce');
+		await pkce.focus();
+		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
+	});
+
+	test('opens at once when clicked', async ({ page }) => {
+		await openHome(page);
+		await (await onTheMap(page, 'pkce')).click();
+		await expect(page).toHaveURL(/pkce/);
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+	});
+});
+
 test.describe('the first screen', () => {
 	test('has the whole diagram and what it says on it, without scrolling', async ({ page }) => {
 		await openHome(page);

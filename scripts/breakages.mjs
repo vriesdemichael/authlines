@@ -91,6 +91,18 @@ export const breakages = [
 		to: ''
 	},
 	{
+		name: 'state: every label does not survive a link',
+		file: STATE,
+		from: "if (state.labels) params.set(LABELS_PARAM, '1');",
+		to: ''
+	},
+	{
+		name: 'map: an everyday error opens in advanced mode again',
+		file: 'src/lib/map/tracks.ts',
+		from: "title: 'Why did my API say 401?',",
+		to: "title: 'Why did my API say 401?',\n\t\t\t\t\tmode: 'advanced',"
+	},
+	{
 		name: 'device: says the user said no with a different error than the server gave',
 		file: 'src/lib/flow/device.ts',
 		from: "{ name: 'error=access_denied', place: 'body' },",

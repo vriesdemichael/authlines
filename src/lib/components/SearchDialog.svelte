@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tick } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import { searchState } from '#lib/search/open.svelte.ts';
 	import type { Found, Result, ResultKind } from '#lib/search/search.ts';
 	import { resultKey } from '#lib/search/result-key.ts';
@@ -23,6 +23,34 @@
 	let query = $state('');
 	let run = $state<((query: string) => Found) | null>(null);
 	let active = $state(0);
+	let failed = $state(false);
+	// Someone who pressed the browser's own key may want that back.
+	let byFind = $state(false);
+	let loading = false;
+
+	const GIVE_UP_MS = 5000;
+
+	function getReady() {
+		if (run || loading) return;
+		loading = true;
+		failed = false;
+		// Saying so does not stop it, and if it does arrive after all, it is used.
+		const giveUp = setTimeout(() => (failed = true), GIVE_UP_MS);
+		load()
+			.then(
+				(search) => {
+					run = search;
+					failed = false;
+				},
+				() => {
+					failed = true;
+				}
+			)
+			.finally(() => {
+				clearTimeout(giveUp);
+				loading = false;
+			});
+	}
 
 	const found = $derived<Found>(
 		run && query.trim() ? run(query) : { results: [], notHereYet: null }
@@ -43,9 +71,7 @@
 		if (searchState.open && !dialog.open) {
 			dialog.showModal();
 			tick().then(() => input?.focus());
-			load().then((search) => {
-				run = search;
-			});
+			untrack(getReady);
 		} else if (!searchState.open && dialog.open) {
 			dialog.close();
 		}
@@ -62,6 +88,20 @@
 		if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
 			event.preventDefault();
 			searchState.open = true;
+		} else if (
+			(event.ctrlKey || event.metaKey) &&
+			!event.shiftKey &&
+			!event.altKey &&
+			event.key.toLowerCase() === 'f'
+		) {
+			// Pressed again it is the browser's, and so it is over a text with lines of its own to look through.
+			if (searchState.open) {
+				close();
+			} else if (!document.querySelector('dialog[open]')) {
+				event.preventDefault();
+				byFind = true;
+				searchState.open = true;
+			}
 		} else if (event.key === '/' && !typing && !event.altKey && !event.ctrlKey && !event.metaKey) {
 			event.preventDefault();
 			searchState.open = true;
@@ -89,6 +129,7 @@
 	const close = () => {
 		searchState.open = false;
 		query = '';
+		byFind = false;
 	};
 
 	// The browser says it closed a moment later, and by then someone may have opened it again.
@@ -126,8 +167,17 @@
 		/>
 
 		<p class="count" role="status" data-testid="search-status">
-			{#if !typed}
+			{#if failed}
+				That did not load, which usually means the connection dropped or the site just changed.
+				<button
+					type="button"
+					class="again"
+					data-testid="search-again"
+					onclick={() => window.location.reload()}>Try again</button
+				>
+			{:else if !typed}
 				For example: SSO, refresh token, or the error on your screen.
+				{#if byFind}Press it again for the browser's own find.{/if}
 			{:else if found.notHereYet}
 				This does not cover {found.notHereYet} yet.
 			{:else if !run}
@@ -207,6 +257,11 @@
 	.nothing {
 		margin: 8px 2px;
 		color: var(--muted);
+		font-size: 12.5px;
+	}
+
+	.again {
+		padding: 0 8px;
 		font-size: 12.5px;
 	}
 

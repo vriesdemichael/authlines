@@ -80,7 +80,7 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto;
 		column-gap: 12px;
-		padding: 12px 0;
+		padding: 9px 0;
 		cursor: pointer;
 		list-style: none;
 	}

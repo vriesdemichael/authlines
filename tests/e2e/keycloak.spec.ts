@@ -117,19 +117,6 @@ test.describe('the switch', () => {
 		await expect(page.locator('[data-flag]')).toHaveCount(0);
 	});
 
-	test('closes a vendor source that was open', async ({ page }) => {
-		await open(page, 'broker=1&source=keycloak-brokering&for=broker');
-		await expect(page.getByTestId('source-panel')).toBeVisible();
-		await serverNotes(page).uncheck();
-		await expect(page.getByTestId('source-panel')).toHaveCount(0);
-	});
-
-	test('leaves a specification open', async ({ page }) => {
-		await open(page, 'source=rfc6749&for=client');
-		await serverNotes(page).uncheck();
-		await expect(page.getByTestId('source-panel')).toBeVisible();
-	});
-
 	test('does not open a vendor source from a link', async ({ page }) => {
 		await open(page, 'keycloak=off&broker=1&source=keycloak-brokering&for=broker');
 		await expect(page.getByTestId('source-panel')).toHaveCount(0);

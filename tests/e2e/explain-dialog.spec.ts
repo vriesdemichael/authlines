@@ -1,0 +1,143 @@
+import { expect, test, type Page } from '@playwright/test';
+import { currentSearch, open } from './helpers.ts';
+
+const dialog = (page: Page) => page.getByTestId('explain-dialog');
+const explanation = (page: Page) => page.getByTestId('explanation');
+
+const overlap = (a: DOMRect, b: DOMRect) =>
+	a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+
+test.describe('an explanation', () => {
+	test('of a word, a party, a setting and a source is the same kind of dialog', async ({
+		page
+	}) => {
+		const opening = [
+			'explain=term.issuer',
+			'explain=lifeline.idp',
+			'explain=setting.oidc',
+			'source=rfc6749&for=client&section=2.1'
+		];
+		for (const search of opening) {
+			await open(page, `${search}&step=token-response`);
+			await expect(dialog(page), search).toBeVisible();
+			await expect(page.locator('dialog[open][data-testid="explain-dialog"]'), search).toHaveCount(
+				1
+			);
+		}
+	});
+
+	test('leaves what someone was reading where it is', async ({ page }) => {
+		await open(page, 'mode=simple&step=token-response');
+		const title = page.locator('aside.detail h2').first();
+		const where = await title.boundingBox();
+		await page.getByTestId('how-to-read').click();
+		await expect(dialog(page)).toBeVisible();
+		await expect(page.locator('aside.detail').getByTestId('explanation')).toHaveCount(0);
+		expect(await title.boundingBox()).toEqual(where);
+	});
+
+	test('closes with Esc and with Back, on the same step', async ({ page }) => {
+		await open(page, 'step=token-response');
+		await page.locator('[data-lifeline="idp"]').first().click();
+		await expect(explanation(page)).toBeVisible();
+		await page.keyboard.press('Escape');
+		await expect(explanation(page)).toHaveCount(0);
+		await expect.poll(() => currentSearch(page)).not.toContain('explain');
+		await expect.poll(() => currentSearch(page)).toContain('step=token-response');
+
+		await page.locator('[data-lifeline="idp"]').first().click();
+		await expect(explanation(page)).toBeVisible();
+		await expect.poll(() => currentSearch(page)).toContain('explain');
+		await page.goBack();
+		await expect(explanation(page)).toHaveCount(0);
+		await expect.poll(() => currentSearch(page)).toContain('step=token-response');
+	});
+
+	test('closes with a click beside it', async ({ page }) => {
+		await open(page, 'explain=term.issuer');
+		await expect(explanation(page)).toBeVisible();
+		await page.mouse.click(4, 400);
+		await expect(explanation(page)).toHaveCount(0);
+	});
+
+	test('opens from a link, and a reload keeps it', async ({ page }) => {
+		await open(page, 'explain=term.issuer&step=token-response');
+		await expect(explanation(page)).toContainText('Issuer');
+		await page.reload();
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		await expect(explanation(page)).toContainText('Issuer');
+	});
+
+	test('hands the focus back to where someone was', async ({ page }) => {
+		await open(page, 'step=token-response');
+		const why = page.locator('[data-why="oidc"]');
+		await why.focus();
+		await page.keyboard.press('Enter');
+		await expect(explanation(page)).toBeVisible();
+		await expect(explanation(page).getByRole('heading', { level: 2 })).toBeFocused();
+		await page.keyboard.press('Escape');
+		await expect(explanation(page)).toHaveCount(0);
+		await expect(why).toBeFocused();
+	});
+
+	test('keeps the keys to itself, so stepping does not go on underneath', async ({ page }) => {
+		await open(page, 'explain=term.issuer&step=callback');
+		await expect(explanation(page)).toBeVisible();
+		await page.keyboard.press('ArrowRight');
+		await expect.poll(() => currentSearch(page)).toContain('step=callback');
+	});
+
+	test('stays clear of a lifeline it is about', async ({ page }) => {
+		for (const line of ['browser', 'api']) {
+			await open(page, `explain=lifeline.${line}&step=token-response`);
+			await expect(explanation(page)).toBeVisible();
+			const place = page.locator(`[data-lifeline="${line}"]`).first();
+			const [head, box] = await Promise.all([
+				place.evaluate((element) => element.getBoundingClientRect().toJSON()),
+				dialog(page).evaluate((element) => element.getBoundingClientRect().toJSON())
+			]);
+			expect(overlap(head, box), line).toBe(false);
+		}
+	});
+
+	test('stays clear of the arrow a word lights up', async ({ page }) => {
+		await open(page, 'explain=term.redirect&step=token-response');
+		await expect(explanation(page)).toBeVisible();
+		const row = page.locator('.row.lit');
+		await expect(row).toHaveCount(1);
+		const [arrow, box] = await Promise.all([
+			row
+				.locator('line')
+				.first()
+				.evaluate((element) => element.getBoundingClientRect().toJSON()),
+			dialog(page).evaluate((element) => element.getBoundingClientRect().toJSON())
+		]);
+		expect(overlap({ ...arrow, top: arrow.top - 1, bottom: arrow.bottom + 1 }, box)).toBe(false);
+	});
+
+	test('offers to show what it is about, when that is not on screen', async ({ page }) => {
+		await open(page, 'explain=term.login-required&step=token-response');
+		await expect(explanation(page)).toBeVisible();
+		const seeIt = page.getByTestId('explanation-see-it');
+		await expect(seeIt).toBeVisible();
+		await seeIt.click();
+		await expect(page.locator('.row.lit')).toHaveCount(1);
+		await expect(explanation(page)).toBeVisible();
+	});
+});
+
+test.describe('a source', () => {
+	test('can be read and moved through in the dialog', async ({ page }) => {
+		await open(page, 'source=rfc6749&for=client&section=2.1');
+		const text = page.getByTestId('source-text');
+		await expect(text).toBeVisible();
+		const box = (await dialog(page).boundingBox())!;
+		expect(box.height).toBeGreaterThan(500);
+		const scrolled = () => dialog(page).evaluate((element) => element.scrollTop);
+		const before = await scrolled();
+		await page.keyboard.press('PageDown');
+		await expect.poll(scrolled).toBeGreaterThan(before);
+		await page.getByTestId('source-sections').selectOption('4.1');
+		await expect.poll(() => currentSearch(page)).toContain('section=4.1');
+	});
+});

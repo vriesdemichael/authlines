@@ -13,14 +13,13 @@ test.describe('opening a question from the map', () => {
 		await page.locator('main[data-ready="true"]').waitFor();
 		const question = page.getByTestId('node-how-access-works');
 		const box = (await question.boundingBox())!;
-		const at = { x: box.x + 60, y: box.y + box.height / 2 };
+		const at = { x: box.x + 60, y: box.y + box.height - 3 };
 		await page.mouse.click(at.x, at.y);
 		await page.locator('.workspace[data-ready="true"]').waitFor();
 
 		// Or this would pass for not being anywhere near one.
 		const under = await page.evaluate(
-			({ x, y }) =>
-				document.elementFromPoint(x, y)?.closest('[data-setting]')?.getAttribute('data-setting'),
+			({ x, y }) => document.elementFromPoint(x, y)?.closest('[data-setting] .toggle')?.textContent,
 			at
 		);
 		expect(under).toBeTruthy();

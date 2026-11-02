@@ -76,6 +76,43 @@ test.describe('something failing to load', () => {
 		await expect(page.getByTestId('not-started').getByRole('link')).toHaveText('Try again');
 	});
 
+	test('search says so when it cannot load, and offers to try again', async ({ page }) => {
+		await page.goto('./');
+		await page.locator('main[data-ready="true"]').waitFor();
+		// As for a tab left open across a deploy, which has removed what it would ask for.
+		await page.route('**/_app/immutable/chunks/**', (route) => route.abort());
+		await page.getByTestId('open-search').click();
+		await page.getByTestId('search-input').fill('refresh');
+		const status = page.getByTestId('search-status');
+		await expect(status).toContainText('did not load', { timeout: 5000 });
+		await expect(status).not.toContainText('Getting ready');
+		await page.unroute('**/_app/immutable/chunks/**');
+		await page.getByTestId('search-again').click();
+		await page.locator('main[data-ready="true"]').waitFor();
+		await page.getByTestId('open-search').click();
+		await page.getByTestId('search-input').fill('refresh');
+		await expect(page.getByTestId('search').locator('[data-result]').first()).toBeVisible();
+	});
+
+	test('search says so when loading does not end, and still works if it does', async ({ page }) => {
+		await page.goto('./');
+		await page.locator('main[data-ready="true"]').waitFor();
+		let finish = () => {};
+		const held = new Promise<void>((resolve) => (finish = resolve));
+		await page.route('**/_app/immutable/chunks/**', async (route) => {
+			await held;
+			await route.continue();
+		});
+		await page.getByTestId('open-search').click();
+		await page.getByTestId('search-input').fill('refresh');
+		const status = page.getByTestId('search-status');
+		await expect(status).toHaveText('Getting ready.');
+		await expect(status).toContainText('did not load', { timeout: 8000 });
+		finish();
+		await expect(page.getByTestId('search').locator('[data-result]').first()).toBeVisible();
+		await expect(status).not.toContainText('did not load');
+	});
+
 	test('nothing is said when it does start', async ({ page }) => {
 		await open(page, 'oidc=1');
 		await expect(page.getByTestId('diagram')).toBeVisible();

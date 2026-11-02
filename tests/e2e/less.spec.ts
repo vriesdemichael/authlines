@@ -46,6 +46,49 @@ test.describe('simple mode', () => {
 		await expect(present(page, 'settings-toggle')).toHaveText('Show settings');
 	});
 
+	for (const [width, shownAtFirst] of [
+		[1440, true],
+		[1100, false]
+	] as const) {
+		test(`has the control for the settings at their side, and it stays put, at ${width}`, async ({
+			page
+		}) => {
+			await page.setViewportSize({ width, height: 800 });
+			await open(page, 'mode=simple');
+			const toggle = present(page, 'settings-toggle');
+			const settings = page.locator('aside.settings');
+			const mark = toggle.locator('svg');
+			const where = (await mark.boundingBox())!;
+			expect(where.x).toBeLessThan(40);
+			await (shownAtFirst ? expect(settings).toBeVisible() : expect(settings).toBeHidden());
+
+			// Twice, from where the mouse is, and with no need to look for it again.
+			await page.mouse.click(where.x + 4, where.y + 4);
+			await (shownAtFirst ? expect(settings).toBeHidden() : expect(settings).toBeVisible());
+			expect(await mark.boundingBox()).toEqual(where);
+			await page.mouse.click(where.x + 4, where.y + 4);
+			await (shownAtFirst ? expect(settings).toBeVisible() : expect(settings).toBeHidden());
+			expect(await mark.boundingBox()).toEqual(where);
+		});
+	}
+
+	test('keeps it working from the keyboard, and hidden settings in the address', async ({
+		page
+	}) => {
+		await page.setViewportSize({ width: 1440, height: 800 });
+		await open(page, 'mode=simple');
+		const toggle = present(page, 'settings-toggle');
+		await toggle.focus();
+		await page.keyboard.press('Enter');
+		await expect(page).toHaveURL(/settings=off/);
+		await expect(toggle).toHaveText('Show settings');
+		await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+		await expect(toggle).toBeFocused();
+		await page.keyboard.press('Enter');
+		await expect(toggle).toHaveText('Hide settings');
+		await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+	});
+
 	test('gives the room to the diagram where there is nothing to change', async ({ page }) => {
 		await page.goto('client-credentials/');
 		await page.locator('.workspace[data-ready="true"]').waitFor();
@@ -80,7 +123,10 @@ test.describe('the start', () => {
 		await expect(page.getByTestId('node-how-access-works')).toBeVisible();
 		await expect(page.getByTestId('node-stolen-code')).toBeHidden();
 
-		await parts.nth(1).locator('summary').click();
+		await page
+			.locator('.track details', { has: page.getByTestId('node-stolen-code') })
+			.locator('summary')
+			.click();
 		await expect(page.getByTestId('node-stolen-code')).toBeVisible();
 		await expect(page.getByTestId('node-how-access-works')).toBeHidden();
 		await expect(page.locator('.track details[open]')).toHaveCount(1);
@@ -97,6 +143,6 @@ test.describe('the start', () => {
 		await page.setViewportSize({ width: 1440, height: 900 });
 		await page.goto('./');
 		await page.locator('main[data-ready="true"]').waitFor();
-		await expect(page.locator('.track').last()).toBeInViewport();
+		await expect(page.locator('.track').last()).toBeInViewport({ ratio: 1 });
 	});
 });

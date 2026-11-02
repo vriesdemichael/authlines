@@ -167,7 +167,7 @@ const list: readonly Term[] = [
 	{
 		id: 'redirect-uri',
 		name: 'Redirect URI',
-		words: ['redirect URI', 'redirect URIs'],
+		words: ['redirect URI', 'redirect URIs', 'redirect_uri'],
 		explains:
 			'The address a user is sent back to after logging in. It has to be registered first, and has to match, so that a code cannot be sent somewhere else.',
 		alsoCalled: ['callback address'],

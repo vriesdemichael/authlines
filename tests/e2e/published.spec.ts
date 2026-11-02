@@ -47,6 +47,12 @@ test.describe('the Storybook', () => {
 			await page.locator(settled).waitFor({ state: 'attached' });
 			const shown = await page.locator('body.sb-show-main').count();
 			const root = page.locator('#storybook-root');
+			// Storybook says it is showing a story a moment before there is anything in it.
+			await root
+				.locator('*')
+				.first()
+				.waitFor({ state: 'attached', timeout: 3000 })
+				.catch(() => {});
 			const hasContent = (await root.innerText()).trim() || (await root.locator('svg').count());
 			if (!shown || !hasContent || errors.length) broken.push(`${id}: ${errors.join('; ')}`);
 		}

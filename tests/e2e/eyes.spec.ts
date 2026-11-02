@@ -150,6 +150,9 @@ test.describe('getting there', () => {
 		await page.locator('[data-lifeline="browser"]').click();
 		await page.getByTestId('see-only').click();
 		await expect(page).toHaveURL(/eyes=browser/);
+		// Out of the way, because what it changed is on the diagram.
+		await expect(page.getByTestId('explanation')).toHaveCount(0);
+		await page.locator('[data-lifeline="browser"]').click();
 		await expect(page.getByTestId('see-only')).toHaveText('See everything again');
 		await page.getByTestId('see-only').click();
 		await expect(page).not.toHaveURL(/eyes=/);

@@ -18,7 +18,7 @@ A message says how it travels: through the browser, direct, or between people. C
 
 Limited context per step is the quality the maintainer asked to keep, and the numbers let someone presenting say which step they mean. What crosses the browser and what does not is the security idea of a redirect flow, and who has seen what is the question behind "why a code and then a token". Both were only in the text before, and a colour that meant two things would teach nothing.
 
-The one exception is the whole flow at once, which someone asks for to see all of the shape, so what is ahead has its words there too, and stays faint.
+The one exception is the whole flow at once, which someone asks for to see all of the shape, so what is ahead has its words there too, and stays faint. The switch for every label does the same on the step someone is on, with no row moving, and it is off unless someone asked for it.
 
 ## Not chosen
 

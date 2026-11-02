@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { Term } from '#lib/flow/glossary.ts';
 	import { artifacts, type ArtifactId } from '#lib/flow/vocabulary.ts';
 	import { refLabel, type SourceRef } from '#lib/sources/sources.ts';
@@ -49,11 +50,20 @@
 		onopensource,
 		onclose
 	}: Props = $props();
+
+	// From one word to the next is the same dialog, so whoever pressed it should be told where they are.
+	let heading = $state<HTMLElement>();
+	// Each state change passes new props, so this keeps anything else from taking the focus back here.
+	const named = $derived(title);
+	$effect(() => {
+		void named;
+		untrack(() => heading)?.focus({ preventScroll: true });
+	});
 </script>
 
 <section data-testid="explanation">
 	<header>
-		<h2>{title}</h2>
+		<h2 tabindex="-1" bind:this={heading}>{title}</h2>
 		<button type="button" data-testid="explanation-close" onclick={onclose}>Close</button>
 	</header>
 	<p>{text}</p>
@@ -140,11 +150,7 @@
 
 <style>
 	section {
-		margin-bottom: 16px;
-		padding: 10px 12px;
-		border: 1px solid var(--accent);
-		border-radius: 8px;
-		background: var(--accent-soft);
+		padding: 16px 18px;
 	}
 
 	header {
@@ -155,14 +161,18 @@
 	}
 
 	h2 {
-		margin: 0 0 4px;
-		font-size: 15px;
+		margin: 0 0 8px;
+		font-size: 16px;
 		font-weight: 600;
 	}
 
+	h2:focus {
+		outline: none;
+	}
+
 	p {
-		margin: 0 0 6px;
-		font-size: 13px;
+		margin: 0 0 8px;
+		font-size: 14px;
 	}
 
 	p:last-child {
@@ -171,7 +181,7 @@
 
 	.seen {
 		color: var(--muted);
-		font-size: 12px;
+		font-size: 12.5px;
 	}
 
 	.parts {

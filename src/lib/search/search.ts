@@ -83,6 +83,7 @@ function stateAt(
 		follow: null,
 		wording: null,
 		list: false,
+		labels: false,
 		whole: false,
 		raw: false
 	};
@@ -109,6 +110,7 @@ const stateIn = (
 	follow: null,
 	wording: null,
 	list: false,
+	labels: false,
 	whole: false,
 	raw: false
 });

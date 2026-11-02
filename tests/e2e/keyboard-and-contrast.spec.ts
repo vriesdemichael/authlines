@@ -66,14 +66,34 @@ test.describe('the keyboard stays somewhere sensible', () => {
 		await expect(back).toBeFocused();
 	});
 
-	test('Next at the end of a question goes on to the way forward', async ({ page }) => {
+	test('Next at the end of a question stays, and never leaves it', async ({
+		page,
+		browserName
+	}) => {
 		await page.goto(`${FLOW_PATH}how-access-works/`);
 		await page.locator('.workspace[data-ready="true"]').waitFor();
 		await page.keyboard.press('End');
 		await page.keyboard.press('ArrowLeft');
-		await page.getByTestId('next').focus();
+		const next = page.getByTestId('next');
+		await expect(page.getByTestId('next-question')).toHaveCount(0);
+		const where = await next.boundingBox();
+		await next.focus();
 		await page.keyboard.press('Enter');
-		await expect(page.getByTestId('next-question')).toBeFocused();
+		await expect(next).toHaveAttribute('aria-disabled', 'true');
+		await expect(next).toHaveText('Next');
+		await expect(next).toBeFocused();
+		expect(await next.boundingBox()).toEqual(where);
+		await expect(page.getByTestId('next-question')).toBeVisible();
+		for (const key of ['Enter', 'Enter', 'PageDown', 'ArrowRight']) {
+			await page.keyboard.press(key);
+		}
+		await expect(page).toHaveURL(/how-access-works/);
+		await expect(next).toBeFocused();
+		// WebKit leaves links out of Tab unless someone has asked for them.
+		if (browserName !== 'webkit') {
+			await page.keyboard.press('Tab');
+			await expect(page.getByTestId('next-question')).toBeFocused();
+		}
 	});
 
 	test('turning off a setting left on goes to the next one, then the panel', async ({ page }) => {
