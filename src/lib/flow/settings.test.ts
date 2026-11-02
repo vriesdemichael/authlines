@@ -10,6 +10,7 @@ import {
 	settingDefs,
 	settingIds,
 	settingsIn,
+	sharedSettingIds,
 	simpleSettingIds,
 	unavailable,
 	all,
@@ -39,7 +40,13 @@ describe('what a setting says for itself', () => {
 	});
 
 	it('is in plain words for the few simple mode offers', () => {
-		expect(simpleSettingIds).toEqual(['oidc', 'consent', 'pkce', 'attacker', 'broker']);
+		expect(simpleSettingIds.filter((id) => sharedSettingIds.includes(id))).toEqual([
+			'oidc',
+			'consent',
+			'pkce',
+			'attacker',
+			'broker'
+		]);
 		for (const id of simpleSettingIds) {
 			expect(settingDefs[id].simple?.label).not.toBe(settingDefs[id].label);
 		}

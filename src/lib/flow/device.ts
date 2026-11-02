@@ -1,13 +1,17 @@
 import type { DiagramDef, FieldDef } from '#lib/flow/model.ts';
 import { example } from '#lib/flow/libraries.ts';
 import { apiWords, appWords, browserWords, idpWords } from '#lib/flow/parties.ts';
-import { all, is, not } from '#lib/flow/settings.ts';
+import { all, any, is, not } from '#lib/flow/settings.ts';
 
 const oidc = is('oidc', true);
 const agrees = is('deviceEnds', 'agrees');
 const saysNo = is('deviceEnds', 'says-no');
 const runsOut = is('deviceEnds', 'runs-out');
 const someoneComes = not(runsOut);
+const sendsCode = is('deviceAttack', 'sends-code');
+const readsCode = is('deviceAttack', 'reads-code');
+const theRealApp = not(sendsCode);
+const theUserFinishes = not(readsCode);
 
 const DEVICE_GRANT = 'urn:ietf:params:oauth:grant-type:device_code';
 
@@ -54,8 +58,27 @@ export const device: DiagramDef = {
 			plainRole: 'On a TV, say',
 			...appWords,
 			icon: 'app',
+			when: theRealApp,
 			concept:
 				'An application on something that is no good for logging in: a TV, a printer, or a tool in a terminal with no browser to hand. In OAuth’s terms it is the client. It makes calls, and this flow does not need anything to be able to call it. It has no secret here, because software on someone’s own device generally cannot keep one.'
+		},
+		{
+			id: 'attacker',
+			plainName: 'Someone else',
+			plainRole: 'Has no business here',
+			name: 'Attacker',
+			role: 'Wants to be let in',
+			icon: 'attacker',
+			when: any(sendsCode, readsCode),
+			concept: [
+				{
+					when: sendsCode,
+					text: 'Someone with a device or a program of their own, who wants into the user’s account and has no need for their password. To the identity provider they look like the app, because a client ID is no secret.'
+				},
+				{
+					text: 'Someone who can see the screen the user code is on: over a shoulder, on a shared display, or on a video call. They have an account of their own, and that is the account they use.'
+				}
+			]
 		},
 		{
 			id: 'idp',
@@ -84,9 +107,24 @@ export const device: DiagramDef = {
 			from: 'device-request'
 		},
 		{
+			label: 'Start',
+			why: 'They do what any app would, because nothing here needs them to be the app.',
+			from: 'sent-request'
+		},
+		{
 			label: 'Wait',
 			why: 'Nothing here tells the app when the user is done, so it keeps asking.',
 			from: 'device-poll'
+		},
+		{
+			label: 'Wait',
+			why: 'All they need now is for the user to do what the message says.',
+			from: 'sent-poll'
+		},
+		{
+			label: 'Get there first',
+			why: 'A user code works once, so whoever enters it first decides whose login this is.',
+			from: 'read-submit-code'
 		},
 		{
 			label: 'Log in',
@@ -99,6 +137,11 @@ export const device: DiagramDef = {
 			from: 'device-poll-again'
 		},
 		{
+			label: 'Collect',
+			why: 'What they get depends on what the user did, and on nothing else.',
+			from: 'sent-poll-again'
+		},
+		{
 			label: 'Use',
 			why: 'This is what the token was for, and whatever gets the call decides what to do with it.',
 			from: 'device-api-request'
@@ -107,6 +150,7 @@ export const device: DiagramDef = {
 	steps: [
 		{
 			id: 'device-request',
+			when: theRealApp,
 			cites: [
 				{
 					source: 'rfc8628',
@@ -132,6 +176,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-response',
+			when: theRealApp,
 			cites: [
 				{
 					source: 'rfc8628',
@@ -168,6 +213,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-show-code',
+			when: theRealApp,
 			cites: [
 				{
 					source: 'rfc8628',
@@ -209,7 +255,87 @@ export const device: DiagramDef = {
 			]
 		},
 		{
+			id: 'sent-request',
+			when: sendsCode,
+			cites: [
+				{
+					source: 'rfc8628',
+					section: '5.4',
+					why: 'Section 5.4 is this attack: the flow started on a device in the hands of an attacker.'
+				}
+			],
+			from: 'attacker',
+			to: 'idp',
+			kind: 'request',
+			plain: 'They ask for a code, as an app would',
+			label: 'POST /device_authorization',
+			recordedAs:
+				'The request the app sends, drawn coming from them. To the identity provider the two are the same, which is the point.',
+			concept:
+				'Anyone can start this flow, naming any app that allows it, because a client ID is no secret, and an app on a TV has no secret to prove anything with. To the identity provider, this looks like the app.',
+			fields: [
+				{ name: 'client_id', place: 'body', note: 'The real app’s, which is not hard to find' },
+				{ name: 'scope=openid', place: 'body', when: oidc }
+			]
+		},
+		{
+			id: 'sent-response',
+			when: sendsCode,
+			from: 'idp',
+			to: 'attacker',
+			kind: 'response',
+			plain: 'Two codes, and where to go',
+			label: '200 with two codes',
+			concept:
+				'The answer any app gets. The long code stays with them, and the tokens will go to it. All they need now is for someone else to log in with the short one.',
+			fields: [
+				{
+					name: 'device_code',
+					place: 'body',
+					artifact: 'device-code',
+					note: 'Stays with them, and is what will get the tokens'
+				},
+				{
+					name: 'user_code',
+					place: 'body',
+					artifact: 'user-code',
+					note: 'For someone else to type'
+				},
+				{ name: 'verification_uri', place: 'body', note: 'The identity provider’s real address' },
+				{
+					name: 'verification_uri_complete',
+					place: 'body',
+					note: 'The same address with the user code in it'
+				},
+				{ name: 'expires_in', place: 'body', note: 'How many seconds they have' },
+				{ name: 'interval', place: 'body', note: 'How many seconds to wait between asking' }
+			]
+		},
+		{
+			id: 'sent-the-code',
+			when: sendsCode,
+			cites: [
+				{
+					source: 'rfc8628',
+					section: '5.4',
+					why: 'Section 5.4 gives this example: an email telling someone to go to the address and enter the user code.'
+				}
+			],
+			from: 'attacker',
+			to: 'browser',
+			kind: 'human',
+			plain: 'They send the user the address and the user code',
+			label: 'A message with the address and user code',
+			concept:
+				'No HTTP message here. An email or a chat message, say, telling the user they have to enter this code. The address is the identity provider’s real one, so it looks right, because it is.',
+			fields: [
+				{ name: 'verification_uri', place: 'memory', note: 'In the message' },
+				{ name: 'user_code', place: 'memory', artifact: 'user-code', note: 'In the message' }
+			]
+		},
+		{
 			id: 'device-poll',
+			when: theRealApp,
 			cites: [
 				{
 					source: 'rfc8628',
@@ -232,6 +358,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-pending',
+			when: theRealApp,
 			cites: [
 				{
 					source: 'rfc8628',
@@ -257,7 +384,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-time-passes',
-			when: runsOut,
+			when: all(runsOut, theRealApp),
 			from: 'app',
 			to: 'app',
 			kind: 'time',
@@ -265,6 +392,112 @@ export const device: DiagramDef = {
 			label: 'Later: expires_in has passed',
 			concept:
 				'Nobody came. Nothing tells the app, and the user may not know there was anything to do. In this recording the codes were set to last 2 seconds, so that a real run could get here.'
+		},
+		{
+			id: 'read-the-code',
+			when: readsCode,
+			cites: [
+				{
+					source: 'rfc8628',
+					section: '5.5',
+					why: 'Section 5.5 is this: someone who can see the screen finishing before the user who started it.'
+				}
+			],
+			from: 'app',
+			to: 'attacker',
+			kind: 'human',
+			plain: 'Someone else reads the user code off the screen',
+			label: 'User code read off the screen',
+			concept:
+				'It is a short code on a screen, so anyone who can see that screen has it too. So far nothing has gone wrong, and nothing shows that it might.',
+			fields: [
+				{ name: 'user_code', place: 'memory', artifact: 'user-code', note: 'Read off the screen' }
+			]
+		},
+		{
+			id: 'sent-poll',
+			when: sendsCode,
+			from: 'attacker',
+			to: 'idp',
+			kind: 'request',
+			plain: 'They ask whether the user is done',
+			label: 'POST /token',
+			concept:
+				'They ask, again and again, like any app waiting for a user. All of it is on their side.',
+			fields: asking
+		},
+		{
+			id: 'sent-pending',
+			when: sendsCode,
+			from: 'idp',
+			to: 'attacker',
+			kind: 'response',
+			plain: 'Not yet',
+			label: '400 authorization_pending',
+			concept:
+				'The user has not done it yet, so they wait and ask again, for as long as the codes last.',
+			fields: [
+				{ name: 'error=authorization_pending', place: 'body' },
+				{ name: 'error_description', place: 'body' }
+			]
+		},
+		{
+			id: 'sent-time-passes',
+			when: all(runsOut, sendsCode),
+			from: 'attacker',
+			to: 'attacker',
+			kind: 'time',
+			plain: 'Later, the codes run out',
+			label: 'Later: expires_in has passed',
+			concept:
+				'The user did nothing with the message. In this recording the codes were set to last 2 seconds, so that a real run could get here.'
+		},
+		{
+			id: 'read-submit-code',
+			when: readsCode,
+			from: 'attacker',
+			to: 'idp',
+			kind: 'request',
+			channel: 'front',
+			plain: 'They enter the user code first',
+			label: 'POST /device',
+			recordedAs:
+				'What a real run sent from a browser of their own, with an account of their own. Only what matters here is drawn.',
+			concept:
+				'In a browser of their own. As far as the identity provider can tell, this is the person the user code was shown to, because all it has to go on is the user code.',
+			fields: [{ name: 'device_user_code', place: 'body', artifact: 'user-code' }]
+		},
+		{
+			id: 'read-submit-credentials',
+			when: readsCode,
+			from: 'attacker',
+			to: 'idp',
+			kind: 'request',
+			channel: 'front',
+			plain: 'They log in, as themselves',
+			label: 'Submit credentials',
+			concept:
+				'With their own account. They have no need for the user’s password, and they will not get a token of the user’s.',
+			fields: [{ name: 'username and password', place: 'body', note: 'Their own' }]
+		},
+		{
+			id: 'read-agree',
+			when: readsCode,
+			from: 'attacker',
+			to: 'idp',
+			kind: 'request',
+			channel: 'front',
+			plain: 'They agree',
+			label: 'Grant access',
+			concept: 'So the device that is waiting is now waiting for their login.',
+			fields: [
+				{ name: 'accept', place: 'body' },
+				{
+					name: 'code',
+					place: 'body',
+					note: "The server's own login session, and neither of the two codes in this flow"
+				}
+			]
 		},
 		{
 			id: 'device-open-page',
@@ -324,8 +557,25 @@ export const device: DiagramDef = {
 			]
 		},
 		{
+			id: 'read-code-refused',
+			when: readsCode,
+			from: 'idp',
+			to: 'browser',
+			kind: 'response',
+			plain: 'It says the user code is not valid',
+			label: '200 Invalid code',
+			page: {
+				address: 'device-open-page',
+				shows:
+					"The identity provider's own page, asking for the user code again and saying it is not valid.",
+				shot: 'device-code-refused'
+			},
+			concept:
+				'The user typed the right user code and is told it is wrong. They may think they mistyped it. Nothing here tells them that someone else used it.'
+		},
+		{
 			id: 'device-login-page',
-			when: someoneComes,
+			when: all(someoneComes, theUserFinishes),
 			cites: [
 				{
 					source: 'rfc8628',
@@ -349,7 +599,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-submit-credentials',
-			when: someoneComes,
+			when: all(someoneComes, theUserFinishes),
 			cites: [
 				{
 					source: 'rfc8628',
@@ -368,7 +618,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-consent-page',
-			when: someoneComes,
+			when: all(someoneComes, theUserFinishes),
 			cites: [
 				{
 					source: 'rfc8628',
@@ -403,7 +653,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-consent-grant',
-			when: agrees,
+			when: all(agrees, theUserFinishes),
 			from: 'browser',
 			to: 'idp',
 			kind: 'request',
@@ -465,7 +715,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-done-page',
-			when: agrees,
+			when: all(agrees, theUserFinishes),
 			from: 'idp',
 			to: 'browser',
 			kind: 'response',
@@ -490,6 +740,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-poll-again',
+			when: theRealApp,
 			from: 'app',
 			to: 'idp',
 			kind: 'request',
@@ -509,7 +760,7 @@ export const device: DiagramDef = {
 					why: 'Section 3.5 defines this answer, and says any error other than the two that mean carry on means stop asking.'
 				}
 			],
-			when: saysNo,
+			when: all(saysNo, theRealApp),
 			from: 'idp',
 			to: 'app',
 			kind: 'response',
@@ -533,7 +784,7 @@ export const device: DiagramDef = {
 					why: 'Section 3.5 defines this answer, and says an app may start again but should wait for the user before it does.'
 				}
 			],
-			when: runsOut,
+			when: all(runsOut, theRealApp),
 			from: 'idp',
 			to: 'app',
 			kind: 'response',
@@ -550,7 +801,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-token-response',
-			when: agrees,
+			when: all(agrees, theRealApp),
 			cites: [
 				{
 					source: 'rfc8628',
@@ -564,6 +815,10 @@ export const device: DiagramDef = {
 			plain: [{ when: oidc, text: 'An access token and an ID token' }, { text: 'An access token' }],
 			label: [{ when: oidc, text: 'Access token and ID token' }, { text: 'Access token' }],
 			concept: [
+				{
+					when: readsCode,
+					text: 'The app has tokens and thinks all went well, and so would anyone looking at it. They are for the account of whoever finished first, so what the app does from here it does as them. They got no token of their own, and the user got no login.'
+				},
 				{
 					when: oidc,
 					text: 'The access token is for the API, and the ID token tells the app who logged in, which is whoever agreed on the other device. The app never saw the password, and the browser never saw a token.'
@@ -594,7 +849,7 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-check-id-token',
-			when: all(oidc, agrees),
+			when: all(oidc, agrees, theRealApp),
 			from: 'app',
 			to: 'app',
 			kind: 'internal',
@@ -612,8 +867,91 @@ export const device: DiagramDef = {
 			]
 		},
 		{
+			id: 'sent-poll-again',
+			when: sendsCode,
+			from: 'attacker',
+			to: 'idp',
+			kind: 'request',
+			plain: 'They ask again',
+			label: 'POST /token',
+			execute: { answer: 'sent-token-response', when: agrees },
+			concept:
+				'The same request as every other time. It never went near the user, and whoever sends it gets what comes next.',
+			fields: asking
+		},
+		{
+			id: 'sent-token-response',
+			when: all(sendsCode, agrees),
+			cites: [
+				{
+					source: 'rfc8628',
+					section: '5.4',
+					why: 'Section 5.4 recommends telling the user they are authorizing a device, and confirming it is in their possession.'
+				}
+			],
+			from: 'idp',
+			to: 'attacker',
+			kind: 'response',
+			plain: 'They get the tokens',
+			label: [{ when: oidc, text: 'Access token and ID token' }, { text: 'Access token' }],
+			concept:
+				'The user logged in at the right address, on the real identity provider, and agreed, and the tokens came here. No password was given away, and nothing looked wrong to the user.',
+			inPractice:
+				'Your app cannot stop this, because your app is not part of it. Only the user can, at the page that asks. What helps is telling users only to enter a code they started themselves, keeping the codes short-lived, and a page that asks whether the device is in front of them, which is for whoever runs the provider.',
+			fields: [
+				{ name: 'access_token', place: 'body', artifact: 'access-token' },
+				{ name: 'token_type=Bearer', place: 'body' },
+				{ name: 'id_token', place: 'body', artifact: 'id-token', when: oidc },
+				{ name: 'expires_in', place: 'body' },
+				{
+					name: 'refresh_token',
+					place: 'body',
+					artifact: 'refresh-token',
+					note: 'Gets a new access token later, without the user'
+				},
+				{ name: 'scope', place: 'body' }
+			]
+		},
+		{
+			id: 'sent-denied-response',
+			when: all(sendsCode, saysNo),
+			from: 'idp',
+			to: 'attacker',
+			kind: 'response',
+			plain: 'The user said no',
+			label: '400 access_denied',
+			concept:
+				'The user noticed, at the page that asks, and they get nothing. That page is the only thing here that stops them, and it takes the user reading it.',
+			fields: [
+				{ name: 'error=access_denied', place: 'body' },
+				{ name: 'error_description', place: 'body' }
+			]
+		},
+		{
+			id: 'sent-expired-response',
+			when: all(sendsCode, runsOut),
+			cites: [
+				{
+					source: 'rfc8628',
+					section: '5.4',
+					why: 'Section 5.4 says a short lifetime limits codes sent by email or text, and does not stop someone getting fresh ones while talking to the user.'
+				}
+			],
+			from: 'idp',
+			to: 'attacker',
+			kind: 'response',
+			plain: 'Too late',
+			label: '400 expired_token',
+			concept:
+				'This is why the codes are short-lived: one sent in an email may be stale before anyone reads it. It does not stop someone who is talking to the user right now, who can get a fresh one.',
+			fields: [
+				{ name: 'error=expired_token', place: 'body' },
+				{ name: 'error_description', place: 'body' }
+			]
+		},
+		{
 			id: 'device-api-request',
-			when: agrees,
+			when: all(agrees, theRealApp),
 			from: 'app',
 			to: 'api',
 			kind: 'request',
@@ -623,6 +961,17 @@ export const device: DiagramDef = {
 			inPractice:
 				'This part is your code, though a library can add the token to each call for you.',
 			practice: [example('oauth4webapi', true, 'with protectedResourceRequest')],
+			fields: [{ name: 'Authorization: Bearer', place: 'header', artifact: 'access-token' }]
+		},
+		{
+			id: 'sent-api-request',
+			when: all(sendsCode, agrees),
+			from: 'attacker',
+			to: 'api',
+			kind: 'request',
+			plain: 'They call the API as the user',
+			label: 'GET /resource',
+			concept: 'Whoever holds a bearer token can use it, and this one is good.',
 			fields: [{ name: 'Authorization: Bearer', place: 'header', artifact: 'access-token' }]
 		},
 		{
@@ -662,14 +1011,33 @@ export const device: DiagramDef = {
 		},
 		{
 			id: 'device-api-response',
-			when: agrees,
+			when: all(agrees, theRealApp),
 			from: 'api',
 			to: 'app',
 			kind: 'response',
 			plain: 'The API answers',
 			label: '200 with the resource',
+			concept: [
+				{
+					when: readsCode,
+					text: 'The API answers for the account that logged in, which is theirs and not the user’s. If the user puts anything in through this app, that is where it goes.'
+				},
+				{
+					text: 'The app has what it came for, on behalf of a user who never typed a password into it.'
+				}
+			],
+			fields: []
+		},
+		{
+			id: 'sent-api-response',
+			when: all(sendsCode, agrees),
+			from: 'api',
+			to: 'attacker',
+			kind: 'response',
+			plain: 'The API answers',
+			label: '200 with the resource',
 			concept:
-				'The app has what it came for, on behalf of a user who never typed a password into it.',
+				'The token is good, so the API answers. It has no way to know who is holding it, and it has done nothing wrong.',
 			fields: []
 		}
 	]

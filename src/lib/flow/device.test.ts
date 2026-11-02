@@ -44,8 +44,11 @@ describe('the device flow', () => {
 			const between = view.steps.filter(
 				({ from, to }) => from !== to && [from, to].every((id) => id === 'app' || id === 'browser')
 			);
-			expect(between.map(({ id }) => id)).toEqual(['device-show-code']);
-			expect(between[0].channel).toBe('people');
+			// Someone with a code to send has taken the place of the app.
+			expect(between.map(({ id }) => id)).toEqual(
+				settings.deviceAttack === 'sends-code' ? [] : ['device-show-code']
+			);
+			for (const step of between) expect(step.channel).toBe('people');
 			expect(layoutDiagram(view).rows).toHaveLength(view.steps.length);
 		}
 	});
@@ -260,12 +263,92 @@ describe('the device flow', () => {
 		expect(lateSteps.at(-1)).toBe('device-expired-response');
 	});
 
+	describe('with someone sending the user a code of theirs', () => {
+		const at = (deviceEnds: Settings['deviceEnds']) =>
+			evaluate(flow, { ...defaultSettings, deviceAttack: 'sends-code', deviceEnds });
+		const recorded = (id: string) => recordings.find(({ preset }) => preset.id === id)!.recording;
+
+		it('takes the app off the diagram, and they do what it did', () => {
+			const view = at('agrees');
+			expect(view.lifelines.map(({ id }) => id)).not.toContain('app');
+			expect(view.lifelines.map(({ id }) => id)).toContain('attacker');
+			expect(holdingsAt(view, 'sent-token-response').attacker).toContain('access-token');
+			expect(holdingsAt(view, 'sent-token-response').browser).not.toContain('access-token');
+		});
+
+		it('gets what the user decides, on the same step of the story', () => {
+			expect(bodyOf(recorded('on-a-device-sent'), 'sent-token-response').access_token).toBeTruthy();
+			expect(bodyOf(recorded('on-a-device-sent-says-no'), 'sent-denied-response').error).toBe(
+				'access_denied'
+			);
+			expect(bodyOf(recorded('on-a-device-sent-runs-out'), 'sent-expired-response').error).toBe(
+				'expired_token'
+			);
+			expect(at('says-no').steps.map(({ id }) => id)).not.toContain('sent-api-request');
+		});
+
+		it('says who stops it', () => {
+			const view = at('agrees');
+			const answer = view.steps.find(({ id }) => id === 'sent-token-response')!;
+			expect(answer.inPractice).toMatch(/Your app cannot stop this/);
+			expect(answer.inPractice).toMatch(/Only the user can/);
+		});
+	});
+
+	describe('with someone reading the code off the screen', () => {
+		const view = evaluate(flow, { ...defaultSettings, deviceAttack: 'reads-code' });
+		const recording = recordings.find(({ preset }) => preset.id === 'on-a-device-read')!.recording;
+
+		it('tells the user the code is not valid', () => {
+			// The recording run only goes on once the page says so, and a code that worked gets a 302.
+			const refused = recording.messages.find(({ step }) => step === 'read-code-refused')!;
+			expect(refused.status).toBe(200);
+		});
+
+		it('leaves the app with tokens for the account that got there first', () => {
+			const token = String(bodyOf(recording, 'device-token-response').access_token);
+			const claims = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+			expect(claims.preferred_username).toBe('someone-else');
+		});
+
+		it('gives them no token', () => {
+			const held = holdingsAt(view, view.steps.at(-1)!.id).attacker;
+			expect(held).not.toContain('access-token');
+			expect(held).toContain('user-code');
+		});
+
+		it('cannot end any other way', () => {
+			expect(
+				allValidSettings(base.settings).filter(
+					(settings) => settings.deviceAttack === 'reads-code' && settings.deviceEnds !== 'agrees'
+				)
+			).toEqual([]);
+		});
+	});
+
 	it('has no part for what did not happen', () => {
 		const partsWhen = (deviceEnds: Settings['deviceEnds']) =>
 			evaluate(flow, { ...defaultSettings, deviceEnds }).parts.map(({ label }) => label);
 		expect(partsWhen('agrees')).toEqual(['Ask', 'Wait', 'Log in', 'Collect', 'Use']);
 		expect(partsWhen('says-no')).toEqual(['Ask', 'Wait', 'Log in', 'Collect']);
 		expect(partsWhen('runs-out')).toEqual(['Ask', 'Wait', 'Collect']);
+		const theirs = (settings: Partial<Settings>) =>
+			evaluate(flow, { ...defaultSettings, ...settings }).parts.map(({ label }) => label);
+		expect(theirs({ deviceAttack: 'sends-code' })).toEqual([
+			'Start',
+			'Wait',
+			'Log in',
+			'Collect',
+			'Use'
+		]);
+		expect(theirs({ deviceAttack: 'reads-code' })).toEqual([
+			'Ask',
+			'Wait',
+			'Get there first',
+			'Log in',
+			'Collect',
+			'Use'
+		]);
 	});
 
 	it('offers how it ends in advanced mode only, and on this flow only', () => {

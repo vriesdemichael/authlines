@@ -26,7 +26,11 @@
 		"refresh-public-ends": "2026-11-02",
 		"api-no-token": "2026-11-02",
 		"on-a-device-says-no": "2026-11-02",
-		"on-a-device-runs-out": "2026-11-02"
+		"on-a-device-runs-out": "2026-11-02",
+		"on-a-device-sent": "2026-11-02",
+		"on-a-device-sent-says-no": "2026-11-02",
+		"on-a-device-sent-runs-out": "2026-11-02",
+		"on-a-device-read": "2026-11-02"
 	},
 	"flows": {
 		"authorization-code": {
@@ -167,7 +171,11 @@
 				"on-a-device",
 				"on-a-device-oidc",
 				"on-a-device-says-no",
-				"on-a-device-runs-out"
+				"on-a-device-runs-out",
+				"on-a-device-sent",
+				"on-a-device-sent-says-no",
+				"on-a-device-sent-runs-out",
+				"on-a-device-read"
 			],
 			"steps": [
 				"device-api-request",
@@ -193,7 +201,21 @@
 				"device-response",
 				"device-submit-code",
 				"device-submit-credentials",
-				"device-token-response"
+				"device-token-response",
+				"read-agree",
+				"read-code-refused",
+				"read-submit-code",
+				"read-submit-credentials",
+				"sent-api-request",
+				"sent-api-response",
+				"sent-denied-response",
+				"sent-expired-response",
+				"sent-pending",
+				"sent-poll",
+				"sent-poll-again",
+				"sent-request",
+				"sent-response",
+				"sent-token-response"
 			]
 		}
 	}

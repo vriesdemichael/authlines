@@ -194,7 +194,7 @@ export const clientCredentialsBase: BaseFlow = {
 export const deviceBase: BaseFlow = {
 	id: device.id,
 	diagrams: { flow: device, setup: deviceSetup },
-	settings: ['oidc', 'deviceEnds'],
+	settings: ['oidc', 'deviceEnds', 'deviceAttack'],
 	notHere: {
 		consent:
 			'It asks here anyway. The spec says a server should, and the one recorded did every time, with that setting off and on.',
@@ -202,7 +202,7 @@ export const deviceBase: BaseFlow = {
 			'Recorded with no secret, because software on someone’s own device generally cannot keep one. An app that had one would send it each time as well.',
 		pkce: 'The code that gets the tokens goes straight to the app and never through a browser, so the theft PKCE is for does not happen here. RFC 8628 does not include it.',
 		attacker:
-			'The code that gets the tokens never goes through a browser, so that theft is not here. The tricks here are different, such as someone sending the user their code, and they are not drawn. The page that asks the user to agree is where someone can still stop that one.',
+			'The code that gets the tokens never goes through a browser, so that theft is not here. What can go wrong here is under "Someone misusing it". The page that asks the user to agree is where someone can still stop that one.',
 		broker: ONLY_RECORDED_THERE,
 		sso: ONLY_RECORDED_THERE,
 		refresh: ONLY_RECORDED_THERE,
@@ -227,6 +227,26 @@ export const deviceBase: BaseFlow = {
 			id: 'on-a-device-runs-out',
 			title: 'An app on a device, and the codes run out',
 			settings: { deviceEnds: 'runs-out' }
+		},
+		{
+			id: 'on-a-device-sent',
+			title: 'Someone sends the user a code of theirs',
+			settings: { deviceAttack: 'sends-code' }
+		},
+		{
+			id: 'on-a-device-sent-says-no',
+			title: 'Someone sends the user a code of theirs, and the user says no',
+			settings: { deviceAttack: 'sends-code', deviceEnds: 'says-no' }
+		},
+		{
+			id: 'on-a-device-sent-runs-out',
+			title: 'Someone sends the user a code of theirs, and it runs out',
+			settings: { deviceAttack: 'sends-code', deviceEnds: 'runs-out' }
+		},
+		{
+			id: 'on-a-device-read',
+			title: 'Someone reads the code off the screen',
+			settings: { deviceAttack: 'reads-code' }
 		}
 	]
 };

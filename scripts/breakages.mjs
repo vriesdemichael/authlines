@@ -103,6 +103,18 @@ export const breakages = [
 		to: "title: 'Why did my API say 401?',\n\t\t\t\t\tmode: 'advanced',"
 	},
 	{
+		name: 'device: the browser gets the tokens of someone who sent the user a code',
+		file: 'src/lib/flow/device.ts',
+		from: "id: 'sent-token-response',\n\t\t\twhen: all(sendsCode, agrees),",
+		to: "id: 'sent-token-response',\n\t\t\twhen: sendsCode,"
+	},
+	{
+		name: 'device: someone who read the code can be said no to',
+		file: 'src/lib/flow/settings.ts',
+		from: "when: is('deviceEnds', 'agrees'),\n\t\t\t\t\tbecause: 'They are the one",
+		to: "when: is('deviceEnds', 'says-no'),\n\t\t\t\t\tbecause: 'They are the one"
+	},
+	{
 		name: 'device: says the user said no with a different error than the server gave',
 		file: 'src/lib/flow/device.ts',
 		from: "{ name: 'error=access_denied', place: 'body' },",

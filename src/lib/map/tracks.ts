@@ -664,12 +664,22 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'device-phishing',
 					flow: 'device',
-					preset: 'on-a-device',
-					step: 'device-consent-page',
+					preset: 'on-a-device-sent',
+					step: 'sent-token-response',
 					title: 'Can someone trick me into approving their device?',
 					summary: 'Yes, by sending you their code. It is called device code phishing.',
 					answer:
-						'Yes. They start this flow on a device of their own and send you the address and the user code. If you log in and agree, the tokens go to them. The page asking you to agree can name an app you know, so ask whether you started this, on a device in front of you.'
+						'Yes. They start this flow on a device of their own and send you the address and the user code. If you log in and agree, the tokens go to them. The page asking you to agree can name an app you know, so ask whether you started this.'
+				}),
+				node({
+					id: 'device-someone-reads-it',
+					flow: 'device',
+					preset: 'on-a-device-read',
+					step: 'read-code-refused',
+					title: 'What if someone else can see the user code on the screen?',
+					summary: 'They can get there first, and the device ends up logged in as them.',
+					answer:
+						'They can enter it first, with an account of their own. They get no token for themselves, but the device ends up logged in as them, and the user is told the user code is not valid. So it matters who can see the screen.'
 				})
 			],
 			[
@@ -694,6 +704,28 @@ export const mapTracks: readonly MapTrack[] = [
 					summary: 'The codes run out, and the app is told when it next asks.',
 					answer:
 						'The codes only last so long. The next time the app asks after that, it gets a 400 with expired_token, stops asking, and tells the user. Trying again takes new codes, once the user asks to.'
+				}),
+				node({
+					id: 'device-phished-says-no',
+					flow: 'device',
+					preset: 'on-a-device-sent-says-no',
+					mode: 'advanced',
+					step: 'sent-denied-response',
+					title: 'What stops someone who sent me a code?',
+					summary: 'You do, at the page that asks. Nothing else here can.',
+					answer:
+						'You do, at the page that asks you to agree. They get access_denied, and nothing else. Neither the app nor the API is part of this, so neither can stop it, and that page only helps if it gets read.'
+				}),
+				node({
+					id: 'device-phished-runs-out',
+					flow: 'device',
+					preset: 'on-a-device-sent-runs-out',
+					mode: 'advanced',
+					step: 'sent-expired-response',
+					title: 'What if I ignore a code someone sent me?',
+					summary: 'It runs out, which is why these codes are short-lived.',
+					answer:
+						'Nothing happens. It runs out, and whoever started it gets expired_token the next time they ask. That is why these codes are short-lived, though someone talking to you right now can simply get a fresh one.'
 				}),
 				node({
 					id: 'device-pending-error',

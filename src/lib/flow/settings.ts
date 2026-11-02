@@ -18,6 +18,7 @@ export interface Settings {
 	ssoAsks: 'remembered' | 'insists' | 'fresh';
 	logout: boolean;
 	deviceEnds: 'agrees' | 'says-no' | 'runs-out';
+	deviceAttack: 'nobody' | 'sends-code' | 'reads-code';
 }
 
 export type SettingId = keyof Settings;
@@ -522,6 +523,39 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			{ value: 'agrees', label: 'The user agrees' },
 			{ value: 'says-no', label: 'The user says no' },
 			{ value: 'runs-out', label: 'The codes run out' }
+		]
+	},
+	deviceAttack: {
+		kind: 'choice',
+		label: 'Someone misusing it',
+		param: 'misuse',
+		default: 'nobody',
+		onlyOn: 'device',
+		simple: {
+			label: 'Show someone misusing it',
+			summary: 'No password gets stolen in either of these. See what they get.'
+		},
+		summary:
+			'Someone starts this on a device of their own and sends the user the code, or reads the user code off a screen and gets there first. No password gets stolen in either.',
+		why: 'Nothing in this flow ties the browser to the device. All that joins them is a code a person carries, so all it takes is getting a person to carry the wrong one, or getting there first.',
+		sources: [
+			{
+				source: 'rfc8628',
+				section: '5.4',
+				why: 'Section 5.4 is someone sending the user their code, and what helps. Section 5.5, right after it, is someone reading it off a screen.'
+			}
+		],
+		options: [
+			{ value: 'nobody', label: 'Nobody' },
+			{ value: 'sends-code', label: 'They send the user a code of theirs' },
+			{
+				value: 'reads-code',
+				label: 'They read the user code off the screen',
+				requires: {
+					when: is('deviceEnds', 'agrees'),
+					because: 'They are the one who agrees here, so it cannot end any other way.'
+				}
+			}
 		]
 	}
 };
