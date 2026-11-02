@@ -20,6 +20,7 @@ import { notesFor } from '#lib/keycloak/notes.ts';
 import { mapNodes, nodeSettings } from '#lib/map/nodes.ts';
 import { settingsOf } from '#lib/recordings/known.ts';
 import { knownErrors, notHereYet } from '#lib/search/errors.ts';
+import { resultKey } from '#lib/search/result-key.ts';
 
 export type ResultKind = 'error' | 'question' | 'word' | 'setting' | 'step' | 'note';
 
@@ -34,10 +35,6 @@ export interface Result {
 	view?: string;
 	query: string;
 }
-
-/** What makes a result this one and no other, in the list as well as in finding them. */
-export const resultKey = ({ flow, kind, title, query }: Result) =>
-	`${flow}:${kind}:${title}:${query}`;
 
 export interface Found {
 	results: Result[];

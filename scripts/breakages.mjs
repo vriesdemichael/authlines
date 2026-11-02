@@ -50,7 +50,7 @@ export const breakages = [
 	},
 	{
 		name: 'search: two results from two flows are taken for one',
-		file: 'src/lib/search/search.ts',
+		file: 'src/lib/search/result-key.ts',
 		from: '`${flow}:${kind}:${title}:${query}`;',
 		to: '`${kind}:${title}:${query}`;'
 	},

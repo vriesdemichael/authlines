@@ -2,7 +2,7 @@
 	import { tick } from 'svelte';
 	import { searchState } from '#lib/search/open.svelte.ts';
 	import type { Found, Result, ResultKind } from '#lib/search/search.ts';
-	import { resultKey } from '#lib/search/search.ts';
+	import { resultKey } from '#lib/search/result-key.ts';
 
 	interface Props {
 		hrefOf: (result: Result) => string;

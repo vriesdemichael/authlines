@@ -5,7 +5,8 @@ import { parseState } from '#lib/flow/state.ts';
 import { evaluate } from '#lib/flow/model.ts';
 import type { Recording } from '#lib/recordings/format.ts';
 import { knownErrors } from '#lib/search/errors.ts';
-import { resultKey, search } from '#lib/search/search.ts';
+import { resultKey } from '#lib/search/result-key.ts';
+import { search } from '#lib/search/search.ts';
 
 /** The demo API's words, which nobody else's server will say. */
 const API_ANSWERS = new Set(['api-response', 'api-refused', 'asks-after-logout-response']);
