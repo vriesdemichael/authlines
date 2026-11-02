@@ -115,6 +115,18 @@ export const breakages = [
 		to: "when: is('deviceEnds', 'says-no'),\n\t\t\t\t\tbecause: 'They are the one"
 	},
 	{
+		name: 'model: an app in the page stays a lifeline of its own',
+		file: MODEL,
+		from: 'joins && holds(joins.when, settings) ?',
+		to: 'joins && false ?'
+	},
+	{
+		name: 'settings: saying where an app runs brings nothing with it',
+		file: 'src/lib/flow/settings.ts',
+		from: "sets: { clientType: 'public', pkce: true },",
+		to: ''
+	},
+	{
 		name: 'model: a flow goes on after the server stopped it',
 		file: MODEL,
 		from: 'const stopsAt = here.findIndex((step) => step.last);',

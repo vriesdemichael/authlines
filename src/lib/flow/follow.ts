@@ -45,7 +45,7 @@ export function pathOf(view: DiagramView, artifact: ArtifactId): Stop[] {
 			stops.push({ step: step.id, says: named(forms, ended, 'Ends here') });
 		} else if (here.length) {
 			const isNew = here.some((form) => !seen.has(form));
-			const inside = step.from === step.to;
+			const inside = step.kind === 'internal';
 			const says = inside
 				? isNew
 					? 'Made here'

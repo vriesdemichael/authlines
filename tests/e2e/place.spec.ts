@@ -208,13 +208,15 @@ test.describe('in simple mode on the setup', () => {
 		page
 	}) => {
 		await open(page, 'mode=simple', 'setup');
-		await expect(page.locator('[data-setting]')).toHaveCount(1);
+		await expect(page.locator('[data-setting]')).toHaveCount(2);
 		await expect(page.locator('[data-setting="broker"]')).toBeVisible();
+		// With no secret there is nothing to hand over.
+		await expect(page.locator('[data-setting="appRuns"]')).toBeVisible();
 		const elsewhere = page.getByTestId('settings-elsewhere');
 		await expect(elsewhere).toContainText('The others change the user flow, not this diagram.');
 		await elsewhere.locator('a').click();
 		await expect(page.locator('.workspace')).toHaveAttribute('data-diagram', 'flow');
-		await expect(page.locator('[data-setting]')).toHaveCount(5);
+		await expect(page.locator('[data-setting]')).toHaveCount(6);
 		await expect(page.getByTestId('settings-elsewhere')).toHaveCount(0);
 	});
 

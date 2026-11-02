@@ -14,6 +14,7 @@ const oidc = is('oidc', true);
 const confidential = is('clientType', 'confidential');
 const pkce = is('pkce', true);
 const consent = is('consent', true);
+const inPage = is('appRuns', 'page');
 const attacker = is('attacker', true);
 // The code is one-time, and on a public client nothing stops someone else using it first.
 const codeTaken = all(attacker, not(confidential));
@@ -73,8 +74,22 @@ export const authorizationCode: DiagramDef = {
 			...browserWords,
 			icon: 'browser',
 			front: true,
+			when: not(inPage),
 			concept:
 				'Where the user is. Anything sent through the browser can be seen, and changed, by the user and by software in the browser. That is why the flow is careful about what goes this way.'
+		},
+		{
+			id: 'browser',
+			plainName: 'Browser and app',
+			plainRole: 'The app is a page',
+			...browserWords,
+			name: 'Browser and client',
+			role: 'The client is a page',
+			icon: 'browser',
+			front: true,
+			when: inPage,
+			concept:
+				'The app runs here, as a page in the user’s browser, so the two are one place. It makes its calls from the page, and what it gets stays in the page, where the user and any script running in it can reach it. The login page is not part of that: it is the identity provider’s own, at another address, and the browser keeps the app’s script out of it. So the password is here in the browser, and still does not reach the app.'
 		},
 		{
 			id: 'app',
@@ -82,6 +97,7 @@ export const authorizationCode: DiagramDef = {
 			plainRole: 'What the user uses',
 			...appWords,
 			icon: 'app',
+			joins: { lifeline: 'browser', when: inPage },
 			startsWith: [{ artifact: 'secret', when: confidential }],
 			concept: [
 				{
@@ -209,7 +225,13 @@ export const authorizationCode: DiagramDef = {
 			kind: 'request',
 			plain: 'The user opens the app',
 			label: 'Open the app',
-			concept: 'The user wants something from the app, and the app needs them logged in first.',
+			concept: [
+				{
+					when: inPage,
+					text: 'The page loads, from wherever it is served, and from here on the app is the page. That place still matters: it serves the scripts, so whoever controls it controls the app, and it is sent the address the login comes back to, with the code in it.'
+				},
+				{ text: 'The user wants something from the app, and the app needs them logged in first.' }
+			],
 			inPractice:
 				'Which pages need a login is your code. For most of what follows a library does the work, and how much depends on the library: a framework integration does nearly all of it, and a low-level one leaves some checks to you.',
 			practice: [
@@ -271,7 +293,22 @@ export const authorizationCode: DiagramDef = {
 			]
 		},
 		{
+			id: 'page-goes-to-log-in',
+			when: inPage,
+			from: 'app',
+			to: 'app',
+			kind: 'internal',
+			plain: 'The page sends them to log in',
+			label: 'Go to the identity provider',
+			concept:
+				'Its own script sends the browser to the identity provider. There is no server to answer with a redirect, so nothing crosses the network until the browser gets there.',
+			inPractice:
+				'A library does this, from the values you gave it in setup. Turn on its PKCE option as well, if it is not on by default.',
+			practice: [example('oidcClientTs', true, 'with PKCE on by default')]
+		},
+		{
 			id: 'redirect-to-idp',
+			when: not(inPage),
 			cites: [
 				{
 					source: 'rfc9700',
@@ -1189,6 +1226,14 @@ export const authorizationCode: DiagramDef = {
 			],
 			concept: [
 				{
+					when: all(inPage, pkce),
+					text: 'The page trades the code for tokens, on a call from its own script. So this one goes through the browser too, which is the difference an app in the page makes. It has no secret to prove which app it is. The verifier, which was never in a redirect, is what someone who only saw the code does not have.'
+				},
+				{
+					when: inPage,
+					text: 'The page trades the code for tokens, on a call from its own script, so this one goes through the browser too. It has no secret to prove which app it is, so anyone holding the code could do this, which is the gap PKCE closes.'
+				},
+				{
 					when: all(confidential, pkce),
 					text: 'The app trades the code for tokens on a direct call. Its secret proves which app it is, and the verifier proves it started this very login. Neither was ever in a redirect.'
 				},
@@ -1240,6 +1285,12 @@ export const authorizationCode: DiagramDef = {
 				{ name: 'grant_type=authorization_code', place: 'body' },
 				{ name: 'code', place: 'body', artifact: 'code' },
 				{ name: 'redirect_uri', place: 'body' },
+				{
+					name: 'Origin',
+					place: 'header',
+					note: 'Which page this is from. The browser only hands it the answer if the server allows that page',
+					when: inPage
+				},
 				{ name: 'client_id', place: 'body', when: not(confidential) },
 				{
 					name: 'Authorization: Basic',
@@ -1407,6 +1458,10 @@ export const authorizationCode: DiagramDef = {
 			label: [{ when: oidc, text: 'Access token and ID token' }, { text: 'Access token' }],
 			concept: [
 				{
+					when: inPage,
+					text: 'The tokens are in the page now, and so in the browser, which the rest of this flow took care to avoid. On a server they would be out of reach of the user’s browser. Here, any script running in this page can reach them, and that is the price of having no server.'
+				},
+				{
 					when: oidc,
 					text: 'The access token is for the API, and the ID token tells the app who logged in. Here a refresh token comes too, to get a new access token later without the user.'
 				},
@@ -1415,6 +1470,10 @@ export const authorizationCode: DiagramDef = {
 				}
 			],
 			inPractice: [
+				{
+					when: inPage,
+					text: 'A library takes these, and they are in the page now. A script running in that page can reach whatever the page can, and can often start a login of its own for new tokens. A worker narrows the first and not the second. That is why current advice for business apps, and anything sensitive or personal, is a server behind the app that keeps them, called a backend for frontend. A script can still act through the open page.'
+				},
 				{
 					when: not(confidential),
 					text: 'A library takes these. If your app runs in the browser, so do they: the diagram draws the two apart to show the redirects, but a script running in that page can reach whatever the page can, and can often start a login of its own for new tokens. A worker narrows the first and not the second. That is why current advice for business apps, and anything sensitive or personal, is a server behind the app that keeps them, called a backend for frontend. A script can still act through the open page.'

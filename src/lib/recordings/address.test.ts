@@ -50,6 +50,8 @@ describe('what a person sees in their browser', () => {
 				if (message.direction !== 'response' || message.status !== 200 || !message.step) continue;
 				const step = view.steps.find(({ id }) => id === message.step);
 				if (!step || step.from !== 'idp' || step.to !== 'browser') continue;
+				// An answer to a call from a page is not a page.
+				if (!message.headers['content-type']?.includes('html')) continue;
 				expect(step.page, `${recording.preset} ${step.id}`).toBeDefined();
 			}
 		}

@@ -31,7 +31,9 @@
 		"on-a-device-sent-says-no": "2026-11-02",
 		"on-a-device-sent-runs-out": "2026-11-02",
 		"on-a-device-read": "2026-11-02",
-		"address-refused": "2026-11-02"
+		"address-refused": "2026-11-02",
+		"browser-app": "2026-11-02",
+		"in-the-page": "2026-11-02"
 	},
 	"flows": {
 		"authorization-code": {
@@ -60,6 +62,7 @@
 				"public-pkce",
 				"oidc-pkce",
 				"browser-app",
+				"in-the-page",
 				"attack-public",
 				"attack-public-pkce",
 				"attack-confidential",

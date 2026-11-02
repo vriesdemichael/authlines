@@ -234,7 +234,7 @@ test.describe('the rail, which stops repeating itself (#63)', () => {
 		await open(page, 'mode=simple');
 		await expect(sentences(page)).toHaveCount(0);
 		const words = (await page.locator('aside.settings').innerText()).split(/\s+/);
-		expect(words.length).toBeLessThan(45);
+		expect(words.length).toBeLessThan(50);
 	});
 
 	test('says it while someone is on it, and while the setting is on', async ({ page }) => {

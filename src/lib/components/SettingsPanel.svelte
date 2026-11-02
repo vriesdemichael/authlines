@@ -6,6 +6,7 @@
 		settingDefs,
 		settingIds,
 		simpleSettingIds,
+		setsWith,
 		unavailable,
 		type SettingDef,
 		type SettingId,
@@ -96,11 +97,22 @@
 			(id) => available.includes(id) && isOffered(id, settings)
 		)
 	);
+	// What a choice here brought with it, which nobody has to take off again.
+	const broughtAlong = $derived(
+		new Set(
+			simpleSettingIds
+				.filter((id) => settings[id] !== defaultSettings[id])
+				.flatMap((id) => Object.keys(setsWith(id, settings[id] as never)))
+		)
+	);
 	// An advanced setting stays on in simple mode, as a chip that says so (ADR-004).
 	const alsoOn = $derived(
 		simple
 			? settingIds.filter(
-					(id) => !simpleSettingIds.includes(id) && settings[id] !== defaultSettings[id]
+					(id) =>
+						!simpleSettingIds.includes(id) &&
+						settings[id] !== defaultSettings[id] &&
+						!broughtAlong.has(id)
 				)
 			: []
 	);
@@ -119,7 +131,7 @@
 		(next ?? panelHeading)?.focus();
 	}
 	const blockedBy = (id: SettingId, value: string | boolean) =>
-		unavailable(id, value as never, settings)?.because;
+		unavailable(id, value as never, { ...settings, ...setsWith(id, value as never) })?.because;
 	function chipText(id: SettingId) {
 		const def = defOf(id);
 		if (def.kind === 'toggle') return def.label;

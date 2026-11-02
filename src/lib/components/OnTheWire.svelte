@@ -146,7 +146,7 @@
 			One real run against {serverNamed ? `Keycloak ${recording.keycloak}` : 'a real server'}, on {recording.recordedAt},
 			on one machine and so over plain HTTP, with throwaway values. Anywhere else all of this has to
 			be HTTPS. Only the headers that matter here were kept.
-			{#if recording.settings.clientType === 'public'}
+			{#if recording.settings.clientType === 'public' && recording.settings.appRuns !== 'page'}
 				What ran here was a server standing in for an app in a page, on a phone or on a device.
 			{/if}
 			{#if !serverNamed}

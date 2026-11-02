@@ -32,6 +32,8 @@ export interface LifelineDef {
 	icon: LifelineIcon;
 	/** Messages to or from this lifeline travel through the browser. */
 	front?: boolean;
+	/** Where it runs inside another lifeline, which then has all its arrows and what they carry. */
+	joins?: { lifeline: string; when: Condition };
 	/** What it knows before the diagram starts. */
 	startsWith?: readonly { artifact: ArtifactId; when?: Condition }[];
 	when?: Condition;
@@ -309,7 +311,15 @@ function partsOf(flow: DiagramDef, steps: readonly Step[]): Part[] {
 }
 
 export function evaluate(flow: DiagramDef, settings: Settings): DiagramView {
-	const here = flow.steps.filter((step) => present(step.when, settings));
+	const joined = new Map(
+		flow.lifelines.flatMap(({ id, joins }) =>
+			joins && holds(joins.when, settings) ? [[id, joins.lifeline] as const] : []
+		)
+	);
+	const on = (lifeline: string) => joined.get(lifeline) ?? lifeline;
+	const here = flow.steps
+		.filter((step) => present(step.when, settings))
+		.map((step) => ({ ...step, from: on(step.from), to: on(step.to) }));
 	const stopsAt = here.findIndex((step) => step.last);
 	const steps: Step[] = (stopsAt < 0 ? here : here.slice(0, stopsAt + 1)).map((step) => ({
 		id: step.id,
@@ -351,7 +361,7 @@ export function evaluate(flow: DiagramDef, settings: Settings): DiagramView {
 
 	return {
 		lifelines: flow.lifelines
-			.filter((lifeline) => present(lifeline.when, settings))
+			.filter((lifeline) => present(lifeline.when, settings) && !joined.has(lifeline.id))
 			.map((lifeline) => ({
 				id: lifeline.id,
 				plainName: lifeline.plainName,

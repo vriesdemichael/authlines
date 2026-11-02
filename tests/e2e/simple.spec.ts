@@ -47,7 +47,7 @@ test.describe('someone arriving for the first time', () => {
 
 	test('is offered only a few settings', async ({ page }) => {
 		await visit(page);
-		await expect(page.locator('[data-setting]')).toHaveCount(5);
+		await expect(page.locator('[data-setting]')).toHaveCount(6);
 		await expect(page.locator('[data-setting="oidc"]')).toContainText('Know who logged in');
 		await expect(page.locator('[data-setting="pkce"]')).toContainText(
 			'Protect against a stolen code'

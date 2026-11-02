@@ -260,6 +260,8 @@ describe.each(asCases)('the recording of %s', (preset, recording) => {
 	});
 
 	it('never lets a token through the browser', () => {
+		// An app in the page is the one exception, which is the whole of what it shows.
+		if (recording.settings.appRuns === 'page') return;
 		const tokens = ['token-response', 'upstream-token-response'].flatMap((step) => {
 			const body = recorded.find((m) => m.step === step)?.body as
 				Record<string, string> | undefined;
