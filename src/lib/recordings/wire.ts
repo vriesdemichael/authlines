@@ -182,7 +182,9 @@ const MADE_IN_THE_RUN = new Set([
 	'access_token',
 	'id_token',
 	'refresh_token',
-	'session'
+	'session',
+	'device_code',
+	'user_code'
 ]);
 
 export interface RunValue {

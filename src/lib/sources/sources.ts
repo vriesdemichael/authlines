@@ -4,6 +4,7 @@ export type SourceId =
 	| 'rfc7636'
 	| 'rfc9449'
 	| 'rfc9207'
+	| 'rfc8628'
 	| 'rfc9700'
 	| 'oidc-core'
 	| 'oidc-rp-logout'
@@ -75,6 +76,15 @@ export const sources: Record<SourceId, SourceDef> = {
 		summary:
 			'Adds iss to the answer that comes back through the browser, naming the server that sent it. An app that uses more than one server can check that against the one it sent the user to, which counters mix-up attacks.',
 		url: 'https://www.rfc-editor.org/rfc/rfc9207.html'
+	},
+	rfc8628: {
+		label: 'RFC 8628',
+		title: 'OAuth 2.0 Device Authorization Grant',
+		status: 'Proposed Standard, August 2019.',
+		summary:
+			'For apps on devices with no good way to log anyone in, such as a TV. The app gets a short code to show and a long one to keep, the user enters the short one in a browser on another device, and the app keeps asking with the long one until they are done. It also lists the attacks this makes possible, such as someone sending you their code.',
+		url: 'https://www.rfc-editor.org/rfc/rfc8628.html',
+		textFile: 'rfc8628.txt'
 	},
 	rfc9700: {
 		label: 'RFC 9700',

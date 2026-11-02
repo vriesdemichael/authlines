@@ -5,6 +5,7 @@ import {
 	Admin,
 	BROKERED_REALM,
 	CONFIDENTIAL_CLIENT,
+	DEVICE_CLIENT,
 	KEYCLOAK,
 	LOCAL_REALM,
 	PASSWORD,
@@ -14,7 +15,7 @@ import {
 	USERNAME
 } from './keycloak.ts';
 
-export const PAGES_FOLDER = 'static/recordings/authorization-code/pages';
+export const PAGES_FOLDER = 'static/recordings/pages';
 
 /** Half the width of the panel's picture twice over, so it stays sharp on a dense screen. */
 const VIEWPORT = { width: 640, height: 480 };
@@ -107,6 +108,46 @@ export async function capturePages(
 		await page.locator('[name="accept"]').waitFor();
 	});
 	await setUpFor(admin, LOCAL_REALM, { ...onDefaults, consent: false });
+
+	const typeACode = async (page: Page) => {
+		const asked = await fetch(
+			`${KEYCLOAK}/realms/${LOCAL_REALM}/protocol/openid-connect/auth/device`,
+			{
+				method: 'POST',
+				headers: { 'content-type': 'application/x-www-form-urlencoded' },
+				body: new URLSearchParams({ client_id: DEVICE_CLIENT }).toString()
+			}
+		);
+		const { verification_uri: address, user_code: code } = (await asked.json()) as {
+			verification_uri: string;
+			user_code: string;
+		};
+		await page.goto(address);
+		await page.locator('[name="device_user_code"]').waitFor();
+		return async () => {
+			await page.fill('[name="device_user_code"]', code);
+			await page.click('[type="submit"]');
+			await page.fill('#username', USERNAME);
+			await page.fill('#password', PASSWORD);
+			await page.click('#kc-login');
+			await page.locator('[name="accept"]').waitFor();
+		};
+	};
+	await capture('device-code', async (page) => {
+		await typeACode(page);
+	});
+	await capture('device-consent', async (page) => {
+		await (
+			await typeACode(page)
+		)();
+	});
+	await capture('device-done', async (page) => {
+		await (
+			await typeACode(page)
+		)();
+		await page.locator('[name="accept"]').click();
+		await page.getByText('Device Login Successful').waitFor();
+	});
 
 	return pageShots.filter((shot) => seen.includes(shot));
 }

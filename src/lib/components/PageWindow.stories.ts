@@ -13,7 +13,7 @@ const meta = {
 		address: LOGIN,
 		marks: ['redirect_uri', 'state'],
 		shows: 'The identity provider’s own page, asking for a username and a password.',
-		image: '/recordings/authorization-code/pages/login.jpg'
+		image: '/recordings/pages/login.jpg'
 	}
 } satisfies Meta<typeof PageWindow>;
 

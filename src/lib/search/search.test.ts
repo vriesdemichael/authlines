@@ -10,14 +10,15 @@ import { search } from '#lib/search/search.ts';
 /** The demo API's words, which nobody else's server will say. */
 const API_ANSWERS = new Set(['api-response', 'api-refused', 'asks-after-logout-response']);
 
-const FOLDER = 'static/recordings/authorization-code';
-const files = readdirSync(FOLDER).filter(
-	(file) => file.endsWith('.json') && file !== 'questions.json'
+const FOLDERS = Object.keys(flows).map((id) => `static/recordings/${id}`);
+const recordings: Recording[] = FOLDERS.flatMap((folder) =>
+	readdirSync(folder)
+		.filter((file) => file.endsWith('.json') && file !== 'questions.json')
+		.map((file) => JSON.parse(readFileSync(`${folder}/${file}`, 'utf8')))
 );
-const recordings: Recording[] = files.map((file) =>
-	JSON.parse(readFileSync(`${FOLDER}/${file}`, 'utf8'))
+const questions = FOLDERS.map((folder) => readFileSync(`${folder}/questions.json`, 'utf8')).join(
+	'\n'
 );
-const questions = readFileSync(`${FOLDER}/questions.json`, 'utf8');
 
 const first = (query: string) => search(query).results[0];
 
@@ -47,6 +48,52 @@ describe('what people bring', () => {
 		const match = results.find((result) => result.kind === kind);
 		expect(match, query).toBeDefined();
 		if (title) expect(match?.title).toBe(title);
+	});
+
+	it.each([
+		['device flow', 'device'],
+		['device code', 'device'],
+		['user code', 'device'],
+		['device code phishing', 'device'],
+		['log in on a TV', 'device'],
+		['in a terminal', 'device'],
+		['verification_uri', 'device'],
+		['urn:ietf:params:oauth:grant-type:device_code', 'device'],
+		['RFC 8628', 'device'],
+		['phishing', 'device'],
+		['polling', 'device'],
+		['ssh', 'device'],
+		['command line tool', 'device'],
+		['headless server no browser', 'device'],
+		['user never finishes', 'device'],
+		['connection timeout', 'device']
+	])('%s finds the flow on a device', (query, flow) => {
+		const found = search(query);
+		expect(found.notHereYet, query).toBeNull();
+		expect(
+			found.results.some((result) => result.flow === flow),
+			query
+		).toBe(true);
+	});
+
+	it.each([
+		['phishing', 'device-phishing'],
+		['polling', 'device-waiting'],
+		['ssh', 'device-flow']
+	])('%s finds the question about it, and not only a word', (query, view) => {
+		expect(search(query).results.map((result) => result.view)).toContain(view);
+	});
+
+	it.each([
+		['expired_token', 'device-no-answer', 'simple'],
+		['access_denied', 'device-no-answer', 'simple'],
+		['slow_down', 'device-pending-error', 'advanced']
+	])('%s opens on the question that says what it means', (query, view, mode) => {
+		const error = search(query).results.find(
+			(result) => result.kind === 'error' && result.flow === 'device'
+		);
+		expect(error?.view).toBe(view);
+		expect(parseState(flows.device, 'flow', error!.query).mode).toBe(mode);
 	});
 
 	it('finds what a pitfall on the other flow says', () => {
@@ -97,7 +144,6 @@ describe('what people bring', () => {
 	});
 
 	it.each([
-		'Device flow',
 		'What about SAML?',
 		'token exchange',
 		'PKCE downgrade',

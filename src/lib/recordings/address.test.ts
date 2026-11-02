@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { authorizationCodeBase as base } from '#lib/flow/index.ts';
+import { authorizationCodeBase as base, flows } from '#lib/flow/index.ts';
 import { evaluate } from '#lib/flow/model.ts';
 import { defaultSettings, normalize } from '#lib/flow/settings.ts';
 import { pageShots } from '#lib/flow/vocabulary.ts';
@@ -97,17 +97,19 @@ describe('what a person sees in their browser', () => {
 
 	it('has each picture, none of them heavy, and uses all of them', () => {
 		const used = new Set(
-			Object.values(base.diagrams).flatMap(({ steps }) =>
-				steps.flatMap((step) => [step.page?.shot, step.pitfall?.shot].filter(Boolean))
-			)
+			Object.values(flows)
+				.flatMap(({ diagrams }) => Object.values(diagrams))
+				.flatMap(({ steps }) =>
+					steps.flatMap((step) => [step.page?.shot, step.pitfall?.shot].filter(Boolean))
+				)
 		);
 		expect([...used].sort()).toEqual([...pageShots].sort());
 		for (const shot of pageShots) {
-			const file = `${FOLDER}/pages/${shot}.jpg`;
+			const file = `static/recordings/pages/${shot}.jpg`;
 			expect(existsSync(file), file).toBe(true);
 			expect(statSync(file).size, file).toBeLessThan(LARGEST_PICTURE);
 		}
-		expect(readdirSync(`${FOLDER}/pages`).sort()).toEqual(
+		expect(readdirSync('static/recordings/pages').sort()).toEqual(
 			[...pageShots].map((shot) => `${shot}.jpg`).sort()
 		);
 	});

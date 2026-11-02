@@ -237,3 +237,23 @@ Tried on Keycloak 26.8.1 on 2026-11-01, because a claims audit doubted what the 
 - **`kc_idp_hint`:** with no default provider set on the Identity Provider Redirector, this still goes straight to the other provider.
 
 What libraries do was read at their source the same day, and the claims and links are in `src/lib/flow/libraries.ts` and on the steps. Worth knowing: passport-oauth2 only compares `state` with `state: true`, and throws if PKCE is on without it. Auth.js has PKCE on by default and checks `state` only when configured to. Spring Security compares `state` unasked. oauth4webapi leaves the ID token's signature to a separate call, because OIDC Core allows skipping it for a token that came straight over TLS. AWS API Gateway's JWT authorizer lists no proof among what it checks, so a DPoP token sent as Bearer would pass its checks.
+
+## The device flow on a real server
+
+Asked of Keycloak 26.8.1 on 2026-11-02, against RFC 8628 (August 2019). The answers are in `static/recordings/device/questions.json`, and a test holds what the screen says to them.
+
+- **The grant is off on a new client.** The first request gets 400 `unauthorized_client`, saying the flow is disabled for the client.
+- **Ten minutes and 5 seconds, unless set.** `expires_in` is 600 and `interval` is 5. A client's own attributes change both. The console has them under the realm's token settings.
+- **Asking too soon gets `slow_down`,** straight after `authorization_pending`. Waiting the interval gets `authorization_pending` again.
+- **The order is code, then login, then the page that asks.** The RFC's figure has the login first, and section 3.3 leaves the order to the server.
+- **It always asks.** The page appeared with Consent required off and on, and again for someone who had agreed before. It names the client and what it would get. It does not ask whether the device is theirs, or say which, as section 5.4 recommends. The page before it says Device Login, but the full address skips that one.
+- **The full address skips the code.** Opening `verification_uri_complete` goes straight to the login, and the code is neither asked for nor shown. Section 3.3.1 says a server should show it.
+- **The session cookie comes after agreeing.** Saying no leaves no `KEYCLOAK_IDENTITY` in the browser.
+- **A device code works once, for one client.** A second try and another client both get `invalid_grant`, and another client trying does not use it up.
+- **With a secret, both requests need it.** Either one without gets 401 `unauthorized_client`.
+- **An ID token here has no nonce,** because the request does not send one.
+
+- **It takes PKCE, which the RFC does not include.** A `code_challenge` on the first request gets a 200, and asking with no verifier gets `invalid_grant` with `PKCE code verifier not specified`.
+- **A used device code and one never given out get the same answer,** `invalid_grant` with `Device code not valid`. Another client gets `invalid_grant` with `unauthorized client`.
+
+What was not tried on this flow: DPoP, a refresh, and whether a server limits tries at the user code, which section 5.1 recommends.

@@ -67,7 +67,22 @@ const CITED: readonly [step: string, SourceId, section: string, phrase: string][
 		'2.2.2',
 		'MUST be sender-constrained or use refresh token rotation'
 	],
-	['service-token-response', 'rfc6749', '4.4.3', 'refresh token SHOULD NOT be included']
+	['service-token-response', 'rfc6749', '4.4.3', 'refresh token SHOULD NOT be included'],
+	['device-request', 'rfc8628', '3.1', 'only commence a device authorization request'],
+	['device-response', 'rfc8628', '3.2', 'clients MUST use 5 as the default'],
+	['device-show-code', 'rfc8628', '3.3', 'and enter the user code'],
+	['device-show-code', 'rfc8628', '3.3.1', 'Clients MUST still display the "user_code"'],
+	['device-poll', 'rfc8628', '3.4', 'in a polling fashion'],
+	['device-pending', 'rfc8628', '3.5', 'it MUST stop polling'],
+	['device-submit-code', 'rfc8628', '5.1', 'rate-limit user code attempts'],
+	['device-login-page', 'rfc8628', '3.3', 'up to the authorization server'],
+	['device-consent-page', 'rfc8628', '3.3', 'approve or deny the request'],
+	['device-consent-page', 'rfc8628', '5.4', 'authorizing a device'],
+	['device-token-response', 'rfc8628', '3.5', 'access_denied'],
+	['device-register', 'rfc8628', '5.6', 'treated as public clients'],
+	['device-show-code', 'rfc8628', '5.5', 'completing the authorization faster than the user'],
+	['device-submit-credentials', 'rfc8628', '5.3', 'address bar is wrong'],
+	['device-discovery-document', 'rfc8628', '4', 'device_authorization_endpoint']
 ];
 
 const flat = (text: string) => text.replace(/\s+/g, ' ');

@@ -347,6 +347,6 @@ describe('what gets downloaded', () => {
 	});
 
 	it('stays small for the index the application does load', () => {
-		expect(statSync('src/lib/recordings/recorded.json').size).toBeLessThan(4 * 1024);
+		expect(statSync('src/lib/recordings/recorded.json').size).toBeLessThan(5 * 1024);
 	});
 });

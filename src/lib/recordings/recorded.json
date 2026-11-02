@@ -20,7 +20,9 @@
 		"attack-at-the-app-pkce": "2026-11-02",
 		"attack-at-the-app": "2026-11-02",
 		"as-itself-dpop": "2026-11-02",
-		"as-itself": "2026-11-02"
+		"as-itself": "2026-11-02",
+		"on-a-device": "2026-11-02",
+		"on-a-device-oidc": "2026-11-02"
 	},
 	"flows": {
 		"authorization-code": {
@@ -153,6 +155,34 @@
 				"service-keys",
 				"service-token-request",
 				"service-token-response"
+			]
+		},
+		"device": {
+			"presets": [
+				"on-a-device",
+				"on-a-device-oidc"
+			],
+			"steps": [
+				"device-api-request",
+				"device-api-response",
+				"device-code-page",
+				"device-consent-grant",
+				"device-consent-page",
+				"device-discover",
+				"device-discovery-document",
+				"device-done-page",
+				"device-fetch-keys",
+				"device-keys",
+				"device-login-page",
+				"device-open-page",
+				"device-pending",
+				"device-poll",
+				"device-poll-again",
+				"device-request",
+				"device-response",
+				"device-submit-code",
+				"device-submit-credentials",
+				"device-token-response"
 			]
 		}
 	}

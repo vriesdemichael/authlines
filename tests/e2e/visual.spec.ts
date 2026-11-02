@@ -79,6 +79,15 @@ for (const scheme of ['light', 'dark'] as const) {
 			});
 		});
 
+		test('a flow on two devices', async ({ page }) => {
+			await page.goto('device/?step=device-consent-page');
+			await page.locator('.workspace[data-ready="true"]').waitFor();
+			await page.mouse.move(0, 0);
+			await expect(page).toHaveScreenshot(`device-${scheme}.png`, {
+				maxDiffPixelRatio: 0.002
+			});
+		});
+
 		test('running it yourself', async ({ page }) => {
 			await page.goto('run-it-yourself/');
 			await expect(page.locator('[data-ready="true"]')).toBeVisible();

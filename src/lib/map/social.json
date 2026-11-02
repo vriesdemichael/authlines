@@ -6,7 +6,7 @@
 	"when-do-i-get-asked": "When does the user get asked?|What a scope is, and why you may never have seen the question.|14|4",
 	"single-sign-on": "What is single sign-on? Why don't I log in twice?|A second app, the same login, and no password.|20|5",
 	"getting-to-know-each-other": "How do an app and a provider get to know each other?|What people have to do before anyone can log in.|9|5",
-	"adding-login": "I have to add login to an app. What do I do?|The part you do once, which part of your code is left, and what a library does.|9|5",
+	"adding-login": "I have to add login to an app. What do I do?|The part you do once, which part of your code is left, and what a library does. An app with no browser takes the device flow.|9|5",
 	"what-state-does": "What does state protect against?|Cross-site request forgery, or CSRF: someone slipping their own answer into your login.|12|4",
 	"what-iss-does": "What is iss doing in the address?|It says which server answered.|12|4",
 	"no-secret": "What is different about an app with no secret?|An app in a browser or on a phone cannot keep one, so what proves who it is?|12|4",
@@ -47,5 +47,12 @@
 	"everything": "What does it all look like at once?|As much as fits together, to see how far one diagram stretches.|30|5",
 	"no-user": "What if no user is involved?|A nightly job, or one service calling another: machine to machine, with no browser and no login.|5|3",
 	"no-user-no-refresh": "Why is there no refresh token for a service?|It has its secret, so it can just ask again.|5|3",
-	"no-user-with-a-key": "Can a token for a service be tied to a key?|DPoP works the same with no user.|6|3"
+	"no-user-with-a-key": "Can a token for a service be tied to a key?|DPoP works the same with no user.|6|3",
+	"device-flow": "How do you log in on a TV, or on a server with no browser?|On another device, with a code the app shows. That includes a command-line tool over SSH on a headless server.|18|4",
+	"device-two-codes": "Why are there two codes?|One for a person, and one that gets the tokens.|18|4",
+	"device-waiting": "What is the app doing while the user types?|Asking, again and again, which is called polling.|18|4",
+	"device-phishing": "Can someone trick me into approving their device?|Yes, by sending you their code. It is called device code phishing.|18|4",
+	"device-no-answer": "What if the user says no, or never finishes?|The app gets an error, and stops asking.|18|4",
+	"device-pending-error": "Why do I get authorization_pending?|It is not a failure, whatever it looks like.|18|4",
+	"device-who-logged-in": "Can a device know who logged in?|Usually, with an ID token.|19|4"
 }

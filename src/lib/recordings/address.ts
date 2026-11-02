@@ -1,11 +1,9 @@
 import type { Recording } from '#lib/recordings/format.ts';
 
-/** What the address bar said at a step, which is the address its request was sent to. */
+/** What the address bar said at a step: where its request was sent, or where its redirect went. */
 export function addressAt(recording: Recording, step: string): string | null {
-	const request = recording.messages.find(
-		(message) => message.step === step && message.direction === 'request'
-	);
-	return request?.url ?? null;
+	const message = recording.messages.find((candidate) => candidate.step === step);
+	return message?.url ?? message?.headers.location ?? null;
 }
 
 /** The words someone can select in an address, for the parameters that have one. */

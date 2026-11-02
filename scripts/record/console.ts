@@ -44,6 +44,7 @@ export async function lookInConsole(
 		'provider-settings': `${root}/${BROKERED_REALM}/identity-providers/oidc/${UPSTREAM_REALM}/settings`,
 		'realm-settings': `${root}/${LOCAL_REALM}/realm-settings`,
 		'realm-sessions': `${root}/${LOCAL_REALM}/realm-settings/sessions`,
+		'realm-tokens': `${root}/${LOCAL_REALM}/realm-settings/tokens`,
 		'browser-flow': `${root}/${BROKERED_REALM}/authentication`
 	};
 

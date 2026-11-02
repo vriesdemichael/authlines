@@ -2,6 +2,8 @@ import { authorizationCode } from '#lib/flow/authorization-code.ts';
 import { authorizationCodeSetup } from '#lib/flow/authorization-code-setup.ts';
 import { clientCredentials } from '#lib/flow/client-credentials.ts';
 import { clientCredentialsSetup } from '#lib/flow/client-credentials-setup.ts';
+import { device } from '#lib/flow/device.ts';
+import { deviceSetup } from '#lib/flow/device-setup.ts';
 import type { BaseFlow, Preset } from '#lib/flow/model.ts';
 import { settingIds } from '#lib/flow/settings.ts';
 
@@ -154,6 +156,8 @@ export const authorizationCodeBase: BaseFlow = {
 };
 
 const ONLY_RECORDED_THERE = 'Only recorded on the authorization code flow so far.';
+/** No real server has asked for one, so this is the RFC's, and it is only on that flow's diagram. */
+const ONLY_DRAWN_THERE = 'Only drawn on the authorization code flow so far, from the RFC.';
 
 export const clientCredentialsBase: BaseFlow = {
 	id: clientCredentials.id,
@@ -170,7 +174,7 @@ export const clientCredentialsBase: BaseFlow = {
 		refresh: 'There is no refresh token. The app asks again with its secret.',
 		logout: 'There is no login to end.',
 		apiToken: ONLY_RECORDED_THERE,
-		dpopNonce: ONLY_RECORDED_THERE
+		dpopNonce: ONLY_DRAWN_THERE
 	},
 	presets: [
 		{ id: 'as-itself', title: 'An app acting for itself', settings: {} },
@@ -182,7 +186,38 @@ export const clientCredentialsBase: BaseFlow = {
 	]
 };
 
+export const deviceBase: BaseFlow = {
+	id: device.id,
+	diagrams: { flow: device, setup: deviceSetup },
+	settings: ['oidc'],
+	notHere: {
+		consent:
+			'It asks here anyway. The spec says a server should, and the one recorded did every time, with that setting off and on.',
+		clientType:
+			'Recorded with no secret, because software on someone’s own device generally cannot keep one. An app that had one would send it each time as well.',
+		pkce: 'The code that gets the tokens goes straight to the app and never through a browser, so the theft PKCE is for does not happen here. RFC 8628 does not include it.',
+		attacker:
+			'The code that gets the tokens never goes through a browser, so that theft is not here. The tricks here are different, such as someone sending the user their code, and they are not drawn. The page that asks the user to agree is where someone can still stop that one.',
+		broker: ONLY_RECORDED_THERE,
+		sso: ONLY_RECORDED_THERE,
+		refresh: ONLY_RECORDED_THERE,
+		logout: ONLY_RECORDED_THERE,
+		apiToken: ONLY_RECORDED_THERE,
+		binding: 'Not recorded on this flow so far.',
+		dpopNonce: ONLY_DRAWN_THERE
+	},
+	presets: [
+		{ id: 'on-a-device', title: 'An app on a device', settings: {} },
+		{
+			id: 'on-a-device-oidc',
+			title: 'An app on a device, with who logged in',
+			settings: { oidc: true }
+		}
+	]
+};
+
 export const flows: Record<string, BaseFlow> = {
 	[authorizationCodeBase.id]: authorizationCodeBase,
-	[clientCredentialsBase.id]: clientCredentialsBase
+	[clientCredentialsBase.id]: clientCredentialsBase,
+	[deviceBase.id]: deviceBase
 };

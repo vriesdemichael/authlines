@@ -77,8 +77,8 @@ test.describe('searching', () => {
 
 	test('says so when something is not here yet', async ({ page }) => {
 		await start(page);
-		await input(page).fill('device flow');
-		await expect(status(page)).toContainText('does not cover device flow yet');
+		await input(page).fill('saml');
+		await expect(status(page)).toContainText('does not cover saml yet');
 		await expect(results(page)).toHaveCount(0);
 		await expect(
 			page.getByTestId('search-nothing').getByRole('link', { name: 'map' })

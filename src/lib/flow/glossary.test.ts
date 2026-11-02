@@ -54,7 +54,7 @@ const WATCH =
 const ACRONYM = /\b[A-Z]{2,}\b/g;
 const SNAKE = /\b[a-z]+_[a-z_]+\b/g;
 // Plain to anyone, or part of a word that has an entry.
-const FINE = new Set(['ID', 'URL', 'RFC', 'WWW']);
+const FINE = new Set(['ID', 'URL', 'RFC', 'WWW', 'TV', 'SSH']);
 
 describe('words in simple mode', () => {
 	const text = simpleModeText();

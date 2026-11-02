@@ -127,7 +127,7 @@ export const mapTracks: readonly MapTrack[] = [
 					startsAtTheBeginning: 'What they have to do starts with the first step of setup.',
 					title: 'I have to add login to an app. What do I do?',
 					summary:
-						'The part you do once, which part of your code is left, and what a library does.',
+						'The part you do once, which part of your code is left, and what a library does. An app with no browser takes the device flow.',
 					diagram: 'setup',
 					preset: 'oidc'
 				})
@@ -588,6 +588,89 @@ export const mapTracks: readonly MapTrack[] = [
 					summary: 'DPoP works the same with no user.',
 					answer:
 						'Yes. The app makes a key, and a proof signed with it goes along when it asks for the token and with every call. At an API that checks the proof, the token is no use to anyone without the key.'
+				})
+			]
+		]
+	},
+	{
+		id: 'on-a-device',
+		title: 'On a TV, or a server with no browser',
+		lead: 'Device flow: when the app cannot log anyone in, and the user does that on another device.',
+		chains: [
+			[
+				node({
+					id: 'device-flow',
+					flow: 'device',
+					preset: 'on-a-device',
+					step: 'device-show-code',
+					title: 'How do you log in on a TV, or on a server with no browser?',
+					summary:
+						'On another device, with a code the app shows. That includes a command-line tool over SSH on a headless server.',
+					answer:
+						'The app gets a short code from the identity provider and shows it. The user types that into a browser on their phone and logs in there, while the app keeps asking whether they are done. The app never sees the password.'
+				}),
+				node({
+					id: 'device-two-codes',
+					flow: 'device',
+					preset: 'on-a-device',
+					step: 'device-response',
+					title: 'Why are there two codes?',
+					summary: 'One for a person, and one that gets the tokens.',
+					answer:
+						'The short one is for a person to type, and says which login this is. The long one stays with the app, and the tokens go to it. So seeing the short one gets nobody a token of their own, though typing it in first leaves the device logged in as them.'
+				}),
+				node({
+					id: 'device-waiting',
+					flow: 'device',
+					preset: 'on-a-device',
+					step: 'device-pending',
+					title: 'What is the app doing while the user types?',
+					summary: 'Asking, again and again, which is called polling.',
+					answer:
+						'Asking the identity provider whether the user is done, every few seconds, and being told not yet. The flow does not count on anything calling the app back, so the answer to one of its own questions is how it finds out.'
+				}),
+				node({
+					id: 'device-phishing',
+					flow: 'device',
+					preset: 'on-a-device',
+					step: 'device-consent-page',
+					title: 'Can someone trick me into approving their device?',
+					summary: 'Yes, by sending you their code. It is called device code phishing.',
+					answer:
+						'Yes. They start this flow on a device of their own and send you the address and the user code. If you log in and agree, the tokens go to them. The page asking you to agree can name an app you know, so ask whether you started this, on a device in front of you.'
+				})
+			],
+			[
+				node({
+					id: 'device-no-answer',
+					flow: 'device',
+					preset: 'on-a-device',
+					step: 'device-token-response',
+					title: 'What if the user says no, or never finishes?',
+					summary: 'The app gets an error, and stops asking.',
+					answer:
+						'Then this last answer is an error and not what is drawn here: access_denied if they said no, and expired_token if the codes ran out. The app stops asking, and trying again takes new codes, once the user asks to.'
+				}),
+				node({
+					id: 'device-pending-error',
+					flow: 'device',
+					preset: 'on-a-device',
+					mode: 'advanced',
+					step: 'device-pending',
+					title: 'Why do I get authorization_pending?',
+					summary: 'It is not a failure, whatever it looks like.',
+					answer:
+						'It is the ordinary answer until the user has finished: a 400, with this in place of tokens. Ask again after waiting as long as the interval said. Asking sooner can get slow_down, and the app then has to wait longer.'
+				}),
+				node({
+					id: 'device-who-logged-in',
+					flow: 'device',
+					preset: 'on-a-device-oidc',
+					step: 'device-check-id-token',
+					title: 'Can a device know who logged in?',
+					summary: 'Usually, with an ID token.',
+					answer:
+						'Usually. RFC 8628 does not cover it, so it is up to the server, and the one recorded here does it: the app adds openid at the start, and the last answer has an ID token. It says who agreed, which need not be who is at the device.'
 				})
 			]
 		]

@@ -17,7 +17,11 @@ import {
 	type Request,
 	type Response
 } from '@playwright/test';
-import { authorizationCodeBase as base, clientCredentialsBase } from '#lib/flow/index.ts';
+import {
+	authorizationCodeBase as base,
+	clientCredentialsBase,
+	deviceBase
+} from '#lib/flow/index.ts';
 import { evidenceDifferences, pagesGone, whatChanged } from '#lib/recordings/check.ts';
 import { defaultSettings, flagsInSettings, normalize, type Settings } from '#lib/flow/settings.ts';
 import type { ShotId } from '#lib/flow/vocabulary.ts';
@@ -37,6 +41,7 @@ import {
 	SECOND_CLIENT,
 	SECOND_REDIRECT_URI,
 	SERVICE_CLIENT,
+	DEVICE_CLIENT,
 	setUpFor,
 	setUpRealms,
 	startKeycloak,
@@ -46,8 +51,13 @@ import {
 } from './keycloak.ts';
 import { lookInConsole } from './console.ts';
 import { capturePages } from './pages.ts';
-import { questionsWithApiV1, questionsWithApiV2, questionsWithNoUser } from './questions.ts';
-import { noUserNoteDefs } from '#lib/keycloak/notes.ts';
+import {
+	questionsOnADevice,
+	questionsWithApiV1,
+	questionsWithApiV2,
+	questionsWithNoUser
+} from './questions.ts';
+import { deviceNoteDefs, noUserNoteDefs } from '#lib/keycloak/notes.ts';
 
 const { presets } = base;
 
@@ -65,6 +75,7 @@ const argument = (name: string) => {
 const checking = process.argv.includes('--check');
 const onlyPages = process.argv.includes('--pages');
 const onlyNoUser = process.argv.includes('--no-user');
+const onlyOnADevice = process.argv.includes('--device');
 const onlyPresets = argument('--presets')?.split(',');
 const version = argument('--keycloak') ?? PINNED_KEYCLOAK;
 
@@ -138,14 +149,38 @@ const isDocument = (request: Request) => request.resourceType() === 'document';
 /** The one cookie that is the session. The rest of them are how Keycloak keeps its forms going. */
 const SESSION_COOKIE = /(?:^|\n|; )(KEYCLOAK_IDENTITY=[^\n]*)/;
 
+/** Which step a message is, going by what it is about, for a login that goes somewhere else. */
+const onADevice = {
+	request(url: URL, method: string): string | null {
+		if (url.pathname === `/realms/${LOCAL_REALM}/device`) {
+			return method === 'GET' ? 'open-page' : 'submit-code';
+		}
+		if (method !== 'POST') return null;
+		if (url.pathname.endsWith('/login-actions/authenticate')) return 'submit-credentials';
+		if (url.pathname.endsWith('/login-actions/consent')) return 'consent-grant';
+		return null;
+	},
+	response(url: URL, method: string): string | null {
+		if (url.pathname === `/realms/${LOCAL_REALM}/device`) {
+			return method === 'GET' ? 'code-page' : 'login-page';
+		}
+		if (method !== 'POST') return null;
+		if (url.pathname.endsWith('/login-actions/authenticate')) return 'consent-page';
+		if (url.pathname.endsWith('/login-actions/consent')) return 'done-page';
+		return null;
+	}
+};
+
 /** Writes down what a page does, in order. Cookies arrive later, so they are added once they do. */
-function watch(page: Page, run: Run, cookies: Promise<void>[]) {
+function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 	const inBrowser = (url: string) =>
 		url.startsWith(APP) || url.startsWith(SECOND_APP) || url.startsWith(KEYCLOAK);
 	page.on('request', (request) => {
 		if (!isDocument(request) || !inBrowser(request.url())) return;
 		const message = requestMessage(
-			classifyRequest(new URL(request.url())),
+			device
+				? onADevice.request(new URL(request.url()), request.method())
+				: classifyRequest(new URL(request.url())),
 			request.method(),
 			request.url(),
 			request.headers(),
@@ -165,11 +200,9 @@ function watch(page: Page, run: Run, cookies: Promise<void>[]) {
 	page.on('response', (response: Response) => {
 		if (!isDocument(response.request()) || !inBrowser(response.url())) return;
 		const headers = response.headers();
-		const step = classifyResponse(
-			new URL(response.url()),
-			response.status(),
-			headers.location ?? null
-		);
+		const step = device
+			? onADevice.response(new URL(response.url()), response.request().method())
+			: classifyResponse(new URL(response.url()), response.status(), headers.location ?? null);
 		const message = responseMessage(step, response.status(), headers);
 		run.messages.push(message);
 		if (!response.url().startsWith(KEYCLOAK)) return;
@@ -312,6 +345,113 @@ function writeWithNoUser(recordings: readonly Recording[]) {
 			steps: [...steps].sort()
 		}
 	};
+}
+
+/** A browser somewhere else, which only ever talks to the identity provider. */
+async function logInElsewhere(browser: Browser, run: Run, address: string, userCode: string) {
+	const context = await browser.newContext();
+	const page = await context.newPage();
+	const cookies: Promise<void>[] = [];
+	watch(page, run, cookies, true);
+	await page.goto(address);
+	await page.fill('[name="device_user_code"]', userCode);
+	await page.click('[type="submit"]');
+	await page.locator('#username').waitFor();
+	await page.fill('#username', USERNAME);
+	await page.fill('#password', PASSWORD);
+	await page.click('#kc-login');
+	await page.locator('[name="accept"]').click();
+	await page.getByText('Device Login Successful').waitFor();
+	await Promise.all(cookies);
+	await context.close();
+}
+
+async function recordDevice(browser: Browser, demo: Demo, keycloak: string, recordedAt: string) {
+	const recordings: Recording[] = [];
+	for (const preset of deviceBase.presets) {
+		const settings = normalize({ ...defaultSettings, ...preset.settings }).settings;
+		const run: Run = {
+			settings,
+			realm: LOCAL_REALM,
+			clientId: DEVICE_CLIENT,
+			clientSecret: null,
+			messages: []
+		};
+		await demo.discover(run);
+		demo.current = run;
+		await demo.onADevice(run, (address, code) => logInElsewhere(browser, run, address, code));
+		demo.current = null;
+		console.log(`${preset.id}: ${run.messages.length} messages`);
+		const messages = run.messages.map((message) => ({
+			...message,
+			step: message.step && `device-${message.step}`
+		}));
+		// Not a setting on this flow, and not what the run's settings would otherwise say.
+		const asRun: Settings = { ...settings, clientType: 'public' };
+		recordings.push({ preset: preset.id, keycloak, recordedAt, settings: asRun, messages });
+	}
+	return recordings;
+}
+
+function writeDevice(recordings: readonly Recording[]) {
+	const folder = `static/recordings/${deviceBase.id}`;
+	mkdirSync(folder, { recursive: true });
+	for (const recording of recordings) {
+		writeFileSync(
+			`${folder}/${recording.preset}.json`,
+			`${JSON.stringify(recording, null, '\t')}\n`
+		);
+	}
+	const known = new Set(
+		Object.values(deviceBase.diagrams).flatMap(({ steps }) => steps.map(({ id }) => id))
+	);
+	const steps = new Set(recordings.flatMap((r) => r.messages.flatMap((m) => m.step ?? [])));
+	for (const step of steps) {
+		if (!known.has(step)) throw new Error(`Recorded a step the model does not have: ${step}`);
+	}
+	return {
+		[deviceBase.id]: {
+			presets: deviceBase.presets.map((preset) => preset.id),
+			steps: [...steps].sort()
+		}
+	};
+}
+
+async function recordOnlyOnADevice() {
+	const demo = new Demo();
+	await demo.start();
+	const browser = await chromium.launch();
+	try {
+		await startKeycloak(version, []);
+		const admin = await Admin.connect();
+		await setUpRealms(admin);
+		const keycloak = await admin.serverVersion();
+		const recordedAt = new Date().toISOString().slice(0, 10);
+		const recordings = await recordDevice(browser, demo, keycloak, recordedAt);
+		const answers = {
+			...(await questionsOnADevice(browser, admin)),
+			console: await lookInConsole(browser, admin, [], deviceNoteDefs)
+		};
+		const written = writeDevice(recordings);
+		writeFileSync(
+			`static/recordings/${deviceBase.id}/questions.json`,
+			`${JSON.stringify({ keycloak, answers }, null, '\t')}\n`
+		);
+		const index = JSON.parse(readFileSync(INDEX, 'utf8')) as RecordingIndex;
+		const flows = { ...index.flows, ...written };
+		const recordedOn = {
+			...index.recordedOn,
+			...Object.fromEntries(recordings.map(({ preset, recordedAt: on }) => [preset, on]))
+		};
+		writeFileSync(INDEX, `${JSON.stringify({ ...index, recordedOn, flows }, null, '\t')}\n`);
+		const differences = evidenceDifferences(answers, deviceNoteDefs);
+		if (differences.length) console.log(differences.join('\n'));
+	} finally {
+		await browser.close();
+		demo.stop();
+		stopKeycloak();
+	}
+	process.exit(0);
 }
 
 /** Only that flow, because a whole run changes every value in every recording. */
@@ -466,6 +606,8 @@ async function main() {
 	const recordings: Recording[] = [];
 	let withNoUser: Recording[] = [];
 	let noUserAnswers: Record<string, unknown> = {};
+	let onDevice: Recording[] = [];
+	let deviceAnswers: Record<string, unknown> = {};
 	const answers: Record<string, unknown> = {};
 	let flags: Record<string, FlagStatus> = {};
 	const inConsole: Record<string, unknown> = {};
@@ -508,6 +650,11 @@ async function main() {
 					...(await questionsWithNoUser(admin)),
 					console: await lookInConsole(browser, admin, [], noUserNoteDefs)
 				};
+				onDevice = await recordDevice(browser, demo, keycloak, recordedAt);
+				deviceAnswers = {
+					...(await questionsOnADevice(browser, admin)),
+					console: await lookInConsole(browser, admin, [], deviceNoteDefs)
+				};
 				pagesSeen = await capturePages(browser, admin, !checking);
 			}
 			Object.assign(inConsole, await lookInConsole(browser, admin, features));
@@ -540,13 +687,20 @@ async function main() {
 								)
 							) as Recording,
 							now
+						})),
+						...onDevice.map((now) => ({
+							committed: JSON.parse(
+								readFileSync(`static/recordings/${deviceBase.id}/${now.preset}.json`, 'utf8')
+							) as Recording,
+							now
 						}))
 					],
 					flags: { committed: committedIndex.flags, now: flags },
 					answers
 				}),
 				...pagesGone(pagesSeen),
-				...evidenceDifferences(noUserAnswers, noUserNoteDefs)
+				...evidenceDifferences(noUserAnswers, noUserNoteDefs),
+				...evidenceDifferences(deviceAnswers, deviceNoteDefs)
 			];
 			failed = changes.length > 0;
 			console.log(
@@ -568,7 +722,12 @@ async function main() {
 				keycloak,
 				answers: noUserAnswers
 			});
-			write(INDEX, { ...index, flows: { ...others.flows, ...index.flows, ...noUser } });
+			const devices = writeDevice(onDevice);
+			write(`static/recordings/${deviceBase.id}/questions.json`, {
+				keycloak,
+				answers: deviceAnswers
+			});
+			write(INDEX, { ...index, flows: { ...others.flows, ...index.flows, ...noUser, ...devices } });
 		}
 	} finally {
 		await browser.close();
@@ -582,6 +741,8 @@ await (onlyPages
 	? takePictures()
 	: onlyNoUser
 		? recordOnlyWithNoUser()
-		: onlyPresets
-			? recordOnlyPresets(onlyPresets)
-			: main());
+		: onlyOnADevice
+			? recordOnlyOnADevice()
+			: onlyPresets
+				? recordOnlyPresets(onlyPresets)
+				: main());

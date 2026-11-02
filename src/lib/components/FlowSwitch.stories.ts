@@ -7,7 +7,8 @@ const meta = {
 	args: {
 		flows: [
 			{ id: 'authorization-code', title: 'Authorization code flow' },
-			{ id: 'client-credentials', title: 'Client credentials flow' }
+			{ id: 'client-credentials', title: 'Client credentials flow' },
+			{ id: 'device', title: 'Device flow' }
 		],
 		current: 'authorization-code',
 		onchange: () => {}

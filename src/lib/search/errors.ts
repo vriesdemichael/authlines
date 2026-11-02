@@ -12,6 +12,8 @@ export interface KnownError {
 	settings: Partial<Settings>;
 	/** The base flow it is on, where that is not the one with a login. */
 	flow?: string;
+	/** The question that says what it means straight away, where the step alone would not. */
+	question?: string;
 }
 
 const stolenFromPublicWithPkce: Partial<Settings> = {
@@ -84,6 +86,93 @@ export const knownErrors: readonly KnownError[] = [
 		settings: { attacker: true, attackerUses: 'real-app', pkce: true }
 	},
 	{
+		text: 'authorization_pending',
+		means:
+			'It is not a failure: the user has not finished yet, so wait as long as the interval said and ask again.',
+		step: 'device-pending',
+		settings: {},
+		flow: 'device',
+		question: 'device-pending-error'
+	},
+	{
+		text: 'The authorization request is still pending',
+		means:
+			'It is not a failure: the user has not finished yet, so wait as long as the interval said and ask again.',
+		step: 'device-pending',
+		settings: {},
+		flow: 'device',
+		question: 'device-pending-error'
+	},
+	{
+		text: 'slow_down',
+		means: 'The app asked again too soon. It has to wait 5 seconds longer from then on.',
+		step: 'device-pending',
+		settings: {},
+		flow: 'device',
+		question: 'device-pending-error'
+	},
+	{
+		text: 'expired_token',
+		means: 'The codes ran out before the user finished. Trying again takes new ones.',
+		step: 'device-token-response',
+		settings: {},
+		flow: 'device',
+		question: 'device-no-answer'
+	},
+	{
+		text: 'Device code is expired',
+		means: 'The codes ran out before the user finished. Trying again takes new ones.',
+		step: 'device-token-response',
+		settings: {},
+		flow: 'device',
+		question: 'device-no-answer'
+	},
+	{
+		text: 'The end user denied the authorization request',
+		means: 'The user said no on the other device, so the app stops asking.',
+		step: 'device-token-response',
+		settings: {},
+		flow: 'device',
+		question: 'device-no-answer'
+	},
+	{
+		text: 'Device code not valid',
+		means:
+			'The server will not take this device code. One that has already got its tokens gets this, because it works once, and so does one it never gave out.',
+		step: 'device-token-response',
+		settings: {},
+		flow: 'device'
+	},
+	{
+		text: 'Invalid code, please try again.',
+		means: 'What the page says to someone who typed a code it does not know, or one already used.',
+		step: 'device-submit-code',
+		settings: {},
+		flow: 'device'
+	},
+	{
+		text: 'The code has expired.',
+		means: 'What the page says to someone who took too long. The app has to start again.',
+		step: 'device-submit-code',
+		settings: {},
+		flow: 'device'
+	},
+	{
+		text: 'Client is not allowed to initiate OAuth 2.0 Device Authorization Grant',
+		means: 'This client has not been allowed to use this flow, which is off on a new client.',
+		step: 'device-request',
+		settings: {},
+		flow: 'device'
+	},
+	{
+		text: 'invalid_grant',
+		means:
+			'On the device flow, this device code will not do: it has been used, it was never given out, or this is another client.',
+		step: 'device-token-response',
+		settings: {},
+		flow: 'device'
+	},
+	{
 		text: 'unauthorized_client',
 		means:
 			'This client is not allowed to do this. With no user, that usually means it was not set up to act for itself.',
@@ -96,6 +185,14 @@ export const knownErrors: readonly KnownError[] = [
 		means: 'The client did not prove who it is. The spec calls this invalid_client.',
 		step: 'attacker-token-response',
 		settings: { attacker: true }
+	},
+	{
+		text: 'unauthorized_client',
+		means:
+			'On the device flow, this flow may be off for this client, or the client has a secret and did not send it.',
+		step: 'device-request',
+		settings: {},
+		flow: 'device'
 	},
 	{
 		text: 'invalid_client',
@@ -121,6 +218,14 @@ export const knownErrors: readonly KnownError[] = [
 		means: 'The user said no when asked.',
 		step: 'consent-page',
 		settings: { consent: true }
+	},
+	{
+		text: 'access_denied',
+		means: 'The user said no on the other device, so the app stops asking.',
+		step: 'device-token-response',
+		settings: {},
+		flow: 'device',
+		question: 'device-no-answer'
 	},
 	{
 		text: 'invalid_request',
@@ -184,8 +289,6 @@ export const notHereYet: readonly string[] = [
 	'malicious app',
 	'rfc 8252',
 	'rfc8252',
-	'device flow',
-	'device code',
 	'saml',
 	'token exchange'
 ];

@@ -42,6 +42,10 @@ export const SECOND_APP = 'http://localhost:9103';
 export const SECOND_CLIENT = 'demo-app-two';
 /** An app with no user, which is what the client credentials flow is. */
 export const SERVICE_CLIENT = 'demo-service';
+/** An app on a device, with no secret, which is what the device flow is for. */
+export const DEVICE_CLIENT = 'demo-device';
+/** What turns the flow on for one client. It is off on a new one (questions.json). */
+export const DEVICE_GRANT_ON = { 'oauth2.device.authorization.grant.enabled': 'true' };
 export const SECOND_REDIRECT_URI = `${SECOND_APP}/callback`;
 export const BACKCHANNEL_URL = 'http://host.docker.internal:9103/backchannel';
 export const API_CLIENT = 'demo-api';
@@ -198,6 +202,11 @@ export async function setUpRealms(admin: Admin) {
 		...client(SERVICE_CLIENT, confidential),
 		standardFlowEnabled: false,
 		serviceAccountsEnabled: true
+	});
+	await admin.call('POST', `/realms/${LOCAL_REALM}/clients`, {
+		...client(DEVICE_CLIENT, { publicClient: true }),
+		standardFlowEnabled: false,
+		attributes: DEVICE_GRANT_ON
 	});
 	await admin.call(
 		'POST',

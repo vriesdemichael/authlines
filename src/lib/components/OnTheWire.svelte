@@ -147,7 +147,7 @@
 			on one machine and so over plain HTTP, with throwaway values. Anywhere else all of this has to
 			be HTTPS. Only the headers that matter here were kept.
 			{#if recording.settings.clientType === 'public'}
-				What ran here was a server standing in for an app in a page or on a phone.
+				What ran here was a server standing in for an app in a page, on a phone or on a device.
 			{/if}
 			{#if !serverNamed}
 				Names such as realms, and claims such as realm_access, are that server's own, and the name
