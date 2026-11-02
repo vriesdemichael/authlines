@@ -79,7 +79,7 @@ test.describe('in front of a room, the whole flow', () => {
 	});
 
 	test('goes back with Escape, or the same button', async ({ page }) => {
-		await open(page, 'mode=simple&whole=1');
+		await open(page, 'mode=advanced&whole=1');
 		await page.keyboard.press('Escape');
 		await expect(page).not.toHaveURL(/whole=1/);
 		await expect(page.getByRole('complementary', { name: 'The current step' })).toBeVisible();

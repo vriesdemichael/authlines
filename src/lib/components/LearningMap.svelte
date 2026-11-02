@@ -13,46 +13,49 @@
 	}
 
 	let { tracks, hrefOf, current = null, showing = null, onpoint }: Props = $props();
-</script>
 
-<!-- A question can be a long way down, and someone with an error wants to get to it quickly. -->
-<nav class="jump" aria-label="Jump to a part of the map" data-testid="map-jump">
-	{#each tracks as track (track.id)}
-		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- a place on this page -->
-		<a href={`#${track.id}`}>{track.title}</a>
-	{/each}
-</nav>
+	const holds = (track: MapTrack, id: string | null) =>
+		track.chains.some((chain) => chain.some((node) => node.id === id));
+	const count = (track: MapTrack) => track.chains.reduce((sum, chain) => sum + chain.length, 0);
+	// One part open at a time, so that what is on screen can be read, and the rest says what is in it.
+	const openAtFirst = $derived(tracks.find((track) => holds(track, current)) ?? tracks[0]);
+</script>
 
 <ol class="tracks" data-testid="map">
 	{#each tracks as track (track.id)}
 		<li class="track" id={track.id}>
-			<h2>{track.title}</h2>
-			<p class="lead">{track.lead}</p>
-			{#each track.chains as chain, c (c)}
-				<ol class="chain">
-					{#each chain as node (node.id)}
-						<li>
-							<!-- eslint-disable svelte/no-navigation-without-resolve -- hrefOf resolves it -->
-							<a
-								class="stop"
-								class:showing={showing === node.id}
-								href={hrefOf(node)}
-								data-testid={`node-${node.id}`}
-								aria-current={current === node.id ? 'location' : undefined}
-								onpointerenter={() => onpoint?.(node)}
-								onfocus={() => onpoint?.(node)}
-							>
-								<span class="title">{node.title}</span>
-								{#if node.mode === 'advanced'}
-									<span class="tag">Advanced</span>
-								{/if}
-								<span class="summary">{node.summary}</span>
-							</a>
-							<!-- eslint-enable svelte/no-navigation-without-resolve -->
-						</li>
-					{/each}
-				</ol>
-			{/each}
+			<details name="map" open={openAtFirst.id === track.id}>
+				<summary>
+					<h2>{track.title}</h2>
+					<span class="count">{count(track)}</span>
+					<span class="lead">{track.lead}</span>
+				</summary>
+				{#each track.chains as chain, c (c)}
+					<ol class="chain">
+						{#each chain as node (node.id)}
+							<li>
+								<!-- eslint-disable svelte/no-navigation-without-resolve -- hrefOf resolves it -->
+								<a
+									class="stop"
+									class:showing={showing === node.id}
+									href={hrefOf(node)}
+									data-testid={`node-${node.id}`}
+									aria-current={current === node.id ? 'location' : undefined}
+									onpointermove={() => onpoint?.(node)}
+									onfocus={() => onpoint?.(node)}
+								>
+									<span class="title">{node.title}</span>
+									{#if node.mode === 'advanced'}
+										<span class="tag">Advanced</span>
+									{/if}
+									<span class="summary">{node.summary}</span>
+								</a>
+								<!-- eslint-enable svelte/no-navigation-without-resolve -->
+							</li>
+						{/each}
+					</ol>
+				{/each}
+			</details>
 		</li>
 	{/each}
 </ol>
@@ -64,62 +67,75 @@
 		list-style: none;
 	}
 
-	.jump {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 4px 14px;
-		margin-bottom: 20px;
-		font-size: 13px;
+	.track {
+		border-top: 1px solid var(--line);
+		scroll-margin-top: 12px;
 	}
 
-	.track {
-		margin-bottom: 26px;
-		scroll-margin-top: 12px;
+	.track:last-child {
+		border-bottom: 1px solid var(--line);
+	}
+
+	summary {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		column-gap: 12px;
+		padding: 12px 0;
+		cursor: pointer;
+		list-style: none;
+	}
+
+	summary::-webkit-details-marker {
+		display: none;
 	}
 
 	h2 {
 		margin: 0;
-		font-size: 15px;
+		font-size: 16px;
 		font-weight: 600;
 	}
 
-	.lead {
-		margin: 1px 0 8px;
+	summary:hover h2 {
+		color: var(--accent);
+	}
+
+	.count {
 		color: var(--muted);
 		font-size: 13px;
 	}
 
-	/* A thin line, and each question a stop on it. The words do the work. */
-	.chain {
-		margin-left: 4px;
-		border-left: 1px solid var(--strong-line);
+	.lead {
+		grid-column: 1 / -1;
+		margin-top: 2px;
+		color: var(--muted);
+		font-size: 13.5px;
+		line-height: 1.4;
+	}
+
+	/* Its title says enough until someone opens it, and so a whole map fits on one screen. */
+	details:not([open]) .lead {
+		display: none;
+	}
+
+	details[open] > summary {
+		padding-bottom: 6px;
+	}
+
+	details[open] > .chain:last-child {
+		padding-bottom: 14px;
 	}
 
 	.chain + .chain {
-		margin-top: 10px;
+		margin-top: 12px;
 	}
 
 	.stop {
-		position: relative;
 		display: block;
-		padding: 3px 0 3px 16px;
+		padding: 5px 0;
 		color: var(--fg);
-		font-size: 14px;
-		line-height: 1.35;
+		font-size: 15px;
+		line-height: 1.4;
 		text-decoration: none;
-	}
-
-	.stop::before {
-		content: '';
-		position: absolute;
-		top: 9px;
-		left: -4px;
-		width: 7px;
-		height: 7px;
-		box-sizing: border-box;
-		border: 1px solid var(--strong-line);
-		border-radius: 50%;
-		background: var(--bg);
 	}
 
 	.stop:hover .title,
@@ -127,21 +143,16 @@
 		text-decoration: underline;
 	}
 
-	.stop.showing::before,
-	.stop[aria-current='location']::before {
-		border-color: var(--accent);
-		background: var(--accent);
-	}
-
 	.stop.showing .title,
 	.stop[aria-current='location'] .title {
 		color: var(--accent);
+		font-weight: 600;
 	}
 
 	.tag {
 		margin-left: 6px;
 		color: var(--muted);
-		font-size: 11.5px;
+		font-size: 12px;
 	}
 
 	/* Beside the diagram, the diagram says it. Still there for anyone who cannot see that. */
@@ -160,7 +171,7 @@
 		.summary {
 			display: block;
 			color: var(--muted);
-			font-size: 13px;
+			font-size: 13.5px;
 		}
 	}
 </style>

@@ -737,7 +737,8 @@ export const READING: Term = {
 	id: 'reading',
 	name: 'How to read this',
 	words: [],
-	explains: 'Select a part to see what it means, and it lights up on the diagram.'
+	explains:
+		'Each arrow is a message, and its number says when it happens. Its colour says how it travels, and what is still ahead is faint. The chips under a name are what it has seen so far. Next and the arrow keys move through it, and selecting any part says what it means.'
 };
 
 export const terms: Readonly<Record<string, Term>> = Object.fromEntries(

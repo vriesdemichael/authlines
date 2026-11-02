@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectMatchesModel, open, watchForErrors } from './helpers.ts';
+import { expectMatchesModel, onTheMap, open, watchForErrors } from './helpers.ts';
 
 const diagram = (page: Page) => page.getByTestId('diagram');
 const row = (page: Page, id: string) => page.locator(`[data-step="${id}"]`);
@@ -87,7 +87,7 @@ test.describe('seeing it as one party', () => {
 	test('explains a step as usual when it was part of it', async ({ page }) => {
 		await open(page, 'mode=simple&eyes=browser&step=redirect-with-code');
 		await expect(page.getByTestId('unseen')).toHaveCount(0);
-		await expect(page.getByTestId('step-carried')).toBeVisible();
+		await expect(page.getByTestId('step-detail')).toContainText('one-time code');
 	});
 
 	test('moves nothing for a message it was not part of', async ({ page }) => {
@@ -132,7 +132,7 @@ test.describe('in advanced mode', () => {
 
 test.describe('getting there', () => {
 	test('is in the address, and comes back on a reload', async ({ page }) => {
-		await open(page, 'mode=simple');
+		await open(page, 'mode=advanced');
 		await eyes(page).selectOption('browser');
 		await expect(page).toHaveURL(/eyes=browser/);
 		await page.reload();
@@ -163,7 +163,7 @@ test.describe('getting there', () => {
 	});
 
 	test('works from the keyboard, and the arrow keys stay with the list', async ({ page }) => {
-		await open(page, 'mode=simple&step=authorize');
+		await open(page, 'mode=advanced&step=authorize');
 		await eyes(page).focus();
 		await page.keyboard.press('ArrowDown');
 		await expect(eyes(page)).toHaveValue('browser');
@@ -213,7 +213,7 @@ test.describe('the question on the map', () => {
 
 	test('is what pointing at it shows on the home screen', async ({ page }) => {
 		await page.goto('./');
-		await page.getByTestId('node-what-the-browser-sees').hover();
+		await (await onTheMap(page, 'what-the-browser-sees')).hover();
 		await expect(page.getByTestId('living')).toHaveAttribute('data-node', 'what-the-browser-sees');
 		await expect(page.getByTestId('living').locator('.bar').first()).toBeAttached();
 	});

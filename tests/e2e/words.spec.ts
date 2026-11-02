@@ -105,10 +105,10 @@ test.describe('how to read the diagram', () => {
 test.describe('Keycloak', () => {
 	test('is defined where it is first named', async ({ page }) => {
 		await page.goto('./');
-		await expect(page.locator('.lead').first()).toContainText(
+		await expect(page.getByTestId('source-link')).toContainText(
 			'a free identity provider you can run yourself'
 		);
-		await open(page, 'mode=simple');
+		await open(page, 'mode=advanced');
 		await page.getByTestId('server-notes-quick').click();
 		await expect(explanation(page)).toContainText('A free identity provider');
 		await expect(explanation(page)).toContainText('the same on other identity providers');

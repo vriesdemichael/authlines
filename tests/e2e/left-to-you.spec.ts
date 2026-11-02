@@ -8,6 +8,7 @@ const current = (page: Page) => page.locator('[data-step][data-state="current"]'
 test.describe('what is left to you', () => {
 	test('is one list, from any step that says something about it', async ({ page }) => {
 		await open(page, 'mode=simple&oidc=1&step=token-request');
+		await page.getByTestId('step-what-to-do').locator('summary').click();
 		await opener(page).click();
 		await expect(panel(page)).toBeVisible();
 		await expect(panel(page).getByRole('heading', { level: 2 })).toBeFocused();
@@ -46,7 +47,7 @@ test.describe('what is left to you', () => {
 	});
 
 	test('goes with Escape or Close, back to what opened it', async ({ page }) => {
-		await open(page, 'mode=simple&oidc=1&step=token-request');
+		await open(page, 'mode=advanced&oidc=1&step=token-request');
 		await opener(page).click();
 		await page.keyboard.press('Escape');
 		await expect(panel(page)).toHaveCount(0);
@@ -60,7 +61,7 @@ test.describe('what is left to you', () => {
 	});
 
 	test('can be read by keyboard alone', async ({ page }) => {
-		await open(page, 'mode=simple&oidc=1&step=token-request');
+		await open(page, 'mode=advanced&oidc=1&step=token-request');
 		await opener(page).focus();
 		await page.keyboard.press('Enter');
 		await expect(panel(page).getByRole('heading', { level: 2 })).toBeFocused();

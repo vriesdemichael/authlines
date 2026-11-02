@@ -5,14 +5,7 @@
 	import { markTerms } from '#lib/flow/glossary.ts';
 	import type { Lifeline, Step, ViewDiff } from '#lib/flow/model.ts';
 	import { settingDefs, type Reset, type SettingId } from '#lib/flow/settings.ts';
-	import {
-		artifacts,
-		channels,
-		whyOf,
-		type ArtifactId,
-		type Mode,
-		type ShotId
-	} from '#lib/flow/vocabulary.ts';
+	import { channels, whyOf, type Mode, type ShotId } from '#lib/flow/vocabulary.ts';
 	import { DEFAULT_WORDING, nameIn, type Wording } from '#lib/flow/wording.ts';
 	import type { Note } from '#lib/keycloak/notes.ts';
 	import { recordedIndex, type Known } from '#lib/recordings/known.ts';
@@ -45,7 +38,6 @@
 		elsewhere?: Link | null;
 		/** The setting that was just changed, because a change alone does not say why it exists. */
 		changed?: SettingId | null;
-		onexplainartifact?: (id: ArtifactId) => void;
 		/** Someone asked what a word means. */
 		onterm?: (id: string) => void;
 		/** What this step looks like on the wire, ahead of what each part of it is for. */
@@ -91,7 +83,6 @@
 		links = [],
 		elsewhere = null,
 		changed = null,
-		onexplainartifact,
 		onterm,
 		wire,
 		notes = [],
@@ -128,9 +119,6 @@
 	};
 	const labelOf = (id: SettingId) =>
 		simple ? (settingDefs[id].simple?.label ?? settingDefs[id].label) : settingDefs[id].label;
-	const carried = $derived([
-		...new Set(step.fields.flatMap((field) => (field.artifact ? [field.artifact] : [])))
-	]);
 	const places: Record<string, string> = {
 		query: 'query',
 		header: 'header',
@@ -208,7 +196,7 @@
 		{#if partWhy}
 			<p class="part-why" data-testid="part-why"><Worded segments={worded[4]} {onterm} /></p>
 		{/if}
-		<p class="route">
+		<p class="route" class:for-a-screen-reader={simple}>
 			{#if step.kind === 'time'}
 				Nothing is sent
 			{:else if step.from === step.to}
@@ -241,7 +229,7 @@
 			{/if}
 			<p><Worded segments={worded[1]} {onterm} /></p>
 			{@render inTheBrowser?.()}
-			{#if step.inPractice}
+			{#snippet practice()}
 				<p class="practice" data-testid="step-practice">
 					<strong>In practice.</strong>
 					<Worded segments={worded[2]} {onterm} />
@@ -261,8 +249,18 @@
 						</button>
 					{/if}
 				</p>
+			{/snippet}
+			{#if step.inPractice}
+				{#if simple}
+					<details class="pitfall" data-testid="step-what-to-do">
+						<summary>What do I have to do?</summary>
+						{@render practice()}
+					</details>
+				{:else}
+					{@render practice()}
+				{/if}
 			{/if}
-			{#if step.kind !== 'time'}
+			{#if step.kind !== 'time' && !simple}
 				<p class="channel" data-channel={step.channel} data-testid="step-channel">
 					<strong>{channels[step.channel].label}.</strong>
 					{#if step.channel !== previousChannel}
@@ -286,7 +284,7 @@
 					{/if}
 				</p>
 			{/if}
-			{#if step.causes.length}
+			{#if step.causes.length && !simple}
 				<p class="cause">Here because of: {step.causes.map(labelOf).join(', ')}</p>
 			{/if}
 			{#if step.pitfall}
@@ -304,8 +302,8 @@
 					{/if}
 				</details>
 			{/if}
-			{#if step.cites.length}
-				<details class="cites" data-testid="step-cites" open={!simple}>
+			{#if step.cites.length && !simple}
+				<details class="cites" data-testid="step-cites" open>
 					<summary>Which spec says so?</summary>
 					<p>
 						{#each step.cites as ref (`${ref.source}:${ref.section}`)}
@@ -336,24 +334,6 @@
 	</div>
 
 	{@render wire?.()}
-
-	{#if simple && carried.length && !unseenBy}
-		<h3>What it carries</h3>
-		<ul class="carried" data-testid="step-carried">
-			{#each carried as id (id)}
-				<li>
-					<button
-						type="button"
-						class="artifact"
-						data-artifact={id}
-						onclick={() => onexplainartifact?.(id)}
-					>
-						{artifacts[id].label}
-					</button>
-				</li>
-			{/each}
-		</ul>
-	{/if}
 
 	{#if atEnd}
 		{#if onward}
@@ -387,6 +367,16 @@
 </section>
 
 <style>
+	/* The arrow on the diagram says this to anyone who can see it. */
+	.for-a-screen-reader {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
 	.to-list {
 		display: block;
 		margin-top: 4px;
@@ -516,25 +506,6 @@
 
 	.pitfall p {
 		margin: 6px 0 0;
-	}
-
-	.carried {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 6px;
-		margin: 6px 0 0;
-		padding: 0;
-		list-style: none;
-	}
-
-	.artifact {
-		padding: 1px 10px;
-		border-radius: 10px;
-		border-color: var(--chip);
-		background: var(--chip-soft);
-		color: var(--chip);
-		font-size: 12px;
-		font-weight: 600;
 	}
 
 	.show {

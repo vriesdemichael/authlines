@@ -13,6 +13,14 @@ const pathOf = (diagram: DiagramId) => (diagram === 'setup' ? SETUP_PATH : FLOW_
  * Opens a state and waits until the page has hydrated, so input is not lost. Advanced mode, because
  * it shows what most tests look at. Simple mode, the default, has its own spec.
  */
+/** A question on the map, with its part of the map open, as someone would have to open it. */
+export async function onTheMap(page: Page, id: string) {
+	const node = page.getByTestId(`node-${id}`);
+	const part = page.locator('.track details', { has: node });
+	if ((await part.getAttribute('open')) === null) await part.locator('summary').click();
+	return node;
+}
+
 export async function open(page: Page, search = '', diagram: DiagramId = 'flow') {
 	const query = search.includes('mode=') ? search : `mode=advanced${search ? `&${search}` : ''}`;
 	await page.goto(`${pathOf(diagram)}?${query}`);

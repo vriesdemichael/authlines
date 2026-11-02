@@ -1,4 +1,3 @@
-import { mapTracks } from '#lib/map/tracks.ts';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { authorizationCodeBase as base } from '../../src/lib/flow/index.ts';
@@ -29,8 +28,8 @@ test.describe('by keyboard alone', () => {
 	test('the whole flow can be walked, from the map to the last step', async ({ page }) => {
 		const { steps } = evaluate(base.diagrams.flow, defaultSettings);
 		await page.goto('./');
-		// Past search and the links that jump to each part of the map, to the first question.
-		for (let i = 0; i < mapTracks.length + 2; i++) await page.keyboard.press('Tab');
+		// Past search and the heading of the part that is open, to the first question.
+		for (let i = 0; i < 3; i++) await page.keyboard.press('Tab');
 		await page.keyboard.press('Enter');
 		await ready(page);
 

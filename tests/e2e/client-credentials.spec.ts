@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { onTheMap } from './helpers.ts';
 
 const PATH = 'client-credentials/';
 
@@ -61,14 +62,10 @@ test.describe('a flow with no user', () => {
 	});
 
 	test('says why the rest is not here', async ({ page }) => {
-		await openIt(page);
+		await openIt(page, 'mode=advanced');
 		const list = page.getByTestId('not-here');
-		await expect(list.locator('[data-not-here="oidc"]')).toContainText('Know who logged in');
 		await expect(list.locator('[data-not-here="oidc"]')).toContainText('nobody does');
 		await expect(list.locator('[data-not-here="pkce"]')).toContainText('no code to protect');
-		await expect(list.locator('[data-not-here="logout"]')).toHaveCount(0);
-
-		await openIt(page, 'mode=advanced');
 		await expect(list.locator('[data-not-here="logout"]')).toContainText('no login to end');
 		await expect(list.locator('[data-not-here="clientType"]')).toContainText('prove who it is');
 	});
@@ -134,7 +131,7 @@ test.describe('picking another flow', () => {
 	});
 
 	test('can be gone back on with the browser', async ({ page }) => {
-		await page.goto('authorization-code/');
+		await page.goto('authorization-code/?mode=advanced');
 		await page.locator('.workspace[data-ready="true"]').waitFor();
 		await flow(page).selectOption('client-credentials');
 		await expect(page).toHaveURL(/client-credentials\//);
@@ -145,7 +142,7 @@ test.describe('picking another flow', () => {
 	});
 
 	test('does not move the old diagram into the new one', async ({ page }) => {
-		await page.goto('authorization-code/');
+		await page.goto('authorization-code/?mode=advanced');
 		await page.locator('.workspace[data-ready="true"]').waitFor();
 		await flow(page).selectOption('client-credentials');
 		await expect(page).toHaveURL(/client-credentials\//);
@@ -157,7 +154,7 @@ test.describe('from the map', () => {
 	test('a question opens it', async ({ page }) => {
 		await page.goto('./');
 		await page.locator('main[data-ready="true"]').waitFor();
-		await page.getByTestId('node-no-user').click();
+		await (await onTheMap(page, 'no-user')).click();
 		await expect(page).toHaveURL(/client-credentials\/no-user/);
 		await page.locator('.workspace[data-ready="true"]').waitFor();
 		await expect(page.getByTestId('answer')).toContainText('its own secret');
