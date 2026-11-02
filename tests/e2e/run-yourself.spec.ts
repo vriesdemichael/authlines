@@ -15,6 +15,15 @@ test.describe('running it yourself', () => {
 		check();
 	});
 
+	test('is one click from the home screen, where it says you can', async ({ page }) => {
+		await page.goto('./');
+		await page
+			.getByTestId('source-link')
+			.getByRole('link', { name: 'you can run yourself' })
+			.click();
+		await expect(page.getByRole('heading', { level: 1 })).toHaveText('Run it yourself');
+	});
+
 	test('fits the settings someone came from', async ({ page }) => {
 		await page.goto('run-it-yourself/');
 		await expect(page.getByTestId('fits-settings')).toContainText('an app with a secret');

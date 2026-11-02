@@ -2,7 +2,7 @@
 
 **Flip one thing. Watch the login change.**
 
-An interactive explainer of OAuth and OpenID Connect, on one diagram recorded from a real Keycloak. It is for anyone who has to add a login, fix one or explain one: pick a question and follow it, one message at a time.
+An interactive explainer of OAuth and OpenID Connect: one diagram you can change, with its messages recorded from a real login server, Keycloak. It is for anyone who has to add a login, fix one or explain one, and it starts from the basics. Pick a question and follow it, one message at a time.
 
 **[Open Authlines](https://vriesdemichael.github.io/authlines/)**
 
@@ -13,31 +13,33 @@ An interactive explainer of OAuth and OpenID Connect, on one diagram recorded fr
   <img src="docs/readme/flip-light.png" width="100%" alt="A sequence diagram of a login with an attacker on it. With an app that has no secret, the attacker copied the one-time code and is given tokens for it. The switch 'Protect against a stolen code' turns on: the same diagram changes, and the attacker's same request is now refused.">
 </picture>
 
-With an app that has no secret, someone who copied the one-time code gets the tokens. Turn on one setting, and the same request is refused. Both answers are what a real server said.
+With an app that has no secret, someone who copied the one-time code gets the tokens. Turn on "Protect against a stolen code", which is PKCE, and the same request is refused. Both answers are what a real server said. [Try it](https://vriesdemichael.github.io/authlines/authorization-code/?mode=simple&attacker=1&client=public&step=attacker-token-response).
 
 ## What it does
 
-- **Starts from your question.** The home screen lists questions, such as what to do when you have to add a login. Search takes the words you have, and a pasted error goes to the step where a real server said it.
-- **One diagram, many settings.** Protection against a stolen code, an attacker or another provider changes the same diagram, instead of opening another page.
-- **Who has seen what.** Under each party is what it has seen so far, so you can see that with an app on a server, the browser saw the code and never the tokens.
-- **The setup, and what is left to you.** How the app and the identity provider get to know each other has a diagram of its own, and one list says what has to be done, grouped by whose job it is.
+- **Starts from your question.** The home screen lists questions, with "Start here" for someone new. Search takes your own words, and a pasted Keycloak error goes to the step where it happens.
+- **One diagram, many settings.** It covers the authorization code, device and client credentials flows. Turn on PKCE, show an attacker or add another provider, and the diagram you are looking at changes, instead of another page opening.
+- **Who has seen what.** Under each party on the diagram is what it has seen so far, so you can see that the browser saw the code and never the tokens, as long as the app runs on a server.
+- **What you have to do.** How the app and the login server get to know each other has a diagram of its own, and one list gathers what has to be done and what can go wrong.
 - **As much detail as you want.** Simple mode says what happens and why. Advanced mode adds the raw requests and answers and, where there is one, which spec says so and the Keycloak setting behind it.
-- **A server you can run yourself.** [A page on the site](https://vriesdemichael.github.io/authlines/run-it-yourself/) gets the same server running at home with Docker, for a real login and real tokens.
+- **Made to be shown.** The address holds the flow, settings and step, so a link opens exactly what you are looking at. Advanced mode can show every row at once, or the raw traffic large, for a room.
+- **A server you can run yourself.** [A page on the site](https://vriesdemichael.github.io/authlines/run-it-yourself/) gives the commands to run Keycloak at home with Docker, for a real login and real tokens with the settings you came from.
 
 ## What this is not
 
-- **A library.** It shows how a login works and what is left to you, and it will not add one for you.
+- **A library.** It shows how a login works and what you have to do, and it will not add one for you.
 - **A debugger for your own server.** Nothing here talks to your server, or to any other: it replays what was recorded.
-- **A comparison of vendors.** The protocol is explained neutrally, and what is Keycloak's own is a layer on top ([ADR-015](docs/adr/015-keycloak-is-an-overlay-on-a-neutral-protocol.md)). It is recorded from Keycloak because anyone can run that, and someone on another identity provider still gets the protocol.
-- **A tour of Keycloak's features.** A feature gets in when it teaches a concept or answers a question people bring.
-- **An article.** There is no reading order. You pick a question, change settings and step through it.
-- **Made for phones, yet.** Desktop comes first ([ADR-008](docs/adr/008-desktop-first-without-ruling-out-phones.md)).
+- **A comparison of vendors.** The protocol is explained neutrally, and what is Keycloak's own is a layer on top ([why](docs/adr/015-keycloak-is-an-overlay-on-a-neutral-protocol.md)). It is recorded from Keycloak because anyone can run that, and the rest applies to other login servers too.
+- **An article.** You operate it: pick a question, change settings and step through it.
+- **Ready for phones.** Desktop comes first ([why](docs/adr/008-desktop-first-without-ruling-out-phones.md)).
 
 Something wrong, or a question missing? [Say what is wrong](https://github.com/vriesdemichael/authlines/issues/new?template=something-is-wrong.yml) or [suggest a question](https://github.com/vriesdemichael/authlines/issues/new?template=suggest-a-question.yml).
 
-## The recordings
+## How far to trust it
 
-The requests and answers in advanced mode come from recorded runs against a real Keycloak and a small demo app and API, and none is written by hand. One that is not from the server says so, as does a step only the spec describes, and settings with no recording show no payload ([ADR-005](docs/adr/005-payloads-are-recorded-never-invented.md)).
+**What a server said is recorded.** The requests and answers in advanced mode come from recorded runs against a real Keycloak and a small demo app and API, and nobody wrote them. A message from the demo app or API says so, as does a step only the spec describes, and settings with no recording show no payload ([the rule](docs/adr/005-payloads-are-recorded-never-invented.md)).
+
+**The words are written.** An AI agent, Claude, writes the explanations, the words on the diagram and the code here. The maintainer decides what it should be and judges it once it is live ([how](docs/adr/001-an-agent-builds-and-the-maintainer-reviews.md)). A step that names a spec cites it, and [a test](src/lib/flow/citations.test.ts) checks that each cited RFC section contains a phrase chosen from it, not that the sentence is right. So check what you will rely on against the specs it links to.
 
 ### Where the recordings are
 
@@ -49,15 +51,13 @@ In [`static/recordings/`](static/recordings/), with a folder for each flow and a
 
 ### How the recordings are checked
 
-- **On every change,** [tests](src/lib/recordings/recordings.test.ts) compare the diagram's data with the recordings: both ways on the authorization code flow, with listed exceptions, and from drawing to recording on the other flows. A browser then compares advanced mode with the files, at every step of the authorization code flow's recorded settings, and spot-checks the other flows.
-- **Every week,** [a workflow](.github/workflows/recordings.yml) records against the latest Keycloak, compares that with what is committed, and opens an issue if it differs. Codes and tokens change on every run, so it compares which steps happened and what they carried. It also runs the commands from the page on running it yourself, on the version recorded.
-- **By you.** In advanced mode, a recorded request can be copied as a command.
+- **On every change,** [tests](src/lib/recordings/recordings.test.ts) compare what the diagram draws with the recordings. On the authorization code flow they also check the other way, that a recording holds nothing the diagram leaves out, apart from a listed few. A browser then compares advanced mode with the files, at every step of that flow's recorded settings, and spot-checks the other flows.
+- **Every week,** [a workflow](.github/workflows/recordings.yml) records against the latest Keycloak, compares that with what is committed, and opens an issue if it differs. Codes and tokens change on every run, so it compares which steps happened and what they carried. The same workflow runs the commands on the run-it-yourself page, on the version recorded.
+- **By you.** With Keycloak running from [that page](https://vriesdemichael.github.io/authlines/run-it-yourself/), you can do a real login yourself. In advanced mode, a recorded request can be copied as a command, to try on that server with a code of your own.
 
-The words on the diagram and the explanations are written by hand. A step that names a spec cites it, and [a test](src/lib/flow/citations.test.ts) checks that each cited RFC section contains a phrase chosen from it.
+## Run the site locally
 
-## Run it locally
-
-You only need this to work on it, because [the site](https://vriesdemichael.github.io/authlines/) is hosted. You need the Node version in [`.node-version`](.node-version), and pnpm at the version in `package.json`. If you have no pnpm, `corepack enable pnpm` gets it, and if you do, that replaces it.
+You only need this to work on it, because [the site](https://vriesdemichael.github.io/authlines/) is hosted. You need the Node version in [`.node-version`](.node-version), and pnpm at the version in `package.json`. `corepack enable pnpm` gets pnpm if you have none. It replaces one you already have, so skip it if you do.
 
 ```bash
 git clone --depth 1 https://github.com/vriesdemichael/authlines.git
@@ -81,8 +81,6 @@ pnpm record
 That writes every recording again, on the version of Keycloak pinned in [`scripts/record/index.ts`](scripts/record/index.ts). `pnpm record --check` writes nothing and says what no longer holds, and `--keycloak` takes another version.
 
 ## Working on it
-
-An AI agent, Claude, writes the code and the words here. The maintainer decides what it should be and judges what is deployed ([ADR-001](docs/adr/001-an-agent-builds-and-the-maintainer-reviews.md)), and what it says about the protocol is held to [the recordings](#the-recordings).
 
 The site and [its Storybook](https://vriesdemichael.github.io/authlines/storybook/) update on every merge to `main`, and a pull request from a branch here gets a preview of both.
 

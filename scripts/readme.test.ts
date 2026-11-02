@@ -24,6 +24,13 @@ describe('the README', () => {
 		expect(README).toContain(`[Open Authlines](${SITE_URL}/)`);
 	});
 
+	it('says where to try what the picture shows', () => {
+		const filmed = readFileSync('scripts/readme-clip.ts', 'utf8').match(
+			/const STATE =\s*'([^']+)'/
+		);
+		expect(README).toContain(`[Try it](${SITE_URL}/${filmed?.[1]})`);
+	});
+
 	it('only names commands that are there', () => {
 		// As a command, in a code block or in quotes, and not a sentence with the word in it.
 		const named = [...README.matchAll(/(?:^|`)pnpm ([a-z][\w:-]*)/gm)].map((match) => match[1]);
