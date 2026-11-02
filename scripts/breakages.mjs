@@ -55,6 +55,18 @@ export const breakages = [
 		to: '`${kind}:${title}:${query}`;'
 	},
 	{
+		name: 'expert: state on a logout is explained as if it were a login',
+		file: AC,
+		from: "concept: 'As far as the user can tell, that is the end of it.',\n\t\t\tfields: [\n\t\t\t\t{\n\t\t\t\t\tname: 'state',\n\t\t\t\t\tplace: 'query',\n\t\t\t\t\tnote: 'The app’s own value, which comes back with the user so it can pick up where it left off'\n\t\t\t\t}\n\t\t\t]",
+		to: "concept: 'As far as the user can tell, that is the end of it.',\n\t\t\tfields: [{ name: 'state', place: 'query' }]"
+	},
+	{
+		name: 'library: Auth.js is said to check a nonce it does not',
+		file: AC,
+		from: "example('authjs', false, 'keeps and checks a nonce only once you add it to its checks'),",
+		to: "example('authjs', true, 'keeps the nonce and checks it'),"
+	},
+	{
 		name: 'words: asking for more detail changes the names',
 		file: 'src/lib/flow/wording.ts',
 		from: "export const DEFAULT_WORDING: Wording = 'plain';",

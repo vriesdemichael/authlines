@@ -70,6 +70,8 @@ const CITED: readonly [step: string, SourceId, section: string, phrase: string][
 	['service-token-response', 'rfc6749', '4.4.3', 'refresh token SHOULD NOT be included'],
 	['token-request', 'rfc10017', '6.3.3.1', 'should not be treated as confidential secrets'],
 	['token-response', 'rfc10017', '8.5', 'none of these options can fully mitigate'],
+	['token-response', 'rfc10017', '5.1.3', 'still be able to request a new set of tokens'],
+	['token-response', 'rfc10017', '6.1.4.1', 'nothing will be able to prevent such attacks'],
 	['token-response', 'rfc10017', '6.1.4.3', 'strongly recommended for business applications'],
 	['device-request', 'rfc8628', '3.1', 'only commence a device authorization request'],
 	['device-response', 'rfc8628', '3.2', 'clients MUST use 5 as the default'],

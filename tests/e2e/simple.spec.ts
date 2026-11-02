@@ -169,7 +169,7 @@ test.describe('why it matters', () => {
 		const pitfall = page.getByTestId('step-pitfall');
 		await expect(pitfall).toContainText('What if the address does not match?');
 		await pitfall.locator('summary').click();
-		await expect(pitfall).toContainText('must not send the browser anywhere');
+		await expect(pitfall).toContainText('must not send the browser to that address');
 	});
 
 	test('setup says what each side has to learn', async ({ page }) => {

@@ -63,14 +63,14 @@ export const knownErrors: readonly KnownError[] = [
 	{
 		text: 'invalid_grant',
 		means:
-			'The code cannot be used this way: it has been used, or its verifier is wrong or missing.',
+			'The code or refresh token will not do. It may have expired, been used, or been issued to another client or address, or the verifier may be wrong or missing.',
 		step: 'real-app-refused',
 		settings: stolenFromPublicWithPkce
 	},
 	{
 		text: 'Code not valid',
 		means:
-			'A code works once, and this one has been used already. It is shown here on someone else’s stolen code, because that is where a real server said it.',
+			'A code works once, so this one has usually been used already. It is shown here on someone else’s stolen code, because that is where a real server said it.',
 		step: 'real-app-refused',
 		settings: stolenFromPublicWithPkce
 	},
@@ -176,7 +176,7 @@ export const knownErrors: readonly KnownError[] = [
 	{
 		text: 'unauthorized_client',
 		means:
-			'This client is not allowed to do this. With no user, that usually means it was not set up to act for itself.',
+			'This client is not allowed to do this, or on this server, it did not prove who it is. With no user, it may not be set up to act for itself, or the secret is wrong or missing. The description says which.',
 		step: 'service-token-request',
 		settings: {},
 		flow: 'client-credentials'
@@ -218,7 +218,7 @@ export const knownErrors: readonly KnownError[] = [
 	},
 	{
 		text: 'access_denied',
-		means: 'The user said no when asked.',
+		means: 'Usually the user said no when asked. The spec lets the server refuse this way too.',
 		step: 'consent-page',
 		settings: { consent: true }
 	},

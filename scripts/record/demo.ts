@@ -701,11 +701,8 @@ export class Demo {
 		const api = createServer(async (request, response) => {
 			// With nothing to be wrong, there is no error to name (RFC 6750 section 3.1).
 			if (!request.headers.authorization) {
-				response.writeHead(401, {
-					'content-type': 'application/json',
-					'www-authenticate': 'Bearer'
-				});
-				response.end(JSON.stringify({ error: 'no token' }));
+				response.writeHead(401, { 'www-authenticate': 'Bearer' });
+				response.end();
 				return;
 			}
 			// One API that does not go by the token alone, and asks the server about it.

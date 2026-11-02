@@ -257,3 +257,12 @@ Asked of Keycloak 26.8.1 on 2026-11-02, against RFC 8628 (August 2019). The answ
 - **A used device code and one never given out get the same answer,** `invalid_grant` with `Device code not valid`. Another client gets `invalid_grant` with `unauthorized client`.
 
 What was not tried on this flow: DPoP, a refresh, and whether a server limits tries at the user code, which section 5.1 recommends.
+
+## Two things a sceptical reader raised
+
+Asked of Keycloak 26.8.1 on 2026-11-02.
+
+- **Where discovery is.** RFC 8414 section 3.1 puts `/.well-known/oauth-authorization-server` ahead of the issuer's path. This server answers there with a 200, and also after the realm, which is where the recordings asked. For `openid-configuration` only the address after the realm answers, with a 404 ahead of it, which is what OpenID Connect Discovery says.
+- **What using a refresh token twice ends.** With Revoke Refresh Token on, the old one gets `Maximum allowed refresh token reuse exceeded` and the newest then gets `Session doesn't have required client`. A new login in the same browser asks for no password: it goes straight back to the app with a code, and that code gets tokens. So this ends the app's session, and not the user's at the identity provider. The site used to say it ended the login, and that the user had to go through it again.
+
+The second is not in a recording or in `questions.json`, so nothing checks it again by itself.

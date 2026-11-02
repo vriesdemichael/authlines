@@ -103,7 +103,7 @@ const parameterWhy: Readonly<Record<string, string>> = {
 	client_id: 'Says which app this is, as registered in setup.',
 	redirect_uri: 'Has to be the address the code was sent to.',
 	state:
-		"A random value the app checks when the user comes back, so nobody can slip an answer into this user's login. It does not stop someone starting a login in their own browser and handing the app a stolen code, which takes PKCE.",
+		"A random value the app checks when the user comes back, so nobody can slip an answer into this user's login. It does not stop someone starting a login in their own browser and handing the app a stolen code, which takes PKCE or a nonce.",
 	'scope=openid': 'Asks for OpenID Connect on top of OAuth.',
 	scope: 'What the access covers, which is not always what was asked for.',
 	nonce:
@@ -124,7 +124,8 @@ const parameterWhy: Readonly<Record<string, string>> = {
 	'username and password': 'Only whoever does the login sees these.',
 	password: 'Only whoever does the login sees this.',
 	'Authorization: Bearer': 'The access token. Holding it is enough.',
-	'Authorization: DPoP': 'The access token, which only works together with the proof.',
+	'Authorization: DPoP':
+		'The access token, which an API that checks the proof only takes along with it.',
 	'DPoP-Nonce': 'The value to put in the next proof.',
 	'error=use_dpop_nonce': 'Says the proof has to include a nonce from the server.',
 	issued_token_type: 'Says what kind of token this is.',
