@@ -147,7 +147,7 @@
 {/if}
 {#each offered as id (id)}
 	{@const def = defOf(id)}
-	<section data-setting={id} class:beside-the-switch={simple} aria-describedby={`about-${id}`}>
+	<section data-setting={id} class="beside-the-switch" aria-describedby={`about-${id}`}>
 		{#if def.kind === 'toggle'}
 			{@const blocked = blockedBy(id, true)}
 			<label
@@ -223,7 +223,7 @@
 					aria-label={`Why ${simple ? (def.simple?.label ?? def.label) : def.label}?`}
 					onclick={() => onexplain?.(id)}
 				>
-					{simple ? '?' : 'Why?'}
+					?
 				</button>
 			</li>
 		</ul>
@@ -296,7 +296,7 @@
 <p class="said" role="status" data-testid="preview-said">{previewed?.says ?? ''}</p>
 
 <style>
-	/* A row for each "Why?" is five more things to read, so in simple mode it is a mark beside the switch. */
+	/* A row for each "Why?" is more to read and takes the room from the settings, so it is a mark beside each. */
 	.beside-the-switch {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto;

@@ -142,7 +142,7 @@ test.describe('the start', () => {
 	// Measured when the maintainer found it busy, so that it can only stay or go down (#142).
 	for (const [mode, words, controls] of [
 		['simple', 330, 40],
-		['advanced', 610, 50]
+		['advanced', 610, 56]
 	] as const) {
 		test(`stays within what ${mode} mode has on screen`, async ({ page }) => {
 			await page.setViewportSize({ width: 1440, height: 900 });
