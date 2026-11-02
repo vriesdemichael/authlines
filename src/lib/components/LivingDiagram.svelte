@@ -14,9 +14,12 @@
 		href: string;
 		/** The first thing someone sees: one switch, between the old way and what came after it. */
 		flip?: { on: boolean; onflip: (on: boolean) => void } | null;
+		/** Back to the first thing someone sees, from a question. */
+		startHref?: string;
+		onstart?: () => void;
 	}
 
-	let { node, step = null, href, flip = null }: Props = $props();
+	let { node, step = null, href, flip = null, startHref, onstart }: Props = $props();
 
 	const SAYS_WHAT_CHANGED_MS = 2600;
 	let width = $state(0);
@@ -93,6 +96,12 @@
 			<p data-testid="living-answer">{node.answer}</p>
 			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the page resolves it -->
 			<a {href} data-testid="living-open">Open this question</a>
+			{#if startHref}
+				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the page resolves it -->
+				<a class="start" href={startHref} data-testid="living-start" onclick={onstart}>
+					Back to the start
+				</a>
+			{/if}
 		{/if}
 	</div>
 </section>
@@ -123,6 +132,11 @@
 
 	p {
 		margin: 2px 0 6px;
+		color: var(--muted);
+	}
+
+	.start {
+		margin-left: 16px;
 		color: var(--muted);
 	}
 

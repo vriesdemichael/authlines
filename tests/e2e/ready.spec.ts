@@ -29,8 +29,8 @@ test.describe('by keyboard alone', () => {
 		// The first question on the map is the old way.
 		const { steps } = evaluate(base.diagrams.flow, { ...defaultSettings, oldWay: true });
 		await page.goto('./');
-		// Past search and the heading of the part that is open, to the first question.
-		for (let i = 0; i < 3; i++) await page.keyboard.press('Tab');
+		// Past the name, search and the heading of the part that is open, to the first question.
+		for (let i = 0; i < 4; i++) await page.keyboard.press('Tab');
 		await page.keyboard.press('Enter');
 		await ready(page);
 

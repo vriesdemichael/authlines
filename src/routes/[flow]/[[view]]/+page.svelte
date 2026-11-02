@@ -175,6 +175,7 @@
 			? `${resolve('/run-it-yourself')}/?${presetSearch(base, appState.settings)}`
 			: null}
 		homeHref={resolve('/') + ((question ?? here) ? `?at=${(question ?? here)?.id}` : '')}
+		startHref={resolve('/')}
 		{hrefFor}
 		{loadText}
 		{loadRecording}

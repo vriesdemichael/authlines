@@ -53,6 +53,8 @@ test.describe('the map', () => {
 	test('works from the keyboard', async ({ page }) => {
 		await page.goto('./');
 		await page.keyboard.press('Tab');
+		await expect(page.getByTestId('home-start')).toBeFocused();
+		await page.keyboard.press('Tab');
 		await expect(page.getByTestId('open-search')).toBeFocused();
 		await page.keyboard.press('Tab');
 		await expect(page.locator('.track summary').first()).toBeFocused();

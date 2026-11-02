@@ -216,7 +216,7 @@ Three things follow:
 - People can also search with the words they have, from anywhere, including a pasted error that goes to the step where a real server said it. Where nothing has all of what was typed, it says so and offers the closest. It loads on first use, and nothing leaves the browser.
 - Planned nodes do not show. Everything on the map opens, because a greyed-out node says nothing a visitor can use.
 - Beside the map is one living diagram. Resting the mouse on a question moves it to that question's state with the real transition, shown whole so that it fits. It used to move once by itself after the page opened, and now it waits for the switch (section 5.5). Crossing a question on the way to the diagram does nothing, and nothing changes while the mouse is on the diagram ([#126](https://github.com/vriesdemichael/authlines/issues/126)). So the home screen shows the idea within seconds, and each question no longer needs a small drawing of its own, which made 40 things look alike ([#64](https://github.com/vriesdemichael/authlines/issues/64)).
-- The way back to the map stays one click away, and the node matching the current state is marked.
+- The way back to the map stays one click away, and the node matching the current state is marked. The name at the top goes to the first screen, and so does a link under any question beside the map, because a person could otherwise only see it again in a new private window.
 - Errors someone meets early have a part of the map of their own, "When something goes wrong", said as they are on someone's screen, and they open in simple mode ([#124](https://github.com/vriesdemichael/authlines/issues/124)).
 - A state reached by flipping settings by hand still has a URL, with or without a node.
 

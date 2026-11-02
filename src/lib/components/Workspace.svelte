@@ -110,6 +110,8 @@
 		/** Where to run the same server at home, with these settings. */
 		runHref?: string | null;
 		homeHref: string;
+		/** The first screen, for someone who wants to start again and not go to where they were. */
+		startHref?: string;
 		hrefFor: (state: AppState) => string;
 		loadText: (file: string) => Promise<string>;
 		loadRecording: (preset: string) => Promise<Recording>;
@@ -134,6 +136,7 @@
 		onward = null,
 		runHref = null,
 		homeHref,
+		startHref = homeHref,
 		hrefFor,
 		loadText,
 		loadRecording,
@@ -639,12 +642,15 @@
 		<button type="button" class="skip" data-testid="skip-to-controls" onclick={focusControls}>
 			Skip to the step controls
 		</button>
-		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the route resolves it -->
-		<a class="brand" href={homeHref}>
-			<Mark />
-			<span class="name">{SITE_NAME}</span>
-			<span>Map</span>
-		</a>
+		<span class="brands">
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the route resolves it -->
+			<a class="brand" href={startHref} data-testid="to-the-start">
+				<Mark />
+				<span class="name">{SITE_NAME}</span>
+			</a>
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the route resolves it -->
+			<a class="brand" href={homeHref}>Map</a>
+		</span>
 		<span class="slash" aria-hidden="true">/</span>
 		<h1 data-testid="title" title={question ?? flow.title}>{question ?? flow.title}</h1>
 		{#if leftQuestion}
@@ -1075,6 +1081,13 @@
 		gap: 10px;
 		padding: 10px 16px;
 		border-bottom: 1px solid var(--line);
+	}
+
+	.brands {
+		display: inline-flex;
+		flex: none;
+		align-items: baseline;
+		gap: 6px;
 	}
 
 	.brand {

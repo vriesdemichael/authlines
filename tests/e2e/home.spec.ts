@@ -54,6 +54,51 @@ test.describe('the way in', () => {
 		await page.locator('.workspace[data-ready="true"]').waitFor();
 	});
 
+	// The maintainer could only see this screen again in a new private window.
+	test('can be got back to from a question, by the link under it', async ({ page }) => {
+		await page.setViewportSize({ width: 1400, height: 900 });
+		await page.goto('./?at=pkce');
+		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
+		await page.getByTestId('living-start').click();
+		await expect(living(page)).toHaveAttribute('data-node', 'the-old-way');
+		await expect(page.getByTestId('way-in-switch')).not.toBeChecked();
+		await expect(page).not.toHaveURL(/at=/);
+		await expect(page.getByTestId('node-the-old-way')).toBeVisible();
+	});
+
+	test('can be got back to by the name at the top, after pointing at something', async ({
+		page
+	}) => {
+		await openHome(page);
+		await (await onTheMap(page, 'pkce')).hover();
+		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
+		await page.getByTestId('home-start').click();
+		await expect(living(page)).toHaveAttribute('data-node', 'the-old-way');
+	});
+
+	test('can be got back to from the application screen', async ({ page }) => {
+		await page.setViewportSize({ width: 1400, height: 900 });
+		await page.goto('authorization-code/pkce/');
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		await page.getByTestId('to-the-start').click();
+		await expect(living(page)).toHaveAttribute('data-node', 'the-old-way');
+		await expect(page).not.toHaveURL(/at=/);
+	});
+
+	test('Map still goes to where someone was, and Back to the start undoes that', async ({
+		page
+	}) => {
+		await page.setViewportSize({ width: 1400, height: 900 });
+		await page.goto('authorization-code/pkce/');
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		await page.getByRole('link', { name: 'Map', exact: true }).click();
+		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
+		await page.getByTestId('living-start').click();
+		await expect(living(page)).toHaveAttribute('data-node', 'the-old-way');
+		await page.goBack();
+		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
+	});
+
 	test('moves when someone flips it, and not by itself', async ({ page }) => {
 		await page.emulateMedia({ reducedMotion: 'no-preference' });
 		await openHome(page);
