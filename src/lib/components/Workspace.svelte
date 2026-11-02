@@ -257,6 +257,13 @@
 	});
 
 	const fresh = $derived(last.diff ? freshIds(last.diff) : new Set<string>());
+	// What a flip changed, to bring into view. New steps if there are any, because a message reworded
+	// further up is not what someone is looking for, and only a flip, because a hover moves nothing.
+	const flipped = $derived.by(() => {
+		if (preview || !last.setting || !last.diff) return null;
+		const { addedSteps } = last.diff;
+		return new Set(addedSteps.length ? addedSteps : [...fresh].map((id) => id.split(':')[0]));
+	});
 
 	const otherDiagram = $derived<DiagramId>(appState.diagram === 'flow' ? 'setup' : 'flow');
 	// Going to look at the other diagram and coming back should not lose your place.
@@ -320,19 +327,6 @@
 		flipping = result.state.settings;
 		sending = null;
 		onnavigate(result.state, 'push');
-	}
-
-	// What was added can be further up than fits on screen with the current step.
-	function showAdded() {
-		const first = last.diff?.addedSteps[0];
-		if (!first) return;
-		const row = window.document.querySelector(`[data-step="${CSS.escape(first)}"]`);
-		const scroller = row?.closest('.scroller');
-		if (!row || !scroller) return;
-		// Measured, because Firefox scrolls to the top when asked to bring something in an SVG into view.
-		const box = row.getBoundingClientRect();
-		const view = scroller.getBoundingClientRect();
-		scroller.scrollTop += box.top + box.height / 2 - (view.top + view.height / 2);
 	}
 
 	function go(next: AppState | null) {
@@ -802,6 +796,7 @@
 					{layout}
 					{animate}
 					fresh={preview?.fresh ?? fresh}
+					{flipped}
 					preview={preview?.marks ?? null}
 					quick={previewedLast}
 					{holdings}
@@ -896,7 +891,6 @@
 			{links}
 			{elsewhere}
 			changed={last.setting}
-			onshowadded={showAdded}
 			onterm={explainTerm}
 			{notes}
 			serverNamed={appState.serverNotes}
