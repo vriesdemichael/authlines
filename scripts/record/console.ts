@@ -11,6 +11,7 @@ import {
 	LOCAL_REALM,
 	UPSTREAM_REALM
 } from './keycloak.ts';
+import { COMPANIES_REALM } from './companies.ts';
 
 const LOOK_FOR_MS = 8000;
 
@@ -41,7 +42,12 @@ export async function lookInConsole(
 		'GET',
 		`/realms/${DIRECTORY_REALM}/components?type=org.keycloak.storage.UserStorageProvider`
 	);
+	const [acme] = await admin.call<{ id: string }[]>(
+		'GET',
+		`/realms/${COMPANIES_REALM}/organizations?search=Acme&exact=true`
+	);
 	const pages: Record<ConsolePage, string> = {
+		'organization-domains': `${root}/${COMPANIES_REALM}/organizations/${acme?.id}/domains`,
 		'client-settings': `${onClient}/settings`,
 		'client-advanced': `${onClient}/advanced`,
 		'client-scopes': `${onClient}/clientScopes`,

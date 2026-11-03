@@ -417,7 +417,11 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 				'This is where each new customer starts, and the app does not change. If the app keeps customers apart, the token can say which one someone is from.',
 			when: companies,
 			fields: [
-				{ name: 'domain', place: 'setting', note: 'The part after the @' },
+				{
+					name: 'domain',
+					place: 'setting',
+					note: 'The part after the @: acme.test is only that, and *.acme.test its subdomains too'
+				},
 				{ name: 'identity provider', place: 'setting', note: 'Where that domain goes' },
 				{
 					name: 'redirect when email matches',

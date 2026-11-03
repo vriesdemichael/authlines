@@ -34,6 +34,7 @@ import {
 	PERSON_AT,
 	SAML_CUSTOMER,
 	forgetCustomersPeople,
+	questionsWithCompanies,
 	setUpCompanies
 } from './companies.ts';
 import {
@@ -943,6 +944,11 @@ async function recordOnlyPresets(ids: readonly string[]) {
 		if (wanted.some(({ settings }) => settings.appRuns === 'bff')) {
 			addToQuestions(recordedAt, await whatAScriptCan(browser, demo, admin));
 		}
+		if (wanted.some(({ settings }) => settings.companies)) {
+			const domainNotes = noteDefs.filter(({ place }) => place?.page === 'organization-domains');
+			const looked = await lookInConsole(browser, admin, [], domainNotes);
+			addToQuestions(recordedAt, await questionsWithCompanies(admin), looked);
+		}
 		const flow = { presets: presets.map(({ id }) => id), steps: [...steps].sort() };
 		const flows = { ...index.flows, [base.id]: flow };
 		writeFileSync(INDEX, `${JSON.stringify({ ...index, recordedOn, flows }, null, '\t')}\n`);
@@ -1047,6 +1053,7 @@ async function main() {
 			if (!features.length) {
 				Object.assign(answers, await questionsWithADirectory(admin));
 				Object.assign(answers, await whatAScriptCan(browser, demo, admin));
+				Object.assign(answers, await questionsWithCompanies(admin));
 			}
 			if (!features.length) {
 				const info = await admin.call<{ features: ServerFeature[] }>('GET', '/serverinfo');

@@ -487,6 +487,29 @@ describe('a customer with a provider of their own', () => {
 		}
 	});
 
+	const { answers } = JSON.parse(readFileSync(`${FOLDER}/questions.json`, 'utf8'));
+
+	it('says what a real server did with someone who has a password of ours', () => {
+		const { passwordHere } = answers;
+		expect(passwordHere).toMatchObject({ goesTo: null, asksForPassword: true, loggedIn: true });
+		expect(passwordHere.buttons).toEqual(['acme', 'globex']);
+		expect(passwordHere.organization).toBeUndefined();
+		const step = stepsOf(read('companies')).find(({ id }) => id === 'find-company');
+		expect(step?.pitfall?.text).toMatch(/not sent to their company[\s\S]*every customer's button/);
+	});
+
+	it('covers a subdomain only with a pattern, as the setup says', () => {
+		const { exact, pattern } = answers.companyDomains;
+		expect(exact.atASubdomain.goesTo).toBeNull();
+		expect(pattern.atASubdomain.goesTo).toBe('acme');
+		expect(pattern.atTheDomain.goesTo).toBe('acme');
+		const setup = evaluate(base.diagrams.setup, read('companies').settings);
+		const domain = setup.steps
+			.find(({ id }) => id === 'add-organization')
+			?.fields.find(({ name }) => name === 'domain');
+		expect(domain?.note).toContain('acme.test is only that, and *.acme.test its subdomains too');
+	});
+
 	it('trades nothing out of sight with SAML, where OpenID Connect trades a code', () => {
 		const steps = (preset: string) => read(preset).messages.map(({ step }) => step);
 		expect(steps('companies')).toContain('upstream-token-request');

@@ -779,7 +779,11 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept:
 				'The identity provider takes the part after the @, finds the customer with that domain, and so the provider to send them to. Every other customer has a provider of its own too, and nothing about them is on this diagram.',
 			inPractice:
-				'Your app does nothing here. An admin adds each customer, with its domains and its provider, which is where a new customer starts.'
+				'Your app does nothing here. An admin adds each customer, with its domains and its provider, which is where a new customer starts.',
+			pitfall: {
+				title: 'What if they already have a password here?',
+				text: "Then they are not sent to their company. On the server recorded, someone at a customer's domain with an account and a password of ours got the usual page with every customer's button, logged in with that password, and had no customer in their token, because their company was never asked."
+			}
 		},
 		{
 			id: 'redirect-to-upstream',
