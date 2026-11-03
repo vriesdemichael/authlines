@@ -68,8 +68,9 @@ test.describe('every named state, walked in advanced mode', () => {
 			const search = presetSearch(base, preset.settings);
 			const { steps } = evaluate(base.diagrams.flow, settingsOf(preset));
 			const executable = steps.filter((step) => step.execute);
-			// A refused address stops before anything comes back to use, and nothing in the old way is used later.
-			if (!['address-refused', 'the-old-way'].includes(preset.id)) {
+			// A refused address, the app's or a link of theirs, stops before anything comes back to use, and
+			// nothing in the old way is used later.
+			if (!['address-refused', 'their-link', 'the-old-way'].includes(preset.id)) {
 				expect(executable.length).toBeGreaterThan(0);
 			}
 
