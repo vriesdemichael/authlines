@@ -26,6 +26,7 @@ export interface Settings {
 	federation: boolean;
 	companies: boolean;
 	customerSpeaks: 'oidc' | 'saml';
+	leaves: boolean;
 }
 
 export type SettingId = keyof Settings;
@@ -481,6 +482,26 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			{ value: 'oidc', label: 'OpenID Connect' },
 			{ value: 'saml', label: 'SAML' }
 		]
+	},
+	leaves: {
+		kind: 'toggle',
+		label: 'Someone leaves the company',
+		param: 'leaves',
+		default: false,
+		onlyOn: 'authorization-code',
+		summary: 'Their company turns their account off, and what still works here.',
+		why: "When someone leaves, their company's admins turn their account off at their own provider. What a customer wants to know is how long that person can still get in through your app, and it is longer than people expect, because nothing tells the identity provider in the middle.",
+		sources: [
+			{
+				source: 'keycloak-timeouts',
+				why: 'How long they can still get in is how long the session in the middle lasts, which these settings say.'
+			}
+		],
+		requires: {
+			when: is('companies', true),
+			because: 'Only someone at a customer with a provider of their own leaves it.',
+			sayWhenBlocked: true
+		}
 	},
 	upstreamTokens: {
 		kind: 'choice',

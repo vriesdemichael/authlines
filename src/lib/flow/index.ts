@@ -171,6 +171,16 @@ const presets: readonly Preset[] = [
 		settings: { broker: true, companies: true, customerSpeaks: 'saml' }
 	},
 	{
+		id: 'companies-leaves',
+		title: 'Someone leaves a customer whose provider speaks SAML',
+		settings: { broker: true, companies: true, customerSpeaks: 'saml', leaves: true }
+	},
+	{
+		id: 'companies-oidc-leaves',
+		title: 'Someone leaves a customer whose provider speaks OpenID Connect',
+		settings: { broker: true, companies: true, leaves: true }
+	},
+	{
 		id: 'upstream-v1',
 		title: 'Stored upstream tokens, API V1',
 		settings: { broker: true, upstreamTokens: 'v1' }

@@ -414,6 +414,23 @@ export const mapTracks: readonly MapTrack[] = [
 					step: 'upstream-callback'
 				}),
 				node({
+					id: 'someone-leaves',
+					alsoAskedAs: [
+						'offboarding',
+						'leaves the company',
+						'deprovisioning',
+						'account disabled',
+						'leaver'
+					],
+					answer:
+						'Their company turns their account off, and nothing tells your provider. On the server recorded, the old token still worked, a refresh still gave new ones, and the same browser logged in again unasked, for as long as the session in the middle lasted.',
+					title: "What happens when someone leaves the customer's company?",
+					summary: 'Longer than people expect: until the session in the middle ends.',
+					mode: 'advanced',
+					preset: 'companies-leaves',
+					step: 'code-again'
+				}),
+				node({
 					id: 'calling-the-other-provider',
 					alsoAskedAs: ['token brokering', 'upstream token', 'upstream tokens', 'stored tokens'],
 					answer:
@@ -679,19 +696,6 @@ export const mapTracks: readonly MapTrack[] = [
 					answer:
 						'They can enter it first, with an account of their own. They get no token for themselves, but the device ends up logged in as them, and the user is told the user code is not valid. So it matters who can see the screen.'
 				})
-			],
-			[
-				node({
-					id: 'device-no-answer',
-					flow: 'device',
-					preset: 'on-a-device-says-no',
-					mode: 'advanced',
-					step: 'device-denied-response',
-					title: 'What if the user says no?',
-					summary: 'The app is told the next time it asks, and stops.',
-					answer:
-						'The app only finds out the next time it asks: a 400 with access_denied. It stops asking and tells the user. Trying again takes new codes, once the user asks to.'
-				})
 			]
 		]
 	}
@@ -705,6 +709,28 @@ export const mapNodes: readonly MapNode[] = mapTracks.flatMap((track) => track.c
  * they were about through the question that took them over.
  */
 export const offTheMap: readonly MapNode[] = [
+	node({
+		id: 'someone-leaves-oidc',
+		alsoAskedAs: ['leaves openid connect', 'offboarding openid connect'],
+		answer:
+			'No. With a customer on OpenID Connect too, the old token, a refresh and the same browser logging in again all still worked after their company turned them off, because the provider in the middle did not ask their company.',
+		title: 'Does it matter what their provider speaks, when someone leaves?',
+		summary: 'No: the provider in the middle does not ask their company either way.',
+		mode: 'advanced',
+		preset: 'companies-oidc-leaves',
+		step: 'code-again'
+	}),
+	node({
+		id: 'device-no-answer',
+		flow: 'device',
+		preset: 'on-a-device-says-no',
+		mode: 'advanced',
+		step: 'device-denied-response',
+		title: 'What if the user says no?',
+		summary: 'The app is told the next time it asks, and stops.',
+		answer:
+			'The app only finds out the next time it asks: a 400 with access_denied. It stops asking and tells the user. Trying again takes new codes, once the user asks to.'
+	}),
 	node({
 		id: 'token-api-v2',
 		answer:

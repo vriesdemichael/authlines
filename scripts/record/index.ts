@@ -34,8 +34,10 @@ import {
 	PERSON_AT,
 	SAML_CUSTOMER,
 	forgetCustomersPeople,
+	questionsWhenSomeoneLeaves,
 	questionsWithCompanies,
-	setUpCompanies
+	setUpCompanies,
+	turnOff
 } from './companies.ts';
 import {
 	Admin,
@@ -224,6 +226,12 @@ function classifyResponse(
 
 const isDocument = (request: Request) => request.resourceType() === 'document';
 
+const AGAIN: Readonly<Record<string, string>> = {
+	authorize: 'login-again',
+	'redirect-with-code': 'code-again'
+};
+const coming = (run: Run, step: string | null) => (run.again ? (AGAIN[step ?? ''] ?? null) : step);
+
 /** A page with a server behind it: the app's addresses mean something else, and the rest is as ever. */
 const behindThePage = {
 	request(url: URL) {
@@ -285,15 +293,18 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 	page.on('request', (request) => {
 		if (!isDocument(request) || !inBrowser(request.url())) return;
 		const message = requestMessage(
-			device
-				? onADevice.request(
-						new URL(request.url()),
-						request.method(),
-						run.settings.deviceEnds === 'says-no'
-					)
-				: behind
-					? once(behindThePage.request(new URL(request.url())), 'request')
-					: classifyRequest(new URL(request.url()), request.method()),
+			coming(
+				run,
+				device
+					? onADevice.request(
+							new URL(request.url()),
+							request.method(),
+							run.settings.deviceEnds === 'says-no'
+						)
+					: behind
+						? once(behindThePage.request(new URL(request.url())), 'request')
+						: classifyRequest(new URL(request.url()), request.method())
+			),
 			request.method(),
 			request.url(),
 			request.headers(),
@@ -363,27 +374,30 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 	page.on('response', (response: Response) => {
 		if (!isDocument(response.request()) || !inBrowser(response.url())) return;
 		const headers = response.headers();
-		const step = device
-			? onADevice.response(
-					new URL(response.url()),
-					response.request().method(),
-					run.settings.deviceEnds === 'says-no'
-				)
-			: behind
-				? once(
-						behindThePage.response(
+		const step = coming(
+			run,
+			device
+				? onADevice.response(
+						new URL(response.url()),
+						response.request().method(),
+						run.settings.deviceEnds === 'says-no'
+					)
+				: behind
+					? once(
+							behindThePage.response(
+								new URL(response.url()),
+								response.status(),
+								headers.location ?? null
+							),
+							'response'
+						)
+					: classifyResponse(
 							new URL(response.url()),
 							response.status(),
-							headers.location ?? null
-						),
-						'response'
-					)
-				: classifyResponse(
-						new URL(response.url()),
-						response.status(),
-						headers.location ?? null,
-						response.request().method()
-					);
+							headers.location ?? null,
+							response.request().method()
+						)
+		);
 		const message = responseMessage(step, response.status(), headers);
 		run.messages.push(message);
 		if (step === 'set-session') {
@@ -473,6 +487,14 @@ async function login(browser: Browser, run: Run) {
 	const outcome = await page.locator('body').innerText();
 	if (outcome.includes('Failed')) throw new Error(`Login failed: ${outcome}`);
 	if (run.settings.sso) await logInToSecondApp(browser, context, run, cookies);
+	if (run.settings.leaves) {
+		await Promise.all(cookies);
+		run.again = true;
+		await page.goto(APP);
+		await page.getByRole('heading', { name: 'Back' }).waitFor({ timeout: 15_000 });
+		await Promise.all(cookies);
+		run.again = false;
+	}
 	if (run.settings.logout) {
 		await page.goto(`${APP}/logout`);
 		await page.getByRole('heading', { name: 'Logged out' }).waitFor();
@@ -579,7 +601,16 @@ async function record(
 	await forgetCustomersPeople(admin);
 	demo.current = run;
 	if (settings.federation) await loginThroughTheDirectory(browser, admin, run);
-	else await login(browser, run);
+	else {
+		const customer = settings.customerSpeaks === 'saml' ? SAML_CUSTOMER : OIDC_CUSTOMER;
+		if (settings.leaves) demo.meanwhile = () => turnOff(admin, customer);
+		try {
+			await login(browser, run);
+		} finally {
+			demo.meanwhile = null;
+			if (settings.leaves) await turnOff(admin, customer, false);
+		}
+	}
 	demo.current = null;
 	return run;
 }
@@ -944,6 +975,9 @@ async function recordOnlyPresets(ids: readonly string[]) {
 		if (wanted.some(({ settings }) => settings.appRuns === 'bff')) {
 			addToQuestions(recordedAt, await whatAScriptCan(browser, demo, admin));
 		}
+		if (wanted.some(({ settings }) => settings.leaves)) {
+			addToQuestions(recordedAt, await questionsWhenSomeoneLeaves(browser, admin));
+		}
 		if (wanted.some(({ settings }) => settings.companies)) {
 			const domainNotes = noteDefs.filter(({ place }) => place?.page === 'organization-domains');
 			const looked = await lookInConsole(browser, admin, [], domainNotes);
@@ -1054,6 +1088,7 @@ async function main() {
 				Object.assign(answers, await questionsWithADirectory(admin));
 				Object.assign(answers, await whatAScriptCan(browser, demo, admin));
 				Object.assign(answers, await questionsWithCompanies(admin));
+				Object.assign(answers, await questionsWhenSomeoneLeaves(browser, admin));
 			}
 			if (!features.length) {
 				const info = await admin.call<{ features: ServerFeature[] }>('GET', '/serverinfo');
