@@ -317,7 +317,7 @@ export const breakages = [
 	{
 		name: 'injection: offered where there is no secret to get around',
 		file: 'src/lib/flow/settings.ts',
-		from: "is('clientType', 'confidential'),\n\t\t\t\tis('attackerGets', 'copy')",
+		from: "is('clientType', 'confidential'), is('attackerGets', 'copy')",
 		to: "is('attackerGets', 'copy')"
 	},
 	{

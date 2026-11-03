@@ -285,12 +285,14 @@ export const mapTracks: readonly MapTrack[] = [
 					follows: 'verifier'
 				}),
 				node({
-					id: 'pkce-stops-it',
+					id: 'wildcard-redirect',
+					alsoAskedAs: ['wildcard', 'redirect uri wildcard', 'valid redirect uris *'],
 					answer:
-						'They are refused, because they do not have the verifier. On this server that try also uses up the code, so the real user has to log in again.',
-					title: 'What does PKCE do to the attacker?',
-					summary: 'The same attempt, a different answer, and a cost that remains.',
-					preset: 'attack-public-pkce',
+						'Then anyone can have the code sent to them: they make a login link for your app with an address of their own, and the user logs in as usual. PKCE does not help, because they made the challenge. Only an exact address stops it.',
+					title: 'Why not just put * in the redirect URIs?',
+					summary: 'A login link someone else made, and the code going where it says.',
+					mode: 'advanced',
+					preset: 'their-link-any-public-pkce',
 					step: 'attacker-token-response'
 				})
 			],
@@ -711,6 +713,45 @@ export const mapNodes: readonly MapNode[] = mapTracks.flatMap((track) => track.c
  * they were about through the question that took them over.
  */
 export const offTheMap: readonly MapNode[] = [
+	node({
+		id: 'pkce-stops-it',
+		answer:
+			'They are refused, because they do not have the verifier. On this server that try also uses up the code, so the real user has to log in again.',
+		title: 'What does PKCE do to the attacker?',
+		summary: 'The same attempt, a different answer, and a cost that remains.',
+		preset: 'attack-public-pkce',
+		step: 'attacker-token-response'
+	}),
+	node({
+		id: 'their-link-refused',
+		answer:
+			'The identity provider refuses it before anyone logs in, because the address in it is not the one registered for the app. That is what an exact address is for, and the identity provider checks it, not the app.',
+		title: 'What if someone sends a login link of their own?',
+		summary: 'Refused at the start, by the identity provider.',
+		mode: 'advanced',
+		preset: 'their-link',
+		step: 'address-refused'
+	}),
+	node({
+		id: 'their-link-with-a-secret',
+		answer:
+			'It stops them trading the code, which still went to them, from a real login by the real user. Only an exact address keeps the code from them in the first place.',
+		title: 'Does a secret stop a login link of theirs?',
+		summary: 'It stops the trade, and the code still goes to them.',
+		mode: 'advanced',
+		preset: 'their-link-any',
+		step: 'attacker-token-response'
+	}),
+	node({
+		id: 'their-link-no-pkce',
+		answer:
+			'The tokens. They trade the code as the real app would, and nothing in the request says it is not the app. Then they call the API as the user.',
+		title: 'What does a * get them from an app with no secret?',
+		summary: 'The tokens, and the API answering them as the user.',
+		mode: 'advanced',
+		preset: 'their-link-any-public',
+		step: 'attacker-api-response'
+	}),
 	node({
 		id: 'dpop-on-the-wire',
 		alsoAskedAs: ['dpop proof', 'dpop header'],

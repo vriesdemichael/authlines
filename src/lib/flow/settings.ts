@@ -289,7 +289,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		param: 'attacker',
 		default: false,
 		summary:
-			'Someone copies the code as it crosses the browser and tries to use it. Flip PKCE or the client type to see what changes.',
+			'Someone gets hold of the code and tries to use it. Flip PKCE or the client type to see what changes.',
 		why: 'A protection is hard to believe in until you see what it stops. This changes nothing about what the app does. It shows what someone else could do with the same code, and the answers they get are what a real server gave.',
 		simple: {
 			label: 'Show someone stealing the code',

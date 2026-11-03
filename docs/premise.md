@@ -309,7 +309,7 @@ An order for later releases. **Proposed**, and expected to change.
 | Client registration, discovery | Setup diagram | Steps before any user arrives |
 | Authorization code | Base flow | The main flow |
 | OIDC | Modifier | Adds the `openid` scope, an ID token and UserInfo. The access token does not change on a default Keycloak client |
-| An attacker | Modifier | Adds a lifeline, the theft and what they get. Only in the plain case, with a Bearer token and no other provider |
+| An attacker | Modifier | Adds a lifeline, the theft and what they get. Only in the plain case, with a Bearer token and no other provider. In advanced mode, built ([#33](https://github.com/vriesdemichael/authlines/issues/33)), they can instead get the user to open a login link of their own, with their own address for the code, and a choice says what the app registered: its exact address, which the identity provider refuses the link for, or `*`, which sends them the code. PKCE does not stop it, because they made the challenge, and a secret stops only the trade |
 | Consent and scopes | Modifier | Adds the question and the answer. Off on a default Keycloak client, which the Keycloak note explains |
 | What the API is sent | Exclusive, advanced only | Changes the call to the API and its answer: no token, expired, changed, for another API, or one that does not allow this. Only in the plain case, with a Bearer token, and the setup gains the API |
 | A second app (single sign-on) | Modifier, then a choice | Adds a lifeline and a login with the login missing, and the session as something the diagram tracks. The choice brings the login back, or shows what happens with no session |

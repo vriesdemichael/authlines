@@ -40,6 +40,7 @@ import {
 	turnOff
 } from './companies.ts';
 import {
+	ATTACKER_SITE,
 	Admin,
 	APP,
 	BROKERED_REALM,
@@ -127,6 +128,7 @@ function classifyRequest(url: URL, method = 'GET'): string | null {
 		}
 		if (path.endsWith(`/broker/${customer}/endpoint`)) return 'upstream-callback';
 	}
+	if (url.origin === ATTACKER_SITE) return 'code-to-attacker';
 	if (url.origin === SECOND_APP) return path === '/' ? 'second-open-app' : 'second-callback';
 	const forSecond = url.searchParams.get('client_id') === SECOND_CLIENT;
 	if (forSecond && path === `/realms/${LOCAL_REALM}/protocol/openid-connect/auth`) {
@@ -205,6 +207,7 @@ function classifyResponse(
 		return 'address-refused';
 	}
 	if (location?.startsWith(REDIRECT_URI)) return 'redirect-with-code';
+	if (location?.startsWith(ATTACKER_SITE)) return 'redirect-with-code';
 	if (location?.includes(`/realms/${UPSTREAM_REALM}/protocol/openid-connect/auth`)) {
 		return 'redirect-to-upstream';
 	}
@@ -282,7 +285,10 @@ const onADevice = {
 /** Writes down what a page does, in order. Cookies arrive later, so they are added once they do. */
 function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 	const inBrowser = (url: string) =>
-		url.startsWith(APP) || url.startsWith(SECOND_APP) || url.startsWith(KEYCLOAK);
+		url.startsWith(APP) ||
+		url.startsWith(SECOND_APP) ||
+		url.startsWith(KEYCLOAK) ||
+		url.startsWith(ATTACKER_SITE);
 	const behind = run.settings.appRuns === 'bff';
 	// It loads the page and asks again after the login, and the diagram draws that once.
 	const once = (step: string | null, direction: 'request' | 'response') =>
@@ -441,14 +447,17 @@ async function logInToSecondApp(
 	if (fresh) await context.close();
 }
 
-async function login(browser: Browser, run: Run) {
+async function login(browser: Browser, run: Run, demo?: Demo) {
 	const context = await browser.newContext();
 	const page = await context.newPage();
 	const cookies: Promise<void>[] = [];
 	watch(page, run, cookies);
 
-	await page.goto(APP);
-	if (run.settings.address === 'other') {
+	// A link someone else made, which the user opens, so the app has no part in it.
+	const link = run.settings.attackerGets === 'link';
+	if (link && !demo) throw new Error('A link of theirs needs the demo app to make it');
+	await page.goto(link && demo ? demo.theirLink() : APP);
+	if (run.settings.address === 'other' || (link && run.settings.registered === 'exact')) {
 		await page.getByText('Invalid parameter: redirect_uri').waitFor();
 		await Promise.all(cookies);
 		await context.close();
@@ -476,7 +485,7 @@ async function login(browser: Browser, run: Run) {
 		await page.locator('[name="accept"]').click();
 	}
 	await page
-		.getByRole('heading', { name: /Logged in|Refused|Failed/ })
+		.getByRole('heading', { name: /Logged in|Refused|Failed|Got it/ })
 		.waitFor({ timeout: 30_000 })
 		.catch(async (error) => {
 			// A timeout says what it waited for, and what was on the screen is what anyone needs to know.
@@ -605,7 +614,7 @@ async function record(
 		const customer = settings.customerSpeaks === 'saml' ? SAML_CUSTOMER : OIDC_CUSTOMER;
 		if (settings.leaves) demo.meanwhile = () => turnOff(admin, customer);
 		try {
-			await login(browser, run);
+			await login(browser, run, demo);
 		} finally {
 			demo.meanwhile = null;
 			if (settings.leaves) await turnOff(admin, customer, false);
