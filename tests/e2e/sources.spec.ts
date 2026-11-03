@@ -1,6 +1,17 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
-import { settingDefs, settingIds, type SettingDef } from '../../src/lib/flow/settings.ts';
+import { flows } from '../../src/lib/flow/index.ts';
+import {
+	allValidSettings,
+	defaultSettings,
+	holds,
+	settingDefs,
+	settingIds,
+	type SettingDef,
+	type SettingId,
+	type Settings
+} from '../../src/lib/flow/settings.ts';
+import { presetSearch } from '../../src/lib/flow/state.ts';
 import { originalUrl, sources } from '../../src/lib/sources/sources.ts';
 import { currentSearch, expectMatchesModel, open, watchForErrors } from './helpers.ts';
 
@@ -18,21 +29,25 @@ const rfcRequests = (page: Page) => {
 	return seen;
 };
 
-// Every setting is on offer with DPoP and an external IdP on, apart from the attacker, which is
-// only for the plain case, and those that build on another setting.
-const ALL_ON_OFFER = 'binding=dpop&broker=1';
-const NEEDS: Partial<Record<string, string>> = {
-	attacker: '',
-	oldWay: 'oldway=1',
-	attackerUses: 'attacker=1',
-	reuse: 'refresh=1',
-	ssoAsks: 'sso=1',
-	customerSpeaks: 'broker=1&companies=1',
-	leaves: 'broker=1&companies=1',
-	tokenThief: 'binding=dpop',
-	apiChecks: 'binding=dpop&thief=1'
-};
-const onOffer = (setting: string) => NEEDS[setting] ?? ALL_ON_OFFER;
+// Where each setting is on offer: the valid combination with the fewest changes that has it on, or
+// failing that has it offered. One that is only ever a chip shows only when on. It used to be a list
+// kept by hand, which every setting that builds on another had to be added to.
+const changed = (settings: Settings) =>
+	settingIds.filter((id) => settings[id] !== defaultSettings[id]).length;
+function whereOnOffer(setting: SettingId) {
+	const flow = settingDefs[setting].onlyOn ?? 'authorization-code';
+	const base = flows[flow];
+	const { requires } = settingDefs[setting] as SettingDef;
+	const [settings] = allValidSettings(base.settings)
+		.filter((candidate) => !requires || holds(requires.when, candidate))
+		.toSorted(
+			(a, b) =>
+				Number(a[setting] === defaultSettings[setting]) -
+					Number(b[setting] === defaultSettings[setting]) || changed(a) - changed(b)
+		);
+	if (!settings) throw new Error(`${setting} is on offer nowhere`);
+	return `${flow}/?mode=advanced&${presetSearch(base, settings)}`;
+}
 
 test.describe('a source', () => {
 	for (const setting of settingIds) {
@@ -40,13 +55,8 @@ test.describe('a source', () => {
 			test(`${setting} opens ${ref.source}`, async ({ page }) => {
 				const check = watchForErrors(page);
 				const source = sources[ref.source];
-				const { onlyOn }: SettingDef = settingDefs[setting];
-				if (onlyOn) {
-					await page.goto(`${onlyOn}/?mode=advanced&${NEEDS[setting] ?? ''}`);
-					await page.locator('.workspace[data-ready="true"]').waitFor();
-				} else {
-					await open(page, onOffer(setting));
-				}
+				await page.goto(whereOnOffer(setting));
+				await page.locator('.workspace[data-ready="true"]').waitFor();
 				await (await opener(page, setting, ref.source)).click();
 
 				await expect(panel(page).getByRole('heading', { level: 2 })).toHaveText(source.title);
