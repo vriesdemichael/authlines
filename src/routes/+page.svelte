@@ -26,30 +26,16 @@
 	// Someone who knows none of the words starts with this, and flips it themselves (#150).
 	const THE_WAY_IN = nodeNamed(wayIn.node)!;
 	const FLIPS_TO = nodeNamed(wayIn.flipsTo.node)!;
-	const SETTLE_MS = 300;
 
+	// Resting the mouse on a question changes nothing here, because the diagram moving under it made
+	// the steps hard to follow. A question someone came back from is on show, and this is the way back.
 	let showing = $state.raw(THE_WAY_IN);
 	let flipped = $state(false);
 	const onTheWayIn = $derived(showing === THE_WAY_IN);
-	let settling: ReturnType<typeof setTimeout> | undefined;
 
-	// Pointing at a question replaces the first screen, so there is always a way back to it.
 	function backToTheStart() {
-		clearTimeout(settling);
 		showing = THE_WAY_IN;
 		flipped = false;
-	}
-
-	function point(node: MapNode) {
-		clearTimeout(settling);
-		// Moving over the one that is on show is nobody asking for anything new.
-		if (node === showing) return;
-		// So that passing over a question on the way to another does not set the diagram off. Each move
-		// starts this again, so it takes resting on one, and not only crossing it slowly.
-		settling = setTimeout(() => {
-			showing = node;
-			flipped = false;
-		}, SETTLE_MS);
 	}
 
 	onMount(() => {
@@ -60,7 +46,6 @@
 				Living = module.default as typeof Living;
 			});
 		}
-		return () => clearTimeout(settling);
 	});
 
 	const current = $derived(mounted ? page.url.searchParams.get('at') : null);
@@ -94,8 +79,7 @@
 
 <main data-ready={mounted}>
 	<div class="home">
-		<!-- Leaving, on the way to the diagram, is not asking for what the mouse last crossed. -->
-		<div class="questions" role="presentation" onpointerleave={() => clearTimeout(settling)}>
+		<div class="questions">
 			<h1>
 				<a href={resolve('/')} data-testid="home-start" onclick={backToTheStart}>
 					<Mark size={24} />{SITE_NAME}
@@ -112,13 +96,7 @@
 				Search for a word, a question, or an error
 				<kbd>/</kbd>
 			</button>
-			<LearningMap
-				tracks={mapTracks}
-				{hrefOf}
-				{current}
-				showing={Living ? showing.id : null}
-				onpoint={point}
-			/>
+			<LearningMap tracks={mapTracks} {hrefOf} {current} showing={Living ? showing.id : null} />
 			<p class="source" data-testid="source-link">
 				Recorded from Keycloak, a free identity provider
 				<a href={resolve('/run-it-yourself')}>you can run yourself</a>. The specs are the same

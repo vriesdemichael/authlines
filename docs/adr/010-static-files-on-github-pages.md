@@ -1,6 +1,6 @@
 # ADR-010: The site is static files on GitHub Pages, with all state in the browser
 
-Search engines are kept out until the maintainer says otherwise. Setting the repository variable `ALLOW_INDEXING` to `true` lets a production build be indexed on its next deploy. Previews and Storybook never are. The address the site lives at for shared links is one constant, in `src/lib/site.ts`.
+Search engines may index production, because the maintainer let them in on 2026-11-03: the repository variable `ALLOW_INDEXING` is `true`, and setting it to anything else keeps them out again from the next deploy. Previews and Storybook never are. The address the site lives at for shared links is one constant, in `src/lib/site.ts`.
 
 The application builds to plain static files, and nothing about a visitor is kept anywhere but their browser. There is no backend, no rendering at request time and no accounts. It is hosted on GitHub Pages for now, and a dedicated place may come later, so nothing may depend on Pages beyond a base path set at build time.
 

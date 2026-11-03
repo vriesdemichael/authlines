@@ -67,7 +67,6 @@ describe('the URL', () => {
 						follow: null,
 						wording: null,
 						list: false,
-						labels: false,
 						whole: false,
 						raw: false
 					};
@@ -105,7 +104,6 @@ describe('the URL', () => {
 							follow: onOff && settings.address === 'registered' ? 'code' : null,
 							wording: onOff ? ('specs' as const) : null,
 							list: onOff,
-							labels: onOff,
 							whole: onOff,
 							raw: onOff
 						};

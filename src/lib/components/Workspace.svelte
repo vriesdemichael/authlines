@@ -19,6 +19,7 @@
 	import SourcePanel from '#lib/components/SourcePanel.svelte';
 	import StepControls from '#lib/components/StepControls.svelte';
 	import StepDetail from '#lib/components/StepDetail.svelte';
+	import Timeline from '#lib/components/Timeline.svelte';
 	import { freshIds } from '#lib/diagram/fresh.ts';
 	import { layoutDiagram } from '#lib/diagram/layout.ts';
 	import { readingTime } from '#lib/diagram/motion.ts';
@@ -56,7 +57,6 @@
 		withEyes,
 		withList,
 		withRaw,
-		withLabels,
 		withWhole,
 		refFor,
 		withWording,
@@ -74,7 +74,6 @@
 	import { explanationOf, litBy, stateShowing } from '#lib/flow/explain.ts';
 	import { sees } from '#lib/flow/eyes.ts';
 	import { formsOf, pathOf } from '#lib/flow/follow.ts';
-	import { bothOf, whatItWouldDo } from '#lib/flow/preview.ts';
 	import { artifacts, type ArtifactId } from '#lib/flow/vocabulary.ts';
 	import type { ShotId } from '#lib/flow/vocabulary.ts';
 	import { leftToYou } from '#lib/flow/left-to-you.ts';
@@ -165,41 +164,13 @@
 	let canvasWidth = $state(0);
 	let canvasHeight = $state(0);
 	const room = $derived(canvasWidth ? { width: canvasWidth, height: canvasHeight } : undefined);
-	// What a setting being pointed at would do. Only ever shown, so the state does not know about it.
-	let pointedAt = $state.raw<{ id: SettingId; value: boolean | string } | null>(null);
-	let previewedLast = $state(false);
-	const preview = $derived.by(() => {
-		if (!pointedAt) return null;
-		const after = evaluate(
-			flow,
-			withSetting(base, appState, pointedAt.id, pointedAt.value as never).state.settings
-		);
-		const diff = diffViews(view, after);
-		return {
-			both: bothOf(flow, view, after),
-			fresh: freshIds(diff),
-			says: whatItWouldDo(diff),
-			marks: {
-				adds: new Set([...diff.addedSteps, ...diff.addedLifelines]),
-				removes: new Set([
-					...diff.removedSteps,
-					...diff.removedLifelines,
-					...diff.removedFields.map(({ step, field }) => `${step}:${field}`)
-				])
-			}
-		};
-	});
-	function pointAtSetting(choice: { id: SettingId; value: boolean | string } | null) {
-		pointedAt = choice;
-		if (choice) previewedLast = true;
-	}
 	// Whose words this is in, which only changes what is said, so all the rest goes on using the view.
 	const wording = $derived(wordingOf(appState));
 	// Read on its own, because a new state on every step should not mean a new layout.
 	const whole = $derived(appState.whole);
 	const say = $derived(sayer(wording));
 	const spoken = $derived(speak(view, say));
-	const layout = $derived(layoutDiagram(preview?.both ?? view, mode, room, wording, whole));
+	const layout = $derived(layoutDiagram(view, mode, room, wording, whole));
 
 	// Below this the settings do not fit beside the diagram, so they open over it when asked for.
 	let settingsDoNotFit = $state(false);
@@ -262,9 +233,9 @@
 
 	const fresh = $derived(last.diff ? freshIds(last.diff) : new Set<string>());
 	// What a flip changed, to bring into view. New steps if there are any, because a message reworded
-	// further up is not what someone is looking for, and only a flip, because a hover moves nothing.
+	// further up is not what someone is looking for.
 	const flipped = $derived.by(() => {
-		if (preview || !last.setting || !last.diff) return null;
+		if (!last.setting || !last.diff) return null;
 		const { addedSteps } = last.diff;
 		return new Set(addedSteps.length ? addedSteps : [...fresh].map((id) => id.split(':')[0]));
 	});
@@ -316,8 +287,6 @@
 	});
 
 	function setSetting<K extends SettingId>(id: K, value: Settings[K]) {
-		pointedAt = null;
-		previewedLast = false;
 		const result = withSetting(base, appState, id, value);
 		last = afterFlip(
 			last,
@@ -625,6 +594,20 @@
 	{/if}
 {/snippet}
 
+{#snippet stepping()}
+	<StepControls
+		position={position + 1}
+		total={steps.length}
+		canGoBack={previousStep(base, appState) !== null}
+		onback={back}
+		onnext={forward}
+		answerAt={answer ? numberOf(answer) : null}
+		onexecute={execute}
+		onwardHref={wayOn?.href ?? null}
+		onwardLabel={wayOn && 'label' in wayOn ? wayOn.label : undefined}
+	/>
+{/snippet}
+
 <svelte:window {onkeydown} onpointerdown={() => (tabbedIn = false)} />
 
 <div
@@ -750,8 +733,6 @@
 			{notHere}
 			elsewhere={settingsElsewhere}
 			onexplain={(id) => explain({ kind: 'setting', id })}
-			onpreview={pointAtSetting}
-			previewed={pointedAt && preview ? { id: pointedAt.id, says: preview.says } : null}
 		/>
 	</aside>
 
@@ -784,18 +765,6 @@
 					{appState.whole ? 'Back to the step' : 'See the whole flow'}
 				</button>
 			{/if}
-			{#if (!simple || appState.labels) && !appState.whole}
-				<label class="quiet every-label">
-					<input
-						type="checkbox"
-						data-testid="every-label"
-						checked={appState.labels}
-						onchange={(event) =>
-							onnavigate(withLabels(appState, event.currentTarget.checked), 'push')}
-					/>
-					Show every label
-				</label>
-			{/if}
 		</div>
 		<div class="canvas" bind:clientWidth={canvasWidth} bind:clientHeight={canvasHeight}>
 			<!-- Two diagrams, not two states of one, so switching does not animate. -->
@@ -803,13 +772,10 @@
 				<Diagram
 					{layout}
 					{animate}
-					fresh={preview?.fresh ?? fresh}
+					{fresh}
 					{flipped}
-					preview={preview?.marks ?? null}
-					quick={previewedLast}
 					{holdings}
 					{lit}
-					allLabels={appState.labels}
 					{sending}
 					{landing}
 					eyes={appState.eyes}
@@ -876,6 +842,9 @@
 				onlist={questionOffersList ? openList : null}
 			/>
 		{/if}
+		{#if !appState.whole}
+			<div class="stepping">{@render stepping()}</div>
+		{/if}
 		<StepDetail
 			step={spoken.steps[position]}
 			lifelines={view.lifelines}
@@ -939,23 +908,18 @@
 		</StepDetail>
 	</aside>
 
+	<!-- Where the whole flow is, and a way to watch it go by. Stepping is beside the step, unless the
+	     diagram has the screen to itself. -->
 	<footer>
-		<StepControls
-			position={position + 1}
-			total={steps.length}
-			canGoBack={previousStep(base, appState) !== null}
-			onback={back}
-			onnext={forward}
+		{#if appState.whole}{@render stepping()}{/if}
+		<button class="play" data-testid="play" onclick={togglePlaying}>
+			{playing ? 'Stop' : 'Play'}
+		</button>
+		<Timeline
 			parts={spoken.parts}
 			current={current.id}
 			onjump={goToStep}
-			{playing}
-			playingFor={toRead}
-			onplay={togglePlaying}
-			answerAt={answer ? numberOf(answer) : null}
-			onexecute={execute}
-			onwardHref={wayOn?.href ?? null}
-			onwardLabel={wayOn && 'label' in wayOn ? wayOn.label : undefined}
+			waiting={playing ? toRead : null}
 		/>
 	</footer>
 
@@ -1164,17 +1128,6 @@
 		white-space: nowrap;
 	}
 
-	.quiet.every-label {
-		display: inline-flex;
-		align-items: center;
-		gap: 4px;
-		text-decoration: none;
-	}
-
-	.quiet.every-label input {
-		margin: 0;
-	}
-
 	.settings-toggle {
 		grid-area: settings;
 		z-index: 3;
@@ -1308,10 +1261,30 @@
 		padding: 14px 16px;
 	}
 
+	/* Staying where it is while what is under it scrolls, so it is never a scroll away. */
+	.stepping {
+		position: sticky;
+		top: -14px;
+		z-index: 1;
+		margin: -14px 0 12px;
+		padding: 14px 0 10px;
+		border-bottom: 1px solid var(--line);
+		background: var(--bg);
+	}
+
 	footer {
 		grid-area: controls;
+		display: flex;
+		align-items: center;
+		gap: 12px;
 		border-top: 1px solid var(--line);
 		padding: 8px 16px;
+	}
+
+	/* Same width either way, so that what is beside it does not move when it changes. */
+	.play {
+		flex: none;
+		min-width: 3.6em;
 	}
 
 	/* Over the step detail, so the diagram stays put. An RFC's lines need a little more room. */
@@ -1484,11 +1457,9 @@
 			overflow-y: visible;
 		}
 
+		/* With no diagram, the parts of it and watching it play have nothing to show. */
 		footer {
-			order: 2;
-			position: sticky;
-			bottom: 0;
-			background: var(--bg);
+			display: none;
 		}
 
 		.settings {
@@ -1529,6 +1500,7 @@
 		.settings,
 		.settings-toggle,
 		footer,
+		.stepping,
 		.source:not([data-list-open]),
 		.narrow-note {
 			display: none;

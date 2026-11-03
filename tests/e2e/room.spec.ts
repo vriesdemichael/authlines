@@ -48,9 +48,10 @@ test.describe('in front of a room, the whole flow', () => {
 		await expect(ahead).toContainText('trades the code');
 		const opacity = await ahead.evaluate((label) => getComputedStyle(label).opacity);
 		expect(Number(opacity)).toBeGreaterThan(0.5);
+		// Back on the step, and still there, because every row says what happens (ADR-014).
 		await page.getByTestId('whole-flow').click();
 		await expect(page).not.toHaveURL(/whole=1/);
-		await expect(ahead).toHaveCSS('opacity', '0');
+		await expect(ahead).toHaveCSS('opacity', '1');
 	});
 
 	test('gives the diagram the room, and keeps the way to move through it', async ({ page }) => {

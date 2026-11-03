@@ -8,11 +8,9 @@
 		current?: string | null;
 		/** The question the diagram beside it is showing. */
 		showing?: string | null;
-		/** Someone is pointing at a question, with a mouse or by moving to it with the keyboard. */
-		onpoint?: (node: MapNode) => void;
 	}
 
-	let { tracks, hrefOf, current = null, showing = null, onpoint }: Props = $props();
+	let { tracks, hrefOf, current = null, showing = null }: Props = $props();
 
 	const holds = (track: MapTrack, id: string | null) =>
 		track.chains.some((chain) => chain.some((node) => node.id === id));
@@ -41,8 +39,6 @@
 									href={hrefOf(node)}
 									data-testid={`node-${node.id}`}
 									aria-current={current === node.id ? 'location' : undefined}
-									onpointermove={() => onpoint?.(node)}
-									onfocus={() => onpoint?.(node)}
 								>
 									<span class="title">{node.title}</span>
 									{#if node.mode === 'advanced'}

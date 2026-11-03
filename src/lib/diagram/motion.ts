@@ -7,8 +7,6 @@ import type {
 } from '#lib/diagram/layout.ts';
 
 export const TRANSITION_MS = 900;
-/** Trying something should cost nothing, so what a setting would do appears in a moment. */
-export const PREVIEW_MS = 300;
 
 const SLOWEST_STEP_MS = 9000;
 const QUICKEST_STEP_MS = 2000;

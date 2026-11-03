@@ -6,21 +6,52 @@ const row = (page: import('@playwright/test').Page, id: string) =>
 	page.locator(`[data-step="${id}"]`);
 
 test.describe('each step shows what is relevant at that point', () => {
-	test('what has happened is spelled out, and what is ahead is only a shape', async ({ page }) => {
+	// A numbered line with nothing on it made people wonder what was coming (the maintainer, 2026-11-03).
+	test('what is ahead says what will happen, and carries nothing until it gets there', async ({
+		page
+	}) => {
 		await open(page, 'step=authorize');
 		await expect(row(page, 'open-app').locator('.label')).toHaveCSS('opacity', '1');
 		await expect(row(page, 'authorize').locator('.label')).toHaveCSS('opacity', '1');
-		await expect(row(page, 'token-request').locator('.label')).toHaveCSS('opacity', '0');
+		await expect(row(page, 'token-request').locator('.label')).toHaveCSS('opacity', '1');
 		await expect(page.locator('[data-chip="token-response:access_token"]')).toHaveCSS(
 			'opacity',
 			'0'
 		);
+		await expect(row(page, 'token-request').locator('line')).toHaveCSS('opacity', '0.32');
 	});
 
-	test('a message ahead can still be read by pointing at it', async ({ page }) => {
+	// The top half is where people were looking, and Next was at the bottom (the maintainer, 2026-11-03).
+	test('Next is beside what the step says, in the top half', async ({ page }) => {
+		await page.setViewportSize({ width: 1440, height: 900 });
+		for (const step of ['open-app', 'token-response']) {
+			await open(page, `mode=advanced&step=${step}`);
+			const next = page.getByTestId('next');
+			await expect(page.locator('aside.detail').getByTestId('next')).toBeVisible();
+			const at = (await next.boundingBox())!;
+			const heading = (await page.locator('aside.detail h2').first().boundingBox())!;
+			expect(at.y).toBeLessThan(450);
+			expect(heading.y - at.y).toBeGreaterThan(0);
+			expect(heading.y - at.y).toBeLessThan(300);
+		}
+		await open(page, 'whole=1');
+		await expect(page.locator('footer').getByTestId('next')).toBeVisible();
+	});
+
+	test('pointing at a message ahead moves nothing', async ({ page }) => {
 		await open(page);
+		const rows = () =>
+			page
+				.locator('[data-step]')
+				.evaluateAll((all) => all.map((one) => one.getBoundingClientRect().y));
+		const before = await rows();
 		await row(page, 'token-request').hover();
-		await expect(row(page, 'token-request').locator('.label')).toHaveCSS('opacity', '1');
+		await page.waitForTimeout(300);
+		expect(await rows()).toEqual(before);
+		await expect(page.locator('[data-chip="token-response:access_token"]')).toHaveCSS(
+			'opacity',
+			'0'
+		);
 	});
 
 	test('a change a setting makes ahead is shown, even though it is ahead', async ({ page }) => {

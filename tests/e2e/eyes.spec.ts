@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectMatchesModel, onTheMap, open, watchForErrors } from './helpers.ts';
+import { expectMatchesModel, open, watchForErrors } from './helpers.ts';
 
 const diagram = (page: Page) => page.getByTestId('diagram');
 const row = (page: Page, id: string) => page.locator(`[data-step="${id}"]`);
@@ -23,11 +23,13 @@ test.describe('seeing it as one party', () => {
 		await expect(
 			page.locator('[data-chip^="redirect-with-code"][data-artifact="code"]')
 		).toBeVisible();
-		// What it was not part of says nothing, and is not on the page to be selected or read out.
-		await expect(row(page, 'token-request').locator('.label')).toHaveCount(0);
-		await expect(row(page, 'token-request').locator('.bar')).not.toHaveCount(0);
+		// What it was not part of still says what happens, because a row with nothing on it only made
+		// people wonder. What it carried is not on the page to be selected or read out.
+		await expect(row(page, 'token-request')).toContainText('trades the code');
+		await expect(row(page, 'token-request')).toHaveClass(/unseen/);
+		await expect(page.locator('[data-chip^="token-request"]')).toHaveCount(0);
 		await expect(page.locator('[data-chip^="token-response"]')).toHaveCount(0);
-		await expect(diagram(page)).not.toContainText('access token');
+		await expect(page.locator('.chip-bar').first()).toBeAttached();
 		await expect(diagram(page)).not.toContainText('client secret');
 		check();
 	});
@@ -43,8 +45,9 @@ test.describe('seeing it as one party', () => {
 
 	test('leaves the app without the password', async ({ page }) => {
 		await open(page, 'mode=simple&eyes=app&step=submit-credentials');
-		await expect(row(page, 'submit-credentials').locator('.label')).toHaveCount(0);
-		await expect(diagram(page)).not.toContainText('password');
+		await expect(row(page, 'submit-credentials')).toHaveClass(/unseen/);
+		await expect(page.locator('[data-chip^="submit-credentials"]')).toHaveCount(0);
+		await expect(page.locator('[data-held="app:password"]')).toHaveCount(0);
 		await expect(row(page, 'open-app')).toContainText('opens the app');
 	});
 
@@ -55,7 +58,7 @@ test.describe('seeing it as one party', () => {
 		);
 		await expect(row(page, 'attacker-token-response')).toContainText('tokens');
 		await expect(page.locator('[data-held="attacker:access-token"]')).toBeVisible();
-		await expect(row(page, 'submit-credentials').locator('.label')).toHaveCount(0);
+		await expect(page.locator('[data-chip^="submit-credentials"]')).toHaveCount(0);
 
 		await open(
 			page,
@@ -190,8 +193,8 @@ test.describe('getting there', () => {
 	test('prints as it looks', async ({ page }) => {
 		await open(page, 'mode=simple&eyes=browser&step=token-response');
 		await page.emulateMedia({ media: 'print' });
-		await expect(row(page, 'token-request').locator('.bar').first()).toBeVisible();
-		await expect(diagram(page)).not.toContainText('access token');
+		await expect(page.locator('.chip-bar').first()).toBeVisible();
+		await expect(page.locator('[data-chip^="token-response"]')).toHaveCount(0);
 	});
 });
 
@@ -214,10 +217,13 @@ test.describe('the question on the map', () => {
 		await expect(page.getByTestId('from-question')).toContainText('What can the browser see?');
 	});
 
-	test('is what pointing at it shows on the home screen', async ({ page }) => {
-		await page.goto('./');
-		await (await onTheMap(page, 'what-the-browser-sees')).hover();
+	test('is what the home screen shows after coming back from it', async ({ page }) => {
+		await page.setViewportSize({ width: 1400, height: 900 });
+		await page.goto('./?at=what-the-browser-sees');
 		await expect(page.getByTestId('living')).toHaveAttribute('data-node', 'what-the-browser-sees');
-		await expect(page.getByTestId('living').locator('.bar').first()).toBeAttached();
+		await expect(page.getByTestId('living').locator('.row.unseen').first()).toBeAttached();
+		await expect(page.getByTestId('living').locator('[data-chip^="token-response"]')).toHaveCount(
+			0
+		);
 	});
 });
