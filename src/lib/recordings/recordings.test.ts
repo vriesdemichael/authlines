@@ -454,6 +454,46 @@ describe('a server behind the page', () => {
 	});
 });
 
+describe('a customer with a provider of their own', () => {
+	const access = (preset: string) => {
+		const answer = read(preset).messages.find(({ step }) => step === 'token-response');
+		const { access_token: token } = answer?.body as { access_token: string };
+		return JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+	};
+	const names = (preset: string) => Object.keys(access(preset)).sort();
+
+	// The screen says the token is the same with one thing more, so it comes from the real runs.
+	it('gets the claims another provider gets, and which customer they are from', () => {
+		expect(names('companies')).toEqual([...names('broker'), 'organization'].sort());
+		expect(access('companies').organization).toEqual(['globex']);
+		expect(access('companies-saml').organization).toEqual(['acme']);
+		const said = stepsOf(read('companies')).find(({ id }) => id === 'token-response');
+		expect(said?.concept).toContain('which customer they are from');
+	});
+
+	it('gets the same token whether their provider speaks SAML or OpenID Connect', () => {
+		expect(names('companies-saml')).toEqual(names('companies'));
+	});
+
+	it('asks only for the email, and goes to the provider of its domain', () => {
+		for (const [preset, customer] of [
+			['companies', 'globex'],
+			['companies-saml', 'acme']
+		]) {
+			const { messages } = read(preset);
+			const sent = messages.findIndex(({ step }) => step === 'submit-email');
+			expect(Object.keys(messages[sent].body as object), preset).toEqual(['username']);
+			expect(messages[sent + 1].headers.location, preset).toContain(`/broker/${customer}/login`);
+		}
+	});
+
+	it('trades nothing out of sight with SAML, where OpenID Connect trades a code', () => {
+		const steps = (preset: string) => read(preset).messages.map(({ step }) => step);
+		expect(steps('companies')).toContain('upstream-token-request');
+		expect(steps('companies-saml')).not.toContain('upstream-token-request');
+	});
+});
+
 describe('a user in a directory', () => {
 	const access = (preset: string) => {
 		const answer = read(preset).messages.find(({ step }) => step === 'token-response');

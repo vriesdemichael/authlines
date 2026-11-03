@@ -1836,6 +1836,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: 'The tokens are in the page now, and so in the browser, which the rest of this flow took care to avoid. On a server they would be out of reach of the user’s browser. Here, any script running in this page can reach them, and that is the price of having no server.'
 				},
 				{
+					when: companies,
+					text: 'The same token another provider would give, with one thing more: which customer they are from, because the app asked. An app that keeps each customer apart can go by that. It is the same whether their provider spoke SAML or OpenID Connect.'
+				},
+				{
 					when: inADirectory,
 					text: 'Nearly the same token as ever. Real runs gave the same claim names with the user in a directory, kept in the provider, or at another provider. One value differed: here it said the email address was not verified, because nobody had said to trust the directory.'
 				},

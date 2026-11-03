@@ -249,6 +249,47 @@ function decodePart(part: string): unknown {
 }
 
 /** What is inside the signed tokens of a message. A token is readable, and that is worth seeing. */
+/** A SAML message, which a form carries as base64 of XML. */
+export interface DecodedSaml {
+	name: string;
+	xml: string;
+}
+
+const SAML_FIELDS = new Set(['SAMLRequest', 'SAMLResponse']);
+
+/** What a SAML message says, so an assertion can be opened as a token can. */
+export function samlIn(lines: readonly Line[]): DecodedSaml[] {
+	return lines.flatMap((line) => {
+		if (!line.name || !SAML_FIELDS.has(line.name) || !line.decoded) return [];
+		try {
+			const bytes = Uint8Array.from(atob(line.decoded), (char) => char.charCodeAt(0));
+			const xml = new TextDecoder().decode(bytes);
+			return xml.trimStart().startsWith('<') ? [{ name: line.name, xml: indented(xml) }] : [];
+		} catch {
+			return [];
+		}
+	});
+}
+
+/** One element to a line, because a server sends the whole document on one. */
+function indented(xml: string): string {
+	let depth = 0;
+	return xml
+		.trim()
+		.replace(/>\s*</g, '>\n<')
+		.split('\n')
+		.map((tag) => {
+			const closes = tag.startsWith('</');
+			const whole =
+				tag.startsWith('<?') || tag.endsWith('/>') || /^<[^>]+>[^<]*<\/[^>]+>$/.test(tag);
+			if (closes) depth -= 1;
+			const line = `${'  '.repeat(Math.max(depth, 0))}${tag}`;
+			if (!closes && !whole) depth += 1;
+			return line;
+		})
+		.join('\n');
+}
+
 export function jwtsIn(lines: readonly Line[]): DecodedJwt[] {
 	return lines.flatMap((line) => {
 		const parts = line.decoded?.split('.');

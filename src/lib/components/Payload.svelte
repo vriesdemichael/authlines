@@ -8,6 +8,7 @@
 		originOf,
 		rawLines,
 		redactedLines,
+		samlIn,
 		type Line,
 		type RunValue
 	} from '#lib/recordings/wire.ts';
@@ -47,6 +48,7 @@
 			: rawLines(message, { serverNamed })
 	);
 	const jwts = $derived(jwtsIn(lines));
+	const samls = $derived(samlIn(lines));
 	const origin = (line: Line) => originOf(line, step.id, trace);
 	let opened = $state<Record<string, boolean>>({});
 
@@ -107,6 +109,14 @@
 		</div>
 	{/each}
 </div>
+
+{#each samls as saml (saml.name)}
+	<details class="jwt" data-testid="saml">
+		<summary>Inside <code>{saml.name}</code></summary>
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<pre tabindex="0" aria-label={`What ${saml.name} says`}>{saml.xml}</pre>
+	</details>
+{/each}
 
 {#each jwts as jwt (jwt.name)}
 	<details class="jwt" data-testid="jwt">
