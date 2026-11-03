@@ -25,10 +25,14 @@ const attacker = is('attacker', true);
 // The code is one-time, and on a public client nothing stops someone else using it first.
 const codeTaken = all(attacker, not(confidential));
 const handedToTheApp = is('attackerUses', 'real-app');
-const codeGone = any(codeTaken, handedToTheApp);
+// They started the login with a link of their own, so the app is not part of any of it.
+const byLink = is('attackerGets', 'link');
+const linkRefused = all(byLink, is('registered', 'exact'));
+const codeGone = any(codeTaken, handedToTheApp, byLink);
 const stillGoing = not(codeGone);
-const attackerWins = all(codeTaken, not(pkce));
-const stoppedByPkce = all(codeTaken, pkce);
+// They made the challenge, so with a link of theirs PKCE does not stop them.
+const attackerWins = all(codeTaken, any(not(pkce), byLink));
+const stoppedByPkce = all(codeTaken, pkce, not(byLink));
 const stoppedByNonce = all(handedToTheApp, oidc, not(pkce));
 const stoppedBySecret = all(attacker, confidential);
 const dpop = is('binding', 'dpop');
@@ -174,11 +178,22 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainName: 'Someone else',
 			plainRole: 'Has no business here',
 			name: 'Attacker',
+			role: 'Made the login link',
+			icon: 'attacker',
+			concept:
+				'Someone who is not the app, with a site of their own. They need nothing from the app but its client ID, which is in every login address, and nothing from the user but that they open a link.',
+			when: all(attacker, byLink)
+		},
+		{
+			id: 'attacker',
+			plainName: 'Someone else',
+			plainRole: 'Has no business here',
+			name: 'Attacker',
 			role: 'Has a copy of the code',
 			icon: 'attacker',
 			concept:
 				"Someone who can read the redirects that go through the browser, but is not the app. Someone who can also change a request can swap in a challenge or a nonce of their own, and then neither stops them. On a phone that can be another app claiming the same address, which gets the code first. A log or a history that keeps addresses usually sees it too late, because a code works once. Something running inside the app's own page sees far more than this, and no setting here stops that.",
-			when: attacker
+			when: all(attacker, not(byLink))
 		},
 		{
 			id: 'attacker',
@@ -254,14 +269,26 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 	],
 	parts: [
 		{
+			label: 'Their link',
+			why: 'Someone else starts the login with a link of theirs, and the app has no part in it.',
+			from: 'attacker-makes-link'
+		},
+		{
 			label: 'Ask',
 			why: 'The app does not handle the password, so it sends the user off to log in elsewhere.',
-			from: 'open-app'
+			from: 'open-app',
+			when: not(byLink)
 		},
 		{
 			label: 'Log in',
 			why: 'The user proves who they are away from the app, which never sees the password.',
 			from: 'login-page'
+		},
+		{
+			label: 'Theirs',
+			why: 'The code went where their link said, so they trade it as the app would.',
+			from: 'attacker-steals-code',
+			when: byLink
 		},
 		{
 			label: 'Stolen',
@@ -311,7 +338,72 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 	],
 	steps: [
 		{
+			id: 'attacker-makes-link',
+			when: byLink,
+			cites: [
+				{
+					source: 'rfc9700',
+					section: '4.1.1',
+					why: 'Section 4.1.1 starts this way: someone gets the user to open a link of theirs, which asks the real identity provider to log them in to the real app.'
+				}
+			],
+			from: 'attacker',
+			to: 'attacker',
+			kind: 'internal',
+			plain: 'Someone makes a login link for the app',
+			label: 'Make a login link',
+			concept: [
+				{
+					when: pkce,
+					text: 'They make the link the app would send the browser to, with an address of their own to send the code to. They make a verifier and its challenge as well, as the app would, and keep the verifier.'
+				},
+				{
+					text: 'They make the link the app would send the browser to, with an address of their own to send the code to. All it takes is the client ID, which is in every login address, so it is not a secret.'
+				}
+			],
+			fields: [
+				{ name: 'client_id', place: 'memory', note: 'The real app’s' },
+				{ name: 'redirect_uri', place: 'memory', note: 'An address of their own' },
+				{ name: 'state', place: 'memory', note: 'Their own' },
+				{
+					name: 'code_verifier',
+					place: 'memory',
+					note: 'Their own, which they keep',
+					artifact: 'verifier',
+					when: pkce
+				},
+				{
+					name: 'code_challenge',
+					place: 'memory',
+					note: 'SHA-256 of their verifier',
+					artifact: 'challenge',
+					when: pkce
+				}
+			]
+		},
+		{
+			id: 'attacker-sends-link',
+			when: byLink,
+			from: 'attacker',
+			to: 'browser',
+			kind: 'human',
+			plain: 'They get the user to open it',
+			label: 'A message with the link',
+			concept:
+				'No HTTP message here. An email, a chat message or a page of theirs, with the link in it. It goes to the real identity provider’s real login page, so it looks right, because it is.',
+			fields: [
+				{
+					name: 'code_challenge',
+					place: 'memory',
+					note: 'In the link',
+					artifact: 'challenge',
+					when: pkce
+				}
+			]
+		},
+		{
 			id: 'open-app',
+			when: not(byLink),
 			from: 'browser',
 			to: 'app',
 			kind: 'request',
@@ -420,7 +512,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				example('authjs', true, 'does this unless told otherwise'),
 				example('passport', false, 'only with pkce: true and state: true')
 			],
-			when: pkce,
+			when: all(pkce, not(byLink)),
 			fields: [
 				{
 					name: 'code_verifier',
@@ -452,7 +544,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		},
 		{
 			id: 'redirect-to-idp',
-			when: not(inPage),
+			when: all(not(inPage), not(byLink)),
 			cites: [
 				{
 					source: 'rfc9700',
@@ -513,6 +605,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			label: 'GET /authorize',
 			concept: [
 				{
+					when: byLink,
+					text: 'The browser opens their link, which asks the real identity provider to log the user in to the real app. The identity provider checks the address to send the code to against what was registered for the app, and that check is all that stands in their way.'
+				},
+				{
 					when: fromADocument,
 					text: 'The browser asks the identity provider to log the user in and grant the app access. The client ID here is an address, and where to send the user back to gets checked against what the app’s document says.'
 				},
@@ -551,7 +647,13 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					name: 'redirect_uri',
 					place: 'query',
 					note: 'Must match what was registered in setup',
-					when: all(not(is('address', 'other')), not(fromADocument))
+					when: all(not(is('address', 'other')), not(fromADocument), not(byLink))
+				},
+				{
+					name: 'redirect_uri',
+					place: 'query',
+					note: 'Their own address, which only a * in setup lets through',
+					when: byLink
 				},
 				{
 					name: 'redirect_uri',
@@ -565,7 +667,8 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					note: 'Not one that was registered in setup',
 					when: is('address', 'other')
 				},
-				{ name: 'state', place: 'query' },
+				{ name: 'state', place: 'query', when: not(byLink) },
+				{ name: 'state', place: 'query', note: 'Their own', when: byLink },
 				{ name: 'scope=openid', place: 'query', when: oidc },
 				{ name: 'nonce', place: 'query', when: oidc },
 				{
@@ -585,7 +688,14 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					place: 'query',
 					note: 'The identity provider keeps this with the code',
 					artifact: 'challenge',
-					when: pkce
+					when: all(pkce, not(byLink))
+				},
+				{
+					name: 'code_challenge',
+					place: 'query',
+					note: 'Theirs, which the identity provider keeps with the code',
+					artifact: 'challenge',
+					when: all(pkce, byLink)
 				},
 				{
 					name: 'code_challenge_method=S256',
@@ -597,7 +707,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		},
 		{
 			id: 'address-refused',
-			when: is('address', 'other'),
+			when: any(is('address', 'other'), linkRefused),
 			last: true,
 			cites: [
 				{
@@ -621,10 +731,24 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				shows: "The identity provider's own error page, with no way back to the app.",
 				shot: 'wrong-redirect'
 			},
-			concept:
-				'This is where it stops. The address is not one registered for this app, so there is no login and no code. It does not send the browser back to the app either, because that address is the one it cannot trust, so the page says what is wrong and has no way back. What your app sent is in the address of this page, after redirect_uri.',
-			inPractice:
-				'Compare what your app sent with what is registered for this client, in the provider’s settings for it. Current advice is that they have to match exactly, so look at http or https, the port, and a slash at the end. Your app usually takes it from its own settings, so the fix is in those or in the registration.',
+			concept: [
+				{
+					when: byLink,
+					text: 'This is where it stops. Their address is not the one registered for this app, so there is no login and no code, and their link gets them nothing. The identity provider did this, by comparing the address exactly, and the app had no part in it.'
+				},
+				{
+					text: 'This is where it stops. The address is not one registered for this app, so there is no login and no code. It does not send the browser back to the app either, because that address is the one it cannot trust, so the page says what is wrong and has no way back. What your app sent is in the address of this page, after redirect_uri.'
+				}
+			],
+			inPractice: [
+				{
+					when: byLink,
+					text: 'Register each address the app really uses, exactly. A * that makes this error go away for your own app lets a link like theirs through as well.'
+				},
+				{
+					text: 'Compare what your app sent with what is registered for this client, in the provider’s settings for it. Current advice is that they have to match exactly, so look at http or https, the port, and a slash at the end. Your app usually takes it from its own settings, so the fix is in those or in the registration.'
+				}
+			],
 			links: [
 				{
 					diagram: 'setup',
@@ -1148,10 +1272,20 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			from: 'idp',
 			to: 'browser',
 			kind: 'response',
-			plain: 'Sent back with a one-time code',
-			label: '302 back with a code',
-			concept:
-				'The identity provider sets a cookie on its own address, so it will know this browser next time, and sends the browser back to the app with a short-lived, one-time code. This goes through the browser, where it can be seen, so it should not be a token.',
+			plain: [
+				{ when: byLink, text: 'Sent to their address, with a code' },
+				{ text: 'Sent back with a one-time code' }
+			],
+			label: [{ when: byLink, text: '302 to their address' }, { text: '302 back with a code' }],
+			concept: [
+				{
+					when: byLink,
+					text: 'The * matches their address, so the identity provider sends the browser there, with a short-lived, one-time code for the real app. It sets its cookie as well, so it will know this browser next time.'
+				},
+				{
+					text: 'The identity provider sets a cookie on its own address, so it will know this browser next time, and sends the browser back to the app with a short-lived, one-time code. This goes through the browser, where it can be seen, so it should not be a token.'
+				}
+			],
 			pitfall: {
 				title: 'Why not send the token here?',
 				text: 'That is the implicit flow, and it is what apps in a browser used to do. The token then sits in the address, where browser history and anything running in the page can get at it, and it cannot be tied to the app that asked. Current advice is not to use it, though you will still see it offered.'
@@ -1190,10 +1324,33 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				'The code crosses the browser, so anything that can see that can copy it. This shows them getting there before the real app, which is the case that matters.',
 			recordedAs:
 				'The request the real app gets, drawn going to them as well. How someone gets a copy is not something a recording can show.',
-			when: attacker,
+			when: all(attacker, not(byLink)),
 			fields: [
 				{ name: 'code', place: 'query', artifact: 'code' },
 				{ name: 'state', place: 'query', note: 'Means nothing to them, and they can ignore it' },
+				{ name: 'iss', place: 'query', note: 'Tells them where to take the code' }
+			]
+		},
+		{
+			id: 'code-to-attacker',
+			when: byLink,
+			cites: [
+				{
+					source: 'rfc9700',
+					section: '4.1.1',
+					why: 'Section 4.1.1 says that once the address is let through, the code is issued and sent straight to them.'
+				}
+			],
+			from: 'browser',
+			to: 'attacker',
+			kind: 'request',
+			plain: 'The code reaches them',
+			label: 'GET their address',
+			concept:
+				'The browser follows the redirect, so the code arrives at a server of theirs, in the address, with their own state. The user logged in to the real identity provider as they always do, and what they see now is whatever that server shows them.',
+			fields: [
+				{ name: 'code', place: 'query', artifact: 'code' },
+				{ name: 'state', place: 'query', note: 'Their own, so it matches' },
 				{ name: 'iss', place: 'query', note: 'Tells them where to take the code' }
 			]
 		},
@@ -1420,6 +1577,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			execute: { answer: 'attacker-token-response', when: attackerWins },
 			concept: [
 				{
+					when: all(byLink, not(confidential), pkce),
+					text: 'They send the code to the identity provider, as the real app would, with the verifier they made for their own link. It matches the challenge, because they made both.'
+				},
+				{
 					when: all(not(confidential), pkce),
 					text: 'They send the code to the identity provider, as the real app would, but without the verifier, which they never saw.'
 				},
@@ -1435,8 +1596,21 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			fields: [
 				{ name: 'grant_type=authorization_code', place: 'body' },
 				{ name: 'code', place: 'body', artifact: 'code' },
-				{ name: 'redirect_uri', place: 'body' },
-				{ name: 'client_id', place: 'body', note: 'Not a secret, and it was in the login address' }
+				{ name: 'redirect_uri', place: 'body', when: not(byLink) },
+				{
+					name: 'redirect_uri',
+					place: 'body',
+					note: 'Their own, which the code was issued for',
+					when: byLink
+				},
+				{ name: 'client_id', place: 'body', note: 'Not a secret, and it was in the login address' },
+				{
+					name: 'code_verifier',
+					place: 'body',
+					note: 'Their own, which matches the challenge in their link',
+					artifact: 'verifier',
+					when: all(byLink, pkce)
+				}
 			]
 		},
 		{
@@ -1446,6 +1620,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					source: 'rfc6749',
 					section: '5.2',
 					why: 'Section 5.2 lists the errors a token request can get, and invalid_client is the one for a client that did not prove who it is.'
+				},
+				{
+					source: 'rfc9700',
+					section: '4.1.1',
+					why: 'Section 4.1.1 says that someone posing as an app with no secret can trade the code, and that it is not as easy with a secret.',
+					when: byLink
 				}
 			],
 			from: 'idp',
@@ -1462,6 +1642,18 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{ text: '401 unauthorized_client' }
 			],
 			concept: [
+				{
+					when: all(byLink, attackerWins, pkce),
+					text: 'They hold the tokens, PKCE and all. PKCE ties the code to whoever started the login, and they did. What would have stopped them is the identity provider refusing their address, which an exact one in setup does.'
+				},
+				{
+					when: all(byLink, attackerWins),
+					text: 'This app has no secret, so nothing in the request says it is not the app. They now hold what the app was supposed to get, including a refresh token, and nothing has told the user. An exact address in setup would have stopped this at the start.'
+				},
+				{
+					when: all(byLink, confidential),
+					text: 'Without the secret, the identity provider refuses them. The code still went to them, from a real login by the real user, and only an exact address in setup would have kept it from them.'
+				},
 				{
 					when: attackerWins,
 					text: 'This app has no secret, and nothing ties the code to it, so the identity provider has no way to tell. They now hold what the app was supposed to get, including a refresh token, which gets them new access tokens without the user, and nothing has told the user.'
@@ -1530,6 +1722,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		},
 		{
 			id: 'callback',
+			when: not(byLink),
 			cites: [
 				{
 					source: 'rfc6749',
@@ -1588,6 +1781,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		},
 		{
 			id: 'token-request',
+			when: not(byLink),
 			cites: [
 				{
 					source: 'rfc10017',
@@ -1802,7 +1996,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: 'A code works once, and it has been used, so the app gets nothing and the user sees an error. The specs advise the server to cancel what that code got, and this one does. But someone else has had the tokens by then, and an API that only looks at the token itself goes on taking them until they expire.'
 				}
 			],
-			when: codeGone,
+			when: all(codeGone, not(byLink)),
 			fields: [
 				{ name: 'error=invalid_grant', place: 'body', note: 'The code cannot be used this way' },
 				{ name: 'error_description', place: 'body', note: 'Which check it failed' }

@@ -166,6 +166,8 @@ export interface PartDef {
 	why: string;
 	/** Its first step, whether or not that step is there under the current settings. */
 	from: string;
+	/** When it is this part that starts there, because someone else can start the login. */
+	when?: Condition;
 }
 
 /** Steps are one ordered list, so a toggle can only add, remove or reword, never reorder. */
@@ -306,11 +308,11 @@ function channelOf(flow: DiagramDef, step: StepDef): Channel {
 	return front ? 'front' : 'back';
 }
 
-function partsOf(flow: DiagramDef, steps: readonly Step[]): Part[] {
+function partsOf(flow: DiagramDef, steps: readonly Step[], settings: Settings): Part[] {
 	const here = new Set(steps.map((step) => step.id));
 	const parts: Part[] = [];
 	for (const step of flow.steps) {
-		const starts = flow.parts.find((part) => part.from === step.id);
+		const starts = flow.parts.find((part) => part.from === step.id && present(part.when, settings));
 		if (starts) parts.push({ label: starts.label, why: starts.why, steps: [] });
 		if (!parts.length) throw new Error(`${step.id} comes before the first part of ${flow.id}`);
 		if (here.has(step.id)) parts[parts.length - 1].steps.push(step.id);
@@ -396,7 +398,7 @@ export function evaluate(flow: DiagramDef, settings: Settings): DiagramView {
 			})),
 		steps,
 		groups: flow.groups.filter((group) => present(group.when, settings)),
-		parts: partsOf(flow, steps)
+		parts: partsOf(flow, steps, settings)
 	};
 }
 

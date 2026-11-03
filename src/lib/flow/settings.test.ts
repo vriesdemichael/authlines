@@ -88,6 +88,9 @@ describe('constraints', () => {
 		const eachCustomerHasAProvider = 2 * 2;
 		// With DPoP in the plain case, at an API that checks the proof or knows only Bearer.
 		const aStolenToken = 2;
+		// A login link of theirs, in the plain case: OpenID Connect, the client type, PKCE, and what the
+		// app registered.
+		const aLinkOfTheirs = 2 * 2 * 2 * 2;
 		expect(allValidSettings()).toBe(allValidSettings());
 		expect(Object.isFrozen(allValidSettings())).toBe(true);
 		expect(allValidSettings().every((settings) => Object.isFrozen(settings))).toBe(true);
@@ -104,7 +107,8 @@ describe('constraints', () => {
 				inADirectory +
 				withAServerBehindThePage +
 				eachCustomerHasAProvider +
-				aStolenToken
+				aStolenToken +
+				aLinkOfTheirs
 		);
 	});
 

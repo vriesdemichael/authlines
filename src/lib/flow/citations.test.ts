@@ -60,6 +60,14 @@ const CITED: readonly [step: string, SourceId, section: string, phrase: string][
 	['callback', 'rfc9700', '4.7', 'Cross-Site Request Forgery'],
 	['redirect-with-code', 'rfc9700', '4.4', 'Mix-up attacks can occur'],
 	['attacker-steals-code', 'rfc9700', '4.5.4', 'can circumvent the countermeasures'],
+	['attacker-makes-link', 'rfc9700', '4.1.1', 'trick the user into opening a'],
+	['code-to-attacker', 'rfc9700', '4.1.1', "immediately sent to the attacker's"],
+	[
+		'attacker-token-response',
+		'rfc9700',
+		'4.1.1',
+		'will not work as easily for confidential clients'
+	],
 	['redirect-with-code', 'rfc9700', '2.1', 'a defense against mix-up attacks'],
 	['service-token-request', 'rfc9700', '2.5', 'RECOMMENDED to use asymmetric cryptography'],
 	['attacker-hands-code', 'rfc9700', '4.5', 'Authorization Code Injection'],

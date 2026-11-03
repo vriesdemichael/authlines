@@ -252,8 +252,8 @@ describe('how a message travels', () => {
 				const browser = step.from === 'browser' || step.to === 'browser';
 				// Someone's own browser, which is not the one on this diagram.
 				const theirs = step.from === 'attacker' || step.to === 'attacker';
-				// An app in the page thinking to itself, which goes nowhere.
-				if (step.kind === 'internal') continue;
+				// An app in the page thinking to itself, which goes nowhere, and a person telling another.
+				if (step.kind === 'internal' || step.kind === 'human') continue;
 				if (browser) expect(step.channel, step.id).toBe('front');
 				else if (!theirs) expect(step.channel, step.id).not.toBe('front');
 			}
@@ -426,9 +426,11 @@ describe('the two diagrams', () => {
 		]);
 	});
 
-	it('keep people out of the user flow', () => {
+	// Except someone with no business here, sending the user something, which is not a hand-off.
+	it('keep the people of the setup out of the user flow', () => {
 		for (const settings of combinations) {
-			expect(evaluate(flow, settings).steps.map((step) => step.kind)).not.toContain('human');
+			const people = evaluate(flow, settings).steps.filter((step) => step.kind === 'human');
+			expect(people.map((step) => step.from)).toEqual(people.map(() => 'attacker'));
 		}
 	});
 

@@ -7,6 +7,8 @@ export interface Settings {
 	pkce: boolean;
 	attacker: boolean;
 	attackerUses: 'themselves' | 'real-app';
+	attackerGets: 'copy' | 'link';
+	registered: 'exact' | 'any';
 	binding: 'bearer' | 'dpop';
 	dpopNonce: boolean;
 	broker: boolean;
@@ -387,7 +389,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			{ value: 'real-app', label: 'Hand it to the real app' }
 		],
 		requires: {
-			when: all(is('attacker', true), is('clientType', 'confidential')),
+			when: all(is('attacker', true), is('clientType', 'confidential'), is('attackerGets', 'copy')),
 			because: 'Only an app with a secret needs this. With no secret, they can just trade the code.'
 		},
 		sources: [
@@ -397,6 +399,68 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				why: 'Section 4.5 is this attack, which it calls authorization code injection, and section 4.5.3 what stops it.'
 			}
 		]
+	},
+	attackerGets: {
+		kind: 'choice',
+		label: 'How they get the code',
+		param: 'gets',
+		default: 'copy',
+		onlyOn: 'authorization-code',
+		summary:
+			'They copy it as it goes by, or they get the user to open a login link of their own, which asks for the code to go to them.',
+		why: 'Anyone can make a login link for any app, because the client ID is in every login address. What keeps the code from going where the link says is the identity provider, which only sends it to an address registered for the app.',
+		sources: [
+			{
+				source: 'rfc9700',
+				section: '4.1.1',
+				why: 'Section 4.1.1 is this attack: a link of theirs, with an address the identity provider should not have let through, and the code sent straight to them.'
+			}
+		],
+		options: [
+			{ value: 'copy', label: 'A copy, as it goes by' },
+			{ value: 'link', label: 'Their own login link', sets: { attackerUses: 'themselves' } }
+		],
+		requires: {
+			when: all(
+				is('attacker', true),
+				is('appRuns', 'server'),
+				is('registration', 'manual'),
+				is('federation', false),
+				is('companies', false),
+				is('consent', false),
+				is('refresh', false),
+				is('sso', false),
+				is('logout', false),
+				is('apiToken', 'good'),
+				is('address', 'registered')
+			),
+			because: 'Only in the plain case so far, with the app on a server.'
+		}
+	},
+	registered: {
+		kind: 'choice',
+		label: 'What the app registered',
+		param: 'registered',
+		default: 'exact',
+		onlyOn: 'authorization-code',
+		summary:
+			'Its exact address, or *, which some put there to make Invalid parameter: redirect_uri go away.',
+		why: 'The identity provider sends the code only to an address registered for the app. With *, that is any address at all, so their link gets them the code. Only an exact address stops it, and it is checked at the identity provider.',
+		sources: [
+			{
+				source: 'rfc9700',
+				section: '4.1.3',
+				why: 'Section 4.1.3 is what stops it: the identity provider compares the address with what was registered, exactly.'
+			}
+		],
+		options: [
+			{ value: 'exact', label: 'Its exact address' },
+			{ value: 'any', label: '*, which matches anything' }
+		],
+		requires: {
+			when: is('attackerGets', 'link'),
+			because: 'Only a link of theirs asks this.'
+		}
 	},
 	binding: {
 		kind: 'choice',
