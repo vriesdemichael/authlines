@@ -340,11 +340,12 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'stolen-token',
 					answer:
-						'It ties the token to a key that stays in the app, and each call has to carry a proof signed with that key. At an API that checks the proof, the token alone gets nobody in.',
+						'It ties the token to a key that stays in the app, and each call has to carry a proof signed with that key. At an API that checks the proof, the token alone gets nobody in. An API that knows only Bearer never looks, and takes it.',
 					title: 'How does DPoP stop a stolen token being used?',
-					summary: 'It ties a token to a key that stays in the app. The theft itself is not drawn.',
-					preset: 'dpop',
-					step: 'api-request'
+					summary: 'Only where the API checks the proof. The theft itself is not drawn.',
+					mode: 'advanced',
+					preset: 'dpop-thief',
+					step: 'thief-api-response'
 				})
 			]
 		]
@@ -710,6 +711,28 @@ export const mapNodes: readonly MapNode[] = mapTracks.flatMap((track) => track.c
  * they were about through the question that took them over.
  */
 export const offTheMap: readonly MapNode[] = [
+	node({
+		id: 'dpop-on-the-wire',
+		alsoAskedAs: ['dpop proof', 'dpop header'],
+		answer:
+			'A proof with each call: a short note signed with a key that stays in the app, new each time and tied to the call it goes with. The token says which key, so an API that checks can tell it came from the app it was issued to.',
+		title: 'What does DPoP add to each call?',
+		summary: 'A proof, signed with a key that stays in the app.',
+		mode: 'advanced',
+		preset: 'dpop',
+		step: 'api-request'
+	}),
+	node({
+		id: 'dpop-at-a-bearer-api',
+		alsoAskedAs: ['dpop downgrade', 'dpop as bearer', 'bearer only api'],
+		answer:
+			"No. An API written before DPoP never looks at what the token is tied to, so a stolen one sent as plain Bearer gets in. The check is the API's own code, and an API that takes both has to refuse a bound token sent as Bearer.",
+		title: 'Does DPoP protect a token at an API that does not know it?',
+		summary: 'No: the API is what checks the proof.',
+		mode: 'advanced',
+		preset: 'dpop-thief-bearer-only',
+		step: 'thief-api-response'
+	}),
 	node({
 		id: 'someone-leaves-oidc',
 		alsoAskedAs: ['leaves openid connect', 'offboarding openid connect'],

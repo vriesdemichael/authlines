@@ -10,7 +10,12 @@ import { resultKey } from '#lib/search/result-key.ts';
 import { search } from '#lib/search/search.ts';
 
 /** The demo API's words, which nobody else's server will say. */
-const API_ANSWERS = new Set(['api-response', 'api-refused', 'asks-after-logout-response']);
+const API_ANSWERS = new Set([
+	'api-response',
+	'api-refused',
+	'asks-after-logout-response',
+	'thief-api-response'
+]);
 
 const FOLDERS = Object.keys(flows).map((id) => `static/recordings/${id}`);
 const recordings: Recording[] = FOLDERS.flatMap((folder) =>

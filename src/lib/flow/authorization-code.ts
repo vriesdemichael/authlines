@@ -40,6 +40,9 @@ const companies = is('companies', true);
 const saml = all(companies, is('customerSpeaks', 'saml'));
 /** Their company turns their account off, and what still works here. */
 const leaves = is('leaves', true);
+/** Someone has a copy of the access token, and not the key it is tied to. */
+const thief = is('tokenThief', true);
+const bearerOnly = all(thief, is('apiChecks', 'bearer'));
 const storedTokens = any(is('upstreamTokens', 'v1'), is('upstreamTokens', 'v2'));
 const apiV1 = is('upstreamTokens', 'v1');
 const apiV2 = is('upstreamTokens', 'v2');
@@ -178,6 +181,17 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			when: attacker
 		},
 		{
+			id: 'attacker',
+			plainName: 'Someone else',
+			plainRole: 'Has no business here',
+			name: 'Attacker',
+			role: 'Has a copy of the token',
+			icon: 'attacker',
+			concept:
+				'Someone who has a copy of the access token, and not the key in the app that it is tied to. How they got it is not drawn: a log that kept it, a leak, or something running where the app runs.',
+			when: thief
+		},
+		{
 			id: 'directory',
 			plainName: 'User directory',
 			plainRole: 'Has the users',
@@ -263,6 +277,11 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			label: 'Use',
 			why: 'This is what the token was for, and whatever gets the call decides what to do with it.',
 			from: 'userinfo-request'
+		},
+		{
+			label: 'Stolen token',
+			why: 'Someone else has the access token. What it gets them depends on what the API checks.',
+			from: 'thief-has-token'
 		},
 		{
 			label: 'Leave',
@@ -2244,6 +2263,78 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept:
 				'The page has the data and still no token. Every call it makes goes this way, so this server now has to be up and in reach for all of them.',
 			fields: [{ name: 'resource', place: 'body', note: 'What the API said, passed on' }]
+		},
+		{
+			id: 'thief-has-token',
+			when: thief,
+			from: 'attacker',
+			to: 'attacker',
+			kind: 'internal',
+			plain: 'Someone else has the access token',
+			label: 'A copy of the token',
+			concept: 'How they got it is not drawn. What matters is what it gets them, without the key.'
+		},
+		{
+			id: 'thief-api-request',
+			when: thief,
+			from: 'attacker',
+			to: 'api',
+			kind: 'request',
+			plain: 'They call the API with it, and no proof',
+			label: 'GET /resource',
+			concept:
+				'They send it as a plain Bearer token, because the key it is tied to stayed in the app, so they cannot make a proof.',
+			fields: [
+				{
+					name: 'Authorization: Bearer',
+					place: 'header',
+					artifact: 'access-token',
+					note: 'The stolen token, with no proof'
+				}
+			]
+		},
+		{
+			id: 'thief-api-response',
+			when: thief,
+			last: true,
+			cites: [
+				{
+					source: 'rfc9449',
+					section: '7.2',
+					why: 'Section 7.2 says an API that supports DPoP must refuse a bound token sent as Bearer, and that one which knows only Bearer would most likely take it.'
+				}
+			],
+			from: 'api',
+			to: 'attacker',
+			kind: 'response',
+			plain: [{ when: bearerOnly, text: 'It answers them' }, { text: 'Refused: it needs a proof' }],
+			label: [{ when: bearerOnly, text: '200 with the resource' }, { text: '401 invalid_token' }],
+			concept: [
+				{
+					when: bearerOnly,
+					text: 'This API was written before DPoP and never looks at what the token is tied to, so the token alone gets them in. The key in the app protected nothing here.'
+				},
+				{
+					text: 'This API sees that the token is tied to a key, and wants a proof made with it, which they cannot make. The token alone gets nobody in.'
+				}
+			],
+			inPractice:
+				"The check is in the API, not the identity provider, so it is the API team's own code to get right. An API that takes both kinds of token has to refuse a bound one sent as Bearer.",
+			fields: [
+				{ name: 'resource', place: 'body', note: 'What the API answers', when: bearerOnly },
+				{
+					name: 'WWW-Authenticate',
+					place: 'header',
+					note: 'Why it refused',
+					when: not(bearerOnly)
+				},
+				{
+					name: 'error',
+					place: 'body',
+					note: 'The same, in the words of the demo API',
+					when: not(bearerOnly)
+				}
+			]
 		},
 		{
 			id: 'company-turns-off',

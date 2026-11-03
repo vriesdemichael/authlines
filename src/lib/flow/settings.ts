@@ -27,6 +27,8 @@ export interface Settings {
 	companies: boolean;
 	customerSpeaks: 'oidc' | 'saml';
 	leaves: boolean;
+	tokenThief: boolean;
+	apiChecks: 'proof' | 'bearer';
 }
 
 export type SettingId = keyof Settings;
@@ -309,6 +311,68 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			because: 'The attacker only shows the plain case, with a Bearer token and no other provider.',
 			sayWhenBlocked: true
 		}
+	},
+	tokenThief: {
+		kind: 'toggle',
+		label: 'Show someone using a stolen token',
+		param: 'thief',
+		default: false,
+		onlyOn: 'authorization-code',
+		summary: 'Someone has the access token, and calls the API with it, without a proof.',
+		why: "DPoP only helps where something checks the proof, and that is the API, not the identity provider. So whether a stolen token gets someone in depends on the API's own code.",
+		sources: [
+			{
+				source: 'rfc9449',
+				section: '7.2',
+				why: 'Section 7.2 says an API that knows only Bearer would most likely take a DPoP-bound token as a Bearer one, and one that supports both must refuse that.'
+			}
+		],
+		requires: {
+			when: all(
+				is('binding', 'dpop'),
+				is('dpopNonce', false),
+				is('oidc', false),
+				is('consent', false),
+				is('clientType', 'confidential'),
+				is('pkce', false),
+				is('attacker', false),
+				is('broker', false),
+				is('apiToken', 'good'),
+				is('refresh', false),
+				is('sso', false),
+				is('logout', false),
+				is('address', 'registered'),
+				is('appRuns', 'server'),
+				is('registration', 'manual'),
+				is('federation', false)
+			),
+			because: 'Only with a DPoP token, in the plain case so far.'
+		}
+	},
+	apiChecks: {
+		kind: 'choice',
+		label: 'What the API checks',
+		param: 'checks',
+		default: 'proof',
+		onlyOn: 'authorization-code',
+		summary:
+			'An API that checks the DPoP proof, or one written before DPoP that knows only Bearer.',
+		why: 'The same token gets two answers. An API that knows DPoP sees the token is tied to a key and wants the proof. One that knows only Bearer never looks at that, so the token alone gets in.',
+		sources: [
+			{
+				source: 'rfc9449',
+				section: '7.1',
+				why: 'Section 7.1 is what an API checks for a DPoP-bound token, including the proof.'
+			}
+		],
+		requires: {
+			when: is('tokenThief', true),
+			because: 'Only someone using a stolen token asks this.'
+		},
+		options: [
+			{ value: 'proof', label: 'Checks the proof' },
+			{ value: 'bearer', label: 'Knows only Bearer' }
+		]
 	},
 	attackerUses: {
 		kind: 'choice',
