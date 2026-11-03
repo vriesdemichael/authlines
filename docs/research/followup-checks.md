@@ -289,3 +289,16 @@ An audit of the source said it caches for 300 seconds, which was not tried past 
 - The token has no audience, and the demo API answered "not for this API". Putting an audience mapper in the `basic` client scope gave it `aud: account`, and the API answered.
 
 The recording turned on plain HTTP, because the demo app has no certificate, and a real one has to be HTTPS. The draft was at -03 that day.
+
+## User federation on a real server
+
+Asked of Keycloak 26.8.1 with OpenLDAP 2.6 (`bitnamilegacy/openldap`) on 2026-11-02, and asked again by the recorder from then on, in `questions.json`. A claims audit by an AI agent asked for most of these, and it was right about most of what it doubted.
+
+- **What can be seen of it.** LDAP is not HTTP, so the recorder has no proxy on it, and it has no text form to show. The directory's own log (`LDAP_LOGLEVEL=256`) has each search and bind, and the screen shows those lines as they are. It leaves the password out, so a pass-through on the connection checks that the password's bytes really cross it. `ssf=0` in the log says the connection was not encrypted.
+- **What one login asks.** A bind as the provider's own account, a search, then a bind as the user with the password they typed. A first login searches by username, and a second by the `entryUUID` it kept. Both try the password on the directory.
+- **What it keeps.** With Import Users on, a copy of the user, linked to the directory, with a password credential that only points there. With it off the server still answers, and `sub` becomes `f:<provider>:alice`, which was tried once by hand.
+- **The tokens.** Same claim names as the provider's own user and as a brokered one, across the three recordings, and a test holds that. One value differs: `email_verified` is false, and Trust Email on the provider turns it true. With a proper full name in `cn`, the default mappers give `given_name` and `family_name`. An earlier test entry with one word there had no first name, which was the test data and not the server.
+- **A wrong password** gets the login page again, with a 200, and the log shows `err=49`.
+- **The directory down.** For someone in the directory, the login page answers 400, "Unexpected error when handling authentication request to identity provider.", including someone who logged in before, and the token endpoint answers 500 with `unknown_error`. Someone with a session is not asked to log in, a refresh token still works, and a user kept in the provider can still log in.
+
+Active Directory was not tried. It speaks LDAP, and Keycloak has a vendor setting for it, so its defaults differ.

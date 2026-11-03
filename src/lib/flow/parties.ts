@@ -51,6 +51,12 @@ export const idpWords: Words = {
 	]
 };
 
+export const directoryWords: Words = {
+	name: 'Directory',
+	role: 'LDAP',
+	knownAs: []
+};
+
 export const upstreamWords: Words = {
 	name: 'Upstream provider',
 	role: 'Other provider',

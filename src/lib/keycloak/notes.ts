@@ -34,7 +34,8 @@ export type ConsolePage =
 	| 'realm-settings'
 	| 'realm-sessions'
 	| 'realm-tokens'
-	| 'browser-flow';
+	| 'browser-flow'
+	| 'directory-settings';
 
 export interface ConsolePlace {
 	/** What someone clicks through, in the words of the console. */
@@ -591,6 +592,26 @@ export const noteDefs: readonly NoteDef[] = [
 			shows: { realmsDiffer: true, endsWithRealm: true }
 		},
 		seen: 'Compared two realms on'
+	},
+	{
+		id: 'trust-email',
+		steps: ['connect-directory', 'token-response'],
+		title: 'Trust Email',
+		text: 'Off on a new provider, so a token says email_verified false for someone from the directory, with their address right there. Turned on, it says true.',
+		when: is('federation', true),
+		place: {
+			path: ['User federation', 'the provider', 'Settings', 'Trust Email'],
+			page: 'directory-settings',
+			shows: ['Trust Email']
+		},
+		backedBy: {
+			question: 'trustEmail',
+			shows: {
+				before: { emailVerified: false },
+				after: { emailVerified: true }
+			}
+		},
+		claims: ['email_verified']
 	},
 	{
 		id: 'broker-redirector',

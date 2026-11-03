@@ -148,6 +148,8 @@ test.describe('the start', () => {
 			await page.setViewportSize({ width: 1440, height: 900 });
 			await page.goto(`authorization-code/?mode=${mode}`);
 			await page.locator('.workspace[data-ready="true"]').waitFor();
+			// What is on screen once it has settled, or this passes by luck on a busy machine.
+			if (mode === 'advanced') await page.getByTestId('payload').waitFor();
 			const measured = await page.evaluate(() => ({
 				words: document.body.innerText.split(/\s+/).filter(Boolean).length,
 				controls: [...document.querySelectorAll('button, a, input, select, summary')].filter(

@@ -9,6 +9,8 @@ import {
 	API,
 	APP,
 	BROKERED_REALM,
+	connectDirectory,
+	DIRECTORY_REALM,
 	CLIENT_SECRET,
 	CONFIDENTIAL_CLIENT,
 	KEYCLOAK,
@@ -27,6 +29,17 @@ import {
 	POST_LOGOUT_URI,
 	namesTheApi
 } from './keycloak.ts';
+import {
+	DIRECTORY_URL,
+	directoryLogLength,
+	passThrough,
+	SERVICE_DN,
+	SERVICE_PASSWORD,
+	startDirectory,
+	stopDirectory,
+	USERS_DN,
+	whatALoginAsked
+} from './directory.ts';
 
 const b64 = (value: string | Buffer) => Buffer.from(value).toString('base64url');
 const sha256 = (value: string) => createHash('sha256').update(value).digest('base64url');
@@ -615,6 +628,157 @@ async function behindTheBrokeringNotes(browser: Browser, demo: Demo, admin: Admi
 }
 
 /** What a server does about an app with no user, each one tried both ways. */
+/** The login page, without a browser, because only what it answers matters here. */
+async function throughTheLoginPage(
+	clientId: string,
+	username: string,
+	password: string,
+	session = ''
+) {
+	const redirect = encodeURIComponent(REDIRECT_URI);
+	const page = await fetch(
+		`${KEYCLOAK}/realms/${DIRECTORY_REALM}/protocol/openid-connect/auth?response_type=code&client_id=${clientId}&redirect_uri=${redirect}`,
+		{ redirect: 'manual', headers: session ? { cookie: session } : {} }
+	);
+	if (page.status === 302) return { status: 302, askedToLogIn: false, session, says: null };
+	const html = await page.text();
+	const action = html.match(/action="([^"]+)"/)?.[1]?.replaceAll('&amp;', '&');
+	if (!action) throw new Error(`No login page: ${page.status} ${html.slice(0, 200)}`);
+	const answer = await fetch(action, {
+		method: 'POST',
+		redirect: 'manual',
+		headers: {
+			cookie: page.headers
+				.getSetCookie()
+				.map((cookie) => cookie.split(';')[0])
+				.join('; '),
+			'content-type': 'application/x-www-form-urlencoded'
+		},
+		body: new URLSearchParams({ username, password })
+	});
+	const body = await answer.text();
+	return {
+		status: answer.status,
+		askedToLogIn: true,
+		session: answer.headers
+			.getSetCookie()
+			.map((cookie) => cookie.split(';')[0])
+			.join('; '),
+		says: body.match(/instruction">\s*([^<]+)/)?.[1]?.trim() ?? null
+	};
+}
+
+/** What a directory changes about a login, and what still works with one that is not there. */
+export async function questionsWithADirectory(admin: Admin) {
+	const clientId = 'directory-question';
+	const realm = `/realms/${DIRECTORY_REALM}`;
+	await startDirectory();
+	const connection = passThrough();
+	try {
+		const provider = await connectDirectory(
+			admin,
+			DIRECTORY_URL,
+			USERS_DN,
+			SERVICE_DN,
+			SERVICE_PASSWORD
+		);
+		await admin.call('POST', `${realm}/clients`, {
+			clientId,
+			enabled: true,
+			publicClient: true,
+			standardFlowEnabled: true,
+			directAccessGrantsEnabled: true,
+			redirectUris: [REDIRECT_URI]
+		});
+		const logIn = () =>
+			token(DIRECTORY_REALM, {
+				grant_type: 'password',
+				client_id: clientId,
+				username: USERNAME,
+				password: PASSWORD
+			});
+		const forgetCopies = () =>
+			admin.call('POST', `${realm}/user-storage/${provider}/remove-imported-users`);
+		const emailVerified = async () => {
+			await forgetCopies();
+			const { json } = await logIn();
+			const [, payload] = json.access_token.split('.');
+			return JSON.parse(Buffer.from(payload, 'base64url').toString()).email_verified;
+		};
+		const before = { emailVerified: await emailVerified() };
+		const stored = await admin.call<{ config: object }>('GET', `${realm}/components/${provider}`);
+		await admin.call('PUT', `${realm}/components/${provider}`, {
+			...stored,
+			config: { ...stored.config, trustEmail: ['true'] }
+		});
+		const after = { emailVerified: await emailVerified() };
+		await admin.call('PUT', `${realm}/components/${provider}`, stored);
+		await forgetCopies();
+
+		const login = async (password: string) => {
+			const since = directoryLogLength();
+			const answer = await throughTheLoginPage(clientId, USERNAME, password);
+			return { status: answer.status, ...whatALoginAsked(since) };
+		};
+		const firstLogin = await login(PASSWORD);
+		const secondLogin = await login(PASSWORD);
+		const wrongPassword = await login('not-the-password');
+
+		const [copy] = await admin.call<{ id: string; federationLink?: string }[]>(
+			'GET',
+			`${realm}/users?username=${USERNAME}&exact=true`
+		);
+		const credentials = await admin.call<{ federationLink?: string }[]>(
+			'GET',
+			`${realm}/users/${copy.id}/credentials`
+		);
+
+		await admin.call('POST', `${realm}/users`, {
+			username: 'kept-in-the-provider',
+			enabled: true,
+			firstName: 'Kept',
+			lastName: 'Here',
+			email: 'kept@example.test',
+			emailVerified: true,
+			credentials: [{ type: 'password', value: PASSWORD, temporary: false }]
+		});
+		const { session } = await throughTheLoginPage(clientId, USERNAME, PASSWORD);
+		const { json: tokens } = await logIn();
+
+		stopDirectory();
+		const atTheForm = await throughTheLoginPage(clientId, USERNAME, PASSWORD);
+		const atTheToken = await logIn();
+		const withASession = await throughTheLoginPage(clientId, USERNAME, PASSWORD, session);
+		const keptHere = await throughTheLoginPage(clientId, 'kept-in-the-provider', PASSWORD);
+		const refreshed = await token(DIRECTORY_REALM, {
+			grant_type: 'refresh_token',
+			client_id: clientId,
+			refresh_token: tokens.refresh_token
+		});
+		return {
+			trustEmail: { before, after },
+			directoryLogin: {
+				firstLogin,
+				secondLogin,
+				wrongPassword,
+				keepsACopy: Boolean(copy.federationLink),
+				passwordIsElsewhere:
+					credentials.length > 0 && credentials.every(({ federationLink }) => federationLink)
+			},
+			directoryDown: {
+				form: { status: atTheForm.status, says: atTheForm.says },
+				token: { status: atTheToken.status, error: atTheToken.json.error },
+				withASession: { askedToLogIn: withASession.askedToLogIn },
+				keptInTheProvider: { status: keptHere.status },
+				refresh: { status: refreshed.status }
+			}
+		};
+	} finally {
+		connection.stop();
+		stopDirectory();
+	}
+}
+
 export async function questionsWithNoUser(admin: Admin) {
 	const onClients = `/realms/${LOCAL_REALM}/clients`;
 	const ask = async (clientId: string) =>

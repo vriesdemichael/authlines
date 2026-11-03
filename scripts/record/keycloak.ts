@@ -71,6 +71,7 @@ export const API_AUDIENCE = 'account';
 
 const CONTAINER = 'authlines-keycloak';
 export const ADMIN_PASSWORD = 'throwaway-admin';
+export const DIRECTORY_REALM = 'in-a-directory';
 
 const docker = (...args: string[]) =>
 	execFileSync('docker', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
@@ -186,8 +187,58 @@ export class Admin {
 	}
 }
 
+const STORAGE_PROVIDER = 'org.keycloak.storage.UserStorageProvider';
+
+const providerOfTheDirectory = async (admin: Admin) =>
+	(
+		await admin.call<{ id: string }[]>(
+			'GET',
+			`/realms/${DIRECTORY_REALM}/components?type=${STORAGE_PROVIDER}`
+		)
+	)[0]?.id;
+
+/** Its users are only in the directory, so that what logs in is really coming from there. */
+export async function connectDirectory(
+	admin: Admin,
+	url: string,
+	usersDn: string,
+	bindDn: string,
+	bindCredential: string
+) {
+	const already = await providerOfTheDirectory(admin);
+	if (already) return already;
+	const { id } = await admin.call<{ id: string }>('GET', `/realms/${DIRECTORY_REALM}`);
+	await admin.call('POST', `/realms/${DIRECTORY_REALM}/components`, {
+		name: 'directory',
+		providerId: 'ldap',
+		providerType: STORAGE_PROVIDER,
+		parentId: id,
+		config: {
+			enabled: ['true'],
+			vendor: ['other'],
+			connectionUrl: [url],
+			usersDn: [usersDn],
+			bindDn: [bindDn],
+			bindCredential: [bindCredential],
+			authType: ['simple'],
+			usernameLDAPAttribute: ['uid'],
+			rdnLDAPAttribute: ['cn'],
+			uuidLDAPAttribute: ['entryUUID'],
+			userObjectClasses: ['inetOrgPerson'],
+			editMode: ['READ_ONLY'],
+			importEnabled: ['true'],
+			syncRegistrations: ['false'],
+			batchSizeForSync: ['1000'],
+			pagination: ['false']
+		}
+	});
+	const provider = await providerOfTheDirectory(admin);
+	if (!provider) throw new Error('The directory did not connect.');
+	return provider;
+}
+
 export async function setUpRealms(admin: Admin) {
-	for (const realm of [LOCAL_REALM, BROKERED_REALM, UPSTREAM_REALM]) {
+	for (const realm of [LOCAL_REALM, BROKERED_REALM, UPSTREAM_REALM, DIRECTORY_REALM]) {
 		await admin.call('POST', '/realms', { realm, enabled: true });
 	}
 

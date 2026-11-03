@@ -80,7 +80,8 @@
 						role="img"
 						aria-label="Hidden"
 						style:width={`${Math.min(line.hidden, MOST_BLACKED_OUT)}ch`}
-					></span>{:else if line.value !== undefined}{#if line.value.length > LONG}<button
+
+					></span>{:else if line.value !== undefined}{#if line.value.length > LONG && !line.whole}<button
 							type="button"
 							class="value long"
 							class:open={whole || opened[i]}

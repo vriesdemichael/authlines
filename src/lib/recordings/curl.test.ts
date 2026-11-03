@@ -65,7 +65,7 @@ function parsed(command: string) {
 const requests = recordings
 	.flatMap(({ messages }) => messages)
 	.filter(({ direction }) => direction === 'request');
-const sendable = requests.filter((message) => !message.bodyNote);
+const sendable = requests.filter((message) => !message.bodyNote && !message.log);
 
 describe('a request as a command', () => {
 	it('exists for a good many requests, in every recording', () => {

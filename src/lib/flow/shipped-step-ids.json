@@ -109,5 +109,10 @@
 	"cimd-allow",
 	"cimd-host",
 	"cimd-fetch",
-	"cimd-document"
+	"cimd-document",
+	"directory-search",
+	"directory-found",
+	"directory-bind",
+	"directory-bound",
+	"connect-directory"
 ]

@@ -405,6 +405,83 @@ describe('the words on what an API answered', () => {
 	});
 });
 
+describe('a user in a directory', () => {
+	const access = (preset: string) => {
+		const answer = read(preset).messages.find(({ step }) => step === 'token-response');
+		const { access_token: token } = answer?.body as { access_token: string };
+		return JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+	};
+
+	// The screen says it is the same token, so it comes from the three real runs and not from me.
+	it("gets a token with the same claims as the provider's own user, and another provider's", () => {
+		const names = (preset: string) => Object.keys(access(preset)).sort();
+		expect(names('in-a-directory')).toEqual(names('oauth'));
+		expect(names('broker')).toEqual(names('oauth'));
+	});
+
+	it('is the same person in each', () => {
+		const who = ({
+			preferred_username,
+			email,
+			given_name,
+			family_name
+		}: Record<string, string>) => ({
+			preferred_username,
+			email,
+			given_name,
+			family_name
+		});
+		expect(who(access('in-a-directory'))).toEqual(who(access('oauth')));
+	});
+
+	it('says what a real server said when the directory was down', () => {
+		const { answers } = JSON.parse(readFileSync(`${FOLDER}/questions.json`, 'utf8'));
+		const bound = stepsOf(read('in-a-directory')).find(({ id }) => id === 'directory-bound');
+		expect(answers.directoryDown.form.status).toBe(400);
+		expect(JSON.stringify(bound?.pitfall)).toContain(answers.directoryDown.form.says);
+		// The rest of what that pitfall says.
+		expect(answers.directoryDown).toMatchObject({
+			withASession: { askedToLogIn: false },
+			keptInTheProvider: { status: 302 },
+			refresh: { status: 200 }
+		});
+		expect(answers.directoryLogin).toMatchObject({
+			// The provider's own account, and then the user's, which LDAP refused.
+			wrongPassword: { status: 200, triedThePassword: true, bindResults: [0, 49] },
+			keepsACopy: true,
+			passwordIsElsewhere: true
+		});
+	});
+
+	it('is looked up by username the first time, by an ID after that, and asked each time', () => {
+		const { answers } = JSON.parse(readFileSync(`${FOLDER}/questions.json`, 'utf8'));
+		expect(answers.directoryLogin.firstLogin).toMatchObject({
+			searchedByUsername: true,
+			searchedById: false,
+			triedThePassword: true
+		});
+		expect(answers.directoryLogin.secondLogin).toMatchObject({
+			searchedByUsername: false,
+			searchedById: true,
+			triedThePassword: true
+		});
+	});
+
+	it('differs in the one value the screen says it does', () => {
+		expect(access('oauth').email_verified).toBe(true);
+		expect(access('broker').email_verified).toBe(true);
+		expect(access('in-a-directory').email_verified).toBe(false);
+	});
+
+	it('shows only the lines of the log, word for word, with nothing built from them', () => {
+		for (const message of read('in-a-directory').messages.filter(({ log }) => log)) {
+			expect(message.url).toBeUndefined();
+			expect(message.log?.length).toBeGreaterThan(0);
+			for (const line of message.log ?? []) expect(line).toMatch(/^conn=\d+ op=\d+ /);
+		}
+	});
+});
+
 describe('every base flow', () => {
 	it.each(Object.values(flows).map((flow) => [flow.id, flow] as const))(
 		'%s has its recordings, so the guards here cannot silently miss one',

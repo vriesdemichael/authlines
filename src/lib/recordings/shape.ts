@@ -13,8 +13,13 @@ function claimNames(value: unknown): string[] | null {
 
 function pathOf(url: string): string {
 	const { pathname } = new URL(url);
-	// The only part of a path that changes between runs is the realm's generated login action.
-	return pathname.replace(/\/login-actions\/[^/]+/, '/login-actions/*');
+	// What changes between runs: the realm's generated login action, and a generated client's ID.
+	return pathname
+		.replace(/\/login-actions\/[^/]+/, '/login-actions/*')
+		.replace(
+			/\/clients-registrations\/openid-connect\/[^/]+/,
+			'/clients-registrations/openid-connect/*'
+		);
 }
 
 function queryNames(url: string): string[] {

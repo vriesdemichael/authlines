@@ -11,6 +11,7 @@ import {
 	API_CLIENT,
 	APP,
 	BROKERED_REALM,
+	DIRECTORY_REALM,
 	CLIENT_SECRET,
 	CONFIDENTIAL_CLIENT,
 	KEYCLOAK,
@@ -937,7 +938,9 @@ export class Demo {
 					url: `${API}${request.url}`
 				},
 				{
-					issuers: [LOCAL_REALM, BROKERED_REALM].map((realm) => `${KEYCLOAK}/realms/${realm}`),
+					issuers: [LOCAL_REALM, BROKERED_REALM, DIRECTORY_REALM].map(
+						(realm) => `${KEYCLOAK}/realms/${realm}`
+					),
 					// One API that expects its own name, as yours should, which a default client's token lacks.
 					audience: request.url?.startsWith('/my-api/') ? 'my-api' : API_AUDIENCE,
 					keysOf: (issuer) => keysAt(`${issuer}/protocol/openid-connect/certs`),

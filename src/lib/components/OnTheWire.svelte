@@ -82,7 +82,7 @@
 </script>
 
 <section class="wire" data-testid="on-the-wire">
-	<h3>On the wire</h3>
+	<h3>{message?.log ? 'From the log, not the wire' : 'On the wire'}</h3>
 	{#if onlarge && status === 'loaded' && message}
 		<button type="button" class="large" data-testid="read-large" onclick={onlarge}>
 			Read it large
@@ -145,7 +145,13 @@
 		<p class="origin" data-testid="payload-origin">
 			One real run against {serverNamed ? `Keycloak ${recording.keycloak}` : 'a real server'}, on {recording.recordedAt},
 			on one machine and so over plain HTTP, with throwaway values. Anywhere else all of this has to
-			be HTTPS. Only the headers that matter here were kept.
+			be HTTPS.
+			{#if message.log}
+				The connection to the directory was not encrypted either, which is what ssf=0 says in the
+				log, and anywhere else it needs LDAPS or StartTLS.
+			{:else}
+				Only the headers that matter here were kept.
+			{/if}
 			{#if recording.settings.clientType === 'public' && recording.settings.appRuns !== 'page'}
 				What ran here was a server standing in for an app in a page, on a phone or on a device.
 			{/if}

@@ -45,6 +45,8 @@ import {
 	QUICK_DEVICE_CLIENT,
 	SOMEONE_ELSE,
 	allowClientDocuments,
+	connectDirectory,
+	DIRECTORY_REALM,
 	makeInitialAccessToken,
 	setUpFor,
 	setUpRealms,
@@ -54,14 +56,26 @@ import {
 	USERNAME
 } from './keycloak.ts';
 import { lookInConsole } from './console.ts';
+import {
+	DIRECTORY_URL,
+	directoryLogLength,
+	messagesFromTheLog,
+	passThrough,
+	SERVICE_DN,
+	SERVICE_PASSWORD,
+	startDirectory,
+	stopDirectory,
+	USERS_DN
+} from './directory.ts';
 import { capturePages } from './pages.ts';
 import {
 	questionsOnADevice,
+	questionsWithADirectory,
 	questionsWithApiV1,
 	questionsWithApiV2,
 	questionsWithNoUser
 } from './questions.ts';
-import { deviceNoteDefs, noUserNoteDefs } from '#lib/keycloak/notes.ts';
+import { deviceNoteDefs, noteDefs, noUserNoteDefs } from '#lib/keycloak/notes.ts';
 
 const { presets } = base;
 
@@ -107,6 +121,7 @@ function classifyRequest(url: URL): string | null {
 	if (path.endsWith('/protocol/openid-connect/logout')) return 'end-session';
 	if (path === `/realms/${LOCAL_REALM}/protocol/openid-connect/auth`) return 'authorize';
 	if (path === `/realms/${BROKERED_REALM}/protocol/openid-connect/auth`) return 'authorize';
+	if (path === `/realms/${DIRECTORY_REALM}/protocol/openid-connect/auth`) return 'authorize';
 	if (path === `/realms/${UPSTREAM_REALM}/protocol/openid-connect/auth`)
 		return 'upstream-authorize';
 	if (path.endsWith(`/broker/${UPSTREAM_REALM}/endpoint`)) return 'upstream-callback';
@@ -114,6 +129,9 @@ function classifyRequest(url: URL): string | null {
 		return 'upstream-sign-in';
 	}
 	if (path.startsWith(`/realms/${LOCAL_REALM}/login-actions/authenticate`)) {
+		return 'submit-credentials';
+	}
+	if (path.startsWith(`/realms/${DIRECTORY_REALM}/login-actions/authenticate`)) {
 		return 'submit-credentials';
 	}
 	if (path.startsWith(`/realms/${LOCAL_REALM}/login-actions/consent`)) return 'consent-grant';
@@ -146,6 +164,12 @@ function classifyResponse(url: URL, status: number, location: string | null): st
 	}
 	if (location?.includes(`/broker/${UPSTREAM_REALM}/endpoint`)) return 'upstream-redirect-back';
 	if (url.pathname === `/realms/${LOCAL_REALM}/protocol/openid-connect/auth` && status === 200) {
+		return 'login-page';
+	}
+	if (
+		url.pathname === `/realms/${DIRECTORY_REALM}/protocol/openid-connect/auth` &&
+		status === 200
+	) {
 		return 'login-page';
 	}
 	if (url.pathname.startsWith(`/realms/${LOCAL_REALM}/login-actions/`) && status === 200) {
@@ -346,7 +370,7 @@ async function login(browser: Browser, run: Run) {
 function runFor(settings: Settings): Run {
 	return {
 		settings,
-		realm: settings.broker ? BROKERED_REALM : LOCAL_REALM,
+		realm: settings.federation ? DIRECTORY_REALM : settings.broker ? BROKERED_REALM : LOCAL_REALM,
 		clientId: CONFIDENTIAL_CLIENT,
 		clientSecret: settings.clientType === 'public' ? null : CLIENT_SECRET,
 		messages: []
@@ -382,9 +406,27 @@ async function record(
 
 	await admin.forgetBrokeredUsers();
 	demo.current = run;
-	await login(browser, run);
+	if (settings.federation) await loginThroughTheDirectory(browser, admin, run);
+	else await login(browser, run);
 	demo.current = null;
 	return run;
+}
+
+/** The same login, with a real LDAP server behind it, and what that was asked put where it happened. */
+async function loginThroughTheDirectory(browser: Browser, admin: Admin, run: Run) {
+	await startDirectory();
+	const connection = passThrough();
+	try {
+		await connectDirectory(admin, DIRECTORY_URL, USERS_DN, SERVICE_DN, SERVICE_PASSWORD);
+		const before = directoryLogLength();
+		await login(browser, run);
+		const at = run.messages.findIndex(({ step }) => step === 'submit-credentials');
+		if (at < 0) throw new Error('This login has no step where the password is submitted.');
+		run.messages.splice(at + 1, 0, ...messagesFromTheLog(before, connection.sawPassword()));
+	} finally {
+		connection.stop();
+		stopDirectory();
+	}
 }
 
 /** No user and no browser, so it is only what the app sends and gets, and the real server's keys. */
@@ -719,6 +761,15 @@ async function recordOnlyPresets(ids: readonly string[]) {
 			writeFileSync(`${FOLDER}/${id}.json`, `${JSON.stringify(recording, null, '\t')}\n`);
 			recordedOn[id] = recordedAt;
 		}
+		if (wanted.some(({ settings }) => settings.federation)) {
+			const file = `${FOLDER}/questions.json`;
+			const asked = JSON.parse(readFileSync(file, 'utf8'));
+			const directoryNotes = noteDefs.filter(({ place }) => place?.page === 'directory-settings');
+			const looked = await lookInConsole(browser, admin, [], directoryNotes);
+			Object.assign(asked.answers, await questionsWithADirectory(admin));
+			Object.assign(asked.answers.console, looked);
+			writeFileSync(file, `${JSON.stringify(asked, null, '\t')}\n`);
+		}
 		const flow = { presets: presets.map(({ id }) => id), steps: [...steps].sort() };
 		const flows = { ...index.flows, [base.id]: flow };
 		writeFileSync(INDEX, `${JSON.stringify({ ...index, recordedOn, flows }, null, '\t')}\n`);
@@ -818,6 +869,7 @@ async function main() {
 			}
 			Object.assign(inConsole, await lookInConsole(browser, admin, features));
 			Object.assign(answers, await questions(browser, demo, admin));
+			if (!features.length) Object.assign(answers, await questionsWithADirectory(admin));
 			if (!features.length) {
 				const info = await admin.call<{ features: ServerFeature[] }>('GET', '/serverinfo');
 				flags = flagsFrom(info.features);

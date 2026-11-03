@@ -40,9 +40,11 @@ test.describe('every named state, walked in advanced mode', () => {
 				if (onTheWire && inTheFile) {
 					const first = page.locator('[data-testid="payload"] [data-line]').first();
 					await expect(first).toContainText(
-						inTheFile.direction === 'response'
-							? String(inTheFile.status)
-							: new URL(inTheFile.url!).pathname
+						inTheFile.log
+							? inTheFile.log[0]
+							: inTheFile.direction === 'response'
+								? String(inTheFile.status)
+								: new URL(inTheFile.url!).pathname
 					);
 				}
 				const recorded = recording.messages.some((message) => message.step === step.id);

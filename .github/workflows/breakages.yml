@@ -78,6 +78,10 @@ jobs:
             title="A deliberate breakage went unnoticed"
           fi
           { echo "Run: $RUN"; echo; cat summary.md; } > body.md
+          # A run tried on a branch has its answer above. An issue is for what main no longer notices.
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            exit 0
+          fi
           existing=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body-file body.md
