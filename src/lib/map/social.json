@@ -39,7 +39,7 @@
 	"token-after-logout": "I logged out. Does the token still work?|The same token, and two answers.|30|4",
 	"logged-out-of-other-apps": "Am I logged out of my other apps too?|They lose the session they relied on, and may not know yet.|40|5",
 	"tokens-in-the-browser": "Where should an app in the browser keep its tokens?|localStorage, sessionStorage or memory: none of them fully stops a script in the page. A backend for frontend keeps tokens out of it, though a script can still act through the open page.|14|3",
-	"server-behind-the-page": "What does a server behind the page change?|The tokens stay out of the browser, and a cookie goes in.|21|4",
+	"server-behind-the-page": "Where should a page keep its tokens?|On a server behind it, if it can.|21|4",
 	"secret-in-the-page": "What if our client secret is in the JavaScript?|Then it is not a secret, and anyone can read it.|17|3",
 	"on-the-wire": "What really goes over the wire?|The raw request and answer, from one real run.|12|4",
 	"what-is-in-my-token": "Why does my access token say that?|Open it, and see which setting put each thing there.|12|4",

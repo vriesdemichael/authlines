@@ -302,3 +302,14 @@ Asked of Keycloak 26.8.1 with OpenLDAP 2.6 (`bitnamilegacy/openldap`) on 2026-11
 - **The directory down.** For someone in the directory, the login page answers 400, "Unexpected error when handling authentication request to identity provider.", including someone who logged in before, and the token endpoint answers 500 with `unknown_error`. Someone with a session is not asked to log in, a refresh token still works, and a user kept in the provider can still log in.
 
 Active Directory was not tried. It speaks LDAP, and Keycloak has a vendor setting for it, so its defaults differ.
+
+## A server behind the page, in a real browser
+
+Recorded on 2026-11-03 from Keycloak 26.8.1, a page and a small server of the demo app's own, and Playwright's Chromium, following RFC 10017 (BCP 212, August 2026) section 6.1. The recorder asks the page what a script in it can do each time it runs, in `questions.json`.
+
+- **The server is the client.** It is a confidential client with PKCE. The page asks it whether anyone is logged in, and when nobody is, sends the browser to the server's `/login`, which starts the login. The server makes the token request itself, so the browser sees the code in its address bar, as with an app on a server, and never a token.
+- **The cookie** is `__Host-Http-session`, with `Path=/; Secure; HttpOnly; SameSite=Strict`, which is what section 6.1.3.2 lists. The tokens stay on the server and the cookie only names a session there. Chromium keeps a `Secure` cookie on `http://localhost`, so the run needs no certificate. Other browsers were not tried.
+- **What a script in the page can do,** asked of the real page after a login: `document.cookie` does not have the cookie, nothing in `localStorage` or `sessionStorage` looks like a token, and `fetch('/api/resource')` gets a 200 through the server. That last one is what section 5.1.4 calls proxying requests, and section 6.1.4.1 says nothing but stopping the script prevents it.
+- **One thing only the recorder needs.** The page waits half a second before it leaves for the login, because Playwright could not read the answer to its question once the page had gone.
+
+Not tried: a server that keeps the tokens in an encrypted cookie rather than its own memory, which section 6.1.3.2 allows, and refreshing a token from the server, which is not drawn with this choice yet.

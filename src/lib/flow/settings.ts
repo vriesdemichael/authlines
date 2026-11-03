@@ -653,7 +653,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			{ value: 'server', label: 'On a server', sets: { clientType: 'confidential' } },
 			{
 				value: 'page',
-				label: 'In the page, in the browser',
+				label: 'In the page',
 				sets: { clientType: 'public', pkce: true },
 				requires: {
 					when: all(
@@ -673,7 +673,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			},
 			{
 				value: 'bff',
-				label: 'In the page, with a server behind it',
+				label: 'In the page, with its server',
 				why: 'The page is still in the browser, and the tokens are not: a server of the app’s own does the login and keeps them, and the browser only gets a cookie. So a script in the page has no token to take, though it can still send requests through that server.',
 				sets: { clientType: 'confidential', pkce: true },
 				requires: {

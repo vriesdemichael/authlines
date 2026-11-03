@@ -516,11 +516,17 @@ export const mapTracks: readonly MapTrack[] = [
 				}),
 				node({
 					id: 'server-behind-the-page',
-					alsoAskedAs: ['backend for frontend', 'httponly cookie', 'session cookie'],
+					alsoAskedAs: [
+						'backend for frontend',
+						'httponly cookie',
+						'session cookie',
+						'localStorage',
+						'store tokens in the browser'
+					],
 					answer:
-						'That server is the client. It does the login and keeps the tokens, and the browser gets a cookie that no script can read. A script in the page can still send requests through it, but cannot take a token away.',
-					title: 'What does a server behind the page change?',
-					summary: 'The tokens stay out of the browser, and a cookie goes in.',
+						'Nowhere in the page stops a script that runs there, because it can ask for tokens just as the page does. A server behind the page can do the login and keep them, and the browser gets a cookie no script can read. A script can still send requests through it.',
+					title: 'Where should a page keep its tokens?',
+					summary: 'On a server behind it, if it can.',
 					preset: 'behind-the-page',
 					step: 'set-session'
 				}),
