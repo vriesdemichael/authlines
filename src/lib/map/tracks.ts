@@ -356,6 +356,17 @@ export const mapTracks: readonly MapTrack[] = [
 		chains: [
 			[
 				node({
+					id: 'users-in-a-directory',
+					alsoAskedAs: ['user federation', 'federation', 'active directory'],
+					answer:
+						'The identity provider keeps the login. It looks the user up in the directory, and tries the password there. No browser goes anywhere else, unlike with another provider, so the app cannot tell and the token looks the same.',
+					title: 'What if our users are already in LDAP or Active Directory?',
+					summary: 'Same app, same token, a different middle.',
+					preset: 'in-a-directory',
+					mode: 'advanced',
+					step: 'directory-bind'
+				}),
+				node({
 					id: 'another-provider',
 					alsoAskedAs: [
 						'brokering',
@@ -579,16 +590,6 @@ export const mapTracks: readonly MapTrack[] = [
 					answer:
 						'Then the app asks for a token with its own secret, with no browser and nobody logging in. It gets an access token, and calls the API with that.',
 					startsAtTheBeginning: 'It is the whole flow, so its start is its answer.'
-				}),
-				node({
-					id: 'no-user-no-refresh',
-					flow: 'client-credentials',
-					preset: 'as-itself',
-					step: 'service-token-response',
-					title: 'Why is there no refresh token for a service?',
-					summary: 'It has its secret, so it can just ask again.',
-					answer:
-						'A refresh token is there to get a new token without asking the user again. Here there is no user, and the app still has its secret, so when the token runs out it asks again.'
 				})
 			]
 		]
@@ -688,6 +689,16 @@ export const mapNodes: readonly MapNode[] = mapTracks.flatMap((track) => track.c
  * they were about through the question that took them over.
  */
 export const offTheMap: readonly MapNode[] = [
+	node({
+		id: 'no-user-no-refresh',
+		flow: 'client-credentials',
+		preset: 'as-itself',
+		step: 'service-token-response',
+		title: 'Why is there no refresh token for a service?',
+		summary: 'It has its secret, so it can just ask again.',
+		answer:
+			'A refresh token is there to get a new token without asking the user again. Here there is no user, and the app still has its secret, so when the token runs out it asks again.'
+	}),
 	node({
 		id: 'two-apps-one-login',
 		answer:

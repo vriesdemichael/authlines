@@ -82,6 +82,7 @@ describe('constraints', () => {
 		const theOldWay = 1;
 		// Each only in the plain case for now, because each brings a different client.
 		const howItRegisters = 2;
+		const inADirectory = 1;
 		expect(allValidSettings()).toBe(allValidSettings());
 		expect(Object.isFrozen(allValidSettings())).toBe(true);
 		expect(allValidSettings().every((settings) => Object.isFrozen(settings))).toBe(true);
@@ -94,7 +95,8 @@ describe('constraints', () => {
 				withASecondApp +
 				withLogout +
 				theOldWay +
-				howItRegisters
+				howItRegisters +
+				inADirectory
 		);
 	});
 
@@ -121,6 +123,16 @@ describe('constraints', () => {
 		for (const settings of allValidSettings()) {
 			expect(normalize(normalize(settings).settings).settings).toEqual(settings);
 		}
+	});
+
+	it('flips between another provider and a directory, because they are two answers to one question', () => {
+		const brokered = { ...defaultSettings, broker: true };
+		const toDirectory = change(brokered, 'federation', true);
+		expect(toDirectory.settings).toMatchObject({ broker: false, federation: true });
+		const back = change(toDirectory.settings, 'broker', true);
+		expect(back.settings).toMatchObject({ broker: true, federation: false });
+		// An address can say both, and then it is one of them.
+		expect(normalize({ ...brokered, federation: true }).settings.federation).toBe(false);
 	});
 
 	it('cascade when a change takes away what another setting needs', () => {

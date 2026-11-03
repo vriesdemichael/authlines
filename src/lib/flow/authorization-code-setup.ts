@@ -21,6 +21,7 @@ const apiV2 = is('upstreamTokens', 'v2');
 const byHand = is('registration', 'manual');
 const itself = is('registration', 'dcr');
 const document = is('registration', 'cimd');
+const inADirectory = is('federation', true);
 
 /**
  * What happens before any user arrives. It has a diagram of its own, because no user does this: the
@@ -259,6 +260,24 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			fields: [
 				{ name: 'client_id', place: 'setting', note: 'The address of this document' },
 				{ name: 'redirect_uris', place: 'setting', note: 'Checked again during every login' }
+			]
+		},
+		{
+			id: 'connect-directory',
+			when: inADirectory,
+			from: 'idp-admin',
+			to: 'idp',
+			kind: 'human',
+			plain: 'Connect the directory',
+			label: 'Add an LDAP provider',
+			concept:
+				'An admin tells the identity provider where the directory is, where in it the users are, which field is which, and an account to search it with. The server recorded gave tokens no first name until an admin said which field held it.',
+			inPractice:
+				'Nothing for your app: it sees the same provider and the same tokens. This is between whoever runs the provider and whoever runs the directory.',
+			fields: [
+				{ name: 'connection URL', place: 'setting', note: 'Use LDAPS, or StartTLS' },
+				{ name: 'users DN', place: 'setting', note: 'Where in the directory the users are' },
+				{ name: 'bind DN', place: 'setting', note: 'The account it searches with' }
 			]
 		},
 		{

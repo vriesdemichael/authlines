@@ -247,12 +247,12 @@ Turning on PKCE adds parameters, and the learner still does not know what they a
 
 It also answers what AI agents reading it kept asking, why an app with a secret needs PKCE: they can hand the stolen code to the real app, from a login of their own, and a real server gives the app the tokens. PKCE refuses it there, and a nonce stops it at the app ([#100](https://github.com/vriesdemichael/authlines/issues/100)).
 
-### User federation and brokering are different (Proposed, from Keycloak's docs)
+### User federation and brokering are different (Proposed, and built)
 
 - **Identity brokering:** Keycloak acts as an intermediary and redirects the browser to another IdP. The diagram gains a lifeline and a nested flow, and client applications never contact the external provider.
 - **User federation** (the docs call it "Using external storage"): Keycloak looks users up in LDAP, AD or a custom store on the server side. The docs mention no redirect.
 
-This contrast makes a good toggle: same app, same token, different middle.
+This contrast makes a good toggle: same app, same token, different middle. It is built as two switches that turn each other off, so someone can flip between them and see the transition ([#144](https://github.com/vriesdemichael/authlines/issues/144)). The token part is from real runs: the three recordings hold the same claim names, and a test keeps it so. The difference someone might not expect is the password. With another provider the identity provider never sees it, and with a directory it does and passes it on, which is why the connection matters. LDAP is not HTTP, so those four messages come from the directory's own log, and the screen says that ([ADR-005](adr/005-payloads-are-recorded-never-invented.md)).
 
 ### Most of this is not feature flags (Proposed)
 
@@ -320,7 +320,7 @@ An order for later releases. **Proposed**, and expected to change.
 | Pre-registered, DCR or CIMD, built | Exclusive, advanced only, in the plain case | Changes the setup diagram. CIMD is the `cimd` flag, experimental, with a client policy, and adds the fetch and the consent to the user flow |
 | External IdP (brokering) | Modifier | Adds a lifeline and a nested flow |
 | Stored upstream tokens | Modifier on brokering, then API V1 or V2 | Adds a retrieval call after login. V2 needs a confidential client |
-| User federation | Modifier | Adds a server-side lookup, no redirect |
+| User federation, built | Modifier, in advanced mode, that turns another provider off | Adds a lifeline, a search and a password check on the server, and no redirect. The setup gains an admin connecting the directory. Only in the plain case |
 | PAR | Modifier | Adds a back-channel push and changes the front channel |
 | Bearer, DPoP or mTLS | Exclusive | Cross-cutting, and DPoP adds a nonce retry |
 | Many customers, each with a provider, and SAML | **Decided, in scope** ([#118](https://github.com/vriesdemichael/authlines/issues/118)) | Routing a user to their company, SAML as the upstream, and someone leaving. What a customer's IT asks about |

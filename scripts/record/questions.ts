@@ -9,6 +9,10 @@ import {
 	API,
 	APP,
 	BROKERED_REALM,
+	connectDirectory,
+	DIRECTORY_REALM,
+	forgetMapper,
+	mapFirstName,
 	CLIENT_SECRET,
 	CONFIDENTIAL_CLIENT,
 	KEYCLOAK,
@@ -27,6 +31,17 @@ import {
 	POST_LOGOUT_URI,
 	namesTheApi
 } from './keycloak.ts';
+import {
+	DIRECTORY_URL,
+	directoryBindsSince,
+	directoryLogLength,
+	passThrough,
+	SERVICE_DN,
+	SERVICE_PASSWORD,
+	startDirectory,
+	stopDirectory,
+	USERS_DN
+} from './directory.ts';
 
 const b64 = (value: string | Buffer) => Buffer.from(value).toString('base64url');
 const sha256 = (value: string) => createHash('sha256').update(value).digest('base64url');
@@ -615,6 +630,118 @@ async function behindTheBrokeringNotes(browser: Browser, demo: Demo, admin: Admi
 }
 
 /** What a server does about an app with no user, each one tried both ways. */
+/** The login page, without a browser, because only what it answers matters here. */
+async function throughTheLoginPage(clientId: string, password: string) {
+	const redirect = encodeURIComponent(REDIRECT_URI);
+	const page = await fetch(
+		`${KEYCLOAK}/realms/${DIRECTORY_REALM}/protocol/openid-connect/auth?response_type=code&client_id=${clientId}&redirect_uri=${redirect}`,
+		{ redirect: 'manual' }
+	);
+	const html = await page.text();
+	const action = html.match(/action="([^"]+)"/)?.[1]?.replaceAll('&amp;', '&');
+	if (!action) throw new Error(`No login page: ${page.status} ${html.slice(0, 200)}`);
+	const answer = await fetch(action, {
+		method: 'POST',
+		redirect: 'manual',
+		headers: {
+			cookie: page.headers
+				.getSetCookie()
+				.map((cookie) => cookie.split(';')[0])
+				.join('; '),
+			'content-type': 'application/x-www-form-urlencoded'
+		},
+		body: new URLSearchParams({ username: USERNAME, password })
+	});
+	const body = await answer.text();
+	return {
+		status: answer.status,
+		says: body.match(/instruction">\s*([^<]+)/)?.[1]?.trim() ?? null,
+		loginPageAgain: body.includes('id="kc-form-login"')
+	};
+}
+
+/** What an admin has to say about a directory, and what happens with one that is not there. */
+export async function questionsWithADirectory(admin: Admin) {
+	const clientId = 'directory-question';
+	const realm = `/realms/${DIRECTORY_REALM}`;
+	await startDirectory();
+	const connection = passThrough();
+	try {
+		const provider = await connectDirectory(
+			admin,
+			DIRECTORY_URL,
+			USERS_DN,
+			SERVICE_DN,
+			SERVICE_PASSWORD
+		);
+		await admin.call('POST', `${realm}/clients`, {
+			clientId,
+			enabled: true,
+			publicClient: true,
+			standardFlowEnabled: true,
+			directAccessGrantsEnabled: true,
+			redirectUris: [REDIRECT_URI]
+		});
+		const logIn = () =>
+			token(DIRECTORY_REALM, {
+				grant_type: 'password',
+				client_id: clientId,
+				username: USERNAME,
+				password: PASSWORD
+			});
+		const givenName = async () => {
+			await admin.call('POST', `${realm}/user-storage/${provider}/remove-imported-users`);
+			const { json } = await logIn();
+			const [, payload] = json.access_token.split('.');
+			return 'given_name' in JSON.parse(Buffer.from(payload, 'base64url').toString());
+		};
+		const after = { givenName: await givenName() };
+		await forgetMapper(admin, provider, 'first name');
+		const before = { givenName: await givenName() };
+		await mapFirstName(admin, provider);
+		await givenName();
+
+		const logSoFar = directoryLogLength();
+		const rightPassword = await throughTheLoginPage(clientId, PASSWORD);
+		const askedAgain = directoryBindsSince(logSoFar) > 0;
+		const wrongPassword = await throughTheLoginPage(clientId, 'not-the-password');
+
+		const [copy] = await admin.call<{ id: string; federationLink?: string }[]>(
+			'GET',
+			`${realm}/users?username=${USERNAME}&exact=true`
+		);
+		const credentials = await admin.call<{ federationLink?: string }[]>(
+			'GET',
+			`${realm}/users/${copy.id}/credentials`
+		);
+
+		stopDirectory();
+		const atTheForm = await throughTheLoginPage(clientId, PASSWORD);
+		const atTheToken = await logIn();
+		return {
+			directoryMappers: { before, after },
+			directoryLogin: {
+				rightPassword: { status: rightPassword.status },
+				wrongPassword: {
+					status: wrongPassword.status,
+					loginPageAgain: wrongPassword.loginPageAgain
+				},
+				askedAgain,
+				keepsACopy: Boolean(copy.federationLink),
+				passwordIsElsewhere:
+					credentials.length > 0 && credentials.every(({ federationLink }) => federationLink)
+			},
+			directoryDown: {
+				form: { status: atTheForm.status, says: atTheForm.says },
+				token: { status: atTheToken.status, error: atTheToken.json.error }
+			}
+		};
+	} finally {
+		connection.stop();
+		stopDirectory();
+	}
+}
+
 export async function questionsWithNoUser(admin: Admin) {
 	const onClients = `/realms/${LOCAL_REALM}/clients`;
 	const ask = async (clientId: string) =>

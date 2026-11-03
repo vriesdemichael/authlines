@@ -71,6 +71,7 @@ export const API_AUDIENCE = 'account';
 
 const CONTAINER = 'authlines-keycloak';
 export const ADMIN_PASSWORD = 'throwaway-admin';
+export const DIRECTORY_REALM = 'in-a-directory';
 
 const docker = (...args: string[]) =>
 	execFileSync('docker', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
@@ -186,8 +187,89 @@ export class Admin {
 	}
 }
 
+const STORAGE_PROVIDER = 'org.keycloak.storage.UserStorageProvider';
+const LDAP_MAPPER = 'org.keycloak.storage.ldap.mappers.LDAPStorageMapper';
+
+const providerOfTheDirectory = async (admin: Admin) =>
+	(
+		await admin.call<{ id: string }[]>(
+			'GET',
+			`/realms/${DIRECTORY_REALM}/components?type=${STORAGE_PROVIDER}`
+		)
+	)[0]?.id;
+
+const directoryMappers = (admin: Admin, provider: string) =>
+	admin.call<{ id: string; name: string }[]>(
+		'GET',
+		`/realms/${DIRECTORY_REALM}/components?parent=${provider}`
+	);
+
+export async function forgetMapper(admin: Admin, provider: string, name: string) {
+	const mapper = (await directoryMappers(admin, provider)).find((one) => one.name === name);
+	if (!mapper) throw new Error(`The directory has no mapper "${name}".`);
+	await admin.call('DELETE', `/realms/${DIRECTORY_REALM}/components/${mapper.id}`);
+}
+
+export const mapFirstName = (admin: Admin, provider: string) =>
+	admin.call('POST', `/realms/${DIRECTORY_REALM}/components`, {
+		name: 'first name',
+		providerId: 'user-attribute-ldap-mapper',
+		providerType: LDAP_MAPPER,
+		parentId: provider,
+		config: {
+			'ldap.attribute': ['givenName'],
+			'user.model.attribute': ['firstName'],
+			'read.only': ['true'],
+			'always.read.value.from.ldap': ['true'],
+			'is.mandatory.in.ldap': ['false']
+		}
+	});
+
+/** Its users are only in the directory, so that what logs in is really coming from there. */
+export async function connectDirectory(
+	admin: Admin,
+	url: string,
+	usersDn: string,
+	bindDn: string,
+	bindCredential: string
+) {
+	const already = await providerOfTheDirectory(admin);
+	if (already) return already;
+	const { id } = await admin.call<{ id: string }>('GET', `/realms/${DIRECTORY_REALM}`);
+	await admin.call('POST', `/realms/${DIRECTORY_REALM}/components`, {
+		name: 'directory',
+		providerId: 'ldap',
+		providerType: STORAGE_PROVIDER,
+		parentId: id,
+		config: {
+			enabled: ['true'],
+			vendor: ['other'],
+			connectionUrl: [url],
+			usersDn: [usersDn],
+			bindDn: [bindDn],
+			bindCredential: [bindCredential],
+			authType: ['simple'],
+			usernameLDAPAttribute: ['uid'],
+			rdnLDAPAttribute: ['cn'],
+			uuidLDAPAttribute: ['entryUUID'],
+			userObjectClasses: ['inetOrgPerson'],
+			editMode: ['READ_ONLY'],
+			importEnabled: ['true'],
+			syncRegistrations: ['false'],
+			batchSizeForSync: ['1000'],
+			pagination: ['false']
+		}
+	});
+	const provider = await providerOfTheDirectory(admin);
+	if (!provider) throw new Error('The directory did not connect.');
+	// On its own it takes the first name from the common name, and here that left the token without one.
+	await forgetMapper(admin, provider, 'full name');
+	await mapFirstName(admin, provider);
+	return provider;
+}
+
 export async function setUpRealms(admin: Admin) {
-	for (const realm of [LOCAL_REALM, BROKERED_REALM, UPSTREAM_REALM]) {
+	for (const realm of [LOCAL_REALM, BROKERED_REALM, UPSTREAM_REALM, DIRECTORY_REALM]) {
 		await admin.call('POST', '/realms', { realm, enabled: true });
 	}
 

@@ -38,6 +38,14 @@ const flowAt = (step: string, settings?: Partial<Settings>): TermPlace => ({
 
 const list: readonly Term[] = [
 	{
+		id: 'ldap',
+		name: 'LDAP',
+		words: ['LDAP', 'LDAPS', 'Active Directory', 'user directory', 'user federation'],
+		explains:
+			'A directory of users, and the way to ask one. LDAPS is the same over an encrypted connection. An identity provider can use one for its users and still do the login itself, which Keycloak calls user federation.',
+		at: flowAt('directory-bind', { federation: true })
+	},
+	{
 		id: 'dcr',
 		name: 'Dynamic client registration',
 		words: ['dynamic client registration', 'DCR'],

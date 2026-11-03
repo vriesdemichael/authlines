@@ -99,6 +99,23 @@ describe('the weekly check of a recording', () => {
 		body.access_token = `${head}.${less}.${signature}`;
 		expect(differs(plain, changed)).not.toBe('');
 	});
+
+	it('does not mind the ID a server gave a client that registered itself', () => {
+		const at = (id: string) => ({
+			...plain,
+			messages: [
+				{
+					step: 'dcr-response',
+					direction: 'response' as const,
+					status: 201,
+					headers: {
+						location: `http://localhost/realms/demo/clients-registrations/openid-connect/${id}`
+					}
+				}
+			]
+		});
+		expect(shapeDifferences(shapeOf(at('one')), shapeOf(at('two')))).toEqual([]);
+	});
 });
 
 describe('the weekly check of what the notes say', () => {
@@ -155,6 +172,12 @@ describe('a whole run', () => {
 	it('notices a flag changing, which a badge on a setting states', () => {
 		const now = { dpop: { type: 'DEFAULT', enabled: false } };
 		expect(whatChanged({ ...same, flags: { ...flags, now } }).join()).toContain('flags');
+	});
+
+	it('does not mind the order the flags came in', () => {
+		const committed = { a: flags.committed.dpop, b: flags.committed.dpop };
+		const now = { b: flags.committed.dpop, a: flags.committed.dpop };
+		expect(whatChanged({ ...same, flags: { committed, now } })).toEqual([]);
 	});
 
 	it('notices a note no longer holding, even if every message looks the same', () => {

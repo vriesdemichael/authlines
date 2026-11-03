@@ -6,6 +6,7 @@ import {
 	ADMIN_PASSWORD,
 	BROKERED_REALM,
 	CONFIDENTIAL_CLIENT,
+	DIRECTORY_REALM,
 	KEYCLOAK,
 	LOCAL_REALM,
 	UPSTREAM_REALM
@@ -36,6 +37,10 @@ export async function lookInConsole(
 	);
 	const root = `${KEYCLOAK}/admin/master/console/#`;
 	const onClient = `${root}/${LOCAL_REALM}/clients/${client.id}`;
+	const [directory] = await admin.call<{ id: string }[]>(
+		'GET',
+		`/realms/${DIRECTORY_REALM}/components?type=org.keycloak.storage.UserStorageProvider`
+	);
 	const pages: Record<ConsolePage, string> = {
 		'client-settings': `${onClient}/settings`,
 		'client-advanced': `${onClient}/advanced`,
@@ -45,7 +50,8 @@ export async function lookInConsole(
 		'realm-settings': `${root}/${LOCAL_REALM}/realm-settings`,
 		'realm-sessions': `${root}/${LOCAL_REALM}/realm-settings/sessions`,
 		'realm-tokens': `${root}/${LOCAL_REALM}/realm-settings/tokens`,
-		'browser-flow': `${root}/${BROKERED_REALM}/authentication`
+		'browser-flow': `${root}/${BROKERED_REALM}/authentication`,
+		'directory-mappers': `${root}/${DIRECTORY_REALM}/user-federation/ldap/${directory?.id}/mappers`
 	};
 
 	const context = await browser.newContext({ viewport: { width: 1600, height: 1400 } });

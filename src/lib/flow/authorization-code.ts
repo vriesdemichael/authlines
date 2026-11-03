@@ -5,6 +5,7 @@ import {
 	apiWords,
 	appWords,
 	browserWords,
+	directoryWords,
 	idpWords,
 	secondAppWords,
 	upstreamWords
@@ -17,6 +18,7 @@ const pkce = is('pkce', true);
 const consent = is('consent', true);
 const inPage = is('appRuns', 'page');
 const fromADocument = is('registration', 'cimd');
+const inADirectory = is('federation', true);
 const byHand = is('registration', 'manual');
 const attacker = is('attacker', true);
 // The code is one-time, and on a public client nothing stops someone else using it first.
@@ -143,6 +145,16 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept:
 				"Someone who can read the redirects that go through the browser, but is not the app. Someone who can also change a request can swap in a challenge or a nonce of their own, and then neither stops them. On a phone that can be another app claiming the same address, which gets the code first. A log or a history that keeps addresses usually sees it too late, because a code works once. Something running inside the app's own page sees far more than this, and no setting here stops that.",
 			when: attacker
+		},
+		{
+			id: 'directory',
+			plainName: 'User directory',
+			plainRole: 'Has the users',
+			...directoryWords,
+			icon: 'api',
+			concept:
+				'Where the users already are, such as LDAP or Active Directory. Only the identity provider talks to it, so neither the browser nor the app ever does.',
+			when: inADirectory
 		},
 		{
 			id: 'upstream',
@@ -561,6 +573,71 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			when: not(broker),
 			execute: { answer: 'redirect-with-code', when: not(consent) },
 			fields: [{ name: 'username and password', place: 'body', artifact: 'password' }]
+		},
+		{
+			id: 'directory-search',
+			when: inADirectory,
+			from: 'idp',
+			to: 'directory',
+			kind: 'request',
+			plain: 'It looks the user up in the directory',
+			label: 'LDAP search',
+			concept:
+				'The identity provider does not have the password to compare, so it asks the directory, as an account of its own. The server recorded asked again at every login.',
+			recordedAs: "From the directory's own log, because this is LDAP and not HTTP.",
+			fields: [
+				{ name: 'filter', place: 'body', note: 'The username from the login page' },
+				{ name: 'attributes', place: 'body', note: 'What it wants to know about them' }
+			]
+		},
+		{
+			id: 'directory-found',
+			when: inADirectory,
+			from: 'directory',
+			to: 'idp',
+			kind: 'response',
+			plain: 'Who that is',
+			label: 'One entry',
+			concept:
+				'The server recorded keeps a copy of these details, so that its tokens can say who this is, and marks the password as being somewhere else.',
+			recordedAs: "From the directory's own log, because this is LDAP and not HTTP.",
+			fields: [{ name: 'entries', place: 'body', note: 'How many users that found' }]
+		},
+		{
+			id: 'directory-bind',
+			when: inADirectory,
+			from: 'idp',
+			to: 'directory',
+			kind: 'request',
+			plain: 'It tries the password on the directory',
+			label: 'LDAP bind',
+			concept:
+				'It checks the password by logging in to the directory as the user. So the identity provider does handle the password, and passes it on. With another provider it never would, which is the difference between the two.',
+			inPractice:
+				'Your app does nothing different. Whoever runs this should use LDAPS or StartTLS, because the password crosses this connection, and in the recording it was not encrypted.',
+			recordedAs:
+				"From the directory's own log, because this is LDAP and not HTTP. The log leaves the password out, and it was seen crossing the connection.",
+			fields: [
+				{ name: 'mechanism', place: 'body', note: 'Simple, which sends the password itself' },
+				{ name: 'password', place: 'body', artifact: 'password' }
+			]
+		},
+		{
+			id: 'directory-bound',
+			when: inADirectory,
+			from: 'directory',
+			to: 'idp',
+			kind: 'response',
+			plain: 'The password is right',
+			label: 'LDAP result 0',
+			concept:
+				'That is all the answer says. From here on the login goes as it always does, and the browser and the app cannot tell the directory was there.',
+			recordedAs: "From the directory's own log, because this is LDAP and not HTTP.",
+			pitfall: {
+				title: 'What if the directory is down?',
+				text: 'Nobody can log in, including people who logged in before, because the password is only there. The server recorded showed the user "Unexpected error when handling authentication request to identity provider." A wrong password just gets the login page again.'
+			},
+			fields: []
 		},
 		{
 			id: 'redirect-to-upstream',
@@ -1535,6 +1612,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					when: inPage,
 					text: 'The tokens are in the page now, and so in the browser, which the rest of this flow took care to avoid. On a server they would be out of reach of the user’s browser. Here, any script running in this page can reach them, and that is the price of having no server.'
+				},
+				{
+					when: inADirectory,
+					text: 'The same token as ever. In real runs it held the same claims with the user in a directory, kept by the provider, or at another provider, so the app and the API cannot tell.'
 				},
 				{
 					when: fromADocument,

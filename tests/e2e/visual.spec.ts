@@ -12,6 +12,7 @@ const states: readonly [string, string, 'flow' | 'setup'][] = [
 	['simple-first-step', 'mode=simple', 'flow'],
 	['the-old-way', 'mode=simple&oldway=1&step=old-way-answer', 'flow'],
 	['registers-itself', 'register=dcr&step=dcr-response', 'setup'],
+	['in-a-directory', 'directory=1&step=directory-bind', 'flow'],
 	[
 		'points-at-a-document',
 		'register=cimd&client=public&pkce=1&consent=1&step=cimd-document',

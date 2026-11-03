@@ -23,6 +23,7 @@ export interface Settings {
 	appRuns: 'server' | 'page';
 	oldWay: boolean;
 	registration: 'manual' | 'dcr' | 'cimd';
+	federation: boolean;
 }
 
 export type SettingId = keyof Settings;
@@ -84,6 +85,8 @@ interface SettingBase {
 export interface ToggleDef extends SettingBase {
 	kind: 'toggle';
 	default: boolean;
+	/** What turning this on brings with it. */
+	setsWhenOn?: Partial<Settings>;
 }
 
 /** A Keycloak feature flag behind an option. Its status comes from a real server (recorded.json). */
@@ -366,6 +369,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		label: 'External IdP',
 		param: 'broker',
 		default: false,
+		setsWhenOn: { federation: false },
 		summary: 'The IdP hands the login to another IdP. The app does not notice.',
 		why: 'Users often already have an account somewhere else, such as at their employer. The IdP hands the login over, so an app that already uses it needs no changes, and by default never learns how the login happened.',
 		simple: {
@@ -378,6 +382,44 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				why: "Keycloak's name for this is identity brokering. The diagram shows a login through an upstream provider that uses the authorization code flow."
 			}
 		]
+	},
+	federation: {
+		kind: 'toggle',
+		label: 'Users in a directory',
+		param: 'directory',
+		default: false,
+		setsWhenOn: { broker: false },
+		onlyOn: 'authorization-code',
+		summary:
+			'The users are in LDAP or Active Directory. The identity provider checks there, and nobody goes anywhere else.',
+		why: 'Many organisations already have their users in a directory. Another provider takes the login away, and with this the identity provider keeps the login and only asks the directory, so the browser and the app see no difference.',
+		sources: [
+			{
+				source: 'keycloak-federation',
+				why: "Keycloak's name for this is user federation. It looks the user up in the directory, from the server."
+			}
+		],
+		requires: {
+			when: all(
+				is('oidc', false),
+				is('consent', false),
+				is('clientType', 'confidential'),
+				is('pkce', false),
+				is('attacker', false),
+				is('binding', 'bearer'),
+				is('broker', false),
+				is('apiToken', 'good'),
+				is('refresh', false),
+				is('sso', false),
+				is('logout', false),
+				is('address', 'registered'),
+				is('appRuns', 'server'),
+				is('registration', 'manual'),
+				is('oldWay', false)
+			),
+			because: 'Only drawn in the plain case so far.',
+			sayWhenBlocked: true
+		}
 	},
 	upstreamTokens: {
 		kind: 'choice',
@@ -833,6 +875,8 @@ export function normalize(settings: Settings): { settings: Settings; resets: Res
 
 /** What choosing this brings with it, because someone who knows where their app runs should not also have to know these. */
 export function setsWith<K extends SettingId>(id: K, value: Settings[K]): Partial<Settings> {
+	const def: SettingDef = settingDefs[id];
+	if (def.kind === 'toggle') return value === true ? (def.setsWhenOn ?? {}) : {};
 	return optionOf(id, value)?.sets ?? {};
 }
 

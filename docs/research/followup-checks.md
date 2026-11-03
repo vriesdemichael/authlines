@@ -289,3 +289,16 @@ An audit of the source said it caches for 300 seconds, which was not tried past 
 - The token has no audience, and the demo API answered "not for this API". Putting an audience mapper in the `basic` client scope gave it `aud: account`, and the API answered.
 
 The recording turned on plain HTTP, because the demo app has no certificate, and a real one has to be HTTPS. The draft was at -03 that day.
+
+## User federation on a real server
+
+Asked of Keycloak 26.8.1 with OpenLDAP 2.6 (`bitnamilegacy/openldap`) on 2026-11-02, and asked again by the recorder from then on, in `questions.json`.
+
+- **What can be seen of it.** LDAP is not HTTP, so the recorder has no proxy on it. The directory's own log (`LDAP_LOGLEVEL=256`) has each search with its filter and attributes, and each bind. It leaves the password out, so a pass-through on the connection checks that the password's bytes really cross it. The connection in the recording is plain, and the screen says so.
+- **What one login asks.** A search as the provider's own account, then a bind as the user with the password they typed. It asks again at every login, because the password is not kept.
+- **What it keeps.** A copy of the user, linked to the directory, with a password credential that only points there.
+- **The tokens.** Same claim names as the provider's own user and as a brokered one, across the three recordings, and a test holds that. It took a change: on the defaults here a mapper takes the name from `cn`, and the token had no `given_name` until a mapper pointed at `givenName`.
+- **A wrong password** gets the login page again, with a 200.
+- **The directory down.** The login page answers 400, "Unexpected error when handling authentication request to identity provider." The token endpoint answers 500 with `unknown_error`. That holds for someone who logged in before too.
+
+Active Directory was not tried. It speaks LDAP, and Keycloak has a vendor setting for it, so its defaults differ.

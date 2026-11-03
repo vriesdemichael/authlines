@@ -317,9 +317,5 @@ export const notHereYet: readonly string[] = [
 	'spiffe',
 	'scram',
 	'oauth 1',
-	'digest auth',
-	// Named in the brief, and not built yet: #144.
-	'user federation',
-	'ldap',
-	'active directory'
+	'digest auth'
 ];

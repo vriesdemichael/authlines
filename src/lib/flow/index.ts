@@ -9,6 +9,7 @@ import { codeFlowSettingIds } from '#lib/flow/settings.ts';
 
 const presets: readonly Preset[] = [
 	{ id: 'oauth', title: 'OAuth', settings: {} },
+	{ id: 'in-a-directory', title: 'Users in a directory', settings: { federation: true } },
 	{
 		id: 'registers-itself',
 		title: 'An app that registers itself',

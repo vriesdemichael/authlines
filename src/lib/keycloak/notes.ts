@@ -34,7 +34,8 @@ export type ConsolePage =
 	| 'realm-settings'
 	| 'realm-sessions'
 	| 'realm-tokens'
-	| 'browser-flow';
+	| 'browser-flow'
+	| 'directory-mappers';
 
 export interface ConsolePlace {
 	/** What someone clicks through, in the words of the console. */
@@ -591,6 +592,26 @@ export const noteDefs: readonly NoteDef[] = [
 			shows: { realmsDiffer: true, endsWithRealm: true }
 		},
 		seen: 'Compared two realms on'
+	},
+	{
+		id: 'directory-mappers',
+		steps: ['connect-directory', 'directory-found'],
+		title: 'LDAP mappers',
+		text: 'Which field of the directory becomes what on the user, set on the provider and not on the client. With no mapper for the first name, the token had no given_name, and the login still worked.',
+		when: is('federation', true),
+		place: {
+			path: ['User federation', 'the provider', 'Mappers', 'first name'],
+			page: 'directory-mappers',
+			shows: ['first name', 'username']
+		},
+		backedBy: {
+			question: 'directoryMappers',
+			shows: {
+				before: { givenName: false },
+				after: { givenName: true }
+			}
+		},
+		claims: ['given_name']
 	},
 	{
 		id: 'broker-redirector',

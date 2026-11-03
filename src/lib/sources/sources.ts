@@ -14,6 +14,7 @@ export type SourceId =
 	| 'oidc-rp-logout'
 	| 'oidc-backchannel-logout'
 	| 'keycloak-brokering'
+	| 'keycloak-federation'
 	| 'keycloak-stored-tokens'
 	| 'keycloak-concepts';
 
@@ -157,6 +158,14 @@ export const sources: Record<SourceId, SourceDef> = {
 		summary:
 			'How an identity provider tells an app directly that a session has ended, with a signed logout token and no browser involved. The app clears what it holds for that session and answers 200. Refresh tokens from that session should go, unless they are for offline access, and access tokens are not mentioned.',
 		url: 'https://openid.net/specs/openid-connect-backchannel-1_0.html'
+	},
+	'keycloak-federation': {
+		label: 'Keycloak docs: user federation',
+		title: 'Using external storage',
+		status: 'Keycloak 26.8.1, Server Administration Guide.',
+		summary:
+			'Keycloak keeps the login, and looks users up in storage it does not own, such as LDAP or Active Directory. The login page stays its own, and the user stays where they are.',
+		url: 'https://www.keycloak.org/docs/26.8.1/server_admin/#_user-storage-federation'
 	},
 	'keycloak-brokering': {
 		label: 'Keycloak docs: identity brokering',

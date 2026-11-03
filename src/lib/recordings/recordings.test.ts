@@ -405,6 +405,51 @@ describe('the words on what an API answered', () => {
 	});
 });
 
+describe('a user in a directory', () => {
+	const access = (preset: string) => {
+		const answer = read(preset).messages.find(({ step }) => step === 'token-response');
+		const { access_token: token } = answer?.body as { access_token: string };
+		return JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+	};
+
+	// The screen says it is the same token, so it comes from the three real runs and not from me.
+	it("gets a token with the same claims as the provider's own user, and another provider's", () => {
+		const names = (preset: string) => Object.keys(access(preset)).sort();
+		expect(names('in-a-directory')).toEqual(names('oauth'));
+		expect(names('broker')).toEqual(names('oauth'));
+	});
+
+	it('is the same person in each', () => {
+		const who = ({
+			preferred_username,
+			email,
+			given_name,
+			family_name
+		}: Record<string, string>) => ({
+			preferred_username,
+			email,
+			given_name,
+			family_name
+		});
+		expect(who(access('in-a-directory'))).toEqual(who(access('oauth')));
+	});
+
+	it('says what a real server said when the directory was down', () => {
+		const { answers } = JSON.parse(readFileSync(`${FOLDER}/questions.json`, 'utf8'));
+		const bound = stepsOf(read('in-a-directory')).find(({ id }) => id === 'directory-bound');
+		const pitfall = JSON.stringify(bound?.pitfall);
+		expect(answers.directoryDown.form.status).toBe(400);
+		expect(pitfall).toContain(answers.directoryDown.form.says);
+		// And what else it says about a login.
+		expect(answers.directoryLogin).toMatchObject({
+			wrongPassword: { status: 200, loginPageAgain: true },
+			askedAgain: true,
+			keepsACopy: true,
+			passwordIsElsewhere: true
+		});
+	});
+});
+
 describe('every base flow', () => {
 	it.each(Object.values(flows).map((flow) => [flow.id, flow] as const))(
 		'%s has its recordings, so the guards here cannot silently miss one',

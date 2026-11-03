@@ -18,6 +18,24 @@ const ERRORS = 'src/lib/search/errors.ts';
 
 export const breakages = [
 	{
+		name: 'directory: another provider stays on beside it',
+		file: 'src/lib/flow/settings.ts',
+		from: 'setsWhenOn: { broker: false },',
+		to: ''
+	},
+	{
+		name: 'directory: the password does not reach it',
+		file: 'src/lib/flow/authorization-code.ts',
+		from: "{ name: 'password', place: 'body', artifact: 'password' }\n\t\t\t]\n\t\t},\n\t\t{\n\t\t\tid: 'directory-bound',",
+		to: "{ name: 'password', place: 'body' }\n\t\t\t]\n\t\t},\n\t\t{\n\t\t\tid: 'directory-bound',"
+	},
+	{
+		name: 'directory: says something else when the directory is down',
+		file: 'src/lib/flow/authorization-code.ts',
+		from: 'Unexpected error when handling authentication request to identity provider.',
+		to: 'The directory is down.'
+	},
+	{
 		name: 'cimd: the login says the address was registered in setup',
 		file: 'src/lib/flow/authorization-code.ts',
 		from: "note: 'Must match what the document says',",
@@ -823,7 +841,7 @@ export const breakages = [
 	{
 		name: 'check: flags are not compared',
 		file: CHECK,
-		from: 'JSON.stringify(flags.committed) === JSON.stringify(flags.now)',
+		from: 'sorted(flags.committed) === sorted(flags.now)',
 		to: 'true'
 	},
 	{

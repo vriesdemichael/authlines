@@ -41,7 +41,7 @@ export function curlFor(
 	numberOf: (step: string) => number | null
 ): string | null {
 	if (message.direction !== 'request' || !message.url || !message.method) return null;
-	if (message.bodyNote) return null;
+	if (message.bodyNote || message.protocol) return null;
 	const command = [
 		`curl -i -X ${message.method} ${quoted(message.url)}`,
 		...Object.entries(message.headers).map(([name, value]) => `-H ${quoted(`${name}: ${value}`)}`),

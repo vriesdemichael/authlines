@@ -780,6 +780,43 @@
 					"Allow retrieve external tokens"
 				],
 				"missing": []
+			},
+			"directory-mappers": {
+				"found": [
+					"first name",
+					"username"
+				],
+				"missing": []
+			}
+		},
+		"directoryMappers": {
+			"before": {
+				"givenName": false
+			},
+			"after": {
+				"givenName": true
+			}
+		},
+		"directoryLogin": {
+			"rightPassword": {
+				"status": 302
+			},
+			"wrongPassword": {
+				"status": 200,
+				"loginPageAgain": true
+			},
+			"askedAgain": true,
+			"keepsACopy": true,
+			"passwordIsElsewhere": true
+		},
+		"directoryDown": {
+			"form": {
+				"status": 400,
+				"says": "Unexpected error when handling authentication request to identity provider."
+			},
+			"token": {
+				"status": 500,
+				"error": "unknown_error"
 			}
 		}
 	}

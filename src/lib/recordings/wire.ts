@@ -135,7 +135,7 @@ export function rawLines(
 	const first =
 		message.direction === 'request'
 			? urlLines(`${message.method} `, message.url ?? '')
-			: [{ before: `HTTP ${message.status}` }];
+			: [{ before: `${message.protocol === 'ldap' ? 'LDAP result' : 'HTTP'} ${message.status}` }];
 	const headers = serverNamed ? message.headers : withoutServerName(message.headers);
 	return [...first, ...headerLines(headers), ...bodyLines(message)];
 }

@@ -58,13 +58,16 @@ export function pagesGone(seen: readonly ShotId[]): string[] {
 		.map((shot) => `The page "${shot}" no longer appears.`);
 }
 
+const sorted = (flags: Record<string, FlagStatus>) =>
+	JSON.stringify(Object.entries(flags).sort(([a], [b]) => a.localeCompare(b)));
+
 export function whatChanged({ recordings, flags, answers }: WhatARunFound): string[] {
 	return [
 		...recordings.flatMap(({ committed, now }) => {
 			const differences = shapeDifferences(shapeOf(committed), shapeOf(now));
 			return differences.length ? [`${now.preset} changed:`, ...differences] : [];
 		}),
-		...(JSON.stringify(flags.committed) === JSON.stringify(flags.now)
+		...(sorted(flags.committed) === sorted(flags.now)
 			? []
 			: [`Feature flags changed: ${JSON.stringify(flags.now)}`]),
 		...evidenceDifferences(answers)

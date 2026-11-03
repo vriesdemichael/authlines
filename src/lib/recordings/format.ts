@@ -5,6 +5,8 @@ export interface RecordedMessage {
 	/** Null for a hop the diagram does not show, such as a redirect inside Keycloak. */
 	step: string | null;
 	direction: 'request' | 'response';
+	/** Not HTTP, and from the other side's own log, so it is not said to be HTTP. */
+	protocol?: 'ldap';
 	method?: string;
 	url?: string;
 	status?: number;
