@@ -706,12 +706,6 @@ export const breakages = [
 		from: '\t.row.future .number text {\n\t\tfill: var(--muted);\n\t}',
 		to: '\t.row.future .number text {\n\t\tfill: var(--muted);\n\t}\n\n\t.row.future .label {\n\t\topacity: 0;\n\t}'
 	},
-	{
-		name: 'look: Next goes back under the diagram',
-		file: 'src/lib/components/Workspace.svelte',
-		from: '\t\t{#if !appState.whole}\n\t\t\t<div class="stepping">{@render stepping()}</div>\n\t\t{/if}',
-		to: ''
-	},
 
 	// A refresh token.
 	{
