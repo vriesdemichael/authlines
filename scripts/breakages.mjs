@@ -755,8 +755,8 @@ export const breakages = [
 	{
 		name: 'api: the token is sent even when it says none is',
 		file: AC,
-		from: "when: all(bearer, not(sends('none')))",
-		to: 'when: bearer'
+		from: "when: any(all(bearer, not(sends('none'))), bearerOnly)",
+		to: 'when: any(bearer, bearerOnly)'
 	},
 
 	// DPoP, which has been wrong twice.

@@ -53,7 +53,7 @@
 	"device-phishing": "Can someone trick me into approving their device?|Yes, by sending you their code. It is called device code phishing.|18|4",
 	"device-someone-reads-it": "What if someone else can see the user code on the screen?|They can get there first, and the device ends up logged in as them.|18|5",
 	"dpop-on-the-wire": "What does DPoP add to each call?|A proof, signed with a key that stays in the app.|13|4",
-	"dpop-at-a-bearer-api": "Does DPoP protect a token at an API that does not know it?|No: the API is what checks the proof.|16|5",
+	"dpop-at-a-bearer-api": "Does DPoP protect a token at an API that does not know it?|Only if the API checks the proof.|16|5",
 	"someone-leaves-oidc": "Does it matter what their provider speaks, when someone leaves?|No, as it was set up: the session in the middle carried on either way.|28|5",
 	"device-no-answer": "What if the user says no?|The app is told the next time it asks, and stops.|15|4",
 	"token-api-v2": "What changes with API V2 for stored tokens?|Only the access token, and the client has to be allowed to ask.|22|5",

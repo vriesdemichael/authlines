@@ -319,7 +319,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		default: false,
 		onlyOn: 'authorization-code',
 		summary: 'Someone has the access token, and calls the API with it, without a proof.',
-		why: "DPoP only helps where something checks the proof, and that is the API, not the identity provider. So whether a stolen token gets someone in depends on the API's own code.",
+		why: 'A stolen access token is only refused where the API checks the proof. The identity provider checks proofs at its own endpoints, and cannot check them at yours, so it is up to the API and the library or gateway it uses.',
 		sources: [
 			{
 				source: 'rfc9449',
@@ -357,7 +357,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		onlyOn: 'authorization-code',
 		summary:
 			'An API that checks the DPoP proof, or one written before DPoP that knows only Bearer.',
-		why: 'The same token gets two answers. An API that knows DPoP sees the token is tied to a key and wants the proof. One that knows only Bearer never looks at that, so the token alone gets in.',
+		why: 'The same token gets two answers. An API that knows DPoP sees the token is tied to a key and wants the proof. One that knows only Bearer may never look at that, and the one recorded took the token alone.',
 		sources: [
 			{
 				source: 'rfc9449',

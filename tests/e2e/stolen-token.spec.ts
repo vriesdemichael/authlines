@@ -25,7 +25,7 @@ test.describe('a stolen DPoP token (#33)', () => {
 		await expect(page).toHaveURL(/checks=bearer/);
 		await expect(row(page, 'thief-api-response')).toHaveCount(1);
 		await expect(page.getByTestId('step-detail')).toContainText('200 with the resource');
-		await expect(page.getByTestId('step-detail')).toContainText("the API team's own code");
+		await expect(page.getByTestId('step-detail')).toContainText('whatever checks its tokens');
 	});
 
 	test('goes when DPoP does, and takes the choice with it', async ({ page }) => {

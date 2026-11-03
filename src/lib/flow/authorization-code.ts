@@ -188,7 +188,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			role: 'Has a copy of the token',
 			icon: 'attacker',
 			concept:
-				'Someone who has a copy of the access token, and not the key in the app that it is tied to. How they got it is not drawn: a log that kept it, a leak, or something running where the app runs.',
+				'Someone who has a copy of the access token, and not the key in the app that it is tied to, from a log that kept it, say, or a leak. Something running inside the app could use the key as well, which DPoP does not stop.',
 			when: thief
 		},
 		{
@@ -2087,6 +2087,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{ text: 'The app calls the API with the token' }
 			],
 			label: [
+				{ when: bearerOnly, text: 'GET /bearer-only/resource' },
 				{ when: sends('elsewhere'), text: 'GET /my-api/resource' },
 				{ when: sends('noscope'), text: 'GET /contacts' },
 				{ text: 'GET /resource' }
@@ -2117,6 +2118,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: 'The token is fine, and this API asks for a scope it does not have.'
 				},
 				{
+					when: bearerOnly,
+					text: 'This API knows only Bearer, so the app sends its DPoP token there as a plain Bearer token, with no proof, which DPoP allows for an API that asks for Bearer.'
+				},
+				{
 					when: dpop,
 					text: 'The app sends the token and a new proof, which shows it holds the key the token is tied to.'
 				},
@@ -2130,15 +2135,20 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					name: 'Authorization: Bearer',
 					place: 'header',
 					artifact: 'access-token',
-					when: all(bearer, not(sends('none')))
+					when: any(all(bearer, not(sends('none'))), bearerOnly)
 				},
-				{ name: 'Authorization: DPoP', place: 'header', artifact: 'access-token', when: dpop },
+				{
+					name: 'Authorization: DPoP',
+					place: 'header',
+					artifact: 'access-token',
+					when: all(dpop, not(bearerOnly))
+				},
 				{
 					name: 'DPoP',
 					place: 'header',
 					note: 'A proof tied to this access token',
 					artifact: 'proof',
-					when: dpop
+					when: all(dpop, not(bearerOnly))
 				}
 			]
 		},
@@ -2151,6 +2161,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'The API checks the token',
 			label: 'Check the token',
 			concept: [
+				{
+					when: bearerOnly,
+					text: 'The API checks the token as a Bearer token: the signature, who issued it, that it has not run out, and who it is for. It never looks at what the token is tied to.'
+				},
 				{
 					when: dpop,
 					text: 'The API checks the token, and that the proof was signed with the key the token names.'
@@ -2281,7 +2295,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			to: 'api',
 			kind: 'request',
 			plain: 'They call the API with it, and no proof',
-			label: 'GET /resource',
+			label: [{ when: bearerOnly, text: 'GET /bearer-only/resource' }, { text: 'GET /resource' }],
 			concept:
 				'They send it as a plain Bearer token, because the key it is tied to stayed in the app, so they cannot make a proof.',
 			fields: [
@@ -2301,7 +2315,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					source: 'rfc9449',
 					section: '7.2',
-					why: 'Section 7.2 says an API that supports DPoP must refuse a bound token sent as Bearer, and that one which knows only Bearer would most likely take it.'
+					why: 'Section 7.2 says an API that takes both DPoP and Bearer must refuse a bound token sent as Bearer, and that one which knows only Bearer would most likely take it.'
 				}
 			],
 			from: 'api',
@@ -2312,14 +2326,14 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept: [
 				{
 					when: bearerOnly,
-					text: 'This API was written before DPoP and never looks at what the token is tied to, so the token alone gets them in. The key in the app protected nothing here.'
+					text: 'This API, standing in for one written before DPoP, never looks at what the token is tied to, and took the token alone, which section 7.2 expects of an API that knows only Bearer. The key in the app protected nothing here.'
 				},
 				{
 					text: 'This API sees that the token is tied to a key, and wants a proof made with it, which they cannot make. The token alone gets nobody in.'
 				}
 			],
 			inPractice:
-				"The check is in the API, not the identity provider, so it is the API team's own code to get right. An API that takes both kinds of token has to refuse a bound one sent as Bearer.",
+				'Whether a stolen token is refused is up to the API, and to how whatever checks its tokens is set up. One that takes both kinds of token has to refuse a bound one sent as Bearer.',
 			fields: [
 				{ name: 'resource', place: 'body', note: 'What the API answers', when: bearerOnly },
 				{

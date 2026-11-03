@@ -552,7 +552,10 @@ export class Demo {
 		}
 
 		const { apiToken } = settings;
-		const resource = `${API}${{ elsewhere: '/my-api/resource', noscope: '/contacts' }[apiToken as string] ?? '/resource'}`;
+		const bearerOnly = settings.tokenThief && settings.apiChecks === 'bearer';
+		const resource = bearerOnly
+			? `${API}/bearer-only/resource`
+			: `${API}${{ elsewhere: '/my-api/resource', noscope: '/contacts' }[apiToken as string] ?? '/resource'}`;
 		// The token has a very short life for this one, set up in keycloak.ts, so it just has to wait.
 		if (apiToken === 'expired') await new Promise((resolve) => setTimeout(resolve, 2100));
 		const sent = apiToken === 'changed' ? withMoreInIt(tokens.access_token) : tokens.access_token;
@@ -561,7 +564,11 @@ export class Demo {
 			['api-request', 'api-response'],
 			'GET',
 			resource,
-			apiToken === 'none' ? {} : this.#authorization('GET', resource, sent)
+			apiToken === 'none'
+				? {}
+				: bearerOnly
+					? { authorization: `Bearer ${sent}` }
+					: this.#authorization('GET', resource, sent)
 		);
 		if (answer.status !== 200 && apiToken === 'good') {
 			throw new Error(`The API refused: ${answer.text}`);
