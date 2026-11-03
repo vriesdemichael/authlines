@@ -344,8 +344,8 @@ export async function questionsWhenSomeoneLeaves(browser: Browser, admin: Admin)
 	const realm = `/realms/${COMPANIES_REALM}`;
 	await admin.call('POST', `${realm}/clients`, client(LEAVING_CLIENT, { publicClient: true }));
 	await forgetCustomersPeople(admin);
-	const { email } = PERSON_AT.acme;
-	const logIn = async () => {
+	const logIn = async (customer: Customer) => {
+		const { email } = PERSON_AT[customer];
 		const context = await browser.newContext();
 		const page = await context.newPage();
 		const query = new URLSearchParams({
@@ -357,6 +357,7 @@ export async function questionsWhenSomeoneLeaves(browser: Browser, admin: Admin)
 		await page.fill('#username', email);
 		await page.click('#kc-login');
 		await page.locator('#password').waitFor({ timeout: 15_000 });
+		// Their company's page may not know the email: with SAML, nothing passed it on.
 		await page.fill('#username', email);
 		await page.fill('#password', PASSWORD);
 		await page.click('#kc-login');
@@ -371,7 +372,7 @@ export async function questionsWhenSomeoneLeaves(browser: Browser, admin: Admin)
 		const loggedIn = at.href.startsWith(REDIRECT_URI);
 		return {
 			loggedIn,
-			atTheirCompany: at.pathname.startsWith(`/realms/${SAML_CUSTOMER}/`),
+			atTheirCompany: at.pathname.startsWith(`/realms/${customer}/`),
 			says: loggedIn
 				? null
 				: (body
@@ -380,23 +381,32 @@ export async function questionsWhenSomeoneLeaves(browser: Browser, admin: Admin)
 						?.trim() ?? null)
 		};
 	};
-	try {
-		const before = await logIn();
-		await turnOff(admin, SAML_CUSTOMER);
-		const withNoSession = await logIn();
+	// The same for a customer on SAML and one on OpenID Connect, so the screen can say it of either.
+	const ask = async (customer: Customer) => {
+		const before = await logIn(customer);
+		await turnOff(admin, customer);
+		const withNoSession = await logIn(customer);
 		const [kept] = await admin.call<{ enabled: boolean }[]>(
 			'GET',
-			`${realm}/users?email=${encodeURIComponent(email)}&exact=true`
+			`${realm}/users?email=${encodeURIComponent(PERSON_AT[customer].email)}&exact=true`
 		);
+		return {
+			before: { loggedIn: before.loggedIn },
+			withNoSession,
+			keptHere: { enabled: kept?.enabled ?? null }
+		};
+	};
+	try {
+		const acme = await ask(SAML_CUSTOMER);
+		const globex = await ask(OIDC_CUSTOMER);
 		const lengths = await admin.call<{
 			ssoSessionIdleTimeout: number;
 			ssoSessionMaxLifespan: number;
 		}>('GET', realm);
 		return {
 			whenSomeoneLeaves: {
-				before: { loggedIn: before.loggedIn },
-				withNoSession,
-				keptHere: { enabled: kept?.enabled ?? null },
+				acme,
+				globex,
 				session: {
 					idleMinutes: lengths.ssoSessionIdleTimeout / 60,
 					maxHours: lengths.ssoSessionMaxLifespan / 3600
@@ -404,7 +414,7 @@ export async function questionsWhenSomeoneLeaves(browser: Browser, admin: Admin)
 			}
 		};
 	} finally {
-		await turnOff(admin, SAML_CUSTOMER, false);
+		for (const customer of CUSTOMERS) await turnOff(admin, customer, false);
 		const [question] = await admin.call<{ id: string }[]>(
 			'GET',
 			`${realm}/clients?clientId=${LEAVING_CLIENT}`

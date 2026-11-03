@@ -455,7 +455,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				is('registration', 'manual'),
 				is('appRuns', 'server')
 			),
-			because: 'It goes through another provider, and is only drawn in the plain case so far.',
+			because: 'Only with another provider, in the plain case so far.',
 			sayWhenBlocked: true
 		}
 	},
@@ -490,7 +490,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		default: false,
 		onlyOn: 'authorization-code',
 		summary: 'Their company turns their account off, and what still works here.',
-		why: "When someone leaves, their company's admins turn their account off at their own provider. What a customer wants to know is how long that person can still get in through your app, and it is longer than people expect, because nothing tells the identity provider in the middle.",
+		why: "When someone leaves, their company's admins turn their account off at their own provider. What a customer wants to know is how long that person can still get in through your app. Unless something is set up to tell it, the identity provider in the middle is not told.",
 		sources: [
 			{
 				source: 'keycloak-timeouts',
@@ -499,8 +499,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		],
 		requires: {
 			when: is('companies', true),
-			because: 'Only someone at a customer with a provider of their own leaves it.',
-			sayWhenBlocked: true
+			because: 'Only someone at a customer with a provider of their own leaves it.'
 		}
 	},
 	upstreamTokens: {

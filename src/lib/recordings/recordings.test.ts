@@ -546,11 +546,14 @@ describe('a customer with a provider of their own', () => {
 	});
 
 	it('says when it stops, as a real server answered', () => {
-		const { withNoSession, keptHere, session, before } = answers.whenSomeoneLeaves;
-		expect(before.loggedIn).toBe(true);
-		expect(withNoSession).toMatchObject({ loggedIn: false, atTheirCompany: true });
-		expect(withNoSession.says).toBe('Account is disabled, contact your administrator.');
-		expect(keptHere.enabled).toBe(true);
+		const { acme, globex, session } = answers.whenSomeoneLeaves;
+		for (const { withNoSession, keptHere, before } of [acme, globex]) {
+			expect(before.loggedIn).toBe(true);
+			expect(withNoSession).toMatchObject({ loggedIn: false, atTheirCompany: true });
+			expect(withNoSession.says).toBe('Account is disabled, contact your administrator.');
+			expect(keptHere.enabled).toBe(true);
+		}
+		const { withNoSession } = acme;
 		expect(session).toEqual({ idleMinutes: 30, maxHours: 10 });
 		const step = stepsOf(read('companies-leaves')).find(({ id }) => id === 'code-again');
 		const text = step?.pitfall?.text ?? '';

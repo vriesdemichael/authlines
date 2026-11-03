@@ -423,9 +423,10 @@ export const mapTracks: readonly MapTrack[] = [
 						'leaver'
 					],
 					answer:
-						'Their company turns their account off, and nothing tells your provider. On the server recorded, the old token still worked, a refresh still gave new ones, and the same browser logged in again unasked, for as long as the session in the middle lasted.',
+						'Their company turns their account off. On the server recorded, nothing told your provider: the old token still worked, a refresh gave new ones, and the same browser logged in again unasked. A refresh or a login works while the session in the middle lasts.',
 					title: "What happens when someone leaves the customer's company?",
-					summary: 'Longer than people expect: until the session in the middle ends.',
+					summary:
+						'The token, a refresh and a login still work, while the session in the middle lasts.',
 					mode: 'advanced',
 					preset: 'companies-leaves',
 					step: 'code-again'
@@ -713,9 +714,9 @@ export const offTheMap: readonly MapNode[] = [
 		id: 'someone-leaves-oidc',
 		alsoAskedAs: ['leaves openid connect', 'offboarding openid connect'],
 		answer:
-			'No. With a customer on OpenID Connect too, the old token, a refresh and the same browser logging in again all still worked after their company turned them off, because the provider in the middle did not ask their company.',
+			'No, as it was set up. With a customer on OpenID Connect too, the old token, a refresh and the same browser logging in again all still worked after their company turned them off, and the session in the middle stayed the same one throughout.',
 		title: 'Does it matter what their provider speaks, when someone leaves?',
-		summary: 'No: the provider in the middle does not ask their company either way.',
+		summary: 'No, as it was set up: the session in the middle carried on either way.',
 		mode: 'advanced',
 		preset: 'companies-oidc-leaves',
 		step: 'code-again'

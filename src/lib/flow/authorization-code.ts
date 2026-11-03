@@ -2254,7 +2254,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'Their company turns their account off',
 			label: 'Account disabled',
 			concept:
-				"They have left, and their company's admins turn their account off at their own provider. On the server recorded, nothing told the identity provider, and nothing told the app."
+				"They have left, and their company's admins turn their account off at their own provider. On the server recorded, nothing was set up for their company to tell the identity provider, and nothing told it, or the app."
 		},
 		{
 			id: 'left-api-request',
@@ -2276,7 +2276,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'It still answers',
 			label: '200 with the resource',
 			concept:
-				'Nothing in the token changed, and it has not run out, so an API that checks the token alone answers as before.',
+				'Nothing in the token changed, and it has not run out, so the API answered as before.',
 			fields: [{ name: 'resource', place: 'body', note: 'What the API answers' }]
 		},
 		{
@@ -2302,7 +2302,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'New tokens, without asking their company',
 			label: '200, new tokens',
 			concept:
-				'The identity provider does not ask their company for a refresh. The session it keeps for them is still good, so it gives new tokens.',
+				'The identity provider did not ask their company for a refresh. The session it keeps for them was still good, and so was the account it kept for them, and it gave new tokens.',
 			fields: [
 				{ name: 'access_token', place: 'body', artifact: 'access-token' },
 				{ name: 'token_type=Bearer', place: 'body' },
@@ -2349,7 +2349,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				title: 'When does it stop?',
 				text: [
 					{
-						text: 'When the session in the middle ends, or its admins end it. The server recorded, as it comes, ends a session after 30 minutes unused, or 10 hours in all, and its guide says a refresh counts as using it, so an app that keeps refreshing keeps it going. A browser with no session went to their company, whose page said "Account is disabled, contact your administrator.", and the identity provider never heard back. The account it kept for them stayed enabled.'
+						text: 'The access token it already has works until it runs out. A refresh and a login again work while the session in the middle lasts: the server recorded, as it comes, ends a session after 30 minutes unused, or 10 hours in all, and its guide says a refresh counts as using it, which restarts the 30 minutes and not the 10 hours. Its admins can end it sooner, which was not tried. With either kind of customer, a browser with no session went to their company, whose page said "Account is disabled, contact your administrator.", and the identity provider never heard back. The account it kept for them stayed enabled.'
 					}
 				]
 			},
