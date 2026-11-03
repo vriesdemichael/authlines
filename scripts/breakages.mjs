@@ -18,6 +18,12 @@ const ERRORS = 'src/lib/search/errors.ts';
 
 export const breakages = [
 	{
+		name: 'behind the page: the tokens reach the browser',
+		file: 'src/lib/flow/authorization-code.ts',
+		from: "name: 'Set-Cookie',\n\t\t\t\t\tplace: 'header',\n\t\t\t\t\tartifact: 'app-session',",
+		to: "name: 'Set-Cookie',\n\t\t\t\t\tplace: 'header',\n\t\t\t\t\tartifact: 'access-token',"
+	},
+	{
 		name: 'directory: another provider stays on beside it',
 		file: 'src/lib/flow/settings.ts',
 		from: 'setsWhenOn: { broker: false },',

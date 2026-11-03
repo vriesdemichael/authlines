@@ -9,6 +9,7 @@ export type ArtifactId =
 	| 'id-token'
 	| 'refresh-token'
 	| 'session'
+	| 'app-session'
 	| 'proof'
 	| 'upstream-token'
 	| 'device-code'
@@ -69,6 +70,12 @@ export const artifacts: Readonly<
 		short: 'session',
 		explains:
 			'How the identity provider remembers this browser. It is a cookie on the address of the identity provider, so the browser sends it there and nowhere else, and no app ever sees it. It is why a second app does not ask for a password. An app usually keeps a session of its own as well, which is a different thing.'
+	},
+	'app-session': {
+		label: 'cookie',
+		short: 'cookie',
+		explains:
+			'What the browser gets from the app’s own server, in place of tokens. It only means something to that server, which looks up the tokens with it, and no script in the page can read it.'
 	},
 	proof: {
 		label: 'key proof',

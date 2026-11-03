@@ -848,6 +848,11 @@
 			"after": {
 				"emailVerified": true
 			}
+		},
+		"scriptBehindThePage": {
+			"readsTheCookie": false,
+			"findsAToken": false,
+			"throughTheServer": 200
 		}
 	}
 }

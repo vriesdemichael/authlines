@@ -17,6 +17,7 @@ const confidential = is('clientType', 'confidential');
 const pkce = is('pkce', true);
 const consent = is('consent', true);
 const inPage = is('appRuns', 'page');
+const behindThePage = is('appRuns', 'bff');
 const fromADocument = is('registration', 'cimd');
 const inADirectory = is('federation', true);
 const byHand = is('registration', 'manual');
@@ -79,7 +80,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			...browserWords,
 			icon: 'browser',
 			front: true,
-			when: not(inPage),
+			when: all(not(inPage), not(behindThePage)),
 			concept:
 				'Where the user is. Anything sent through the browser can be seen, and changed, by the user and by software in the browser. That is why the flow is careful about what goes this way.'
 		},
@@ -97,11 +98,25 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				'The app runs here, as a page in the user’s browser, so the two are one place. It makes its calls from the page, and what it gets stays in the page, where the user and any script running in it can reach it. The login page is not part of that: it is the identity provider’s own, at another address, and the browser keeps the app’s script out of it. So the password is here in the browser, and still does not reach the app.'
 		},
 		{
+			id: 'browser',
+			plainName: 'Browser and page',
+			plainRole: 'The page runs here',
+			...browserWords,
+			name: 'Browser and page',
+			role: 'The page runs here',
+			icon: 'browser',
+			front: true,
+			when: behindThePage,
+			concept:
+				'Where the user is, and where the app’s page runs. The page is not the client here, and has no tokens and no secret.'
+		},
+		{
 			id: 'app',
 			plainName: 'App',
 			plainRole: 'What the user uses',
 			...appWords,
 			icon: 'app',
+			when: not(behindThePage),
 			joins: { lifeline: 'browser', when: inPage },
 			startsWith: [{ artifact: 'secret', when: confidential }],
 			concept: [
@@ -113,6 +128,17 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: "The application the user wants to use. In OAuth's terms it is the client, and it never sees the user's password."
 				}
 			]
+		},
+		{
+			id: 'app',
+			plainName: 'App’s server',
+			plainRole: 'Keeps the tokens',
+			...appWords,
+			icon: 'app',
+			when: behindThePage,
+			startsWith: [{ artifact: 'secret', when: confidential }],
+			concept:
+				"A small server of the app's own, behind the page. In OAuth's terms this is the client: it has the secret, does the login and keeps the tokens, and it never sees the user's password."
 		},
 		{
 			id: 'second-app',
@@ -242,6 +268,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			label: 'Open the app',
 			concept: [
 				{
+					when: behindThePage,
+					text: 'The page loads. It is not the client here, the server behind it is, so it has nothing of its own to log in with.'
+				},
+				{
 					when: inPage,
 					text: 'The page loads, from wherever it is served, and from here on the app is the page. That place still matters: it serves the scripts, so whoever controls it controls the app, and it is sent the address the login comes back to, with the code in it.'
 				},
@@ -261,6 +291,53 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: 'See how the app and the identity provider got to know each other'
 				}
 			]
+		},
+		{
+			id: 'page-served',
+			when: behindThePage,
+			from: 'app',
+			to: 'browser',
+			kind: 'response',
+			plain: 'The page',
+			label: '200, the page',
+			concept:
+				'The page and its scripts. Here its own server sends them, though another host could, because serving them and keeping tokens are separate jobs.',
+			fields: []
+		},
+		{
+			id: 'session-check',
+			when: behindThePage,
+			from: 'browser',
+			to: 'app',
+			kind: 'request',
+			plain: 'The page asks if anyone is logged in',
+			label: 'GET /session',
+			concept: 'The page holds nothing that could tell it, so it asks its server.',
+			fields: []
+		},
+		{
+			id: 'no-session',
+			when: behindThePage,
+			from: 'app',
+			to: 'browser',
+			kind: 'response',
+			plain: 'Nobody yet',
+			label: 'Not logged in',
+			concept:
+				'How this looks is up to the app. This server and page were written for the recording, and only the identity provider is someone else’s.',
+			fields: [{ name: 'loggedIn', place: 'body', note: 'Whether a cookie came that it knows' }]
+		},
+		{
+			id: 'bff-login',
+			when: behindThePage,
+			from: 'browser',
+			to: 'app',
+			kind: 'request',
+			plain: 'The page sends the browser to its server',
+			label: 'GET /login',
+			concept:
+				'The whole browser goes, and not a call from a script, because it is about to leave for the identity provider. From here the login is the one any app on a server has, because to the identity provider that is what this is.',
+			fields: []
 		},
 		{
 			id: 'generate-key',
@@ -1584,6 +1661,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			cites: [
 				{
 					source: 'rfc10017',
+					section: '6.1.2.3',
+					why: 'Section 6.1.2.3 is the two ways to keep them: all on the server, or in a signed cookie, which it says suits this better than usual, because the tokens are what can be revoked.',
+					when: behindThePage
+				},
+				{
+					source: 'rfc10017',
 					section: '5.1.3',
 					why: 'Section 5.1.3 is a script in the page starting a login of its own, which keeping tokens somewhere better does not stop. It takes a session at the server, and a server that allows it silently.',
 					when: not(confidential)
@@ -1615,6 +1698,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			label: [{ when: oidc, text: 'Access token and ID token' }, { text: 'Access token' }],
 			concept: [
 				{
+					when: behindThePage,
+					text: 'The tokens stop here, at the server. Neither the page nor the browser gets them, which is what the server is for.'
+				},
+				{
 					when: inPage,
 					text: 'The tokens are in the page now, and so in the browser, which the rest of this flow took care to avoid. On a server they would be out of reach of the user’s browser. Here, any script running in this page can reach them, and that is the price of having no server.'
 				},
@@ -1635,6 +1722,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				}
 			],
 			inPractice: [
+				{
+					when: behindThePage,
+					text: 'Keep them with the session you start next, on the server or in an encrypted cookie. RFC 10017 section 6.1.2.3 weighs the two.'
+				},
 				{
 					when: inPage,
 					text: 'A library takes these, and they are in the page now. A script running in that page can reach whatever the page can, and can often start a login of its own for new tokens. A worker narrows the first and not the second. That is why current advice for business apps, and anything sensitive or personal, is a server behind the app that keeps them, called a backend for frontend. A script can still act through the open page.'
@@ -1748,12 +1839,70 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			fields: [{ name: 'sub', place: 'body' }]
 		},
 		{
+			id: 'set-session',
+			when: behindThePage,
+			cites: [
+				{
+					source: 'rfc10017',
+					section: '6.1.3.2',
+					why: 'Section 6.1.3.2 lists what this cookie has to have: Secure and HttpOnly, and SameSite=Strict and the prefix unless there is a reason not to.'
+				}
+			],
+			from: 'app',
+			to: 'browser',
+			kind: 'response',
+			plain: 'The browser gets a cookie, not tokens',
+			label: '302 to the page, with a cookie',
+			concept:
+				'All the browser gets is a cookie that only means something to this server, and HttpOnly keeps scripts from reading it. The page then loads again, asks again and gets a yes, which the diagram leaves out.',
+			fields: [
+				{
+					name: 'Set-Cookie',
+					place: 'header',
+					artifact: 'app-session',
+					note: 'HttpOnly, Secure and SameSite=Strict'
+				},
+				{ name: 'location', place: 'header', note: 'Back to the page' }
+			]
+		},
+		{
+			id: 'page-calls-api',
+			when: behindThePage,
+			cites: [
+				{
+					source: 'rfc10017',
+					section: '6.1',
+					why: 'Section 6.1 says what a script here can and cannot do: it can send requests through this server, and has no tokens to take and no way to read this cookie.'
+				}
+			],
+			from: 'browser',
+			to: 'app',
+			kind: 'request',
+			plain: 'The page asks its server for the data',
+			label: 'GET /api/resource',
+			concept:
+				'The script calls its own server, and the browser adds the cookie by itself. The script sees neither the cookie nor a token.',
+			pitfall: {
+				title: 'What can a script in this page still do?',
+				text: 'In a real page, a script could not read this cookie and found no token. But it can do what the page does: the same request worked from a script. So a script that gets in can act for the user while the page is open, and can take what comes back, but not the cookie or a token to use elsewhere.'
+			},
+			fields: [
+				{
+					name: 'Cookie',
+					place: 'header',
+					artifact: 'app-session',
+					note: 'The browser adds it by itself'
+				}
+			]
+		},
+		{
 			id: 'api-request',
 			when: stillGoing,
 			from: 'app',
 			to: 'api',
 			kind: 'request',
 			plain: [
+				{ when: behindThePage, text: 'The server calls the API with the token' },
 				{ when: sends('none'), text: 'The app calls the API with no token' },
 				{ when: sends('expired'), text: 'The app calls the API with an old token' },
 				{ when: sends('changed'), text: 'The app calls the API with a changed token' },
@@ -1767,6 +1916,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{ text: 'GET /resource' }
 			],
 			concept: [
+				{
+					when: behindThePage,
+					text: 'The server takes the cookie off, puts the token on, and calls the API. The API gets what it always gets, and knows nothing about the page.'
+				},
 				{
 					when: sends('none'),
 					text: 'The app calls the API without a token, as happens when a library has not added one or the app has none yet.'
@@ -1922,6 +2075,18 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					when: apiRefuses
 				}
 			]
+		},
+		{
+			id: 'page-gets-answer',
+			when: behindThePage,
+			from: 'app',
+			to: 'browser',
+			kind: 'response',
+			plain: 'The server hands the answer to the page',
+			label: '200, what the API said',
+			concept:
+				'The page has the data and still no token. Every call it makes goes this way, so this server now has to be up and in reach for all of them.',
+			fields: [{ name: 'resource', place: 'body', note: 'What the API said, passed on' }]
 		},
 		{
 			id: 'token-runs-out',

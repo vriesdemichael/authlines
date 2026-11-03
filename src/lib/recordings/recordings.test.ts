@@ -405,6 +405,38 @@ describe('the words on what an API answered', () => {
 	});
 });
 
+describe('a server behind the page', () => {
+	const recording = read('behind-the-page');
+	const toTheAppsServer = recording.messages.filter(
+		({ url, direction }) => direction === 'request' && url?.startsWith('http://localhost:9100')
+	);
+
+	it('sends the cookie the screen says, with the flags it says', () => {
+		const given = recording.messages.find(({ step }) => step === 'set-session');
+		expect(given?.headers['set-cookie']).toMatch(/; Path=\/; Secure; HttpOnly; SameSite=Strict$/);
+		const sent = recording.messages.find(({ step }) => step === 'page-calls-api');
+		expect(sent?.headers.cookie).toContain('__Host-Http-session=');
+		expect(given?.headers['set-cookie']).toContain(sent?.headers.cookie);
+	});
+
+	it('never lets the browser send a token, and the server does', () => {
+		expect(toTheAppsServer.length).toBeGreaterThan(3);
+		for (const message of toTheAppsServer) expect(JSON.stringify(message)).not.toContain('eyJ');
+		expect(
+			recording.messages.find(({ step }) => step === 'api-request')?.headers.authorization
+		).toMatch(/^Bearer eyJ/);
+	});
+
+	it('says what a real page could and could not do', () => {
+		const { answers } = JSON.parse(readFileSync(`${FOLDER}/questions.json`, 'utf8'));
+		expect(answers.scriptBehindThePage).toEqual({
+			readsTheCookie: false,
+			findsAToken: false,
+			throughTheServer: 200
+		});
+	});
+});
+
 describe('a user in a directory', () => {
 	const access = (preset: string) => {
 		const answer = read(preset).messages.find(({ step }) => step === 'token-response');

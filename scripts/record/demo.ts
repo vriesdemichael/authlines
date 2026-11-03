@@ -111,6 +111,22 @@ export function responseMessage(
 }
 
 /** The whole of an app that runs in the page, as a library would do it for you. */
+/** The page, with a server behind it: it holds nothing, and asks. RFC 10017, section 6.1.1. */
+const pageBehindAServer = `<!doctype html><title>An app with a server behind it</title><body><script type="module">
+const { loggedIn } = await (await fetch('/session')).json();
+if (loggedIn) {
+	const answer = await fetch('/api/resource');
+	document.body.innerHTML = '<h1>' + (answer.ok ? 'Logged in' : 'Failed') + '</h1>';
+} else {
+	// Only for the recorder: a browser will not hand over an answer once the page has left it.
+	await new Promise((resolve) => setTimeout(resolve, 500));
+	location.assign('/login');
+}
+</script>`;
+
+/** With the flags section 6.1.3.2 asks for, and the prefix it suggests. */
+const BFF_COOKIE = '__Host-Http-session';
+
 function appInThePage(
 	run: Run,
 	server: {
@@ -332,6 +348,7 @@ export class Demo {
 	/** Logout tokens that came in with no run going, for a question to count. */
 	logoutTokens: string[] = [];
 	#tokens: Tokens | null = null;
+	#bffSession: string | null = null;
 	#servers: Server[] = [];
 	#discovered: Discovered | null = null;
 	#state = '';
@@ -506,6 +523,8 @@ export class Demo {
 		const tokens = jsonOf<Tokens>(result.text);
 		if (!tokens.access_token) throw new Error(`No token: ${result.text}`);
 		this.#tokens = tokens;
+		// It keeps them, and calls the API when the page asks.
+		if (settings.appRuns === 'bff') return 'Logged in';
 
 		if (settings.oidc) {
 			const problem = idTokenProblem(tokens.id_token, {
@@ -801,7 +820,42 @@ export class Demo {
 				response.end(appInThePage(this.current, this.#server));
 				return;
 			}
-			if (url.pathname === '/') {
+			if (this.current?.settings.appRuns === 'bff') {
+				const inSession =
+					this.#bffSession !== null &&
+					(request.headers.cookie ?? '').includes(`${BFF_COOKIE}=${this.#bffSession}`);
+				if (url.pathname === '/') {
+					response.writeHead(200, { 'content-type': 'text/html' });
+					response.end(pageBehindAServer);
+					return;
+				}
+				if (url.pathname === '/session') {
+					response.writeHead(200, { 'content-type': 'application/json' });
+					response.end(JSON.stringify({ loggedIn: inSession }));
+					return;
+				}
+				if (url.pathname === '/api/resource') {
+					if (!inSession) {
+						response.writeHead(401);
+						response.end();
+						return;
+					}
+					// Takes the cookie off and puts the token on, which is all section 6.1 asks of this.
+					await settle();
+					const resource = `${API}/resource`;
+					const answer = await call(
+						this.#run,
+						['api-request', 'api-response'],
+						'GET',
+						resource,
+						this.#authorization('GET', resource, this.#tokens?.access_token ?? '')
+					);
+					response.writeHead(answer.status, { 'content-type': 'application/json' });
+					response.end(answer.text);
+					return;
+				}
+			}
+			if (url.pathname === '/' || url.pathname === '/login') {
 				const run = this.#run;
 				const { settings } = run;
 				this.#state = random();
@@ -867,6 +921,15 @@ export class Demo {
 				try {
 					await settle();
 					const outcome = await this.#afterLogin(url.searchParams.get('code') ?? '');
+					if (this.#run.settings.appRuns === 'bff') {
+						this.#bffSession = random();
+						response.writeHead(302, {
+							location: `${APP}/`,
+							'set-cookie': `${BFF_COOKIE}=${this.#bffSession}; Path=/; Secure; HttpOnly; SameSite=Strict`
+						});
+						response.end();
+						return;
+					}
 					response.writeHead(200, { 'content-type': 'text/html' });
 					response.end(`<h1>${outcome}</h1>`);
 				} catch (error) {

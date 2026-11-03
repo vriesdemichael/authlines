@@ -114,5 +114,12 @@
 	"directory-found",
 	"directory-bind",
 	"directory-bound",
-	"connect-directory"
+	"connect-directory",
+	"page-served",
+	"session-check",
+	"no-session",
+	"bff-login",
+	"set-session",
+	"page-calls-api",
+	"page-gets-answer"
 ]

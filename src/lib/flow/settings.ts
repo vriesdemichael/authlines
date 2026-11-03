@@ -20,7 +20,7 @@ export interface Settings {
 	deviceEnds: 'agrees' | 'says-no' | 'runs-out';
 	deviceAttack: 'nobody' | 'sends-code' | 'reads-code';
 	address: 'registered' | 'other';
-	appRuns: 'server' | 'page';
+	appRuns: 'server' | 'page' | 'bff';
 	oldWay: boolean;
 	registration: 'manual' | 'dcr' | 'cimd';
 	federation: boolean;
@@ -390,7 +390,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		default: false,
 		setsWhenOn: { broker: false },
 		onlyOn: 'authorization-code',
-		summary: 'The users are in LDAP or Active Directory, and the identity provider checks there.',
+		summary: 'The identity provider checks users in LDAP or Active Directory.',
 		why: 'Many organisations already have their users in a directory. Another provider takes the login away, and with this the identity provider keeps the login and only asks the directory, so the browser and the app see no difference.',
 		sources: [
 			{
@@ -635,7 +635,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		simple: {
 			label: 'Where does your app run?',
 			summary:
-				'In the page, the tokens end up in the browser, where any script in it can reach them.'
+				'In the page, the tokens end up in the browser, where any script in it can reach them. With a server behind it, they stay there.'
 		},
 		summary:
 			'On a server of its own, or in the page in the user’s browser. In the page there is nowhere to keep a secret, and the tokens end up in the browser.',
@@ -665,6 +665,30 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 						is('logout', false),
 						is('apiToken', 'good'),
 						is('address', 'registered')
+					),
+					because: 'Not drawn with these settings yet.'
+				}
+			},
+			{
+				value: 'bff',
+				label: 'In the page, with a server behind it',
+				sets: { clientType: 'confidential', pkce: true },
+				requires: {
+					when: all(
+						is('clientType', 'confidential'),
+						is('pkce', true),
+						is('oidc', false),
+						is('binding', 'bearer'),
+						is('broker', false),
+						is('federation', false),
+						is('attacker', false),
+						is('consent', false),
+						is('sso', false),
+						is('refresh', false),
+						is('logout', false),
+						is('apiToken', 'good'),
+						is('address', 'registered'),
+						is('registration', 'manual')
 					),
 					because: 'Not drawn with these settings yet.'
 				}
