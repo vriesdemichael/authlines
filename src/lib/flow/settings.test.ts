@@ -84,6 +84,8 @@ describe('constraints', () => {
 		const howItRegisters = 2;
 		const inADirectory = 1;
 		const withAServerBehindThePage = 1;
+		// Through another provider in the plain case, and what their provider speaks.
+		const eachCustomerHasAProvider = 2;
 		expect(allValidSettings()).toBe(allValidSettings());
 		expect(Object.isFrozen(allValidSettings())).toBe(true);
 		expect(allValidSettings().every((settings) => Object.isFrozen(settings))).toBe(true);
@@ -98,7 +100,8 @@ describe('constraints', () => {
 				theOldWay +
 				howItRegisters +
 				inADirectory +
-				withAServerBehindThePage
+				withAServerBehindThePage +
+				eachCustomerHasAProvider
 		);
 	});
 

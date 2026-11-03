@@ -6,6 +6,7 @@ import { defaultSettings } from '#lib/flow/settings.ts';
 import { notesFor } from '#lib/keycloak/notes.ts';
 import type { Recording } from '#lib/recordings/format.ts';
 import { traceRun } from '#lib/recordings/wire.ts';
+import companiesSaml from '../../../static/recordings/authorization-code/companies-saml.json';
 import oauth from '../../../static/recordings/authorization-code/oauth.json';
 
 const recording = oauth as Recording;
@@ -45,5 +46,17 @@ export const SayingWhichSettingPutWhatInAToken: Story = {
 	args: {
 		...argsFor('token-response'),
 		notes: notesFor('authorization-code', 'token-response', defaultSettings)
+	}
+};
+
+const saml = companiesSaml as Recording;
+const samlView = evaluate(flow, saml.settings);
+
+export const OpeningASamlAssertion: Story = {
+	args: {
+		step: samlView.steps.find((step) => step.id === 'upstream-callback')!,
+		message: saml.messages.find((message) => message.step === 'upstream-callback')!,
+		trace: traceRun(saml),
+		numberOf: (id: string) => samlView.steps.findIndex((step) => step.id === id) + 1 || null
 	}
 };

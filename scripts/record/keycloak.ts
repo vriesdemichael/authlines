@@ -30,7 +30,7 @@ export {
 };
 export const API = 'http://localhost:9101';
 export const PROXY_PORT = 9102;
-const PROXY_FROM_CONTAINER = `http://host.docker.internal:${PROXY_PORT}`;
+export const PROXY_FROM_CONTAINER = `http://host.docker.internal:${PROXY_PORT}`;
 
 export const BROKERED_REALM = 'demo-brokered';
 export const UPSTREAM_REALM = 'upstream';
@@ -160,6 +160,26 @@ export class Admin {
 		}
 		const text = await response.text();
 		return (text ? JSON.parse(text) : undefined) as T;
+	}
+
+	/** Makes something and says where it is, which is all a 201 gives back. */
+	async created(method: string, path: string, body: unknown): Promise<string> {
+		const send = () =>
+			fetch(`${KEYCLOAK}/admin${path}`, {
+				method,
+				headers: { authorization: `Bearer ${this.#token}`, 'content-type': 'application/json' },
+				body: JSON.stringify(body)
+			});
+		let response = await send();
+		if (response.status === 401) {
+			await this.#logIn();
+			response = await send();
+		}
+		const location = response.headers.get('location');
+		if (!response.ok || !location) {
+			throw new Error(`${method} ${path}: ${response.status} ${await response.text()}`);
+		}
+		return location;
 	}
 
 	async serverVersion() {

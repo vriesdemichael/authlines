@@ -61,7 +61,9 @@
 	let settling: ReturnType<typeof setTimeout> | undefined;
 	function consider(id: SettingId, value: boolean | string) {
 		clearTimeout(settling);
-		if (settings[id] === value || unavailable(id, value as never, settings)) return;
+		// Judged with what choosing it brings along, as the switch itself is.
+		const after = { ...settings, ...setsWith(id, value as never) };
+		if (settings[id] === value || unavailable(id, value as never, after)) return;
 		settling = setTimeout(() => onpreview?.({ id, value }), SETTLE_MS);
 	}
 	// Flipping a setting can move the others, and something sliding under a mouse that stayed where it

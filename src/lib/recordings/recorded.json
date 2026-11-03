@@ -42,7 +42,9 @@
 		"registers-itself": "2026-11-02",
 		"points-at-a-document": "2026-11-02",
 		"in-a-directory": "2026-11-03",
-		"behind-the-page": "2026-11-03"
+		"behind-the-page": "2026-11-03",
+		"companies": "2026-11-03",
+		"companies-saml": "2026-11-03"
 	},
 	"flows": {
 		"authorization-code": {
@@ -87,6 +89,8 @@
 				"dpop",
 				"dpop-nonce",
 				"broker",
+				"companies",
+				"companies-saml",
 				"upstream-v1",
 				"upstream-v2",
 				"everything"
@@ -128,6 +132,7 @@
 				"directory-search",
 				"discover",
 				"discovery-document",
+				"email-page",
 				"end-session",
 				"fetch-keys",
 				"handed-token-request",
@@ -173,6 +178,7 @@
 				"session-check",
 				"set-session",
 				"submit-credentials",
+				"submit-email",
 				"token-after-logout",
 				"token-after-logout-response",
 				"token-request",

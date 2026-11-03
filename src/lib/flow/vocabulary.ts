@@ -12,6 +12,7 @@ export type ArtifactId =
 	| 'app-session'
 	| 'proof'
 	| 'upstream-token'
+	| 'assertion'
 	| 'device-code'
 	| 'user-code';
 
@@ -89,6 +90,12 @@ export const artifacts: Readonly<
 		explains:
 			'A token the other provider issued, for calling that provider’s own APIs. It is not the token the app got from its own identity provider.'
 	},
+	assertion: {
+		label: 'assertion',
+		short: 'assertion',
+		explains:
+			'A statement from a SAML provider about who logged in, with what it knows about them, meant for one provider and for a short time. Here it came in a response the provider signed, and was not encrypted, so the browser carrying it could read it. The signature is what makes it worth anything.'
+	},
 	'device-code': {
 		label: 'device code',
 		short: 'device code',
@@ -105,6 +112,9 @@ export const artifacts: Readonly<
 
 /** Why a parameter is there, for the ones that mean the same wherever they appear. */
 const parameterWhy: Readonly<Record<string, string>> = {
+	SAMLRequest: 'Who is asking, and where to send the answer',
+	SAMLResponse: 'The assertion, signed by their provider',
+	RelayState: 'Like state: it comes back as it went',
 	'initial access token': 'What lets an app register itself',
 	'allowed domains': 'Whose documents to trust',
 	client_name: 'What the user is told the app is called',

@@ -203,7 +203,6 @@ describe('what people bring', () => {
 	});
 
 	it.each([
-		'What about SAML?',
 		'token exchange',
 		'PKCE downgrade',
 		'native apps',

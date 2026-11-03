@@ -13,6 +13,8 @@ const states: readonly [string, string, 'flow' | 'setup'][] = [
 	['the-old-way', 'mode=simple&oldway=1&step=old-way-answer', 'flow'],
 	['registers-itself', 'register=dcr&step=dcr-response', 'setup'],
 	['in-a-directory', 'directory=1&step=directory-bind', 'flow'],
+	['customer-on-saml', 'broker=1&companies=1&speaks=saml&step=upstream-callback', 'flow'],
+	['customer-setup', 'broker=1&companies=1&speaks=saml&step=send-their-details', 'setup'],
 	[
 		'points-at-a-document',
 		'register=cimd&client=public&pkce=1&consent=1&step=cimd-document',

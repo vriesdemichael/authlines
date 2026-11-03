@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { authorizationCodeBase as base, flows } from '#lib/flow/index.ts';
-import { evaluate, type Field, type DiagramView, type Step } from '#lib/flow/model.ts';
+import { evaluate, holdingsAt, type Field, type DiagramView, type Step } from '#lib/flow/model.ts';
 import { allValidSettings, defaultSettings, normalize, type Settings } from '#lib/flow/settings.ts';
 import type { ArtifactId } from '#lib/flow/vocabulary.ts';
 import type { RecordedMessage, Recording } from '#lib/recordings/format.ts';
@@ -110,6 +110,7 @@ const SIGN_IN = new Set([
 	'submit-credentials',
 	'second-submit-credentials',
 	'upstream-sign-in',
+	'submit-email',
 	'consent-grant'
 ]);
 
@@ -302,7 +303,8 @@ describe.each(asCases)('the recording of %s', (preset, recording) => {
 		const allowed = new Set(['localhost', 'host.docker.internal']);
 		expect(hosts.filter((host) => !allowed.has(host))).toEqual([]);
 		const emails = [...text.matchAll(/[\w.+-]+@[\w-]+\.[\w.]+/g)].map((match) => match[0]);
-		expect(emails.filter((email) => !email.endsWith('@example.test'))).toEqual([]);
+		// At a domain reserved for testing (RFC 2606), so no address in a recording is anyone's.
+		expect(emails.filter((email) => !/@([\w-]+\.)*test$/.test(email))).toEqual([]);
 		expect(text).toContain('"keycloak"');
 	});
 
@@ -449,6 +451,80 @@ describe('a server behind the page', () => {
 			findsAToken: false,
 			throughTheServer: 200
 		});
+	});
+});
+
+describe('a customer with a provider of their own', () => {
+	const access = (preset: string) => {
+		const answer = read(preset).messages.find(({ step }) => step === 'token-response');
+		const { access_token: token } = answer?.body as { access_token: string };
+		return JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+	};
+	const names = (preset: string) => Object.keys(access(preset)).sort();
+
+	// The screen says the token is the same with one thing more, so it comes from the real runs.
+	it('gets the claims another provider gets, and which customer they are from', () => {
+		expect(names('companies')).toEqual([...names('broker'), 'organization'].sort());
+		expect(access('companies').organization).toEqual(['globex']);
+		expect(access('companies-saml').organization).toEqual(['acme']);
+		const said = stepsOf(read('companies')).find(({ id }) => id === 'token-response');
+		expect(said?.concept).toContain('which customer they are from');
+	});
+
+	it('gets the same token whether their provider speaks SAML or OpenID Connect', () => {
+		expect(names('companies-saml')).toEqual(names('companies'));
+	});
+
+	it('asks only for the email, and goes to the provider of its domain', () => {
+		for (const [preset, customer] of [
+			['companies', 'globex'],
+			['companies-saml', 'acme']
+		]) {
+			const { messages } = read(preset);
+			const sent = messages.findIndex(({ step }) => step === 'submit-email');
+			expect(Object.keys(messages[sent].body as object), preset).toEqual(['username']);
+			expect(messages[sent + 1].headers.location, preset).toContain(`/broker/${customer}/login`);
+		}
+	});
+
+	const { answers } = JSON.parse(readFileSync(`${FOLDER}/questions.json`, 'utf8'));
+
+	it('says what a real server did with someone who has a password of ours', () => {
+		const { passwordHere } = answers;
+		expect(passwordHere).toMatchObject({ goesTo: null, asksForPassword: true, loggedIn: true });
+		expect(passwordHere.buttons).toEqual(['acme', 'globex']);
+		expect(passwordHere.organization).toBeUndefined();
+		const step = stepsOf(read('companies')).find(({ id }) => id === 'find-company');
+		expect(step?.pitfall?.text).toMatch(/not sent to their company[\s\S]*every customer's button/);
+	});
+
+	it('covers a subdomain only with a pattern, as the setup says', () => {
+		const { exact, pattern } = answers.companyDomains;
+		expect(exact.atASubdomain.goesTo).toBeNull();
+		expect(pattern.atASubdomain.goesTo).toBe('acme');
+		expect(pattern.atTheDomain.goesTo).toBe('acme');
+		const setup = evaluate(base.diagrams.setup, read('companies').settings);
+		const domain = setup.steps
+			.find(({ id }) => id === 'add-organization')
+			?.fields.find(({ name }) => name === 'domain');
+		expect(domain?.note).toContain('acme.test is only that, and *.acme.test its subdomains too');
+	});
+
+	// The chips are the most prominent claim on the screen, and the point of SAML here is that the
+	// browser carries the answer itself.
+	it('shows the browser holding the assertion, which the recording has it send', () => {
+		const recording = read('companies-saml');
+		const view = evaluate(base.diagrams.flow, recording.settings);
+		expect(holdingsAt(view, 'upstream-callback').browser).toContain('assertion');
+		expect(holdingsAt(view, 'upstream-callback').app).not.toContain('assertion');
+		const sent = recording.messages.find(({ step }) => step === 'upstream-callback');
+		expect(Object.keys(sent?.body as object)).toContain('SAMLResponse');
+	});
+
+	it('trades nothing out of sight with SAML, where OpenID Connect trades a code', () => {
+		const steps = (preset: string) => read(preset).messages.map(({ step }) => step);
+		expect(steps('companies')).toContain('upstream-token-request');
+		expect(steps('companies-saml')).not.toContain('upstream-token-request');
 	});
 });
 

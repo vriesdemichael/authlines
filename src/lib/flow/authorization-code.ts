@@ -35,6 +35,9 @@ const dpop = is('binding', 'dpop');
 const bearer = is('binding', 'bearer');
 const nonce = is('dpopNonce', true);
 const broker = is('broker', true);
+/** Each customer has a provider of their own, and the identity provider finds which (issue 118). */
+const companies = is('companies', true);
+const saml = all(companies, is('customerSpeaks', 'saml'));
 const storedTokens = any(is('upstreamTokens', 'v1'), is('upstreamTokens', 'v2'));
 const apiV1 = is('upstreamTokens', 'v1');
 const apiV2 = is('upstreamTokens', 'v2');
@@ -190,7 +193,17 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			icon: 'upstream',
 			concept:
 				"Another identity provider, such as the one at the user's employer, which the identity provider trusts to log the user in.",
-			when: broker
+			when: all(broker, not(companies))
+		},
+		{
+			id: 'upstream',
+			plainName: 'Their company',
+			plainRole: 'Its own provider',
+			...upstreamWords,
+			icon: 'upstream',
+			concept:
+				"The provider at the user's own company, which the company runs. Each customer can have one, and this is the one for the person logging in now. The identity provider trusts it for that company's people.",
+			when: companies
 		},
 		{
 			id: 'api',
@@ -207,7 +220,19 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			id: 'brokered-login',
 			plain: 'The login at the other provider',
 			label: 'Brokered login: here the identity provider is the client',
-			when: broker
+			when: all(broker, not(companies))
+		},
+		{
+			id: 'brokered-login',
+			plain: 'The login at their company',
+			label: 'Brokered login: here the identity provider is the client',
+			when: all(companies, not(saml))
+		},
+		{
+			id: 'brokered-login',
+			plain: 'The login at their company',
+			label: 'Brokered login: in SAML, the identity provider is the service provider',
+			when: saml
 		},
 		{ id: 'nonce-retry', plain: 'A fresh proof', label: 'Nonce retry', when: nonce }
 	],
@@ -518,6 +543,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{ name: 'scope=openid', place: 'query', when: oidc },
 				{ name: 'nonce', place: 'query', when: oidc },
 				{
+					name: 'scope=organization',
+					place: 'query',
+					note: 'Asks for which customer they are from to be in the token',
+					when: companies
+				},
+				{
 					name: 'dpop_jkt',
 					place: 'query',
 					note: 'Optional: ties the code to the key',
@@ -722,15 +753,81 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			fields: []
 		},
 		{
+			id: 'email-page',
+			when: companies,
+			from: 'idp',
+			to: 'browser',
+			kind: 'response',
+			plain: 'A page that asks only for an email',
+			label: 'Login page, email only',
+			concept:
+				'The identity provider cannot know who this is yet, or which company they are from, so it asks for the email first and nothing else.',
+			page: {
+				address: 'authorize',
+				shows:
+					"The identity provider's own page, with one field for a username or email and no password."
+			}
+		},
+		{
+			id: 'submit-email',
+			when: companies,
+			from: 'browser',
+			to: 'idp',
+			kind: 'request',
+			plain: 'The user enters their email',
+			label: 'Submit the email',
+			concept:
+				'Only the email goes. The identity provider has to know who this is, and which company they are from, before it can say where they log in.',
+			fields: [{ name: 'username', place: 'body', note: 'The email their company gave them' }]
+		},
+		{
+			id: 'find-company',
+			when: companies,
+			from: 'idp',
+			to: 'idp',
+			kind: 'internal',
+			plain: 'It finds their company from the email',
+			label: 'Find the organization',
+			concept:
+				'The identity provider takes the part after the @, finds the customer with that domain, and so the provider to send them to. Every other customer has a provider of its own too, and nothing about them is on this diagram.',
+			inPractice:
+				'Your app does nothing here. An admin adds each customer, with its domains and its provider, which is where a new customer starts. The other way is for your app to connect to each customer itself, which means it speaks SAML too, and that is not drawn here.',
+			pitfall: {
+				title: 'What if they already have a password here?',
+				text: "Then they are not sent to their company. On the server recorded, someone at a customer's domain with an account and a password of ours got the usual page with every customer's button, logged in with that password, and had no customer in their token: their company was never asked, and they were not a member of it here."
+			}
+		},
+		{
 			id: 'redirect-to-upstream',
 			group: 'brokered-login',
 			from: 'idp',
 			to: 'browser',
 			kind: 'response',
-			plain: 'Sent on to the other provider',
-			label: '303 to the other provider',
-			concept:
-				'The identity provider does not log the user in itself. It sends the browser on to the other provider.',
+			plain: [
+				{ when: saml, text: 'A form that sends the browser to their company' },
+				{ when: companies, text: 'Sent on to their company' },
+				{ text: 'Sent on to the other provider' }
+			],
+			label: [
+				{ when: saml, text: '200, a form that posts itself' },
+				{ when: companies, text: '303 to their company' },
+				{ text: '303 to the other provider' }
+			],
+			concept: [
+				{
+					when: saml,
+					text: 'Their company was set up to take a request in a form, one of the ways SAML can travel. The page holds a signed request for a login, saying who asks and where to answer, and sends itself on as soon as it loads, so there is little to see.'
+				},
+				{
+					text: 'The identity provider does not log the user in itself. It sends the browser on to the other provider.'
+				}
+			],
+			page: {
+				when: saml,
+				address: 'redirect-to-upstream',
+				shows:
+					'A page with a form, which sends itself on as soon as it loads, so there is little to see.'
+			},
 			inPractice:
 				'Nothing changes for an app that already uses this identity provider. It does not know this is happening.',
 			when: broker
@@ -742,27 +839,43 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			to: 'upstream',
 			kind: 'request',
 			page: {
+				when: not(saml),
 				address: 'upstream-authorize',
 				shows: "The other provider's own login page. The app is nowhere on it.",
 				shot: 'login-upstream',
 				marks: ['client_id', 'redirect_uri']
 			},
 			plain: 'The browser asks to log in there',
-			label: 'GET /authorize',
-			concept:
-				'The same request the app made, but now the identity provider is the client asking for a login.',
+			label: [{ when: saml, text: 'POST the SAML request' }, { text: 'GET /authorize' }],
+			concept: [
+				{
+					when: saml,
+					text: 'The browser posts the request to their company. It names the identity provider by the ID their company was given at setup.'
+				},
+				{
+					text: 'The same request the app made, but now the identity provider is the client asking for a login.'
+				}
+			],
 			when: broker,
 			fields: [
-				{ name: 'response_type=code', place: 'query' },
+				{ name: 'SAMLRequest', place: 'body', when: saml },
+				{ name: 'RelayState', place: 'body', when: saml },
+				{ name: 'response_type=code', place: 'query', when: not(saml) },
 				{
 					name: 'client_id',
 					place: 'query',
-					note: "The identity provider's own client ID at the upstream"
+					note: "The identity provider's own client ID at the upstream",
+					when: not(saml)
 				},
-				{ name: 'redirect_uri', place: 'query', note: "The identity provider's broker endpoint" },
-				{ name: 'state', place: 'query' },
-				{ name: 'scope=openid', place: 'query' },
-				{ name: 'nonce', place: 'query' }
+				{
+					name: 'redirect_uri',
+					place: 'query',
+					note: "The identity provider's broker endpoint",
+					when: not(saml)
+				},
+				{ name: 'state', place: 'query', when: not(saml) },
+				{ name: 'scope=openid', place: 'query', when: not(saml) },
+				{ name: 'nonce', place: 'query', when: not(saml) }
 			]
 		},
 		{
@@ -776,7 +889,8 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept:
 				'The user signs in at the other provider. Neither the app nor the identity provider sees the password.',
 			when: broker,
-			execute: { answer: 'upstream-redirect-back' },
+			// With SAML the answer is a page, and what it holds comes in the next request.
+			execute: { answer: 'upstream-redirect-back', when: not(saml) },
 			fields: [{ name: 'username and password', place: 'body', artifact: 'password' }]
 		},
 		{
@@ -785,18 +899,32 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			from: 'upstream',
 			to: 'browser',
 			kind: 'response',
-			plain: 'Sent back with a code',
-			label: '302 back with a code',
-			concept:
-				'The other provider sends the browser back to the identity provider with a one-time code.',
+			plain: [
+				{ when: saml, text: 'Sent back with a signed answer' },
+				{ text: 'Sent back with a code' }
+			],
+			label: [
+				{ when: saml, text: '200, a form that posts itself' },
+				{ text: '302 back with a code' }
+			],
+			concept: [
+				{
+					when: saml,
+					text: 'Their company answers with another form that sends itself, and the answer is in it: an assertion saying who this is, in a response their provider signed. Sent this way there is no code to trade, so the browser carries the answer itself.'
+				},
+				{
+					text: 'The other provider sends the browser back to the identity provider with a one-time code.'
+				}
+			],
 			when: broker,
 			fields: [
-				{ name: 'code', place: 'query' },
-				{ name: 'state', place: 'query' },
+				{ name: 'code', place: 'query', when: not(saml) },
+				{ name: 'state', place: 'query', when: not(saml) },
 				{
 					name: 'iss',
 					place: 'query',
-					note: 'Names the server this came from, so an app that uses more than one can tell which answered'
+					note: 'Names the server this came from, so an app that uses more than one can tell which answered',
+					when: not(saml)
 				}
 			]
 		},
@@ -806,17 +934,35 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			from: 'browser',
 			to: 'idp',
 			kind: 'request',
-			plain: 'The code reaches the identity provider',
-			label: 'Deliver the code',
-			concept: "The browser delivers the code to the identity provider's broker endpoint.",
+			plain: [
+				{ when: saml, text: 'The answer reaches the identity provider' },
+				{ text: 'The code reaches the identity provider' }
+			],
+			label: [{ when: saml, text: 'POST the assertion' }, { text: 'Deliver the code' }],
+			concept: [
+				{
+					when: saml,
+					text: 'The browser posts the answer to the identity provider, which checks the signature with the certificate their company handed over at setup. Then it has who logged in, with nothing to trade.'
+				},
+				{ text: "The browser delivers the code to the identity provider's broker endpoint." }
+			],
 			when: broker,
 			fields: [
-				{ name: 'code', place: 'query' },
-				{ name: 'state', place: 'query' },
+				{
+					name: 'SAMLResponse',
+					place: 'body',
+					artifact: 'assertion',
+					note: 'In a response their provider signed. It was not encrypted, so whoever has it can read it',
+					when: saml
+				},
+				{ name: 'RelayState', place: 'body', when: saml },
+				{ name: 'code', place: 'query', when: not(saml) },
+				{ name: 'state', place: 'query', when: not(saml) },
 				{
 					name: 'iss',
 					place: 'query',
-					note: 'Names the server this came from, so an app that uses more than one can tell which answered'
+					note: 'Names the server this came from, so an app that uses more than one can tell which answered',
+					when: not(saml)
 				}
 			]
 		},
@@ -830,7 +976,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			label: 'POST /token',
 			concept:
 				'The identity provider trades the code for tokens, on a connection the browser never sees.',
-			when: broker,
+			when: all(broker, not(saml)),
 			execute: { answer: 'upstream-token-response', when: storedTokens },
 			fields: [
 				{ name: 'grant_type=authorization_code', place: 'body' },
@@ -850,7 +996,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			label: 'Upstream tokens',
 			concept:
 				'These tokens belong to the identity provider. The app will get tokens the identity provider issues itself.',
-			when: broker,
+			when: all(broker, not(saml)),
 			fields: [
 				{ name: 'access_token', place: 'body', artifact: 'upstream-token' },
 				{ name: 'id_token', place: 'body' },
@@ -1704,6 +1850,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					when: inPage,
 					text: 'The tokens are in the page now, and so in the browser, which the rest of this flow took care to avoid. On a server they would be out of reach of the user’s browser. Here, any script running in this page can reach them, and that is the price of having no server.'
+				},
+				{
+					when: companies,
+					text: 'The same token another provider would give, with one thing more: which customer they are from, because the app asked. An app that keeps each customer apart can go by that. It is the same whether their provider spoke SAML or OpenID Connect.'
 				},
 				{
 					when: inADirectory,

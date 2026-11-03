@@ -35,7 +35,8 @@ export type ConsolePage =
 	| 'realm-sessions'
 	| 'realm-tokens'
 	| 'browser-flow'
-	| 'directory-settings';
+	| 'directory-settings'
+	| 'organization-domains';
 
 export interface ConsolePlace {
 	/** What someone clicks through, in the words of the console. */
@@ -592,6 +593,25 @@ export const noteDefs: readonly NoteDef[] = [
 			shows: { realmsDiffer: true, endsWithRealm: true }
 		},
 		seen: 'Compared two realms on'
+	},
+	{
+		id: 'auto-redirect',
+		steps: ['find-company', 'add-organization'],
+		title: 'Auto redirect',
+		text: "On each of an organization's domains, beside the identity provider it goes to. Off, someone who types an address there gets a password page with only their company's button. On, they go straight there.",
+		when: is('companies', true),
+		place: {
+			path: ['Organizations', 'the organization', 'Domains', 'Auto redirect'],
+			page: 'organization-domains',
+			shows: ['Identity provider', 'Auto redirect']
+		},
+		backedBy: {
+			question: 'autoRedirect',
+			shows: {
+				before: { goesTo: null, buttons: ['acme'], asksForPassword: true },
+				after: { goesTo: 'acme' }
+			}
+		}
 	},
 	{
 		id: 'trust-email',

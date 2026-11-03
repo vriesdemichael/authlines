@@ -18,6 +18,24 @@ const ERRORS = 'src/lib/search/errors.ts';
 
 export const breakages = [
 	{
+		name: 'companies: SAML trades a code out of sight after all',
+		file: AC,
+		from: "on a connection the browser never sees.',\n\t\t\twhen: all(broker, not(saml)),",
+		to: "on a connection the browser never sees.',\n\t\t\twhen: broker,"
+	},
+	{
+		name: 'companies: the assertion does not go through the browser',
+		file: AC,
+		from: "\t\t\t\t\tartifact: 'assertion',\n\t\t\t\t\tnote: 'In a response their provider signed. It was not encrypted, so whoever has it can read it',",
+		to: "\t\t\t\t\tnote: 'In a response their provider signed. It was not encrypted, so whoever has it can read it',"
+	},
+	{
+		name: 'companies: Auto redirect is said to do the opposite',
+		file: NOTES,
+		from: "before: { goesTo: null, buttons: ['acme'], asksForPassword: true },",
+		to: "before: { goesTo: 'acme' },"
+	},
+	{
 		name: 'behind the page: the tokens reach the browser',
 		file: 'src/lib/flow/authorization-code.ts',
 		from: "name: 'Set-Cookie',\n\t\t\t\t\tplace: 'header',\n\t\t\t\t\tartifact: 'app-session',",
@@ -226,8 +244,8 @@ export const breakages = [
 	{
 		name: 'device: the address after a redirect is lost',
 		file: 'src/lib/recordings/address.ts',
-		from: 'return message?.url ?? message?.headers.location ?? null;',
-		to: 'return message?.url ?? null;'
+		from: 'const own = message.url ?? message.headers.location;',
+		to: 'const own = message.url;'
 	},
 	{
 		name: 'device: a token with a nonce nobody sent is taken',
@@ -331,8 +349,8 @@ export const breakages = [
 	{
 		name: 'threats: a flow that is here is said not to be',
 		file: ERRORS,
-		from: "	'saml',",
-		to: "	'saml',\n	'client credentials',\n	'device flow',"
+		from: "	'token exchange',",
+		to: "	'token exchange',\n	'client credentials',\n	'device flow',"
 	},
 	// All that is left to someone, in one list.
 	{
@@ -449,8 +467,8 @@ export const breakages = [
 	{
 		name: 'page: the address is taken from another step',
 		file: ADDRESS,
-		from: 'recording.messages.find((candidate) => candidate.step === step)',
-		to: 'recording.messages.find((candidate) => candidate.step !== step)'
+		from: 'recording.messages.findIndex((candidate) => candidate.step === step)',
+		to: 'recording.messages.findIndex((candidate) => candidate.step !== step)'
 	},
 	{
 		name: 'page: nothing in an address is marked',

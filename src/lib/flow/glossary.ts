@@ -35,8 +35,45 @@ const flowAt = (step: string, settings?: Partial<Settings>): TermPlace => ({
 	step,
 	settings
 });
+const setupAt = (step: string, settings?: Partial<Settings>): TermPlace => ({
+	diagram: 'setup',
+	step,
+	settings
+});
 
 const list: readonly Term[] = [
+	{
+		id: 'saml',
+		name: 'SAML',
+		words: ['SAML', 'SAML 2.0', 'assertion', 'assertions', 'service provider'],
+		explains:
+			'An older way for one provider to tell another who logged in, still common at companies. The answer is an assertion in a signed response, which here comes back through the browser in a form, where OpenID Connect sends a code and trades it out of sight. The provider that asks for one is the service provider.',
+		at: flowAt('upstream-callback', { broker: true, companies: true, customerSpeaks: 'saml' })
+	},
+	{
+		id: 'entity-id',
+		name: 'Entity ID',
+		words: ['entity ID'],
+		explains:
+			'The name a SAML provider goes by, usually an address. Each side is given the other one, so an assertion can say who it is from and who it is for.',
+		at: setupAt('send-our-details', { broker: true, companies: true, customerSpeaks: 'saml' })
+	},
+	{
+		id: 'acs-url',
+		name: 'ACS URL',
+		words: ['ACS URL', 'Assertion Consumer Service'],
+		explains:
+			"Assertion Consumer Service: where a SAML provider sends its answer, through the browser. Here it is the identity provider's broker endpoint.",
+		at: setupAt('send-our-details', { broker: true, companies: true, customerSpeaks: 'saml' })
+	},
+	{
+		id: 'saml-metadata',
+		name: 'SAML metadata',
+		words: ['SAML metadata', 'IdP metadata'],
+		explains:
+			'What a SAML provider says about itself: the entity ID it goes by, where to send it a request or an answer, and the certificate it signs with. Swapping these is most of setting one up.',
+		at: setupAt('send-their-details', { broker: true, companies: true, customerSpeaks: 'saml' })
+	},
 	{
 		id: 'ldap',
 		name: 'LDAP',

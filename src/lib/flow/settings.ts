@@ -24,6 +24,8 @@ export interface Settings {
 	oldWay: boolean;
 	registration: 'manual' | 'dcr' | 'cimd';
 	federation: boolean;
+	companies: boolean;
+	customerSpeaks: 'oidc' | 'saml';
 }
 
 export type SettingId = keyof Settings;
@@ -421,6 +423,64 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			because: 'Only drawn in the plain case so far.',
 			sayWhenBlocked: true
 		}
+	},
+	companies: {
+		kind: 'toggle',
+		label: 'Each customer has a provider',
+		param: 'companies',
+		default: false,
+		setsWhenOn: { broker: true, federation: false },
+		onlyOn: 'authorization-code',
+		summary:
+			'Users log in at their own company, which the identity provider finds from their email.',
+		why: 'An app sold to other businesses meets customers who each have a provider of their own, and their people expect to log in with their company account. The identity provider in the middle finds the company from the email and sends them there, so the app still knows only one provider.',
+		sources: [
+			{
+				source: 'keycloak-organizations',
+				why: "Keycloak's name for a customer here is an organization. Each of its domains can name the provider its people are sent to."
+			}
+		],
+		requires: {
+			when: all(
+				is('broker', true),
+				is('upstreamTokens', 'off'),
+				is('oidc', false),
+				is('consent', false),
+				is('clientType', 'confidential'),
+				is('pkce', false),
+				is('binding', 'bearer'),
+				is('apiToken', 'good'),
+				is('address', 'registered'),
+				is('registration', 'manual'),
+				is('appRuns', 'server')
+			),
+			because: 'It goes through another provider, and is only drawn in the plain case so far.',
+			sayWhenBlocked: true
+		}
+	},
+	customerSpeaks: {
+		kind: 'choice',
+		label: 'What their provider speaks',
+		param: 'speaks',
+		default: 'oidc',
+		onlyOn: 'authorization-code',
+		summary:
+			'OpenID Connect, as on the rest of this diagram, or SAML, which many companies still run.',
+		why: "A customer's IT may ask about SAML in the first meeting. The app's side does not change. Only the part between the two providers does: with SAML set up as here, the answer comes back through the browser in a signed response, where OpenID Connect sends a code and trades it out of sight.",
+		sources: [
+			{
+				source: 'saml-core',
+				why: 'SAML 2.0 defines the assertion, the statement about who logged in that comes back here.'
+			}
+		],
+		requires: {
+			when: is('companies', true),
+			because: "Only a customer's own provider is asked this."
+		},
+		options: [
+			{ value: 'oidc', label: 'OpenID Connect' },
+			{ value: 'saml', label: 'SAML' }
+		]
 	},
 	upstreamTokens: {
 		kind: 'choice',

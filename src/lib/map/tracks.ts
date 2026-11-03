@@ -383,6 +383,37 @@ export const mapTracks: readonly MapTrack[] = [
 					step: 'redirect-to-upstream'
 				}),
 				node({
+					id: 'company-accounts',
+					alsoAskedAs: [
+						'company account',
+						'enterprise login',
+						'sso for customers',
+						'multi-tenant',
+						'multi tenant',
+						'organizations',
+						'home realm discovery',
+						'b2b'
+					],
+					answer:
+						"Each customer's provider sits behind yours. Yours asks for the email, finds the company from the part after the @, and sends them to their provider. The app still talks to one provider, and the token can say which customer.",
+					title: 'How do we offer log in with your company account?',
+					summary:
+						'Your provider finds their company from the email, and the app still knows only one.',
+					preset: 'companies',
+					step: 'find-company'
+				}),
+				node({
+					id: 'customer-on-saml',
+					alsoAskedAs: ['saml 2.0', 'saml assertion', 'acs url', 'entity id', 'idp metadata'],
+					answer:
+						'Only the middle changes. Their provider answers with an assertion in a signed response, which here comes back through the browser in a form, where OpenID Connect sends a code. Your provider checks it, and the app gets its usual tokens.',
+					title: "What if a customer's provider speaks SAML?",
+					summary: 'Only the part between the two providers changes.',
+					mode: 'advanced',
+					preset: 'companies-saml',
+					step: 'upstream-callback'
+				}),
+				node({
 					id: 'calling-the-other-provider',
 					alsoAskedAs: ['token brokering', 'upstream token', 'upstream tokens', 'stored tokens'],
 					answer:
@@ -391,16 +422,6 @@ export const mapTracks: readonly MapTrack[] = [
 					summary: 'The identity provider kept its tokens, and hands them over.',
 					mode: 'advanced',
 					preset: 'upstream-v1',
-					step: 'retrieve-upstream-token'
-				}),
-				node({
-					id: 'token-api-v2',
-					answer:
-						'The app also has to authenticate, and has to be allowed to ask. What comes back is only the access token.',
-					title: 'What changes with API V2 for stored tokens?',
-					summary: 'Only the access token, and the client has to be allowed to ask.',
-					mode: 'advanced',
-					preset: 'upstream-v2',
 					step: 'retrieve-upstream-token'
 				})
 			]
@@ -510,7 +531,7 @@ export const mapTracks: readonly MapTrack[] = [
 						'A script in the page can read any storage there. A worker can keep tokens from that script, but the script can often start a login of its own for new ones. So for business apps, or anything personal, current advice is a server behind the app that keeps them.',
 					title: 'Where should an app in the browser keep its tokens?',
 					summary:
-						'localStorage, sessionStorage or memory: none of them fully stops a script in the page. A backend for frontend keeps tokens out of it, though a script can still act through the open page.',
+						'localStorage, sessionStorage or memory: none of them fully stops a script in the page. A backend for frontend keeps tokens out of it, though a script can still send requests through it.',
 					preset: 'in-the-page',
 					step: 'token-response'
 				}),
@@ -524,9 +545,9 @@ export const mapTracks: readonly MapTrack[] = [
 						'store tokens in the browser'
 					],
 					answer:
-						'Nowhere in the page stops a script that runs there, because it can ask for tokens just as the page does. A server behind the page can do the login instead, and give the browser a cookie no script can read. A script can still send requests through it.',
-					title: 'Where should a page keep its tokens?',
-					summary: 'With a server behind it, the page has none.',
+						'That server is the client. It does the login, so the page never has a token, and the browser gets a cookie no script can read. A script in the page can still send requests through it, but finds no token to take.',
+					title: 'What does a server behind the page change?',
+					summary: 'The page never has a token, and the browser gets a cookie.',
 					preset: 'behind-the-page',
 					step: 'set-session'
 				}),
@@ -670,17 +691,6 @@ export const mapTracks: readonly MapTrack[] = [
 					summary: 'The app is told the next time it asks, and stops.',
 					answer:
 						'The app only finds out the next time it asks: a 400 with access_denied. It stops asking and tells the user. Trying again takes new codes, once the user asks to.'
-				}),
-				node({
-					id: 'device-ran-out',
-					flow: 'device',
-					preset: 'on-a-device-runs-out',
-					mode: 'advanced',
-					step: 'device-expired-response',
-					title: 'What if the user never comes?',
-					summary: 'The codes run out, and the app is told when it next asks.',
-					answer:
-						'The codes only last so long. The next time the app asks after that, it gets a 400 with expired_token, stops asking, and tells the user. Trying again takes new codes, once the user asks to.'
 				})
 			]
 		]
@@ -695,6 +705,27 @@ export const mapNodes: readonly MapNode[] = mapTracks.flatMap((track) => track.c
  * they were about through the question that took them over.
  */
 export const offTheMap: readonly MapNode[] = [
+	node({
+		id: 'token-api-v2',
+		answer:
+			'The app also has to authenticate, and has to be allowed to ask. What comes back is only the access token.',
+		title: 'What changes with API V2 for stored tokens?',
+		summary: 'Only the access token, and the client has to be allowed to ask.',
+		mode: 'advanced',
+		preset: 'upstream-v2',
+		step: 'retrieve-upstream-token'
+	}),
+	node({
+		id: 'device-ran-out',
+		flow: 'device',
+		preset: 'on-a-device-runs-out',
+		mode: 'advanced',
+		step: 'device-expired-response',
+		title: 'What if the user never comes?',
+		summary: 'The codes run out, and the app is told when it next asks.',
+		answer:
+			'The codes only last so long. The next time the app asks after that, it gets a 400 with expired_token, stops asking, and tells the user. Trying again takes new codes, once the user asks to.'
+	}),
 	node({
 		id: 'force-a-login',
 		answer:

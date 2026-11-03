@@ -25,6 +25,7 @@ import {
 	lineText,
 	originOf,
 	rawLines,
+	samlIn,
 	traceRun,
 	type Line
 } from '#lib/recordings/wire.ts';
@@ -199,6 +200,31 @@ describe('a message as text', () => {
 		expect(artifactOf(on('submit-credentials'), 'password')).toBe('password');
 		expect(artifactOf(on('submit-credentials'), 'username')).toBeUndefined();
 		expect(artifactOf(on('token-request'), 'grant_type')).toBeUndefined();
+	});
+});
+
+describe('a SAML message as text', () => {
+	const recording = JSON.parse(
+		readFileSync('static/recordings/authorization-code/companies-saml.json', 'utf8')
+	) as Recording;
+	const at = (step: string) => samlIn(rawLines(recording.messages.find((m) => m.step === step)!));
+
+	it('opens the assertion that went through the browser, as it was', () => {
+		const [opened] = at('upstream-callback');
+		expect(opened.name).toBe('SAMLResponse');
+		expect(opened.xml).toMatch(/<saml:NameID[^>]*>ann@acme\.test<\/saml:NameID>/);
+		expect(opened.xml).toContain('<saml:Assertion');
+		expect(opened.xml).not.toContain('EncryptedAssertion');
+		// One element to a line, and nothing added or left out but the line breaks and the indent.
+		expect(opened.xml.split('\n').length).toBeGreaterThan(20);
+		const message = recording.messages.find((m) => m.step === 'upstream-callback')!;
+		const sent = atob(String((message.body as Record<string, unknown>).SAMLResponse));
+		expect(opened.xml.replace(/\n\s*/g, '')).toBe(sent.trim().replace(/>\s*</g, '><'));
+	});
+
+	it('opens the request too, and nothing that is not SAML', () => {
+		expect(at('upstream-authorize').map(({ name }) => name)).toEqual(['SAMLRequest']);
+		expect(at('token-request')).toEqual([]);
 	});
 });
 

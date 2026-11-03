@@ -22,6 +22,8 @@ const byHand = is('registration', 'manual');
 const itself = is('registration', 'dcr');
 const document = is('registration', 'cimd');
 const inADirectory = is('federation', true);
+const companies = is('companies', true);
+const saml = all(companies, is('customerSpeaks', 'saml'));
 
 /**
  * What happens before any user arrives. It has a diagram of its own, because no user does this: the
@@ -81,7 +83,28 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			...upstreamWords,
 			icon: 'upstream',
 			concept: 'Another identity provider, which the identity provider will trust to log users in.',
-			when: broker
+			when: all(broker, not(companies))
+		},
+		{
+			id: 'customer-admins',
+			plainName: 'Their admins',
+			plainRole: 'At the customer',
+			name: 'Customer admins',
+			role: 'People',
+			icon: 'people',
+			concept:
+				"The people who run the customer's own provider. Each customer has its own, and what they do is not something anyone on our side can do for them, so this part is a conversation with each new customer.",
+			when: companies
+		},
+		{
+			id: 'upstream',
+			plainName: 'Their company',
+			plainRole: 'Its own provider',
+			...upstreamWords,
+			icon: 'upstream',
+			concept:
+				"The customer's own provider, which their admins run, and which will log their people in.",
+			when: companies
 		},
 		{
 			id: 'api',
@@ -291,7 +314,7 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 				'The identity provider is itself a client of the other provider, so it has to be registered there the same way.',
 			inPractice:
 				'Whoever runs the other provider has to do their half, so this is a conversation with them. If each customer has a provider of their own, it is one conversation for each.',
-			when: broker,
+			when: all(broker, not(companies)),
 			fields: [
 				{
 					name: 'redirect_uris',
@@ -300,6 +323,117 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 				},
 				{ name: 'client_id', place: 'setting' },
 				{ name: 'client_secret', place: 'setting' }
+			]
+		},
+		{
+			id: 'send-our-details',
+			from: 'idp-admin',
+			to: 'customer-admins',
+			kind: 'human',
+			plain: "Send them our provider's details",
+			label: [{ when: saml, text: 'Our SAML metadata' }, { text: 'Our details' }],
+			concept: [
+				{
+					when: saml,
+					text: "The admin sends the customer's admins what their provider has to know about ours: the entity ID it goes by, the address to post answers to, and the certificate it signs its requests with. Often it is one link, to our provider's SAML metadata."
+				},
+				{
+					text: "The admin sends the customer's admins what their provider has to know about ours, as an app would: where to send people back to."
+				}
+			],
+			when: companies,
+			fields: [
+				{ name: 'entity ID', place: 'setting', note: 'The name our provider goes by', when: saml },
+				{ name: 'ACS URL', place: 'setting', note: 'Where to post the answer', when: saml },
+				{
+					name: 'certificate',
+					place: 'setting',
+					note: 'What our signed requests are checked with',
+					when: saml
+				},
+				{
+					name: 'redirect_uri',
+					place: 'setting',
+					note: "The identity provider's broker endpoint",
+					when: not(saml)
+				}
+			]
+		},
+		{
+			id: 'customer-registers-us',
+			from: 'customer-admins',
+			to: 'upstream',
+			kind: 'human',
+			plain: 'They register our provider',
+			label: 'Register our provider',
+			concept:
+				'Their admins add our provider to theirs, as one more thing that may ask it to log their people in.',
+			when: companies,
+			fields: [
+				{ name: 'client_id', place: 'setting', when: not(saml) },
+				{ name: 'client_secret', place: 'setting', when: not(saml) }
+			]
+		},
+		{
+			id: 'send-their-details',
+			from: 'customer-admins',
+			to: 'idp-admin',
+			kind: 'human',
+			plain: "They send their provider's details",
+			label: [{ when: saml, text: 'Their SAML metadata' }, { text: 'Their details' }],
+			concept: [
+				{
+					when: saml,
+					text: "Their admins send back their provider's SAML metadata: the entity ID it goes by, where to send the request, and the certificate it signs with. The certificate is what lets our provider trust an assertion that came through someone's browser."
+				},
+				{
+					text: "Their admins send back their provider's issuer, and the client ID and secret they made for our provider."
+				}
+			],
+			when: companies,
+			fields: [
+				{
+					name: 'entity ID',
+					place: 'setting',
+					note: 'The name their provider goes by',
+					when: saml
+				},
+				{ name: 'SSO URL', place: 'setting', note: 'Where to send the request', when: saml },
+				{
+					name: 'certificate',
+					place: 'setting',
+					note: 'What their signature is checked with',
+					when: saml
+				},
+				{ name: 'issuer', place: 'setting', when: not(saml) },
+				{ name: 'client_id', place: 'setting', when: not(saml) },
+				{ name: 'client_secret', place: 'setting', when: not(saml) }
+			]
+		},
+		{
+			id: 'add-organization',
+			from: 'idp-admin',
+			to: 'idp',
+			kind: 'human',
+			plain: 'Add them as a customer, with their domain',
+			label: 'Add the organization',
+			concept:
+				"The admin adds the company with its email domain, and says which provider that domain goes to. With Auto redirect on, someone who types an email at that domain is then sent to their company's provider.",
+			inPractice:
+				'This is where each new customer starts, and the app does not change. If the app keeps customers apart, the token can say which one someone is from.',
+			when: companies,
+			fields: [
+				{
+					name: 'domain',
+					place: 'setting',
+					note: 'The part after the @: acme.test is only that, and *.acme.test its subdomains too'
+				},
+				{ name: 'identity provider', place: 'setting', note: 'Where that domain goes' },
+				{
+					name: 'auto redirect',
+					place: 'setting',
+					note: 'Send them there straight away'
+				}
 			]
 		},
 		{
