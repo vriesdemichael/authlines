@@ -101,6 +101,8 @@ export interface OptionDef<V extends string = string> {
 	plainly?: string;
 	/** What choosing this brings with it. */
 	sets?: Partial<Settings>;
+	/** Why this one, where what the setting says as a whole would be wrong about it. */
+	why?: string;
 	value: V;
 	label: string;
 	requires?: Requirement;
@@ -622,7 +624,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				is('refresh', false),
 				is('ssoAsks', 'remembered')
 			),
-			because: 'It is part of OpenID Connect, and this shows the plain case.',
+			because: 'It is part of OpenID Connect.',
 			sayWhenBlocked: true
 		}
 	},
@@ -635,7 +637,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		simple: {
 			label: 'Where does your app run?',
 			summary:
-				'In the page, the tokens end up in the browser, where any script in it can reach them. With a server behind it, they stay there.'
+				'In the page, the tokens end up in the browser, where any script in it can reach them. With a server behind it, they stay on that server.'
 		},
 		summary:
 			'On a server of its own, or in the page in the user’s browser. In the page there is nowhere to keep a secret, and the tokens end up in the browser.',
@@ -672,6 +674,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			{
 				value: 'bff',
 				label: 'In the page, with a server behind it',
+				why: 'The page is still in the browser, and the tokens are not: a server of the app’s own does the login and keeps them, and the browser only gets a cookie. So a script in the page has no token to take, though it can still send requests through that server.',
 				sets: { clientType: 'confidential', pkce: true },
 				requires: {
 					when: all(
@@ -894,6 +897,11 @@ export function normalize(settings: Settings): { settings: Settings; resets: Res
 		}
 	}
 	return { settings: next, resets };
+}
+
+/** Why this is here, which an option can say for itself. */
+export function whyItIsHere(id: SettingId, value: unknown): string {
+	return optionOf(id, value)?.why ?? settingDefs[id].why;
 }
 
 /** What choosing this brings with it, because someone who knows where their app runs should not also have to know these. */

@@ -1770,6 +1770,33 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			]
 		},
 		{
+			id: 'set-session',
+			when: behindThePage,
+			cites: [
+				{
+					source: 'rfc10017',
+					section: '6.1.3.2',
+					why: 'Section 6.1.3.2 lists what this cookie has to have: Secure and HttpOnly, and SameSite=Strict and the prefix unless there is a reason not to.'
+				}
+			],
+			from: 'app',
+			to: 'browser',
+			kind: 'response',
+			plain: 'The browser gets a cookie, not tokens',
+			label: '302 to the page, with a cookie',
+			concept:
+				'All the browser gets is a cookie that only means something to this server, and HttpOnly keeps scripts from reading it. The page then loads again, asks again and gets a yes, which the diagram leaves out.',
+			fields: [
+				{
+					name: 'Set-Cookie',
+					place: 'header',
+					artifact: 'app-session',
+					note: 'HttpOnly, Secure and SameSite=Strict'
+				},
+				{ name: 'location', place: 'header', note: 'Back to the page' }
+			]
+		},
+		{
 			id: 'validate-id-token',
 			cites: [
 				{
@@ -1837,33 +1864,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				'Who the user is, limited to the scopes granted, which are not always those asked for.',
 			when: all(oidc, stillGoing),
 			fields: [{ name: 'sub', place: 'body' }]
-		},
-		{
-			id: 'set-session',
-			when: behindThePage,
-			cites: [
-				{
-					source: 'rfc10017',
-					section: '6.1.3.2',
-					why: 'Section 6.1.3.2 lists what this cookie has to have: Secure and HttpOnly, and SameSite=Strict and the prefix unless there is a reason not to.'
-				}
-			],
-			from: 'app',
-			to: 'browser',
-			kind: 'response',
-			plain: 'The browser gets a cookie, not tokens',
-			label: '302 to the page, with a cookie',
-			concept:
-				'All the browser gets is a cookie that only means something to this server, and HttpOnly keeps scripts from reading it. The page then loads again, asks again and gets a yes, which the diagram leaves out.',
-			fields: [
-				{
-					name: 'Set-Cookie',
-					place: 'header',
-					artifact: 'app-session',
-					note: 'HttpOnly, Secure and SameSite=Strict'
-				},
-				{ name: 'location', place: 'header', note: 'Back to the page' }
-			]
 		},
 		{
 			id: 'page-calls-api',

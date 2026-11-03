@@ -4,7 +4,7 @@
 	import Worded from '#lib/components/Worded.svelte';
 	import { markTerms } from '#lib/flow/glossary.ts';
 	import type { Lifeline, Step, ViewDiff } from '#lib/flow/model.ts';
-	import { settingDefs, type Reset, type SettingId } from '#lib/flow/settings.ts';
+	import { settingDefs, whyItIsHere, type Reset, type SettingId } from '#lib/flow/settings.ts';
 	import { channels, whyOf, type Mode, type ShotId } from '#lib/flow/vocabulary.ts';
 	import { DEFAULT_WORDING, nameIn, type Wording } from '#lib/flow/wording.ts';
 	import type { Note } from '#lib/keycloak/notes.ts';
@@ -38,6 +38,8 @@
 		elsewhere?: Link | null;
 		/** The setting that was just changed, because a change alone does not say why it exists. */
 		changed?: SettingId | null;
+		/** What it was changed to, because an option can have a reason of its own. */
+		changedTo?: unknown;
 		/** Someone asked what a word means. */
 		onterm?: (id: string) => void;
 		/** What this step looks like on the wire, ahead of what each part of it is for. */
@@ -81,6 +83,7 @@
 		links = [],
 		elsewhere = null,
 		changed = null,
+		changedTo,
 		onterm,
 		wire,
 		notes = [],
@@ -175,7 +178,7 @@
 				{/if}
 			</ul>
 			{#if changed}
-				<p class="why" data-testid="change-why">{settingDefs[changed].why}</p>
+				<p class="why" data-testid="change-why">{whyItIsHere(changed, changedTo)}</p>
 			{/if}
 		</section>
 	{/if}
