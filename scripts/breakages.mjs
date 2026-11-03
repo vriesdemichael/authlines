@@ -829,7 +829,13 @@ export const breakages = [
 	{
 		name: 'check: headers left out',
 		file: SHAPE,
-		from: 'headers: Object.keys(message.headers).sort(),',
+		from: 'headers: Object.keys(message.headers)\n\t\t\t.filter((name) => message.headers[name] !== undefined)\n\t\t\t.sort(),',
+		to: ''
+	},
+	{
+		name: 'check: a header holding nothing counts',
+		file: SHAPE,
+		from: '\t\t\t.filter((name) => message.headers[name] !== undefined)\n',
 		to: ''
 	},
 	{
