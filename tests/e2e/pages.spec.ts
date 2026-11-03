@@ -51,7 +51,9 @@ test.describe('what a person sees in their browser', () => {
 
 	test('says it in the words chosen', async ({ page }) => {
 		await open(page, 'mode=simple&say=specs&step=callback');
-		await expect(outline(page)).toContainText('The client’s own page'.replace('’', "'"));
+		// What it is for, not a sentence, so that rewording the outline does not break it.
+		await expect(outline(page)).toContainText(/\bthe client\b/);
+		await expect(outline(page)).not.toContainText(/\bthe app\b/i);
 	});
 
 	test('keeps the address and leaves out the server, with its notes off (ADR-015)', async ({
