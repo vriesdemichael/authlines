@@ -233,8 +233,9 @@ test.describe('the rail, which stops repeating itself (#63)', () => {
 	test('says what never changes only when it is asked', async ({ page }) => {
 		await open(page, 'mode=simple');
 		await expect(sentences(page)).toHaveCount(0);
-		const words = (await page.locator('aside.settings').innerText()).split(/\s+/);
-		expect(words.length).toBeLessThan(50);
+		const words = (await page.locator('aside.settings').innerText()).split(/\s+/).filter(Boolean);
+		// What it counted, so a change that goes over can see where to take words away.
+		expect(words.length, words.join(' ')).toBeLessThan(50);
 	});
 
 	test('says it while someone is on it, and while the setting is on', async ({ page }) => {
