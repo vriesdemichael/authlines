@@ -5,6 +5,7 @@ import { createServer, type IncomingMessage, type Server } from 'node:http';
 import type { Settings } from '#lib/flow/settings.ts';
 import type { RecordedMessage } from '#lib/recordings/format.ts';
 import { accessTokenProblem, idTokenProblem, scopeProblem, sha256, type Jwk } from './checks.ts';
+import { COMPANIES_REALM } from './companies.ts';
 import {
 	API,
 	API_AUDIENCE,
@@ -875,6 +876,10 @@ export class Demo {
 					query.set('scope', 'openid');
 					query.set('nonce', this.#nonce);
 				}
+				// So the token says which customer, which an app selling to companies keeps them apart by.
+				if (settings.companies) {
+					query.set('scope', [query.get('scope'), 'organization'].filter(Boolean).join(' '));
+				}
 				if (this.#key) query.set('dpop_jkt', this.#key.thumbprint);
 				if (this.#verifier) {
 					query.set('code_challenge', sha256(this.#verifier));
@@ -1001,7 +1006,7 @@ export class Demo {
 					url: `${API}${request.url}`
 				},
 				{
-					issuers: [LOCAL_REALM, BROKERED_REALM, DIRECTORY_REALM].map(
+					issuers: [LOCAL_REALM, BROKERED_REALM, DIRECTORY_REALM, COMPANIES_REALM].map(
 						(realm) => `${KEYCLOAK}/realms/${realm}`
 					),
 					// One API that expects its own name, as yours should, which a default client's token lacks.

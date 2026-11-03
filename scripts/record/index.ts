@@ -28,6 +28,15 @@ import type { ShotId } from '#lib/flow/vocabulary.ts';
 import type { FlagStatus, Recording, RecordingIndex } from '#lib/recordings/format.ts';
 import { CLIENT_DOCUMENT, Demo, requestMessage, responseMessage, type Run } from './demo.ts';
 import {
+	COMPANIES_REALM,
+	CUSTOMERS,
+	OIDC_CUSTOMER,
+	PERSON_AT,
+	SAML_CUSTOMER,
+	forgetCustomersPeople,
+	setUpCompanies
+} from './companies.ts';
+import {
 	Admin,
 	APP,
 	BROKERED_REALM,
@@ -99,8 +108,22 @@ const onlyPresets = argument('--presets')?.split(',');
 const version = argument('--keycloak') ?? PINNED_KEYCLOAK;
 
 /** Which step of the diagram a message in the browser is, going by where it went. */
-function classifyRequest(url: URL): string | null {
+function classifyRequest(url: URL, method = 'GET'): string | null {
 	const path = url.pathname;
+	if (path === `/realms/${COMPANIES_REALM}/protocol/openid-connect/auth`) return 'authorize';
+	if (path.startsWith(`/realms/${COMPANIES_REALM}/login-actions/authenticate`)) {
+		return method === 'POST' ? 'submit-email' : null;
+	}
+	for (const customer of CUSTOMERS) {
+		const at = `/realms/${customer}`;
+		if (path === `${at}/protocol/openid-connect/auth` || path === `${at}/protocol/saml`) {
+			return 'upstream-authorize';
+		}
+		if (path.startsWith(`${at}/login-actions/authenticate`)) {
+			return method === 'POST' ? 'upstream-sign-in' : null;
+		}
+		if (path.endsWith(`/broker/${customer}/endpoint`)) return 'upstream-callback';
+	}
 	if (url.origin === SECOND_APP) return path === '/' ? 'second-open-app' : 'second-callback';
 	const forSecond = url.searchParams.get('client_id') === SECOND_CLIENT;
 	if (forSecond && path === `/realms/${LOCAL_REALM}/protocol/openid-connect/auth`) {
@@ -138,7 +161,27 @@ function classifyRequest(url: URL): string | null {
 	return null;
 }
 
-function classifyResponse(url: URL, status: number, location: string | null): string | null {
+function classifyResponse(
+	url: URL,
+	status: number,
+	location: string | null,
+	method = 'GET'
+): string | null {
+	if (
+		url.pathname === `/realms/${COMPANIES_REALM}/protocol/openid-connect/auth` &&
+		status === 200
+	) {
+		return 'email-page';
+	}
+	for (const customer of CUSTOMERS) {
+		// A redirect to OpenID Connect, or with SAML a page with a form that sends itself.
+		if (url.pathname === `/realms/${COMPANIES_REALM}/broker/${customer}/login`) {
+			return 'redirect-to-upstream';
+		}
+		if (location?.includes(`/broker/${customer}/endpoint`)) return 'upstream-redirect-back';
+		const signedIn = url.pathname.startsWith(`/realms/${customer}/login-actions/authenticate`);
+		if (signedIn && method === 'POST' && status === 200) return 'upstream-redirect-back';
+	}
 	if (url.origin === SECOND_APP) return url.pathname === '/' ? 'second-redirect-to-idp' : null;
 	if (location?.startsWith(SECOND_REDIRECT_URI)) return 'second-redirect-with-code';
 	if (
@@ -249,7 +292,7 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 					)
 				: behind
 					? once(behindThePage.request(new URL(request.url())), 'request')
-					: classifyRequest(new URL(request.url())),
+					: classifyRequest(new URL(request.url()), request.method()),
 			request.method(),
 			request.url(),
 			request.headers(),
@@ -334,7 +377,12 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 						),
 						'response'
 					)
-				: classifyResponse(new URL(response.url()), response.status(), headers.location ?? null);
+				: classifyResponse(
+						new URL(response.url()),
+						response.status(),
+						headers.location ?? null,
+						response.request().method()
+					);
 		const message = responseMessage(step, response.status(), headers);
 		run.messages.push(message);
 		if (step === 'set-session') {
@@ -391,8 +439,21 @@ async function login(browser: Browser, run: Run) {
 		await context.close();
 		return;
 	}
+	if (run.settings.companies) {
+		const { email } =
+			PERSON_AT[run.settings.customerSpeaks === 'saml' ? SAML_CUSTOMER : OIDC_CUSTOMER];
+		await page.locator('#username').waitFor();
+		await page.fill('#username', email);
+		await page.click('#kc-login');
+		await page.locator('#password').waitFor({ timeout: 15_000 });
+	}
 	await page.locator('#username').waitFor();
-	await page.fill('#username', USERNAME);
+	if (!run.settings.companies) await page.fill('#username', USERNAME);
+	else if (!(await page.inputValue('#username'))) {
+		const { email } =
+			PERSON_AT[run.settings.customerSpeaks === 'saml' ? SAML_CUSTOMER : OIDC_CUSTOMER];
+		await page.fill('#username', email);
+	}
 	await page.fill('#password', PASSWORD);
 	await page.click('#kc-login');
 	if (run.settings.consent) {
@@ -473,7 +534,13 @@ function addToQuestions(
 function runFor(settings: Settings): Run {
 	return {
 		settings,
-		realm: settings.federation ? DIRECTORY_REALM : settings.broker ? BROKERED_REALM : LOCAL_REALM,
+		realm: settings.companies
+			? COMPANIES_REALM
+			: settings.federation
+				? DIRECTORY_REALM
+				: settings.broker
+					? BROKERED_REALM
+					: LOCAL_REALM,
 		clientId: CONFIDENTIAL_CLIENT,
 		clientSecret: settings.clientType === 'public' ? null : CLIENT_SECRET,
 		messages: []
@@ -508,6 +575,7 @@ async function record(
 	);
 
 	await admin.forgetBrokeredUsers();
+	await forgetCustomersPeople(admin);
 	demo.current = run;
 	if (settings.federation) await loginThroughTheDirectory(browser, admin, run);
 	else await login(browser, run);
@@ -725,6 +793,7 @@ async function recordOnlyOnADevice() {
 		await startKeycloak(version, []);
 		const admin = await Admin.connect();
 		await setUpRealms(admin);
+		await setUpCompanies(admin);
 		const keycloak = await admin.serverVersion();
 		const recordedAt = new Date().toISOString().slice(0, 10);
 		const recordings = await recordDevice(browser, demo, keycloak, recordedAt);
@@ -762,6 +831,7 @@ async function recordOnlyWithNoUser() {
 		await startKeycloak(version, []);
 		const admin = await Admin.connect();
 		await setUpRealms(admin);
+		await setUpCompanies(admin);
 		const keycloak = await admin.serverVersion();
 		const recordings = await recordWithNoUser(
 			demo,
@@ -844,6 +914,7 @@ async function recordOnlyPresets(ids: readonly string[]) {
 		const admin = await Admin.connect();
 		const keycloak = await admin.serverVersion();
 		await setUpRealms(admin);
+		await setUpCompanies(admin);
 		const recordedAt = new Date().toISOString().slice(0, 10);
 		const index = JSON.parse(readFileSync(INDEX, 'utf8')) as RecordingIndex;
 		const steps = new Set(index.flows[base.id].steps);
@@ -892,6 +963,7 @@ async function takePictures() {
 		await startKeycloak(version, []);
 		const admin = await Admin.connect();
 		await setUpRealms(admin);
+		await setUpCompanies(admin);
 		const onDefaults = {
 			clientType: 'confidential',
 			consent: false,
@@ -937,6 +1009,7 @@ async function main() {
 			const admin = await Admin.connect();
 			keycloak = await admin.serverVersion();
 			await setUpRealms(admin);
+			await setUpCompanies(admin);
 
 			for (const preset of wanted) {
 				const run = await record(browser, demo, admin, preset);

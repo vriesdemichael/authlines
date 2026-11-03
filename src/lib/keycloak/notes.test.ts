@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { authorizationCode as flow } from '#lib/flow/authorization-code.ts';
 import { authorizationCodeSetup as setup } from '#lib/flow/authorization-code-setup.ts';
-import { evaluate, introsOf, type DiagramDef } from '#lib/flow/model.ts';
+import { evaluate, introsOf, pagesOf, type DiagramDef } from '#lib/flow/model.ts';
 import {
 	allValidSettings,
 	defaultSettings,
@@ -74,7 +74,8 @@ describe('the protocol layer', () => {
 	it('says nothing about Keycloak in what a page shows, whatever is in its picture', () => {
 		for (const diagram of [flow, setup]) {
 			for (const step of diagram.steps) {
-				expect(`${step.page?.shows} ${step.pitfall?.shows}`, step.id).not.toMatch(/keycloak/i);
+				const shows = pagesOf(step.page).map((page) => page.shows);
+				expect(`${shows.join(' ')} ${step.pitfall?.shows}`, step.id).not.toMatch(/keycloak/i);
 			}
 		}
 	});

@@ -161,6 +161,16 @@ const presets: readonly Preset[] = [
 	},
 	{ id: 'broker', title: 'External IdP', settings: { broker: true } },
 	{
+		id: 'companies',
+		title: 'A customer with a provider of their own',
+		settings: { broker: true, companies: true }
+	},
+	{
+		id: 'companies-saml',
+		title: 'A customer whose provider speaks SAML',
+		settings: { broker: true, companies: true, customerSpeaks: 'saml' }
+	},
+	{
 		id: 'upstream-v1',
 		title: 'Stored upstream tokens, API V1',
 		settings: { broker: true, upstreamTokens: 'v1' }

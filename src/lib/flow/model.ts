@@ -96,6 +96,8 @@ export interface PageDef {
 	shot?: ShotId;
 	/** The part of the address that matters here. */
 	marks?: readonly string[];
+	/** When it is this page, for a step whose page depends on the settings, as its text can. */
+	when?: Condition;
 }
 
 /** This step sends something, and what comes back is used later, so running it adds something. */
@@ -131,7 +133,7 @@ export interface StepDef {
 	concept: Text;
 	group?: string;
 	pitfall?: PitfallDef;
-	page?: PageDef;
+	page?: PageDef | readonly PageDef[];
 	cites?: readonly CiteDef[];
 	/** How it travels, where its lifelines alone would not say: someone's own browser, say. */
 	channel?: Channel;
@@ -316,6 +318,17 @@ function partsOf(flow: DiagramDef, steps: readonly Step[]): Part[] {
 	return parts.filter((part) => part.steps.length);
 }
 
+/** The first of a step's pages whose settings hold, because a person sees a different page by them. */
+function pageOf(page: StepDef['page'], settings: Settings): PageDef | undefined {
+	return pagesOf(page).find((candidate) => present(candidate.when, settings));
+}
+
+/** Every page a step can show, whatever the settings. */
+export function pagesOf(page: StepDef['page']): readonly PageDef[] {
+	if (!page) return [];
+	return 'address' in page ? [page] : page;
+}
+
 export function evaluate(flow: DiagramDef, settings: Settings): DiagramView {
 	const joined = new Map(
 		flow.lifelines.flatMap(({ id, joins }) =>
@@ -339,7 +352,7 @@ export function evaluate(flow: DiagramDef, settings: Settings): DiagramView {
 		concept: resolveText(step.concept, settings),
 		group: step.group,
 		pitfall: step.pitfall && resolvePitfall(step.pitfall, settings),
-		page: step.page,
+		page: pageOf(step.page, settings),
 		cites: (step.cites ?? []).filter((cite) => present(cite.when, settings)),
 		inPractice:
 			[step.inPractice && resolveText(step.inPractice, settings), step.largerJob]

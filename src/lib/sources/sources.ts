@@ -15,6 +15,8 @@ export type SourceId =
 	| 'oidc-backchannel-logout'
 	| 'keycloak-brokering'
 	| 'keycloak-federation'
+	| 'keycloak-organizations'
+	| 'saml-core'
 	| 'keycloak-stored-tokens'
 	| 'keycloak-concepts';
 
@@ -166,6 +168,22 @@ export const sources: Record<SourceId, SourceDef> = {
 		summary:
 			'Keycloak can use users from LDAP or Active Directory, imported or not, and check their passwords on the LDAP server.',
 		url: 'https://www.keycloak.org/docs/26.8.1/server_admin/#_user-storage-federation'
+	},
+	'keycloak-organizations': {
+		label: 'Keycloak docs: organizations',
+		title: 'Managing organizations',
+		status: 'Keycloak 26.8.1, Server Administration Guide.',
+		summary:
+			"Keycloak can keep customers apart as organizations, each with its members, internet domains and identity providers. With organizations on, the login asks for an email first, and can send someone straight to their organization's provider.",
+		url: 'https://www.keycloak.org/docs/26.8.1/server_admin/#_managing_organizations'
+	},
+	'saml-core': {
+		label: 'SAML 2.0 Core',
+		title: 'Assertions and Protocols for the OASIS Security Assertion Markup Language (SAML) V2.0',
+		status: 'OASIS Standard, March 2005.',
+		summary:
+			'Defines the assertion, a statement from an identity provider about who someone is, how they logged in and what else it says about them, and the request and response messages that carry it. How those messages travel, such as in a form through the browser, is in a separate document on bindings.',
+		url: 'https://docs.oasis-open.org/security/saml/v2.0/saml-core-2.0-os.pdf'
 	},
 	'keycloak-brokering': {
 		label: 'Keycloak docs: identity brokering',

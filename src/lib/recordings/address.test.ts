@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { authorizationCodeBase as base, flows } from '#lib/flow/index.ts';
-import { evaluate } from '#lib/flow/model.ts';
+import { evaluate, pagesOf } from '#lib/flow/model.ts';
 import { defaultSettings, normalize } from '#lib/flow/settings.ts';
 import { pageShots } from '#lib/flow/vocabulary.ts';
 import { addressAt, readAddress } from '#lib/recordings/address.ts';
@@ -102,7 +102,9 @@ describe('what a person sees in their browser', () => {
 			Object.values(flows)
 				.flatMap(({ diagrams }) => Object.values(diagrams))
 				.flatMap(({ steps }) =>
-					steps.flatMap((step) => [step.page?.shot, step.pitfall?.shot].filter(Boolean))
+					steps.flatMap((step) =>
+						[...pagesOf(step.page).map(({ shot }) => shot), step.pitfall?.shot].filter(Boolean)
+					)
 				)
 		);
 		expect([...used].sort()).toEqual([...pageShots].sort());
@@ -119,7 +121,8 @@ describe('what a person sees in their browser', () => {
 	it('says in words what is on each picture', () => {
 		for (const { steps } of Object.values(base.diagrams)) {
 			for (const step of steps) {
-				if (step.page) expect(step.page.shows.length, step.id).toBeGreaterThan(20);
+				for (const page of pagesOf(step.page))
+					expect(page.shows.length, step.id).toBeGreaterThan(20);
 				if (step.pitfall?.shot) expect(step.pitfall.shows?.length, step.id).toBeGreaterThan(20);
 			}
 		}

@@ -77,7 +77,8 @@ body {
 [data-artifact='id-token'],
 [data-artifact='refresh-token'],
 [data-artifact='device-code'],
-[data-artifact='upstream-token'] {
+[data-artifact='upstream-token'],
+[data-artifact='assertion'] {
 	--chip: var(--grants);
 	--chip-soft: var(--grants-soft);
 }

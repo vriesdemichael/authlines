@@ -110,6 +110,7 @@ const SIGN_IN = new Set([
 	'submit-credentials',
 	'second-submit-credentials',
 	'upstream-sign-in',
+	'submit-email',
 	'consent-grant'
 ]);
 
@@ -302,7 +303,8 @@ describe.each(asCases)('the recording of %s', (preset, recording) => {
 		const allowed = new Set(['localhost', 'host.docker.internal']);
 		expect(hosts.filter((host) => !allowed.has(host))).toEqual([]);
 		const emails = [...text.matchAll(/[\w.+-]+@[\w-]+\.[\w.]+/g)].map((match) => match[0]);
-		expect(emails.filter((email) => !email.endsWith('@example.test'))).toEqual([]);
+		// At a domain reserved for testing (RFC 2606), so no address in a recording is anyone's.
+		expect(emails.filter((email) => !/@([\w-]+\.)*test$/.test(email))).toEqual([]);
 		expect(text).toContain('"keycloak"');
 	});
 

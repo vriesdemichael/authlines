@@ -292,7 +292,6 @@ export const notHereYet: readonly string[] = [
 	'malicious app',
 	'rfc 8252',
 	'rfc8252',
-	'saml',
 	'token exchange',
 	// What #147 lists, which has no flow yet. Nothing here may have a result, or it would hide it.
 	'kerberos',

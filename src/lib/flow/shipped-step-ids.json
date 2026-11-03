@@ -121,5 +121,12 @@
 	"bff-login",
 	"set-session",
 	"page-calls-api",
-	"page-gets-answer"
+	"page-gets-answer",
+	"email-page",
+	"submit-email",
+	"find-company",
+	"send-our-details",
+	"customer-registers-us",
+	"send-their-details",
+	"add-organization"
 ]

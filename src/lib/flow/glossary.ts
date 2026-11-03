@@ -38,6 +38,14 @@ const flowAt = (step: string, settings?: Partial<Settings>): TermPlace => ({
 
 const list: readonly Term[] = [
 	{
+		id: 'saml',
+		name: 'SAML',
+		words: ['SAML', 'SAML 2.0', 'assertion', 'assertions'],
+		explains:
+			'An older way for one provider to tell another who logged in, still common at companies. The answer is a signed document, an assertion, which comes back through the browser in a form, where OpenID Connect sends a code and trades it out of sight.',
+		at: flowAt('upstream-callback', { broker: true, companies: true, customerSpeaks: 'saml' })
+	},
+	{
 		id: 'ldap',
 		name: 'LDAP',
 		words: ['LDAP', 'LDAPS', 'Active Directory', 'user directory', 'user federation'],
