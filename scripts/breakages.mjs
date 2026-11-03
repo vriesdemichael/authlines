@@ -18,6 +18,18 @@ const ERRORS = 'src/lib/search/errors.ts';
 
 export const breakages = [
 	{
+		name: 'stolen token: the Bearer-only API checks the binding after all',
+		file: 'scripts/record/checks.ts',
+		from: "if (trust.knowsOnlyBearer) return scheme === 'Bearer' ? null : 'not a Bearer token';",
+		to: "if (trust.knowsOnlyBearer && !jwt.claims.cnf) return scheme === 'Bearer' ? null : 'not a Bearer token';"
+	},
+	{
+		name: 'stolen token: the answers are the wrong way round',
+		file: AC,
+		from: "label: [{ when: bearerOnly, text: '200 with the resource' }, { text: '401 invalid_token' }],",
+		to: "label: [{ when: bearerOnly, text: '401 invalid_token' }, { text: '200 with the resource' }],"
+	},
+	{
 		name: 'leaving: the pitfall gives the wrong session length',
 		file: AC,
 		from: 'ends a session after 30 minutes unused, or 10 hours in all,',
