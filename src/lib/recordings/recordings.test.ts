@@ -387,6 +387,21 @@ describe('the words on a refresh token used twice', () => {
 	});
 });
 
+describe('the questions a real server was asked', () => {
+	it('say when one was asked after the rest, and only of answers that are there', () => {
+		const {
+			recordedAt,
+			askedOn = {},
+			answers
+		} = JSON.parse(readFileSync(`${FOLDER}/questions.json`, 'utf8'));
+		for (const [key, on] of Object.entries<string>(askedOn)) {
+			const [first, page] = key.split('.');
+			expect(page ? answers[first][page] : answers[first], key).toBeDefined();
+			expect(on >= recordedAt, key).toBe(true);
+		}
+	});
+});
+
 describe('the words on what an API answered', () => {
 	it.each([
 		['api-no-token', 401, 'Bearer', 'asks for a token', '401 with no error'],

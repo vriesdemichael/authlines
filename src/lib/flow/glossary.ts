@@ -543,7 +543,7 @@ const list: readonly Term[] = [
 		words: ['backend for frontend', 'backend-for-frontend', 'BFF'],
 		at: flowAt('set-session', { appRuns: 'bff', clientType: 'confidential', pkce: true }),
 		explains:
-			'A server of your own behind an app in the browser. It is the client: it does the login and keeps the tokens, and the browser only gets a cookie from it, so there are no tokens in the page to take. A script running there can still send requests through it as the user, for as long as the page is open.',
+			'A server of your own behind an app in the browser. It is the client: it does the login and uses the tokens, and the browser only gets a cookie from it that no script can read, so there are no tokens in the page to take. A script running there can still send requests through it as the user.',
 		alsoCalled: ['BFF']
 	},
 	{

@@ -524,9 +524,9 @@ export const mapTracks: readonly MapTrack[] = [
 						'store tokens in the browser'
 					],
 					answer:
-						'Nowhere in the page stops a script that runs there, because it can ask for tokens just as the page does. A server behind the page can do the login and keep them, and the browser gets a cookie no script can read. A script can still send requests through it.',
+						'Nowhere in the page stops a script that runs there, because it can ask for tokens just as the page does. A server behind the page can do the login instead, and give the browser a cookie no script can read. A script can still send requests through it.',
 					title: 'Where should a page keep its tokens?',
-					summary: 'On a server behind it, if it can.',
+					summary: 'With a server behind it, the page has none.',
 					preset: 'behind-the-page',
 					step: 'set-session'
 				}),

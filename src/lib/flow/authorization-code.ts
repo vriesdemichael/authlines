@@ -1376,7 +1376,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			page: {
 				address: 'callback',
 				shows:
-					"The app's own page, whatever it shows. What matters is the address, because the code is in it, for anything that can see the address.",
+					'Whatever the app answers here, a page of its own or a move straight on to another. What matters is the address, because the code is in it, for anything that can see the address.',
 				marks: ['code', 'state']
 			},
 			plain: 'The code reaches the app',
@@ -1699,7 +1699,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept: [
 				{
 					when: behindThePage,
-					text: 'The tokens stop here, at the server. Neither the page nor the browser gets them, which is what the server is for.'
+					text: 'The tokens stop here, at the server, and no script in the page can get them, which is what the server is for.'
 				},
 				{
 					when: inPage,
@@ -1884,7 +1884,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				'The script calls its own server, and the browser adds the cookie by itself. The script sees neither the cookie nor a token.',
 			pitfall: {
 				title: 'What can a script in this page still do?',
-				text: 'In a real page, a script could not read this cookie and found no token. But it can do what the page does: the same request worked from a script. So a script that gets in can act for the user while the page is open, and can take what comes back, but not the cookie or a token to use elsewhere.'
+				text: 'In a real page, a script could not read this cookie and found no token. But it can do what the page does: the same request worked from a script. So a script that gets in can act for the user through this server, and take what comes back, but finds no cookie or token to take away.'
 			},
 			fields: [
 				{

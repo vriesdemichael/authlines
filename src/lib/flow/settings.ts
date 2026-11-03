@@ -637,11 +637,11 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		simple: {
 			label: 'Where does your app run?',
 			summary:
-				'In the page, the tokens end up in the browser, where any script in it can reach them. With a server behind it, they stay on that server.'
+				'In the page, the tokens end up in the browser, and a script running there can get some for itself. With a server behind it, the page never has one.'
 		},
 		summary:
-			'On a server of its own, or in the page in the user’s browser. In the page there is nowhere to keep a secret, and the tokens end up in the browser.',
-		why: 'The rest of this flow is careful to keep the tokens away from the browser. An app that runs in the page is in the browser, so that care stops at its door, and what can reach the page can reach them.',
+			'On a server of its own, or in the page in the user’s browser, alone or with a server behind it. In the page alone there is nowhere to keep a secret, and the tokens end up in the browser.',
+		why: 'The rest of this flow is careful to keep the tokens away from the browser. An app that runs only in the page is in the browser, so that care stops at its door, and a script running there can get tokens just as the app does.',
 		sources: [
 			{
 				source: 'rfc10017',
@@ -674,7 +674,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			{
 				value: 'bff',
 				label: 'In the page, with its server',
-				why: 'The page is still in the browser, and the tokens are not: a server of the app’s own does the login and keeps them, and the browser only gets a cookie. So a script in the page has no token to take, though it can still send requests through that server.',
+				why: 'The page is still in the browser, and no token reaches it: a server of the app’s own does the login and uses the tokens, and gives the browser a cookie no script can read. So a script in the page has no token to take, though it can still send requests through that server.',
 				sets: { clientType: 'confidential', pkce: true },
 				requires: {
 					when: all(

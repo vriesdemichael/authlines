@@ -455,6 +455,21 @@ async function whatAScriptCan(browser: Browser, demo: Demo, admin: Admin) {
 	};
 }
 
+/** Adds answers asked on their own, with when, because the file's date is when all of them were. */
+function addToQuestions(
+	on: string,
+	answers: Record<string, unknown>,
+	looked: Record<string, unknown> = {}
+) {
+	const file = `${FOLDER}/questions.json`;
+	const asked = JSON.parse(readFileSync(file, 'utf8'));
+	Object.assign(asked.answers, answers);
+	Object.assign(asked.answers.console, looked);
+	const keys = [...Object.keys(answers), ...Object.keys(looked).map((page) => `console.${page}`)];
+	asked.askedOn = { ...asked.askedOn, ...Object.fromEntries(keys.map((key) => [key, on])) };
+	writeFileSync(file, `${JSON.stringify(asked, null, '\t')}\n`);
+}
+
 function runFor(settings: Settings): Run {
 	return {
 		settings,
@@ -850,19 +865,12 @@ async function recordOnlyPresets(ids: readonly string[]) {
 			recordedOn[id] = recordedAt;
 		}
 		if (wanted.some(({ settings }) => settings.federation)) {
-			const file = `${FOLDER}/questions.json`;
-			const asked = JSON.parse(readFileSync(file, 'utf8'));
 			const directoryNotes = noteDefs.filter(({ place }) => place?.page === 'directory-settings');
 			const looked = await lookInConsole(browser, admin, [], directoryNotes);
-			Object.assign(asked.answers, await questionsWithADirectory(admin));
-			Object.assign(asked.answers.console, looked);
-			writeFileSync(file, `${JSON.stringify(asked, null, '\t')}\n`);
+			addToQuestions(recordedAt, await questionsWithADirectory(admin), looked);
 		}
 		if (wanted.some(({ settings }) => settings.appRuns === 'bff')) {
-			const file = `${FOLDER}/questions.json`;
-			const asked = JSON.parse(readFileSync(file, 'utf8'));
-			Object.assign(asked.answers, await whatAScriptCan(browser, demo, admin));
-			writeFileSync(file, `${JSON.stringify(asked, null, '\t')}\n`);
+			addToQuestions(recordedAt, await whatAScriptCan(browser, demo, admin));
 		}
 		const flow = { presets: presets.map(({ id }) => id), steps: [...steps].sort() };
 		const flows = { ...index.flows, [base.id]: flow };
