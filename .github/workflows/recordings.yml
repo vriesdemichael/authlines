@@ -39,7 +39,8 @@ jobs:
           code=${PIPESTATUS[0]}
           echo "code=$code" >> "$GITHUB_OUTPUT"
           exit "$code"
-      - if: failure() && steps.record.conclusion == 'failure'
+      # A run tried on a branch has its answer in its own log. An issue is for what main no longer says.
+      - if: failure() && steps.record.conclusion == 'failure' && github.ref == 'refs/heads/main'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}

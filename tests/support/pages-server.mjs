@@ -5,6 +5,10 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 
 const [, , folder, base, port] = process.argv;
+if (!base?.startsWith('/')) {
+	// Git Bash rewrites /authlines into a folder of its own, and everything would then be a 404.
+	throw new Error(`The base has to start with a slash, and got: ${base}`);
+}
 const types = {
 	'.html': 'text/html',
 	'.js': 'text/javascript',
