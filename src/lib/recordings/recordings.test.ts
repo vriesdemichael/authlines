@@ -456,6 +456,37 @@ describe('a server behind the page', () => {
 	});
 });
 
+describe('a stolen DPoP token', () => {
+	const answered = (preset: string) =>
+		read(preset).messages.find(({ step }) => step === 'thief-api-response');
+	const said = (preset: string) =>
+		stepsOf(read(preset)).find(({ id }) => id === 'thief-api-response');
+
+	it('gets two answers by what the API checks, as two real runs did', () => {
+		expect(answered('dpop-thief')?.status).toBe(401);
+		expect(answered('dpop-thief')?.headers['www-authenticate']).toContain('invalid_token');
+		expect(said('dpop-thief')?.label).toBe('401 invalid_token');
+		expect(answered('dpop-thief-bearer-only')?.status).toBe(200);
+		expect(said('dpop-thief-bearer-only')?.label).toBe('200 with the resource');
+	});
+
+	it('is the token the app got, tied to a key, and sent with no proof', () => {
+		for (const preset of ['dpop-thief', 'dpop-thief-bearer-only']) {
+			const { messages } = read(preset);
+			const got = messages.find(({ step }) => step === 'token-response')?.body as {
+				access_token: string;
+			};
+			const sent = messages.find(({ step }) => step === 'thief-api-request');
+			expect(sent?.headers.authorization, preset).toBe(`Bearer ${got.access_token}`);
+			expect(sent?.headers.dpop, preset).toBeUndefined();
+			const claims = JSON.parse(
+				Buffer.from(got.access_token.split('.')[1], 'base64url').toString()
+			);
+			expect(claims.cnf?.jkt, preset).toBeTruthy();
+		}
+	});
+});
+
 describe('a customer with a provider of their own', () => {
 	const access = (preset: string) => {
 		const answer = read(preset).messages.find(({ step }) => step === 'token-response');

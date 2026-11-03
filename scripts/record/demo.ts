@@ -552,7 +552,10 @@ export class Demo {
 		}
 
 		const { apiToken } = settings;
-		const resource = `${API}${{ elsewhere: '/my-api/resource', noscope: '/contacts' }[apiToken as string] ?? '/resource'}`;
+		const bearerOnly = settings.tokenThief && settings.apiChecks === 'bearer';
+		const resource = bearerOnly
+			? `${API}/bearer-only/resource`
+			: `${API}${{ elsewhere: '/my-api/resource', noscope: '/contacts' }[apiToken as string] ?? '/resource'}`;
 		// The token has a very short life for this one, set up in keycloak.ts, so it just has to wait.
 		if (apiToken === 'expired') await new Promise((resolve) => setTimeout(resolve, 2100));
 		const sent = apiToken === 'changed' ? withMoreInIt(tokens.access_token) : tokens.access_token;
@@ -561,7 +564,11 @@ export class Demo {
 			['api-request', 'api-response'],
 			'GET',
 			resource,
-			apiToken === 'none' ? {} : this.#authorization('GET', resource, sent)
+			apiToken === 'none'
+				? {}
+				: bearerOnly
+					? { authorization: `Bearer ${sent}` }
+					: this.#authorization('GET', resource, sent)
 		);
 		if (answer.status !== 200 && apiToken === 'good') {
 			throw new Error(`The API refused: ${answer.text}`);
@@ -573,6 +580,7 @@ export class Demo {
 		if (settings.upstreamTokens !== 'off') await this.#storedToken(tokens.access_token);
 		if (settings.refresh) await this.#whenItRunsOut(tokens);
 		if (settings.leaves) await this.#afterTheyLeft(tokens);
+		if (settings.tokenThief) await this.#someoneElseUses(tokens.access_token);
 		return 'Logged in';
 	}
 
@@ -745,6 +753,22 @@ export class Demo {
 			'refresh-newest-response'
 		]);
 		if (newest.status !== 400) throw new Error(`The newest still works: ${newest.text}`);
+	}
+
+	/** Someone who has a copy of the access token and not the key, so they send it with no proof. */
+	async #someoneElseUses(accessToken: string) {
+		const bearerOnly = this.#run.settings.apiChecks === 'bearer';
+		const resource = `${API}${bearerOnly ? '/bearer-only/resource' : '/resource'}`;
+		const answer = await call(
+			this.#run,
+			['thief-api-request', 'thief-api-response'],
+			'GET',
+			resource,
+			{ authorization: `Bearer ${accessToken}` }
+		);
+		if (answer.status !== (bearerOnly ? 200 : 401)) {
+			throw new Error(`The stolen token got ${answer.status}: ${answer.text}`);
+		}
 	}
 
 	/** Their company turns them off, and the app goes on with what it has. */
@@ -1051,7 +1075,9 @@ export class Demo {
 					// One API that expects its own name, as yours should, which a default client's token lacks.
 					audience: request.url?.startsWith('/my-api/') ? 'my-api' : API_AUDIENCE,
 					keysOf: (issuer) => keysAt(`${issuer}/protocol/openid-connect/certs`),
-					seenProofs: this.#seenProofs
+					seenProofs: this.#seenProofs,
+					// Another API, written before DPoP, beside the one that knows it.
+					knowsOnlyBearer: request.url?.startsWith('/bearer-only/')
 				}
 			);
 			if (problem) {

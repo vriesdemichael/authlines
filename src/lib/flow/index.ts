@@ -171,6 +171,16 @@ const presets: readonly Preset[] = [
 		settings: { broker: true, companies: true, customerSpeaks: 'saml' }
 	},
 	{
+		id: 'dpop-thief',
+		title: 'Someone using a stolen DPoP token, at an API that checks the proof',
+		settings: { binding: 'dpop', tokenThief: true }
+	},
+	{
+		id: 'dpop-thief-bearer-only',
+		title: 'Someone using a stolen DPoP token, at an API that knows only Bearer',
+		settings: { binding: 'dpop', tokenThief: true, apiChecks: 'bearer' }
+	},
+	{
 		id: 'companies-leaves',
 		title: 'Someone leaves a customer whose provider speaks SAML',
 		settings: { broker: true, companies: true, customerSpeaks: 'saml', leaves: true }

@@ -46,7 +46,9 @@
 		"companies": "2026-11-03",
 		"companies-saml": "2026-11-03",
 		"companies-leaves": "2026-11-03",
-		"companies-oidc-leaves": "2026-11-03"
+		"companies-oidc-leaves": "2026-11-03",
+		"dpop-thief": "2026-11-03",
+		"dpop-thief-bearer-only": "2026-11-03"
 	},
 	"flows": {
 		"authorization-code": {
@@ -93,6 +95,8 @@
 				"broker",
 				"companies",
 				"companies-saml",
+				"dpop-thief",
+				"dpop-thief-bearer-only",
 				"companies-leaves",
 				"companies-oidc-leaves",
 				"upstream-v1",
@@ -189,6 +193,8 @@
 				"set-session",
 				"submit-credentials",
 				"submit-email",
+				"thief-api-request",
+				"thief-api-response",
 				"token-after-logout",
 				"token-after-logout-response",
 				"token-request",

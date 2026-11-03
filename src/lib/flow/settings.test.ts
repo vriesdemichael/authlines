@@ -86,6 +86,8 @@ describe('constraints', () => {
 		const withAServerBehindThePage = 1;
 		// Through another provider in the plain case: what their provider speaks, and whether they leave.
 		const eachCustomerHasAProvider = 2 * 2;
+		// With DPoP in the plain case, at an API that checks the proof or knows only Bearer.
+		const aStolenToken = 2;
 		expect(allValidSettings()).toBe(allValidSettings());
 		expect(Object.isFrozen(allValidSettings())).toBe(true);
 		expect(allValidSettings().every((settings) => Object.isFrozen(settings))).toBe(true);
@@ -101,7 +103,8 @@ describe('constraints', () => {
 				howItRegisters +
 				inADirectory +
 				withAServerBehindThePage +
-				eachCustomerHasAProvider
+				eachCustomerHasAProvider +
+				aStolenToken
 		);
 	});
 

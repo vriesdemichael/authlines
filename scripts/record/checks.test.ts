@@ -196,6 +196,16 @@ describe('what the demo API checks', () => {
 			expect(await ask(`DPoP ${token}`)).toBe('no proof');
 		});
 
+		// What an API written before DPoP may do: it skips the binding, which RFC 9449 section 7.2 expects.
+		it('is taken as a bearer token by an API that knows only Bearer', async () => {
+			const onlyBearer = { ...trust(), knowsOnlyBearer: true };
+			expect(await ask(`Bearer ${token}`, undefined, onlyBearer)).toBeNull();
+			expect(await ask(`DPoP ${token}`, key.proof(good), onlyBearer)).toBe('not a Bearer token');
+			expect(
+				await ask(`Bearer ${server.token({ ...claims, iss: 'elsewhere' })}`, undefined, onlyBearer)
+			).toBe('from an issuer this API does not trust');
+		});
+
 		it('refuses a proof from another key', async () => {
 			expect(await ask(`DPoP ${token}`, proofKey().proof(good))).toBe('proof from the wrong key');
 		});

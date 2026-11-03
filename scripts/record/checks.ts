@@ -142,6 +142,8 @@ export interface Trust {
 	audience: string;
 	keysOf: (issuer: string) => Promise<readonly Jwk[]>;
 	seenProofs: Set<string>;
+	/** An API written before DPoP, which RFC 9449 section 7.2 says would most presumably take one as Bearer. */
+	knowsOnlyBearer?: boolean;
 }
 
 /**
@@ -170,6 +172,8 @@ export async function accessTokenProblem(
 		return 'not an access token';
 	}
 
+	// The one check it skips: what the token is tied to, a claim it has never heard of.
+	if (trust.knowsOnlyBearer) return scheme === 'Bearer' ? null : 'not a Bearer token';
 	const cnf = jwt.claims.cnf as { jkt?: string } | undefined;
 	if (cnf && !cnf.jkt) return 'tied to something this API cannot check';
 	const bound = cnf?.jkt;

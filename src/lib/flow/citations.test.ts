@@ -69,6 +69,7 @@ const CITED: readonly [step: string, SourceId, section: string, phrase: string][
 	['real-app-refused', 'rfc9700', '4.2.4', 'MUST be invalidated by the authorization server'],
 	['attacker-token-response', 'rfc6749', '5.2', 'Client authentication failed'],
 	['nonce-challenge', 'rfc9449', '8', 'nonce'],
+	['thief-api-response', 'rfc9449', '7.2', 'most presumably accept'],
 	['token-request-retry', 'rfc9449', '8', 'nonce'],
 	[
 		'refresh-again-response',

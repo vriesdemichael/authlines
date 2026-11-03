@@ -135,5 +135,8 @@
 	"left-refresh",
 	"left-refresh-response",
 	"login-again",
-	"code-again"
+	"code-again",
+	"thief-has-token",
+	"thief-api-request",
+	"thief-api-response"
 ]
