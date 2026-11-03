@@ -298,7 +298,7 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 					request.postData() ?? ''
 				);
 				// Only here does it mean anything: a form the server sent says only that it has none.
-				message.headers.origin = headers.origin;
+				if (headers.origin) message.headers.origin = headers.origin;
 				// What the browser adds by itself, which the script cannot read.
 				if (behind && headers.cookie) message.headers.cookie = headers.cookie;
 				run.messages[at] = message;
@@ -986,6 +986,9 @@ async function main() {
 
 		if (checking) {
 			const committedIndex = JSON.parse(readFileSync(INDEX, 'utf8')) as RecordingIndex;
+			// As it would be written, because a key holding nothing is gone from the file and not from memory.
+			const asWritten = (recording: Recording) =>
+				JSON.parse(JSON.stringify(recording)) as Recording;
 			const changes = [
 				...whatChanged({
 					recordings: [
@@ -993,7 +996,7 @@ async function main() {
 							committed: JSON.parse(
 								readFileSync(`${FOLDER}/${now.preset}.json`, 'utf8')
 							) as Recording,
-							now
+							now: asWritten(now)
 						})),
 						...withNoUser.map((now) => ({
 							committed: JSON.parse(
@@ -1002,13 +1005,13 @@ async function main() {
 									'utf8'
 								)
 							) as Recording,
-							now
+							now: asWritten(now)
 						})),
 						...onDevice.map((now) => ({
 							committed: JSON.parse(
 								readFileSync(`static/recordings/${deviceBase.id}/${now.preset}.json`, 'utf8')
 							) as Recording,
-							now
+							now: asWritten(now)
 						}))
 					],
 					flags: { committed: committedIndex.flags, now: flags },
