@@ -921,16 +921,31 @@
 			"loggedIn": true
 		},
 		"whenSomeoneLeaves": {
-			"before": {
-				"loggedIn": true
+			"acme": {
+				"before": {
+					"loggedIn": true
+				},
+				"withNoSession": {
+					"loggedIn": false,
+					"atTheirCompany": true,
+					"says": "Account is disabled, contact your administrator."
+				},
+				"keptHere": {
+					"enabled": true
+				}
 			},
-			"withNoSession": {
-				"loggedIn": false,
-				"atTheirCompany": true,
-				"says": "Account is disabled, contact your administrator."
-			},
-			"keptHere": {
-				"enabled": true
+			"globex": {
+				"before": {
+					"loggedIn": true
+				},
+				"withNoSession": {
+					"loggedIn": false,
+					"atTheirCompany": true,
+					"says": "Account is disabled, contact your administrator."
+				},
+				"keptHere": {
+					"enabled": true
+				}
 			},
 			"session": {
 				"idleMinutes": 30,
