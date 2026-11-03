@@ -205,18 +205,17 @@ function yoursToOverrule(): Section {
 				'The map is the home screen, and a question is named for what someone brings and not for a feature (premise 5.9).'
 			),
 			item(
-				'own-index',
-				'**Recommendation: decide.** Let search engines in, with the repository variable `ALLOW_INDEXING`. Today nobody can find it (#12).'
+				'own-next-beside',
+				'Back and Next are at the top of the step’s text, and stay there while it scrolls. The timeline and Play stay under the diagram (premise 5.9).'
 			),
 			item(
-				'own-measure',
-				'**Recommendation: leave it off.** Measuring use at all. Go by GitHub stars and what people say (premise 11).'
+				'own-labels-ahead',
+				'Every message says what happens, ahead and when seeing it as one party too. What is ahead is faint and carries nothing until it gets there, and Show every label is gone (ADR-014).'
 			),
 			item(
 				'own-123',
 				'**Recommendation: hold until people have tried it.** Simple mode as a different picture (#123).'
 			),
-			item('own-128', '**Recommendation: close.** Someone’s own hostnames, apps and realm (#128).'),
 			item(
 				'own-147',
 				'**Recommendation: pick nothing until #150 is judged, then session cookies first.** Which other ways of logging in get a flow (#147).'

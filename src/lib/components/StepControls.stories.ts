@@ -9,14 +9,7 @@ const meta = {
 		total: 12,
 		canGoBack: true,
 		onback: () => {},
-		onnext: () => {},
-		parts: [
-			{ label: 'Ask', why: 'Why asking.', steps: ['a', 'b', 'c', 'd'] },
-			{ label: 'Log in', why: 'Why logging in.', steps: ['e', 'f', 'g'] },
-			{ label: 'Trade', why: 'Why trading.', steps: ['h', 'i', 'j', 'k', 'l'] }
-		],
-		current: 'c',
-		onjump: () => {}
+		onnext: () => {}
 	}
 } satisfies Meta<typeof StepControls>;
 
@@ -26,11 +19,7 @@ type Story = StoryObj<typeof meta>;
 export const Middle: Story = {};
 
 export const AtTheVeryStart: Story = {
-	args: { position: 1, canGoBack: false, current: 'a' }
-};
-
-export const Playing: Story = {
-	args: { playing: true }
+	args: { position: 1, canGoBack: false }
 };
 
 export const WhereExecuteAddsSomething: Story = {
@@ -43,8 +32,4 @@ export const AtTheEnd: Story = {
 
 export const AtTheEndWithAQuestionToGoOnTo: Story = {
 	args: { position: 12, onwardHref: '#next' }
-};
-
-export const AtTheEndWithNowhereToGo: Story = {
-	args: { position: 12 }
 };

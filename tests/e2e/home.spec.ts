@@ -66,11 +66,11 @@ test.describe('the way in', () => {
 		await expect(page.getByTestId('node-the-old-way')).toBeVisible();
 	});
 
-	test('can be got back to by the name at the top, after pointing at something', async ({
+	test('can be got back to by the name at the top, after coming back from a question', async ({
 		page
 	}) => {
-		await openHome(page);
-		await (await onTheMap(page, 'pkce')).hover();
+		await page.setViewportSize({ width: 1400, height: 900 });
+		await page.goto('./?at=pkce');
 		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
 		await page.getByTestId('home-start').click();
 		await expect(living(page)).toHaveAttribute('data-node', 'the-old-way');
@@ -107,13 +107,11 @@ test.describe('the way in', () => {
 		await expect(living(page)).toHaveAttribute('data-node', 'the-old-way');
 	});
 
-	test('comes back, unflipped, by pointing at its question', async ({ page }) => {
+	test('comes back unflipped by the name at the top', async ({ page }) => {
 		await openHome(page);
 		await page.getByTestId('way-in-switch').check();
-		await (await onTheMap(page, 'pkce')).hover();
-		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
-		await expect(page.getByTestId('way-in-switch')).toHaveCount(0);
-		await (await onTheMap(page, 'the-old-way')).hover();
+		await expect(living(page)).toHaveAttribute('data-node', 'how-access-works');
+		await page.getByTestId('home-start').click();
 		await expect(living(page)).toHaveAttribute('data-node', 'the-old-way');
 		await expect(page.getByTestId('way-in-switch')).not.toBeChecked();
 	});
@@ -156,47 +154,18 @@ test.describe('what is on show', () => {
 	}
 });
 
+// The diagram moving under the mouse made the steps hard to follow (the maintainer, 2026-11-03).
 test.describe('pointing at a question', () => {
-	test('waits for the mouse to rest', async ({ page }) => {
+	test('moves nothing, with the mouse or the keyboard', async ({ page }) => {
 		await openHome(page);
-		await page.evaluate(() => {
-			const state = window as unknown as { moved: number; changed: number };
-			addEventListener('pointermove', () => (state.moved = performance.now()), true);
-			new MutationObserver(() => (state.changed = performance.now())).observe(
-				document.querySelector('[data-testid="living"]')!,
-				{ attributes: true, attributeFilter: ['data-node'] }
-			);
-		});
-		await (await onTheMap(page, 'pkce')).hover();
-		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
-		const waited = await page.evaluate(() => {
-			const state = window as unknown as { moved: number; changed: number };
-			return state.changed - state.moved;
-		});
-		expect(waited).toBeGreaterThanOrEqual(250);
-	});
-
-	test('stays on its question when the mouse goes across to the diagram', async ({ page }) => {
-		await openHome(page);
-		const pkce = await onTheMap(page, 'pkce');
-		await pkce.hover();
-		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
-
-		// Over another question on the way, as a straight line from one to the other would be.
-		const other = page.locator('[data-testid^="node-"]:visible').first();
-		const crossed = (await other.boundingBox())!;
-		const there = (await living(page).boundingBox())!;
-		await page.mouse.move(crossed.x + 50, crossed.y + crossed.height / 2);
-		await page.mouse.move(there.x + there.width / 2, there.y + there.height / 2, { steps: 4 });
+		await (await onTheMap(page, 'stolen-code')).hover();
 		await page.waitForTimeout(800);
-		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
-	});
-
-	test('still shows a question reached with the keyboard', async ({ page }) => {
-		await openHome(page);
-		const pkce = await onTheMap(page, 'pkce');
-		await pkce.focus();
-		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
+		await expect(living(page)).toHaveAttribute('data-node', 'the-old-way');
+		await (await onTheMap(page, 'pkce')).focus();
+		await page.waitForTimeout(800);
+		await expect(living(page)).toHaveAttribute('data-node', 'the-old-way');
+		await expect(page.locator('.stop.showing')).toHaveCount(1);
+		await expect(await onTheMap(page, 'the-old-way')).toHaveClass(/showing/);
 	});
 
 	test('opens at once when clicked', async ({ page }) => {
@@ -216,8 +185,8 @@ test.describe('the first screen', () => {
 
 	test('stops saying what changed, because nothing else will', async ({ page }) => {
 		await openHome(page);
-		await (await onTheMap(page, 'pkce')).hover();
-		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
+		await page.getByTestId('way-in-switch').check();
+		await expect(living(page)).toHaveAttribute('data-node', 'how-access-works');
 		await expect(page.locator('.row.fresh').first()).toBeAttached();
 		await expect(page.locator('.row.fresh')).toHaveCount(0, { timeout: 5000 });
 	});
@@ -235,37 +204,20 @@ test.describe('with reduced motion', () => {
 	});
 });
 
-test.describe('pointing at a question', () => {
-	test('moves the diagram to it, and leaves the address alone', async ({ page }) => {
-		await openHome(page);
-		const before = page.url();
-		await (await onTheMap(page, 'stolen-code')).hover();
+test.describe('a question on show', () => {
+	test('says its answer under the diagram', async ({ page }) => {
+		await page.setViewportSize({ width: 1400, height: 900 });
+		await page.goto('./?at=stolen-code');
 		await expect(living(page)).toHaveAttribute('data-node', 'stolen-code');
 		await expect(page.locator('[data-lifeline="attacker"]')).toBeVisible();
 		await expect(page.getByTestId('living-answer')).toContainText(
 			mapNodes.find(({ id }) => id === 'stolen-code')!.answer.slice(0, 40)
 		);
-		expect(page.url()).toBe(before);
-	});
-
-	test('from the keyboard does the same', async ({ page }) => {
-		await openHome(page);
-		const before = page.url();
-		await (await onTheMap(page, 'pkce')).focus();
-		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
-		expect(page.url()).toBe(before);
-	});
-
-	test('marks the one on show, and only that one', async ({ page }) => {
-		await openHome(page);
-		await (await onTheMap(page, 'pkce')).hover();
-		await expect(page.locator('.stop.showing')).toHaveCount(1);
-		await expect(await onTheMap(page, 'pkce')).toHaveClass(/showing/);
 	});
 
 	test('can be opened, by the question or the link under the diagram', async ({ page }) => {
-		await openHome(page);
-		await (await onTheMap(page, 'pkce')).hover();
+		await page.setViewportSize({ width: 1400, height: 900 });
+		await page.goto('./?at=pkce');
 		await expect(living(page)).toHaveAttribute('data-node', 'pkce');
 		await page.getByTestId('living-open').click();
 		await expect(page).toHaveURL(/pkce\/$/);

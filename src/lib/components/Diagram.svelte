@@ -4,19 +4,12 @@
 	import {
 		FULL_HEAD_WIDTH,
 		layHeld,
-		lineSpan,
 		TIME_GAP,
 		SELF_LOOP,
 		WHOLE_SELF_LOOP,
 		type DiagramLayout
 	} from '#lib/diagram/layout.ts';
-	import {
-		interpolate,
-		PREVIEW_MS,
-		toFrame,
-		TRANSITION_MS,
-		type Frame
-	} from '#lib/diagram/motion.ts';
+	import { interpolate, toFrame, TRANSITION_MS, type Frame } from '#lib/diagram/motion.ts';
 	import type { Lit } from '#lib/flow/explain.ts';
 	import { sees } from '#lib/flow/eyes.ts';
 	import { artifacts, type ArtifactId } from '#lib/flow/vocabulary.ts';
@@ -30,20 +23,14 @@
 		animate?: boolean;
 		/** What is being explained, to light up where it is. */
 		lit?: Lit | null;
-		/** The words of what is ahead too, when someone asked to see them. */
-		allLabels?: boolean;
 		/** What each lifeline has seen, up to the current step. */
 		holdings?: Readonly<Record<string, readonly ArtifactId[]>>;
 		/** The step whose message is on its way, when someone just sent it. */
 		sending?: string | null;
 		/** What it adds to what they have seen, as `lifeline:artifact`, to show when it gets there. */
 		landing?: ReadonlySet<string>;
-		/** The one party whose view to show. What it never saw is not drawn, only how much there was. */
+		/** The one party whose view to show. What it never got is not drawn, only how much there was. */
 		eyes?: string | null;
-		/** What a setting being pointed at would add and take away, without having done it. */
-		preview?: { adds: ReadonlySet<string>; removes: ReadonlySet<string> } | null;
-		/** Moving because of a preview, or back from one, which should not take a while. */
-		quick?: boolean;
 		/** The steps one thing goes through, and what forms it takes, to light up that path. */
 		followed?: { steps: ReadonlySet<string>; forms: readonly ArtifactId[] } | null;
 		onselect?: (step: string) => void;
@@ -57,14 +44,11 @@
 		fresh = new Set(),
 		animate = true,
 		lit = null,
-		allLabels = false,
 		holdings = {},
 		flipped = null,
 		sending = null,
 		landing = new Set(),
 		eyes = null,
-		preview = null,
-		quick = false,
 		followed = null,
 		onselect,
 		onexplainlifeline,
@@ -95,11 +79,10 @@
 			return;
 		}
 		let raf = 0;
-		const duration = untrack(() => quick) ? PREVIEW_MS : TRANSITION_MS;
 		const began = performance.now();
 		animating = true;
 		const tick = (now: number) => {
-			const t = Math.min(1, (now - began) / duration);
+			const t = Math.min(1, (now - began) / TRANSITION_MS);
 			frame = interpolate(start, target, t);
 			if (t < 1) raf = requestAnimationFrame(tick);
 			else animating = false;
@@ -210,7 +193,6 @@
 <div
 	class="diagram"
 	class:whole={frame.whole}
-	class:all-labels={allLabels}
 	data-testid="diagram"
 	data-animating={animating}
 	data-lit={lit?.part}
@@ -237,7 +219,6 @@
 					class:fresh={fresh.has(lane.id)}
 					class:lit={lit?.lifeline === lane.id}
 					class:eyes={eyes === lane.id}
-					class:struck={preview?.removes.has(lane.id)}
 					class:active={currentRow && (lane.id === currentRow.from || lane.id === currentRow.to)}
 					style:opacity={lane.opacity}
 					data-lifeline={lane.leaving ? undefined : lane.id}
@@ -359,8 +340,6 @@
 					class:lit={lit?.step === row.id}
 					class:sending={travelling === row.id}
 					class:unseen={hiddenRows.has(row.id)}
-					class:ghost={preview?.adds.has(row.id)}
-					class:struck={preview?.removes.has(row.id)}
 					class:on-path={followed?.steps.has(row.id)}
 					class:off-path={followed && !followed.steps.has(row.id)}
 					style:opacity={row.opacity}
@@ -383,7 +362,7 @@
 					}}
 				>
 					<desc id={`route-${row.id}`}>
-						{hiddenRows.has(row.id) ? `${eyesName} was not part of this.` : row.route}
+						{hiddenRows.has(row.id) ? `${row.route} ${eyesName} was not part of this.` : row.route}
 					</desc>
 					{#if row.kind === 'time'}
 						<!-- A gap in every line, which is how a sequence diagram says that time went by. -->
@@ -433,26 +412,13 @@
 						<text y={frame.whole ? 3 : 3.7} text-anchor="middle">{row.number}</text>
 					</g>
 					<!-- The spaces are for anything reading this, because lines are only places on a screen. -->
-					{#if hiddenRows.has(row.id)}
+					<!-- Every row says what happens, ahead and unseen too, because a numbered line with nothing
+					     on it only made people wonder. What it carries waits until it gets there. -->
+					<text class="label" style:--words={row.words}>
 						{#each row.lines as line, l (l)}
-							{@const span = lineSpan(line)}
-							<rect
-								class="bar"
-								style:--words={row.words}
-								x={span.left}
-								y={line.y - 10}
-								width={span.width}
-								height="12"
-								rx="2"
-							/>
+							<tspan x={line.x} y={line.y} text-anchor={line.anchor}>{`${line.text} `}</tspan>
 						{/each}
-					{:else}
-						<text class="label" style:--words={row.words}>
-							{#each row.lines as line, l (l)}
-								<tspan x={line.x} y={line.y} text-anchor={line.anchor}>{`${line.text} `}</tspan>
-							{/each}
-						</text>
-					{/if}
+					</text>
 				</g>
 			{/each}
 
@@ -475,7 +441,6 @@
 						class={`chip ${state}`}
 						class:fresh={fresh.has(chip.id) || fresh.has(chip.step)}
 						class:sending={travelling === chip.step}
-						class:struck={preview?.removes.has(chip.step) || preview?.removes.has(chip.id)}
 						class:followed={followed?.steps.has(chip.step) &&
 							chip.artifact &&
 							followed.forms.includes(chip.artifact)}
@@ -774,24 +739,11 @@
 		opacity: var(--words, 1);
 	}
 
-	/* Only what has happened is spelled out. Ahead there is just the shape of what is to come. */
+	/* What is ahead is faint and says what will happen, with nothing in it until it gets there. */
 	.row.future line,
 	.row.future path,
 	.row.future polygon {
 		opacity: 0.32;
-	}
-
-	.row.future .label {
-		opacity: 0;
-	}
-
-	/* Someone asked to see all of the shape. */
-	.whole .row.future .label,
-	.all-labels .row.future .label,
-	.row.future:hover .label,
-	.row.future:focus-visible .label,
-	.row.fresh .label {
-		opacity: var(--words, 1);
 	}
 
 	/* Only the current step is filled in. What has happened stays readable, and quiet. */
@@ -959,7 +911,7 @@
 		}
 	}
 
-	/* What is ahead stays only a shape, even when it is new, because it has not happened yet. */
+	/* What is ahead stays faint, even when it is new, because it has not happened yet. */
 	.row.fresh:not(.future) line,
 	.row.fresh:not(.future) path,
 	.row.fresh:not(.future) polygon {
@@ -1035,39 +987,6 @@
 		opacity: 0 !important;
 	}
 
-	/* What a setting would do, while someone points at it. A ghost is lighter than what is there and
-	   has words, where what is ahead has none. What would go is struck through. */
-	.row.ghost.fresh line,
-	.row.ghost.fresh path,
-	.row.ghost.fresh polygon {
-		opacity: 0.6;
-	}
-
-	.row.ghost .label {
-		opacity: var(--words, 1);
-	}
-
-	.row.struck line,
-	.row.struck path,
-	.row.struck polygon {
-		opacity: 0.3;
-	}
-
-	/* With no knock-out behind it, which would be painted over the words along with the line. */
-	.row.struck .label {
-		stroke: none;
-		opacity: var(--words, 1);
-		text-decoration: line-through;
-	}
-
-	.chip.struck {
-		opacity: 0.45 !important;
-	}
-
-	.lane-head.struck {
-		opacity: 0.45;
-	}
-
 	/* Following one thing: its path stays, ahead as well because that is what was asked for, and the
 	   rest goes quiet. Nothing gets a colour of its own. */
 	.row.off-path line,
@@ -1098,10 +1017,6 @@
 		opacity: 1;
 	}
 
-	.row.on-path.future .label {
-		opacity: var(--words, 1);
-	}
-
 	.chip.followed.future {
 		opacity: 1 !important;
 	}
@@ -1120,7 +1035,6 @@
 		pointer-events: none;
 	}
 
-	.row.future .bar,
 	.chip-bar.future {
 		opacity: 0 !important;
 	}

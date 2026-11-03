@@ -15,6 +15,6 @@ How this project is built and worked on, one rule to a record. Each record says 
 - [ADR-011: Tooling follows the JavaScript ecosystem](011-tooling-follows-the-javascript-ecosystem.md)
 - [ADR-012: SvelteKit for the view, and plain TypeScript for the engine](012-sveltekit-for-the-view-and-plain-typescript-for-the-engine.md)
 - [ADR-013: A flow is one ordered list of conditional steps](013-a-flow-is-one-ordered-list-of-conditional-steps.md)
-- [ADR-014: A colour means one thing, and what is ahead is only a shape](014-a-colour-means-one-thing-and-ahead-is-only-a-shape.md)
+- [ADR-014: A colour means one thing, and what is ahead is faint](014-a-colour-means-one-thing-and-ahead-is-only-a-shape.md)
 - [ADR-015: Keycloak is an overlay on a neutral protocol](015-keycloak-is-an-overlay-on-a-neutral-protocol.md)
 - [ADR-016: A word on screen explains itself](016-a-word-on-screen-explains-itself.md)

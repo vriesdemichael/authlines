@@ -91,7 +91,8 @@ test.describe('following something', () => {
 
 	test('still hides what a party never saw', async ({ page }) => {
 		await open(page, 'mode=simple&eyes=browser&follow=access-token&step=api-response');
-		await expect(page.getByTestId('diagram')).not.toContainText('access token');
+		await expect(page.locator('[data-chip^="token-response"]')).toHaveCount(0);
+		await expect(page.locator('[data-held="browser:access-token"]')).toHaveCount(0);
 		await expect(page.locator('.chip.followed')).toHaveCount(0);
 	});
 

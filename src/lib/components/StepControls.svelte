@@ -1,7 +1,5 @@
 <script lang="ts">
 	import Execute from '#lib/components/Execute.svelte';
-	import Timeline from '#lib/components/Timeline.svelte';
-	import type { Part } from '#lib/flow/model.ts';
 
 	interface Props {
 		position: number;
@@ -9,14 +7,6 @@
 		canGoBack: boolean;
 		onback: () => void;
 		onnext: () => void;
-		/** The diagram's parts and where someone is in them, to go anywhere at a click. */
-		parts: readonly Part[];
-		current: string;
-		onjump: (step: string) => void;
-		/** Whether it is stepping by itself, and how long it stays on this step. */
-		playing?: boolean;
-		playingFor?: number;
-		onplay?: () => void;
 		/** The step's answer, when running this step adds something. */
 		answerAt?: number | null;
 		onexecute?: () => void;
@@ -31,12 +21,6 @@
 		canGoBack,
 		onback,
 		onnext,
-		parts,
-		current,
-		onjump,
-		playing = false,
-		playingFor = 0,
-		onplay = () => {},
 		answerAt = null,
 		onexecute = () => {},
 		onwardHref = null,
@@ -47,6 +31,7 @@
 	const atEnd = $derived(position >= total);
 </script>
 
+<!-- Beside what someone is reading, because that is where they are looking when they want more. -->
 <div class="controls">
 	<!-- Not disabled, because that would drop the focus of whoever just pressed it. -->
 	<button
@@ -76,9 +61,7 @@
 			{onwardLabel}
 		</a>
 	{/if}
-	<button class="play" data-testid="play" onclick={onplay}>{playing ? 'Stop' : 'Play'}</button>
 	<span class="position" data-testid="position">Step {position} of {total}</span>
-	<Timeline {parts} {current} {onjump} waiting={playing ? playingFor : null} />
 	{#if answerAt !== null}
 		<Execute {answerAt} {onexecute} />
 	{/if}
@@ -87,6 +70,7 @@
 <style>
 	.controls {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		gap: 8px;
 	}
@@ -128,23 +112,10 @@
 	}
 
 	.position {
-		margin-left: 8px;
+		margin-left: 4px;
+		color: var(--muted);
+		font-size: 12.5px;
 		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
-	}
-
-	/* Same width either way, so that what is beside it does not move when it changes. */
-	.play {
-		min-width: 3.6em;
-	}
-
-	@media (max-width: 767px) {
-		.controls :global([data-testid='timeline']) {
-			display: none;
-		}
-
-		.controls {
-			flex-wrap: wrap;
-		}
 	}
 </style>

@@ -17,10 +17,6 @@ export const WithServerNotesOff: Story = {
 
 export const Defaults: Story = {};
 
-export const WhilePointingAtOne: Story = {
-	args: { previewed: { id: 'oidc', says: 'Adds 3 steps, changes 2 messages.' } }
-};
-
 export const Simple: Story = {
 	args: { mode: 'simple' }
 };

@@ -170,12 +170,6 @@ export const breakages = [
 		to: ''
 	},
 	{
-		name: 'state: every label does not survive a link',
-		file: STATE,
-		from: "if (state.labels) params.set(LABELS_PARAM, '1');",
-		to: ''
-	},
-	{
 		name: 'map: an everyday error opens in advanced mode again',
 		file: 'src/lib/map/tracks.ts',
 		from: "title: 'Why did my API say 401?',",
@@ -706,6 +700,18 @@ export const breakages = [
 		from: '--fresh: light-dark(#141720, #eceef3);',
 		to: '--fresh: light-dark(#be185d, #f688bd);'
 	},
+	{
+		name: 'look: what is ahead loses its words again',
+		file: 'src/lib/components/Diagram.svelte',
+		from: '\t.row.future .number text {\n\t\tfill: var(--muted);\n\t}',
+		to: '\t.row.future .number text {\n\t\tfill: var(--muted);\n\t}\n\n\t.row.future .label {\n\t\topacity: 0;\n\t}'
+	},
+	{
+		name: 'look: Next goes back under the diagram',
+		file: 'src/lib/components/Workspace.svelte',
+		from: '\t\t{#if !appState.whole}\n\t\t\t<div class="stepping">{@render stepping()}</div>\n\t\t{/if}',
+		to: ''
+	},
 
 	// A refresh token.
 	{
@@ -1075,26 +1081,6 @@ export const breakages = [
 		file: 'src/lib/flow/state.ts',
 		from: '\t\t\teyes: onTheDiagram(view, state.eyes),\n\t\t\tfollow: onTheWay(view, state.follow)\n',
 		to: '\t\t\teyes: onTheDiagram(view, state.eyes)\n'
-	},
-
-	// What a setting would do.
-	{
-		name: 'preview: what would go is not shown',
-		file: 'src/lib/flow/preview.ts',
-		from: '?? a.find((item) => item.id === id) ?? []',
-		to: '?? []'
-	},
-	{
-		name: 'preview: what would come is not shown',
-		file: 'src/lib/flow/preview.ts',
-		from: 'b.find((item) => item.id === id) ?? a.find((item) => item.id === id) ?? []',
-		to: 'a.find((item) => item.id === id) ?? []'
-	},
-	{
-		name: 'preview: a message that changes in two ways counts twice',
-		file: 'src/lib/flow/preview.ts',
-		from: 'changed.size && `changes ${count(changed.size, ',
-		to: 'changed.size && `changes ${count(diff.addedFields.length + diff.removedFields.length + diff.rewordedSteps.length, '
 	},
 
 	// A request as a command.

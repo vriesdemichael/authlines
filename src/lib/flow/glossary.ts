@@ -803,7 +803,7 @@ const parts: readonly Term[] = [
 		name: 'A faint arrow',
 		words: [],
 		part: true,
-		explains: 'What is still to come. Point at one to see what it is.'
+		explains: 'What is still to come. What it carries shows when it gets there.'
 	},
 	{
 		id: 'part-time',

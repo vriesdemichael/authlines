@@ -110,14 +110,6 @@ export interface LabelLine {
 	anchor: 'start' | 'middle' | 'end';
 }
 
-/** Where a line of words sits across its row, worked out from its length. */
-export function lineSpan(line: LabelLine) {
-	const width = line.text.length * LABEL_CHAR_WIDTH;
-	const left =
-		line.anchor === 'start' ? line.x : line.anchor === 'end' ? line.x - width : line.x - width / 2;
-	return { left, width };
-}
-
 export interface RowLayout {
 	id: string;
 	number: number;

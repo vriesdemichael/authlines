@@ -26,8 +26,6 @@ const states: readonly [string, string, 'flow' | 'setup'][] = [
 	['address-refused', 'mode=simple&address=other&step=address-refused', 'flow'],
 	['app-in-the-page', 'mode=simple&runs=page&client=public&pkce=1&step=token-response', 'flow'],
 	['server-behind-the-page', 'mode=simple&runs=bff&pkce=1&step=set-session', 'flow'],
-	['every-label', 'labels=1&step=callback', 'flow'],
-	['every-label-setup', 'labels=1&step=hand-over-credentials', 'setup'],
 	['settings-put-away', 'settings=off&step=callback', 'flow'],
 	['at-the-end-of-a-question', 'mode=simple&step=api-response', 'flow'],
 	['simple-setup', 'mode=simple&step=hand-over-credentials', 'setup'],
