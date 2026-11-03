@@ -288,7 +288,7 @@ export const mapTracks: readonly MapTrack[] = [
 					id: 'wildcard-redirect',
 					alsoAskedAs: ['wildcard', 'redirect uri wildcard', 'valid redirect uris *'],
 					answer:
-						'Then anyone can have the code sent to them: they make a login link for your app with an address of their own, and the user logs in as usual. PKCE does not help, because they made the challenge. Only an exact address stops it.',
+						'Then anyone can have the code sent to them: they make a login link for your app with an address of their own, and the user logs in as usual. PKCE does not help, because they made the challenge. An exact address stops it.',
 					title: 'Why not just put * in the redirect URIs?',
 					summary: 'A login link someone else made, and the code going where it says.',
 					mode: 'advanced',
@@ -735,7 +735,7 @@ export const offTheMap: readonly MapNode[] = [
 	node({
 		id: 'their-link-with-a-secret',
 		answer:
-			'It stops them trading the code, which still went to them, from a real login by the real user. Only an exact address keeps the code from them in the first place.',
+			'It stops them trading the code, which still went to them, from a real login by the real user. An exact address keeps the code from them in the first place.',
 		title: 'Does a secret stop a login link of theirs?',
 		summary: 'It stops the trade, and the code still goes to them.',
 		mode: 'advanced',

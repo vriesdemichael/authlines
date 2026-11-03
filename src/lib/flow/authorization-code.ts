@@ -181,7 +181,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			role: 'Made the login link',
 			icon: 'attacker',
 			concept:
-				'Someone who is not the app, with a site of their own. They need nothing from the app but its client ID, which is in every login address, and nothing from the user but that they open a link.',
+				'Someone who is not the app, with a site of their own. To make the link they need only the app’s client ID, which is in every login address. For it to work, the identity provider has to let their address through, and the user has to open it and log in.',
 			when: all(attacker, byLink)
 		},
 		{
@@ -344,7 +344,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					source: 'rfc9700',
 					section: '4.1.1',
-					why: 'Section 4.1.1 starts this way: someone gets the user to open a link of theirs, which asks the real identity provider to log them in to the real app.'
+					why: 'The attack in section 4.1.1 begins this way: someone gets the user to open a link of theirs, which asks the real identity provider to log them in to the real app.'
 				}
 			],
 			from: 'attacker',
@@ -390,7 +390,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'They get the user to open it',
 			label: 'A message with the link',
 			concept:
-				'No HTTP message here. An email, a chat message or a page of theirs, with the link in it. It goes to the real identity provider’s real login page, so it looks right, because it is.',
+				'No HTTP message here. An email, a chat message or a page of theirs, with the link in it. It points at the real identity provider, so it looks right, because it is.',
 			fields: [
 				{
 					name: 'code_challenge',
@@ -606,7 +606,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept: [
 				{
 					when: byLink,
-					text: 'The browser opens their link, which asks the real identity provider to log the user in to the real app. The identity provider checks the address to send the code to against what was registered for the app, and that check is all that stands in their way.'
+					text: 'The browser opens their link, which asks the real identity provider to log the user in to the real app. The identity provider checks the address to send the code to against what was registered for the app, and that check is all that keeps the code from them.'
 				},
 				{
 					when: fromADocument,
@@ -652,7 +652,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					name: 'redirect_uri',
 					place: 'query',
-					note: 'Their own address, which only a * in setup lets through',
+					note: 'Their own address, which a * in setup lets through',
 					when: byLink
 				},
 				{
@@ -1624,7 +1624,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					source: 'rfc9700',
 					section: '4.1.1',
-					why: 'Section 4.1.1 says that someone posing as an app with no secret can trade the code, and that it is not as easy with a secret.',
+					why: 'Section 4.1.1 says someone posing as an app with no secret can trade the code, that a secret makes this harder, and that they could still try handing the code to the real app (section 4.5), which is not drawn here.',
 					when: byLink
 				}
 			],
@@ -1652,7 +1652,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				},
 				{
 					when: all(byLink, confidential),
-					text: 'Without the secret, the identity provider refuses them. The code still went to them, from a real login by the real user, and only an exact address in setup would have kept it from them.'
+					text: 'Without the secret, the identity provider refuses them. The code still went to them, from a real login by the real user, and an exact address in setup would have kept it from them.'
 				},
 				{
 					when: attackerWins,

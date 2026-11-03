@@ -289,8 +289,8 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		param: 'attacker',
 		default: false,
 		summary:
-			'Someone gets hold of the code and tries to use it. Flip PKCE or the client type to see what changes.',
-		why: 'A protection is hard to believe in until you see what it stops. This changes nothing about what the app does. It shows what someone else could do with the same code, and the answers they get are what a real server gave.',
+			'Someone gets hold of the code and tries to use it. Flip PKCE, the client type or how they get it to see what changes.',
+		why: 'A protection is hard to believe in until you see what it stops. This changes nothing about what the app does. It shows what someone else could do with a code for this app, and the answers they get are what a real server gave.',
 		simple: {
 			label: 'Show someone stealing the code',
 			summary:
@@ -390,7 +390,8 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		],
 		requires: {
 			when: all(is('attacker', true), is('clientType', 'confidential'), is('attackerGets', 'copy')),
-			because: 'Only an app with a secret needs this. With no secret, they can just trade the code.'
+			because:
+				'Only an app with a secret needs this, and only for a copied code. With no secret, they can just trade it.'
 		},
 		sources: [
 			{
@@ -443,9 +444,8 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		param: 'registered',
 		default: 'exact',
 		onlyOn: 'authorization-code',
-		summary:
-			'Its exact address, or *, which some put there to make Invalid parameter: redirect_uri go away.',
-		why: 'The identity provider sends the code only to an address registered for the app. With *, that is any address at all, so their link gets them the code. Only an exact address stops it, and it is checked at the identity provider.',
+		summary: 'Its exact address, or *, which some put there to make a redirect_uri error go away.',
+		why: 'The identity provider sends the code only to an address registered for the app. With *, the server recorded took any address at all, so their link got them the code. An exact address stops it, and the identity provider is what checks it.',
 		sources: [
 			{
 				source: 'rfc9700',
@@ -455,7 +455,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		],
 		options: [
 			{ value: 'exact', label: 'Its exact address' },
-			{ value: 'any', label: '*, which matches anything' }
+			{ value: 'any', label: 'A wildcard, *' }
 		],
 		requires: {
 			when: is('attackerGets', 'link'),
