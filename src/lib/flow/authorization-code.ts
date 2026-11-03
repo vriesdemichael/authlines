@@ -2349,7 +2349,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				title: 'When does it stop?',
 				text: [
 					{
-						text: 'When the session in the middle ends, or its admins end it. The server recorded had the defaults: a session ends after 30 minutes unused, or 10 hours in all. A browser with no session went to their company, whose page said "Account is disabled, contact your administrator.", and the identity provider never heard back. The account it kept for them stayed enabled.'
+						text: 'When the session in the middle ends, or its admins end it. The server recorded, as it comes, ends a session after 30 minutes unused, or 10 hours in all, and its guide says a refresh counts as using it, so an app that keeps refreshing keeps it going. A browser with no session went to their company, whose page said "Account is disabled, contact your administrator.", and the identity provider never heard back. The account it kept for them stayed enabled.'
 					}
 				]
 			},

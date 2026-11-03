@@ -183,7 +183,7 @@ export const sources: Record<SourceId, SourceDef> = {
 		title: 'Session and token timeouts',
 		status: 'Keycloak 26.8.1, Server Administration Guide.',
 		summary:
-			'How long sessions and tokens last on a realm. A session ends when it has not been used for SSO Session Idle, and at SSO Session Max however much it is used. A token has a lifespan of its own, and a refresh token cannot outlast its session.',
+			'How long sessions and tokens last on a realm. A session ends when it has not been used for SSO Session Idle, and at the latest after SSO Session Max. Logging in again or refreshing a token counts as using it. A token has a lifespan of its own.',
 		url: 'https://www.keycloak.org/docs/26.8.1/server_admin/#_timeouts'
 	},
 	'saml-core': {

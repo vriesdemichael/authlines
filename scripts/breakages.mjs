@@ -18,6 +18,18 @@ const ERRORS = 'src/lib/search/errors.ts';
 
 export const breakages = [
 	{
+		name: 'leaving: the pitfall gives the wrong session length',
+		file: AC,
+		from: 'ends a session after 30 minutes unused, or 10 hours in all,',
+		to: 'ends a session after 5 minutes unused, or 1 hours in all,'
+	},
+	{
+		name: 'leaving: the session is not drawn on the second login',
+		file: AC,
+		from: "\t\t\t\t\tartifact: 'session',\n\t\t\t\t\tnote: 'The session from before, which is why nobody is asked'",
+		to: "\t\t\t\t\tnote: 'The session from before, which is why nobody is asked'"
+	},
+	{
 		name: 'companies: SAML trades a code out of sight after all',
 		file: AC,
 		from: "on a connection the browser never sees.',\n\t\t\twhen: all(broker, not(saml)),",

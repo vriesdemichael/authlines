@@ -555,7 +555,9 @@ describe('a customer with a provider of their own', () => {
 		const step = stepsOf(read('companies-leaves')).find(({ id }) => id === 'code-again');
 		const text = step?.pitfall?.text ?? '';
 		expect(text).toContain(withNoSession.says);
-		expect(text).toContain(`${session.idleMinutes} minutes unused, or ${session.maxHours} hours`);
+		expect(text).toContain(
+			`${session.idleMinutes} minutes unused, or ${session.maxHours} hours in all`
+		);
 		expect(text).toContain('stayed enabled');
 	});
 
