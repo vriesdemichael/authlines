@@ -26,8 +26,8 @@ export const breakages = [
 	{
 		name: 'companies: the assertion does not go through the browser',
 		file: AC,
-		from: "\t\t\t\t\tartifact: 'assertion',\n\t\t\t\t\tnote: 'Signed by their provider, and readable by anyone who has it',",
-		to: "\t\t\t\t\tnote: 'Signed by their provider, and readable by anyone who has it',"
+		from: "\t\t\t\t\tartifact: 'assertion',\n\t\t\t\t\tnote: 'In a response their provider signed. It was not encrypted, so whoever has it can read it',",
+		to: "\t\t\t\t\tnote: 'In a response their provider signed. It was not encrypted, so whoever has it can read it',"
 	},
 	{
 		name: 'companies: Auto redirect is said to do the opposite',

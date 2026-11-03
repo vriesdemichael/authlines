@@ -60,7 +60,9 @@ export async function setUpCompanies(admin: Admin) {
 		});
 	}
 
-	// Acme knows our provider as a service provider: who it is, and where to send the answer.
+	// Acme knows our provider as a service provider: who it is, where to send the answer, and the
+	// certificate our requests are signed with, which is in our metadata.
+	const ours = await signingCertificate(admin, COMPANIES_REALM);
 	await admin.call('POST', `/realms/${SAML_CUSTOMER}/clients`, {
 		clientId: OUR_ENTITY_ID,
 		protocol: 'saml',
@@ -69,8 +71,8 @@ export async function setUpCompanies(admin: Admin) {
 		attributes: {
 			saml_name_id_format: 'email',
 			'saml.force.name.id.format': 'true',
-			// It would check a signature with a certificate of ours, which nobody has handed over here.
-			'saml.client.signature': 'false',
+			'saml.client.signature': 'true',
+			'saml.signing.certificate': ours,
 			saml_assertion_consumer_url_post: answerGoesTo(SAML_CUSTOMER)
 		},
 		protocolMappers: ['email', 'firstName', 'lastName'].map((attribute) => ({
@@ -262,6 +264,7 @@ async function whereAnEmailGoes(email: string, password?: string) {
 /** What decides where someone goes, asked of the real server, so the weekly run checks it. */
 export async function questionsWithCompanies(admin: Admin) {
 	const realm = `/realms/${COMPANIES_REALM}`;
+	await forgetCustomersPeople(admin);
 	await admin.call('POST', `${realm}/clients`, {
 		...client(QUESTION_CLIENT, { publicClient: true })
 	});

@@ -777,7 +777,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'The user enters their email',
 			label: 'Submit the email',
 			concept:
-				'Only the email goes, and no password, because the password is not for this provider.',
+				'Only the email goes. The identity provider has to know who this is, and which company they are from, before it can say where they log in.',
 			fields: [{ name: 'username', place: 'body', note: 'The email their company gave them' }]
 		},
 		{
@@ -791,10 +791,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept:
 				'The identity provider takes the part after the @, finds the customer with that domain, and so the provider to send them to. Every other customer has a provider of its own too, and nothing about them is on this diagram.',
 			inPractice:
-				'Your app does nothing here. An admin adds each customer, with its domains and its provider, which is where a new customer starts.',
+				'Your app does nothing here. An admin adds each customer, with its domains and its provider, which is where a new customer starts. The other way is for your app to connect to each customer itself, which means it speaks SAML too, and that is not drawn here.',
 			pitfall: {
 				title: 'What if they already have a password here?',
-				text: "Then they are not sent to their company. On the server recorded, someone at a customer's domain with an account and a password of ours got the usual page with every customer's button, logged in with that password, and had no customer in their token, because their company was never asked."
+				text: "Then they are not sent to their company. On the server recorded, someone at a customer's domain with an account and a password of ours got the usual page with every customer's button, logged in with that password, and had no customer in their token: their company was never asked, and they were not a member of it here."
 			}
 		},
 		{
@@ -816,7 +816,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept: [
 				{
 					when: saml,
-					text: 'Their company speaks SAML, which sends a request in a form. The page holds a signed request to log this person in, and sends itself on as soon as it loads, so nobody sees it.'
+					text: 'Their company was set up to take a request in a form, one of the ways SAML can travel. The page holds a signed request for a login, saying who asks and where to answer, and sends itself on as soon as it loads, so there is little to see.'
 				},
 				{
 					text: 'The identity provider does not log the user in itself. It sends the browser on to the other provider.'
@@ -910,7 +910,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept: [
 				{
 					when: saml,
-					text: 'Their company answers with another form that sends itself, and the answer is in it: an assertion saying who this is, signed by their provider. There is no code to trade, so this is the browser carrying the answer itself.'
+					text: 'Their company answers with another form that sends itself, and the answer is in it: an assertion saying who this is, in a response their provider signed. Sent this way there is no code to trade, so the browser carries the answer itself.'
 				},
 				{
 					text: 'The other provider sends the browser back to the identity provider with a one-time code.'
@@ -942,7 +942,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept: [
 				{
 					when: saml,
-					text: 'The browser posts the assertion to the identity provider, which checks the signature with the certificate their company handed over at setup, that it is meant for this provider, and that it is still new. Then it has who logged in, with nothing to trade.'
+					text: 'The browser posts the answer to the identity provider, which checks the signature with the certificate their company handed over at setup. Then it has who logged in, with nothing to trade.'
 				},
 				{ text: "The browser delivers the code to the identity provider's broker endpoint." }
 			],
@@ -952,7 +952,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					name: 'SAMLResponse',
 					place: 'body',
 					artifact: 'assertion',
-					note: 'Signed by their provider, and readable by anyone who has it',
+					note: 'In a response their provider signed. It was not encrypted, so whoever has it can read it',
 					when: saml
 				},
 				{ name: 'RelayState', place: 'body', when: saml },

@@ -335,7 +335,7 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			concept: [
 				{
 					when: saml,
-					text: "The admin sends the customer's admins what their provider has to know about ours: the entity ID it goes by, and the address to post answers to. Often it is one link, to our provider's SAML metadata."
+					text: "The admin sends the customer's admins what their provider has to know about ours: the entity ID it goes by, the address to post answers to, and the certificate it signs its requests with. Often it is one link, to our provider's SAML metadata."
 				},
 				{
 					text: "The admin sends the customer's admins what their provider has to know about ours, as an app would: where to send people back to."
@@ -345,6 +345,12 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			fields: [
 				{ name: 'entity ID', place: 'setting', note: 'The name our provider goes by', when: saml },
 				{ name: 'ACS URL', place: 'setting', note: 'Where to post the answer', when: saml },
+				{
+					name: 'certificate',
+					place: 'setting',
+					note: 'What our signed requests are checked with',
+					when: saml
+				},
 				{
 					name: 'redirect_uri',
 					place: 'setting',
@@ -361,7 +367,7 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plain: 'They register our provider',
 			label: 'Register our provider',
 			concept:
-				'Their admins add our provider to theirs, as one more thing that may ask it to log their people in, and say which of their people may use it.',
+				'Their admins add our provider to theirs, as one more thing that may ask it to log their people in.',
 			when: companies,
 			fields: [
 				{ name: 'client_id', place: 'setting', when: not(saml) },
@@ -412,7 +418,7 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plain: 'Add them as a customer, with their domain',
 			label: 'Add the organization',
 			concept:
-				"The admin adds the company with its email domain, and says which provider that domain goes to. Then anyone who types an email at that domain is sent to their company's provider.",
+				"The admin adds the company with its email domain, and says which provider that domain goes to. With Auto redirect on, someone who types an email at that domain is then sent to their company's provider.",
 			inPractice:
 				'This is where each new customer starts, and the app does not change. If the app keeps customers apart, the token can say which one someone is from.',
 			when: companies,
@@ -424,7 +430,7 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 				},
 				{ name: 'identity provider', place: 'setting', note: 'Where that domain goes' },
 				{
-					name: 'redirect when email matches',
+					name: 'auto redirect',
 					place: 'setting',
 					note: 'Send them there straight away'
 				}

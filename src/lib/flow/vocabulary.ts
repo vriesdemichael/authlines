@@ -94,7 +94,7 @@ export const artifacts: Readonly<
 		label: 'assertion',
 		short: 'assertion',
 		explains:
-			'A signed statement from a SAML provider about who logged in, with what it knows about them, for one provider to read and only for a minute or so. It goes through the browser, which can read it, so what makes it worth anything is the signature, which the provider it is meant for checks.'
+			'A statement from a SAML provider about who logged in, with what it knows about them, meant for one provider and for a short time. Here it came in a response the provider signed, and was not encrypted, so the browser carrying it could read it. The signature is what makes it worth anything.'
 	},
 	'device-code': {
 		label: 'device code',

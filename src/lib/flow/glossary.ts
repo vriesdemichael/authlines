@@ -47,7 +47,7 @@ const list: readonly Term[] = [
 		name: 'SAML',
 		words: ['SAML', 'SAML 2.0', 'assertion', 'assertions', 'service provider'],
 		explains:
-			'An older way for one provider to tell another who logged in, still common at companies. The answer is a signed document, an assertion, which comes back through the browser in a form, where OpenID Connect sends a code and trades it out of sight. The provider that asks for one is the service provider.',
+			'An older way for one provider to tell another who logged in, still common at companies. The answer is an assertion in a signed response, which here comes back through the browser in a form, where OpenID Connect sends a code and trades it out of sight. The provider that asks for one is the service provider.',
 		at: flowAt('upstream-callback', { broker: true, companies: true, customerSpeaks: 'saml' })
 	},
 	{

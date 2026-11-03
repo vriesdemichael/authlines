@@ -466,11 +466,11 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		onlyOn: 'authorization-code',
 		summary:
 			'OpenID Connect, as on the rest of this diagram, or SAML, which many companies still run.',
-		why: "A customer's IT may ask about SAML in the first meeting. The app's side does not change. Only the part between the two providers does: with SAML the answer comes back through the browser as a signed document, where OpenID Connect sends a code and trades it out of sight.",
+		why: "A customer's IT may ask about SAML in the first meeting. The app's side does not change. Only the part between the two providers does: with SAML set up as here, the answer comes back through the browser in a signed response, where OpenID Connect sends a code and trades it out of sight.",
 		sources: [
 			{
 				source: 'saml-core',
-				why: 'SAML 2.0 defines the assertion, the signed statement about who logged in that comes back here.'
+				why: 'SAML 2.0 defines the assertion, the statement about who logged in that comes back here.'
 			}
 		],
 		requires: {

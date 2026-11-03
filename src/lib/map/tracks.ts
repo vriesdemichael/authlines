@@ -397,7 +397,8 @@ export const mapTracks: readonly MapTrack[] = [
 					answer:
 						"Each customer's provider sits behind yours. Yours asks for the email, finds the company from the part after the @, and sends them to their provider. The app still talks to one provider, and the token can say which customer.",
 					title: 'How do we offer log in with your company account?',
-					summary: 'Your provider finds their company from the email, and the app does not change.',
+					summary:
+						'Your provider finds their company from the email, and the app still knows only one.',
 					preset: 'companies',
 					step: 'find-company'
 				}),
@@ -405,7 +406,7 @@ export const mapTracks: readonly MapTrack[] = [
 					id: 'customer-on-saml',
 					alsoAskedAs: ['saml 2.0', 'saml assertion', 'acs url', 'entity id', 'idp metadata'],
 					answer:
-						'Only the middle changes. Their provider answers with a signed assertion, which comes back through the browser in a form, where OpenID Connect sends a code. Your provider checks it, and the app gets its usual tokens.',
+						'Only the middle changes. Their provider answers with an assertion in a signed response, which here comes back through the browser in a form, where OpenID Connect sends a code. Your provider checks it, and the app gets its usual tokens.',
 					title: "What if a customer's provider speaks SAML?",
 					summary: 'Only the part between the two providers changes.',
 					mode: 'advanced',
