@@ -35,7 +35,7 @@ export type ConsolePage =
 	| 'realm-sessions'
 	| 'realm-tokens'
 	| 'browser-flow'
-	| 'directory-mappers';
+	| 'directory-settings';
 
 export interface ConsolePlace {
 	/** What someone clicks through, in the words of the console. */
@@ -594,24 +594,24 @@ export const noteDefs: readonly NoteDef[] = [
 		seen: 'Compared two realms on'
 	},
 	{
-		id: 'directory-mappers',
-		steps: ['connect-directory', 'directory-found'],
-		title: 'LDAP mappers',
-		text: 'Which field of the directory becomes what on the user, set on the provider and not on the client. With no mapper for the first name, the token had no given_name, and the login still worked.',
+		id: 'trust-email',
+		steps: ['connect-directory', 'token-response'],
+		title: 'Trust Email',
+		text: 'Off on a new provider, so a token says email_verified false for someone from the directory, with their address right there. Turned on, it says true.',
 		when: is('federation', true),
 		place: {
-			path: ['User federation', 'the provider', 'Mappers', 'first name'],
-			page: 'directory-mappers',
-			shows: ['first name', 'username']
+			path: ['User federation', 'the provider', 'Settings', 'Trust Email'],
+			page: 'directory-settings',
+			shows: ['Trust Email']
 		},
 		backedBy: {
-			question: 'directoryMappers',
+			question: 'trustEmail',
 			shows: {
-				before: { givenName: false },
-				after: { givenName: true }
+				before: { emailVerified: false },
+				after: { emailVerified: true }
 			}
 		},
-		claims: ['given_name']
+		claims: ['email_verified']
 	},
 	{
 		id: 'broker-redirector',

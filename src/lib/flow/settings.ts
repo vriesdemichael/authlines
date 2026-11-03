@@ -390,8 +390,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		default: false,
 		setsWhenOn: { broker: false },
 		onlyOn: 'authorization-code',
-		summary:
-			'The users are in LDAP or Active Directory. The identity provider checks there, and nobody goes anywhere else.',
+		summary: 'The users are in LDAP or Active Directory, and the identity provider checks there.',
 		why: 'Many organisations already have their users in a directory. Another provider takes the login away, and with this the identity provider keeps the login and only asks the directory, so the browser and the app see no difference.',
 		sources: [
 			{

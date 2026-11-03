@@ -153,7 +153,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			...directoryWords,
 			icon: 'api',
 			concept:
-				'Where the users already are, such as LDAP or Active Directory. Only the identity provider talks to it, so neither the browser nor the app ever does.',
+				'Where the users already are, such as LDAP or Active Directory. On this diagram only the identity provider talks to it.',
 			when: inADirectory
 		},
 		{
@@ -583,10 +583,15 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'It looks the user up in the directory',
 			label: 'LDAP search',
 			concept:
-				'The identity provider does not have the password to compare, so it asks the directory, as an account of its own. The server recorded asked again at every login.',
-			recordedAs: "From the directory's own log, because this is LDAP and not HTTP.",
+				'The identity provider does not have the password to compare, so it asks the directory, with an account an admin gave it. The server recorded asked at every login it was tried on, and after the first it looks the user up by an ID it kept.',
+			recordedAs:
+				'From the log of an OpenLDAP server, because this is LDAP and not HTTP. Active Directory was not tried.',
 			fields: [
-				{ name: 'filter', place: 'body', note: 'The username from the login page' },
+				{
+					name: 'filter',
+					place: 'body',
+					note: 'At a first login, the username from the login page'
+				},
 				{ name: 'attributes', place: 'body', note: 'What it wants to know about them' }
 			]
 		},
@@ -599,7 +604,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'Who that is',
 			label: 'One entry',
 			concept:
-				'The server recorded keeps a copy of these details, so that its tokens can say who this is, and marks the password as being somewhere else.',
+				'The server recorded keeps a copy of these details, because Import Users was on, and marks the password as being somewhere else.',
 			recordedAs: "From the directory's own log, because this is LDAP and not HTTP.",
 			fields: [{ name: 'entries', place: 'body', note: 'How many users that found' }]
 		},
@@ -612,7 +617,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'It tries the password on the directory',
 			label: 'LDAP bind',
 			concept:
-				'It checks the password by logging in to the directory as the user. So the identity provider does handle the password, and passes it on. With another provider it never would, which is the difference between the two.',
+				'The server recorded checks the password by logging in to the directory as the user. So the identity provider does handle the password, and passes it on. With another provider it never would, which is a difference between the two.',
 			inPractice:
 				'Your app does nothing different. Whoever runs this should use LDAPS or StartTLS, because the password crosses this connection, and in the recording it was not encrypted.',
 			recordedAs:
@@ -631,11 +636,11 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'The password is right',
 			label: 'LDAP result 0',
 			concept:
-				'That is all the answer says. From here on the login goes as it always does, and the browser and the app cannot tell the directory was there.',
+				'Right or not is all the answer says. From here on the login goes as it always does, with no new message for the browser or the app.',
 			recordedAs: "From the directory's own log, because this is LDAP and not HTTP.",
 			pitfall: {
 				title: 'What if the directory is down?',
-				text: 'Nobody can log in, including people who logged in before, because the password is only there. The server recorded showed the user "Unexpected error when handling authentication request to identity provider." A wrong password just gets the login page again.'
+				text: 'Nobody in the directory can log in with a password, including people who logged in before, because it can only be checked there. The server recorded showed them "Unexpected error when handling authentication request to identity provider." Someone with a session stayed logged in, a refresh token still worked, and a user kept in the provider could still log in. A wrong password is different: it just gets the login page again.'
 			},
 			fields: []
 		},
@@ -1615,7 +1620,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				},
 				{
 					when: inADirectory,
-					text: 'The same token as ever. In real runs it held the same claims with the user in a directory, kept by the provider, or at another provider, so the app and the API cannot tell.'
+					text: 'Nearly the same token as ever. Real runs gave the same claim names with the user in a directory, kept in the provider, or at another provider. One value differed: here it said the email address was not verified, because nobody had said to trust the directory.'
 				},
 				{
 					when: fromADocument,

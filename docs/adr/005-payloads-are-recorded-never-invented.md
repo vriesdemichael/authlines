@@ -24,7 +24,7 @@ Someone can run the same server themselves. A recorded request can be copied as 
 
 Pictures of the pages a person gets are recordings as well: taken by the same run, kept beside the recordings, and taken again on each release. Their pixels are not compared, and a page that stopped appearing fails the check. `pnpm record --pages` takes only those, because a whole run changes every value in every recording.
 
-What is not HTTP comes from the other side's own log. User federation is LDAP between the identity provider and a directory, with no proxy on it, so the four messages are what that server's log says it was asked and answered. A log leaves a password out, so a pass-through on the connection checks that the bytes crossed it, and the recording fails if they did not. On the screen these are marked as coming from a log and offer no command to copy.
+What is not HTTP shows the other side's own log, word for word, and is not rebuilt into something that looks like a request. User federation is LDAP between the identity provider and a directory, which has no text form, so the four messages are that server's log lines. A log leaves a password out, so a pass-through on the connection checks that the bytes crossed it, and the recording fails if they did not. On the screen these say they are from a log, and offer no command to copy.
 
 ## Not chosen
 

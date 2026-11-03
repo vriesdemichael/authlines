@@ -271,11 +271,11 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plain: 'Connect the directory',
 			label: 'Add an LDAP provider',
 			concept:
-				'An admin tells the identity provider where the directory is, where in it the users are, which field is which, and an account to search it with. The server recorded gave tokens no first name until an admin said which field held it.',
+				'An admin tells the identity provider where the directory is, where in it the users are, which field is the username, and an account to search it with. The app team does nothing different.',
 			inPractice:
 				'Nothing for your app: it sees the same provider and the same tokens. This is between whoever runs the provider and whoever runs the directory.',
 			fields: [
-				{ name: 'connection URL', place: 'setting', note: 'Use LDAPS, or StartTLS' },
+				{ name: 'connection URL', place: 'setting', note: 'Use ldaps://, or turn on StartTLS' },
 				{ name: 'users DN', place: 'setting', note: 'Where in the directory the users are' },
 				{ name: 'bind DN', place: 'setting', note: 'The account it searches with' }
 			]

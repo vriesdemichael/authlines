@@ -41,7 +41,7 @@
 		"the-old-way": "2026-11-02",
 		"registers-itself": "2026-11-02",
 		"points-at-a-document": "2026-11-02",
-		"in-a-directory": "2026-11-02"
+		"in-a-directory": "2026-11-03"
 	},
 	"flows": {
 		"authorization-code": {

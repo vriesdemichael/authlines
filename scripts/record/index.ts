@@ -764,7 +764,7 @@ async function recordOnlyPresets(ids: readonly string[]) {
 		if (wanted.some(({ settings }) => settings.federation)) {
 			const file = `${FOLDER}/questions.json`;
 			const asked = JSON.parse(readFileSync(file, 'utf8'));
-			const directoryNotes = noteDefs.filter(({ place }) => place?.page === 'directory-mappers');
+			const directoryNotes = noteDefs.filter(({ place }) => place?.page === 'directory-settings');
 			const looked = await lookInConsole(browser, admin, [], directoryNotes);
 			Object.assign(asked.answers, await questionsWithADirectory(admin));
 			Object.assign(asked.answers.console, looked);

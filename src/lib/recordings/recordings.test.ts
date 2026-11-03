@@ -437,16 +437,48 @@ describe('a user in a directory', () => {
 	it('says what a real server said when the directory was down', () => {
 		const { answers } = JSON.parse(readFileSync(`${FOLDER}/questions.json`, 'utf8'));
 		const bound = stepsOf(read('in-a-directory')).find(({ id }) => id === 'directory-bound');
-		const pitfall = JSON.stringify(bound?.pitfall);
 		expect(answers.directoryDown.form.status).toBe(400);
-		expect(pitfall).toContain(answers.directoryDown.form.says);
-		// And what else it says about a login.
+		expect(JSON.stringify(bound?.pitfall)).toContain(answers.directoryDown.form.says);
+		// The rest of what that pitfall says.
+		expect(answers.directoryDown).toMatchObject({
+			withASession: { askedToLogIn: false },
+			keptInTheProvider: { status: 302 },
+			refresh: { status: 200 }
+		});
 		expect(answers.directoryLogin).toMatchObject({
-			wrongPassword: { status: 200, loginPageAgain: true },
-			askedAgain: true,
+			// The provider's own account, and then the user's, which LDAP refused.
+			wrongPassword: { status: 200, triedThePassword: true, bindResults: [0, 49] },
 			keepsACopy: true,
 			passwordIsElsewhere: true
 		});
+	});
+
+	it('is looked up by username the first time, by an ID after that, and asked each time', () => {
+		const { answers } = JSON.parse(readFileSync(`${FOLDER}/questions.json`, 'utf8'));
+		expect(answers.directoryLogin.firstLogin).toMatchObject({
+			searchedByUsername: true,
+			searchedById: false,
+			triedThePassword: true
+		});
+		expect(answers.directoryLogin.secondLogin).toMatchObject({
+			searchedByUsername: false,
+			searchedById: true,
+			triedThePassword: true
+		});
+	});
+
+	it('differs in the one value the screen says it does', () => {
+		expect(access('oauth').email_verified).toBe(true);
+		expect(access('broker').email_verified).toBe(true);
+		expect(access('in-a-directory').email_verified).toBe(false);
+	});
+
+	it('shows only the lines of the log, word for word, with nothing built from them', () => {
+		for (const message of read('in-a-directory').messages.filter(({ log }) => log)) {
+			expect(message.url).toBeUndefined();
+			expect(message.log?.length).toBeGreaterThan(0);
+			for (const line of message.log ?? []) expect(line).toMatch(/^conn=\d+ op=\d+ /);
+		}
 	});
 });
 

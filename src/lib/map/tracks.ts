@@ -359,7 +359,7 @@ export const mapTracks: readonly MapTrack[] = [
 					id: 'users-in-a-directory',
 					alsoAskedAs: ['user federation', 'federation', 'active directory'],
 					answer:
-						'The identity provider keeps the login. It looks the user up in the directory, and tries the password there. No browser goes anywhere else, unlike with another provider, so the app cannot tell and the token looks the same.',
+						'The identity provider keeps the login. It looks the user up in the directory and tries the password there, and no browser goes anywhere else. The token has the same claims, with one value different. Recorded with OpenLDAP, not Active Directory.',
 					title: 'What if our users are already in LDAP or Active Directory?',
 					summary: 'Same app, same token, a different middle.',
 					preset: 'in-a-directory',

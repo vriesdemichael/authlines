@@ -51,7 +51,7 @@ export async function lookInConsole(
 		'realm-sessions': `${root}/${LOCAL_REALM}/realm-settings/sessions`,
 		'realm-tokens': `${root}/${LOCAL_REALM}/realm-settings/tokens`,
 		'browser-flow': `${root}/${BROKERED_REALM}/authentication`,
-		'directory-mappers': `${root}/${DIRECTORY_REALM}/user-federation/ldap/${directory?.id}/mappers`
+		'directory-settings': `${root}/${DIRECTORY_REALM}/user-federation/ldap/${directory?.id}`
 	};
 
 	const context = await browser.newContext({ viewport: { width: 1600, height: 1400 } });

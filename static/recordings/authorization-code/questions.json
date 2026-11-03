@@ -781,31 +781,44 @@
 				],
 				"missing": []
 			},
-			"directory-mappers": {
+			"trust-email": {
 				"found": [
-					"first name",
-					"username"
+					"Trust Email"
 				],
 				"missing": []
 			}
 		},
-		"directoryMappers": {
-			"before": {
-				"givenName": false
-			},
-			"after": {
-				"givenName": true
-			}
-		},
 		"directoryLogin": {
-			"rightPassword": {
-				"status": 302
+			"firstLogin": {
+				"status": 302,
+				"searchedByUsername": true,
+				"searchedById": false,
+				"triedThePassword": true,
+				"bindResults": [
+					0,
+					0
+				]
+			},
+			"secondLogin": {
+				"status": 302,
+				"searchedByUsername": false,
+				"searchedById": true,
+				"triedThePassword": true,
+				"bindResults": [
+					0,
+					0
+				]
 			},
 			"wrongPassword": {
 				"status": 200,
-				"loginPageAgain": true
+				"searchedByUsername": false,
+				"searchedById": true,
+				"triedThePassword": true,
+				"bindResults": [
+					0,
+					49
+				]
 			},
-			"askedAgain": true,
 			"keepsACopy": true,
 			"passwordIsElsewhere": true
 		},
@@ -817,6 +830,23 @@
 			"token": {
 				"status": 500,
 				"error": "unknown_error"
+			},
+			"withASession": {
+				"askedToLogIn": false
+			},
+			"keptInTheProvider": {
+				"status": 302
+			},
+			"refresh": {
+				"status": 200
+			}
+		},
+		"trustEmail": {
+			"before": {
+				"emailVerified": false
+			},
+			"after": {
+				"emailVerified": true
 			}
 		}
 	}

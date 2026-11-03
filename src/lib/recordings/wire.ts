@@ -13,6 +13,8 @@ export interface Line {
 	decoded?: string;
 	/** How long a value someone was not sent is, which is all they get of it. */
 	hidden?: number;
+	/** Shown in full however long, because a line of a log is the point and not a detail of it. */
+	whole?: boolean;
 }
 
 export const lineText = (line: Line) => `${line.before}${line.value ?? ''}${line.after ?? ''}`;
@@ -132,10 +134,11 @@ export function rawLines(
 	message: RecordedMessage,
 	{ serverNamed = true }: { serverNamed?: boolean } = {}
 ): Line[] {
+	if (message.log) return message.log.map((line) => ({ before: '', value: line, whole: true }));
 	const first =
 		message.direction === 'request'
 			? urlLines(`${message.method} `, message.url ?? '')
-			: [{ before: `${message.protocol === 'ldap' ? 'LDAP result' : 'HTTP'} ${message.status}` }];
+			: [{ before: `HTTP ${message.status}` }];
 	const headers = serverNamed ? message.headers : withoutServerName(message.headers);
 	return [...first, ...headerLines(headers), ...bodyLines(message)];
 }

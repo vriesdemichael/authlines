@@ -5,6 +5,7 @@ import { evaluate } from '#lib/flow/model.ts';
 import { defaultSettings, type Settings } from '#lib/flow/settings.ts';
 import type { Recording } from '#lib/recordings/format.ts';
 import dpopNonce from '../../../static/recordings/authorization-code/dpop-nonce.json';
+import inADirectory from '../../../static/recordings/authorization-code/in-a-directory.json';
 import oauth from '../../../static/recordings/authorization-code/oauth.json';
 
 const viewOf = (settings: Partial<Settings> = {}) =>
@@ -39,6 +40,14 @@ export const TheAnswerAfterExecuting: Story = {
 };
 
 export const CarryingValuesFromEarlierSteps: Story = { args: { step: stepIn('callback') } };
+
+export const FromALogAndNotTheWire: Story = {
+	args: {
+		step: stepIn('directory-bind', { federation: true }),
+		recording: inADirectory as unknown as Recording,
+		numberOf: numberOfIn({ federation: true })
+	}
+};
 
 export const NoRecordingOfTheseSettings: Story = {
 	args: {

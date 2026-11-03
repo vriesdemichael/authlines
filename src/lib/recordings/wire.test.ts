@@ -64,6 +64,11 @@ describe.each(asCases)('the raw view of %s', (_, recording) => {
 
 	it('leaves out nothing the message carries', () => {
 		for (const message of recording.messages) {
+			// A log is shown as it is, and what the message says beyond it is only there for the tests.
+			if (message.log) {
+				expect(rawLines(message).map(lineText)).toEqual(message.log);
+				continue;
+			}
 			const text = rawLines(message).map(lineText).join('\n');
 			for (const [name, value] of Object.entries(message.headers)) {
 				if (name !== 'location') expect(text).toContain(value);

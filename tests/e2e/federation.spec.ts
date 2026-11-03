@@ -35,10 +35,11 @@ test.describe('users in a directory', () => {
 
 	test('shows the password reaching the directory, and what it answers', async ({ page }) => {
 		await open(page, '&directory=1&step=directory-bind');
-		await expect(page.getByTestId('on-the-wire')).toContainText('BIND ldap://directory/');
+		await expect(page.getByTestId('on-the-wire')).toContainText('mech=SIMPLE');
 		await open(page, '&directory=1&step=directory-bound');
-		await expect(page.getByTestId('on-the-wire')).toContainText('LDAP result 0');
-		await expect(page.getByTestId('on-the-wire')).not.toContainText('HTTP 0');
+		await expect(page.getByTestId('on-the-wire')).toContainText('RESULT tag=97 err=0');
+		await expect(page.getByTestId('on-the-wire')).toContainText('From the log, not the wire');
+		await expect(page.getByTestId('on-the-wire')).toContainText('ssf=0');
 	});
 
 	test('offers no command for what is not HTTP', async ({ page }) => {

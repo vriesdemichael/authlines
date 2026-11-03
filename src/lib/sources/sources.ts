@@ -164,7 +164,7 @@ export const sources: Record<SourceId, SourceDef> = {
 		title: 'Using external storage',
 		status: 'Keycloak 26.8.1, Server Administration Guide.',
 		summary:
-			'Keycloak keeps the login, and looks users up in storage it does not own, such as LDAP or Active Directory. The login page stays its own, and the user stays where they are.',
+			'Keycloak can use users from LDAP or Active Directory, imported or not, and check their passwords on the LDAP server.',
 		url: 'https://www.keycloak.org/docs/26.8.1/server_admin/#_user-storage-federation'
 	},
 	'keycloak-brokering': {

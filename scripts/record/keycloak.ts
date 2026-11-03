@@ -188,7 +188,6 @@ export class Admin {
 }
 
 const STORAGE_PROVIDER = 'org.keycloak.storage.UserStorageProvider';
-const LDAP_MAPPER = 'org.keycloak.storage.ldap.mappers.LDAPStorageMapper';
 
 const providerOfTheDirectory = async (admin: Admin) =>
 	(
@@ -197,33 +196,6 @@ const providerOfTheDirectory = async (admin: Admin) =>
 			`/realms/${DIRECTORY_REALM}/components?type=${STORAGE_PROVIDER}`
 		)
 	)[0]?.id;
-
-const directoryMappers = (admin: Admin, provider: string) =>
-	admin.call<{ id: string; name: string }[]>(
-		'GET',
-		`/realms/${DIRECTORY_REALM}/components?parent=${provider}`
-	);
-
-export async function forgetMapper(admin: Admin, provider: string, name: string) {
-	const mapper = (await directoryMappers(admin, provider)).find((one) => one.name === name);
-	if (!mapper) throw new Error(`The directory has no mapper "${name}".`);
-	await admin.call('DELETE', `/realms/${DIRECTORY_REALM}/components/${mapper.id}`);
-}
-
-export const mapFirstName = (admin: Admin, provider: string) =>
-	admin.call('POST', `/realms/${DIRECTORY_REALM}/components`, {
-		name: 'first name',
-		providerId: 'user-attribute-ldap-mapper',
-		providerType: LDAP_MAPPER,
-		parentId: provider,
-		config: {
-			'ldap.attribute': ['givenName'],
-			'user.model.attribute': ['firstName'],
-			'read.only': ['true'],
-			'always.read.value.from.ldap': ['true'],
-			'is.mandatory.in.ldap': ['false']
-		}
-	});
 
 /** Its users are only in the directory, so that what logs in is really coming from there. */
 export async function connectDirectory(
@@ -262,9 +234,6 @@ export async function connectDirectory(
 	});
 	const provider = await providerOfTheDirectory(admin);
 	if (!provider) throw new Error('The directory did not connect.');
-	// On its own it takes the first name from the common name, and here that left the token without one.
-	await forgetMapper(admin, provider, 'full name');
-	await mapFirstName(admin, provider);
 	return provider;
 }
 

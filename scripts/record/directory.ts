@@ -1,6 +1,7 @@
 // A real LDAP server in a container, so that user federation is recorded and not drawn from the docs.
-// LDAP is not HTTP, so what it was asked comes from its own log, and a pass-through on the connection
-// shows that the password really crosses it, which the log leaves out. Nothing here is a real credential.
+// LDAP is not HTTP and has no text form, so what it was asked is its own log's lines, word for word, and
+// a pass-through on the connection shows that the password really crosses it, which the log leaves out.
+// Nothing here is a real credential.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { connect, createServer, type Server } from 'node:net';
 import type { RecordedMessage } from '#lib/recordings/format.ts';
@@ -24,17 +25,15 @@ export function stopDirectory() {
 	spawnSync('docker', ['rm', '-f', CONTAINER], { stdio: 'ignore' });
 }
 
-/** The same person as the one in the identity provider's own realm, so the two can be compared. */
-const person = `dn: cn=${USERNAME},${USERS_DN}
-changetype: modify
-replace: mail
-mail: ${USERNAME}@example.test
--
-replace: givenName
-givenName: Alice
--
-replace: sn
+/** The same person as in the identity provider's own realm, as a directory really has one. */
+const person = `dn: cn=Alice Example,${USERS_DN}
+objectClass: inetOrgPerson
+cn: Alice Example
 sn: Example
+givenName: Alice
+uid: ${USERNAME}
+mail: ${USERNAME}@example.test
+userPassword: ${PASSWORD}
 `;
 
 export async function startDirectory() {
@@ -53,9 +52,9 @@ export async function startDirectory() {
 		'--env',
 		`LDAP_ADMIN_PASSWORD=${SERVICE_PASSWORD}`,
 		'--env',
-		`LDAP_USERS=${USERNAME}`,
+		'LDAP_USERS=unused',
 		'--env',
-		`LDAP_PASSWORDS=${PASSWORD}`,
+		'LDAP_PASSWORDS=unused-password',
 		'--env',
 		'LDAP_LOGLEVEL=256',
 		IMAGE
@@ -67,7 +66,7 @@ export async function startDirectory() {
 					'exec',
 					'-i',
 					CONTAINER,
-					'ldapmodify',
+					'ldapadd',
 					'-x',
 					'-H',
 					'ldap://localhost:1389',
@@ -86,13 +85,16 @@ export async function startDirectory() {
 	throw new Error(`The directory did not start:\n${logLines().slice(-20).join('\n')}`);
 }
 
-/** It logs to stderr. */
+/** It logs to stderr. Without the time and the thread, which say nothing about what was asked. */
 function logLines(): string[] {
 	const { stderr, stdout } = spawnSync('docker', ['logs', CONTAINER], {
 		encoding: 'utf8',
 		maxBuffer: 2 ** 26
 	});
-	return `${stdout}${stderr}`.split('\n');
+	return `${stdout}${stderr}`
+		.split('\n')
+		.filter((line) => / op=\d+ /.test(line))
+		.map((line) => line.replace(/^\S+\s+\S+\s+/, ''));
 }
 
 /** Everything passes through this on its way to the directory, and it only looks for one thing. */
@@ -118,73 +120,82 @@ export function passThrough() {
 	};
 }
 
-const match = (lines: readonly string[], pattern: RegExp, what: string) => {
-	for (const line of lines) {
-		const found = line.match(pattern);
-		if (found) return found;
-	}
-	throw new Error(`The directory's log has no ${what}:\n${lines.slice(-20).join('\n')}`);
-};
-
 /** How many lines there are now, so that a run only reads what it caused. */
 export const directoryLogLength = () => logLines().length;
 
-/** How many times, since then, a password was tried on the directory. */
-export const directoryBindsSince = (since: number) =>
-	logLines()
-		.slice(since)
-		.filter((line) => line.includes(`BIND dn="cn=${USERNAME},`) && line.includes('mech=')).length;
+const USER_BIND = new RegExp(`BIND dn="(cn=[^"]*,${USERS_DN})" mech=(\\w+)`);
+
+/** What a real login asked of it, since then, in the words of its log. */
+export function whatALoginAsked(since: number) {
+	const lines = logLines().slice(since);
+	return {
+		searchedByUsername: lines.some((line) => line.includes(`filter="(&(uid=${USERNAME})`)),
+		searchedById: lines.some((line) => line.includes('filter="(entryUUID=')),
+		// A refused one has no line naming how it was tried, so this goes by who it was tried as.
+		triedThePassword: lines.some((line) => line.includes(`,${USERS_DN}" method=`)),
+		/** 49 is what LDAP calls invalid credentials. */
+		bindResults: lines
+			.filter((line) => line.includes('RESULT tag=97'))
+			.map((line) => Number(line.match(/err=(\d+)/)?.[1]))
+	};
+}
 
 /** What the log says one login asked, as messages, because the diagram draws them as messages. */
 export function messagesFromTheLog(since: number, sawPassword: boolean): RecordedMessage[] {
 	if (!sawPassword) throw new Error('The password never crossed the connection to the directory.');
 	const lines = logLines().slice(since);
-	const [, base, filter] = match(
-		lines,
-		new RegExp(`SRCH base="([^"]*)".*filter="([^"]*uid=${USERNAME}[^"]*)"`),
+	const find = (pattern: RegExp, what: string) => {
+		const found = lines.find((line) => pattern.test(line));
+		if (!found) {
+			throw new Error(`The directory's log has no ${what}:\n${lines.slice(-20).join('\n')}`);
+		}
+		return found;
+	};
+	const search = find(
+		new RegExp(`SRCH base=.*filter="[^"]*uid=${USERNAME}`),
 		'search for the user'
 	);
-	const [, attributes] = match(lines, /SRCH attr=(.*)$/, 'list of attributes');
-	const [, searched, entries] = match(
-		lines,
-		/SEARCH RESULT .*err=(\d+) .*nentries=(\d+)/,
-		'search result'
-	);
-	const [, conn, dn, mechanism] = match(
-		lines,
-		new RegExp(`(conn=\\d+) op=\\d+ BIND dn="(cn=${USERNAME},[^"]*)" mech=(\\w+)`),
-		'bind as the user'
-	);
-	const [, result] = match(
-		lines,
-		new RegExp(`${conn} op=\\d+ RESULT tag=97 err=(\\d+)`),
-		'answer to the bind'
-	);
-	const ldap = { protocol: 'ldap', headers: {} } as const;
+	const conn = search.split(' ')[0];
+	const filter = search.match(/filter="([^"]*)"/)?.[1];
+	const of = (connection: string) =>
+		lines.filter((line) => line.startsWith(`${connection} `) && !line.includes('UNBIND'));
+	const answer = find(new RegExp(`^${conn} .*SEARCH RESULT`), 'search result');
+	const attributes = find(new RegExp(`^${conn} .*SRCH attr=`), 'list of attributes');
+	const bind = find(USER_BIND, 'bind as the user');
+	const [, , mechanism] = bind.match(USER_BIND) ?? [];
+	const bindConn = bind.split(' ')[0];
+	const result = find(new RegExp(`^${bindConn} .*RESULT tag=97`), 'answer to the bind');
 	return [
 		{
-			...ldap,
 			step: 'directory-search',
 			direction: 'request',
 			method: 'SEARCH',
-			url: `ldap://directory/${base}`,
-			body: { filter, attributes: attributes.trim().split(' ') }
+			headers: {},
+			log: of(conn).filter((line) => line !== answer),
+			body: { filter, attributes: attributes.split('attr=')[1].trim().split(' ') }
 		},
 		{
-			...ldap,
 			step: 'directory-found',
 			direction: 'response',
-			status: Number(searched),
-			body: { entries: Number(entries) }
+			status: Number(answer.match(/err=(\d+)/)?.[1]),
+			headers: {},
+			log: [answer],
+			body: { entries: Number(answer.match(/nentries=(\d+)/)?.[1]) }
 		},
 		{
-			...ldap,
 			step: 'directory-bind',
 			direction: 'request',
 			method: 'BIND',
-			url: `ldap://directory/${dn}`,
+			headers: {},
+			log: of(bindConn).filter((line) => line !== result),
 			body: { mechanism, password: PASSWORD }
 		},
-		{ ...ldap, step: 'directory-bound', direction: 'response', status: Number(result) }
+		{
+			step: 'directory-bound',
+			direction: 'response',
+			status: Number(result.match(/err=(\d+)/)?.[1]),
+			headers: {},
+			log: [result]
+		}
 	];
 }
