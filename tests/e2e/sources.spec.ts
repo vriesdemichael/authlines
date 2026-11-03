@@ -28,7 +28,9 @@ const NEEDS: Partial<Record<string, string>> = {
 	reuse: 'refresh=1',
 	ssoAsks: 'sso=1',
 	customerSpeaks: 'broker=1&companies=1',
-	leaves: 'broker=1&companies=1'
+	leaves: 'broker=1&companies=1',
+	tokenThief: 'binding=dpop',
+	apiChecks: 'binding=dpop&thief=1'
 };
 const onOffer = (setting: string) => NEEDS[setting] ?? ALL_ON_OFFER;
 
