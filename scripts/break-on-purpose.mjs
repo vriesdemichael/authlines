@@ -6,6 +6,8 @@
 //   pnpm test:breakages --part=2/3  only every third one, so that CI can run them side by side
 //
 // Each one has to be a real mistake someone could make. A new test that exists to catch one adds it here.
+// Only the unit tests run here, because a browser for each would take hours, so a breakage that only a
+// browser test notices does not belong in the list. Two went in on that mistake, and CI said so.
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { breakages } from './breakages.mjs';

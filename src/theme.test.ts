@@ -114,4 +114,10 @@ describe('colours (ADR-014)', () => {
 		const diagram = readFileSync('src/lib/components/Diagram.svelte', 'utf8');
 		expect(diagram).not.toMatch(/fill-opacity/);
 	});
+
+	// A numbered line with nothing on it made people wonder what was coming (the maintainer, 2026-11-03).
+	it('leave what is ahead its words', () => {
+		const diagram = readFileSync('src/lib/components/Diagram.svelte', 'utf8');
+		expect(diagram).not.toMatch(/\.row\.future[^{]*\.label\s*\{[^}]*opacity:\s*0\b/);
+	});
 });
