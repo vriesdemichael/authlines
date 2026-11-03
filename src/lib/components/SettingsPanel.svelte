@@ -262,7 +262,7 @@
 			/>
 			Server notes
 		</label>
-		<p>Which setting controls each message, on the server this was recorded from.</p>
+		<p>Which setting controls each message.</p>
 	</section>
 {/if}
 
