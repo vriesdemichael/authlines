@@ -6,7 +6,11 @@
 		"directoryDown": "2026-11-03",
 		"trustEmail": "2026-11-03",
 		"console.trust-email": "2026-11-03",
-		"scriptBehindThePage": "2026-11-03"
+		"scriptBehindThePage": "2026-11-03",
+		"autoRedirect": "2026-11-03",
+		"companyDomains": "2026-11-03",
+		"passwordHere": "2026-11-03",
+		"console.auto-redirect": "2026-11-03"
 	},
 	"answers": {
 		"validRedirectUris": {
@@ -793,6 +797,13 @@
 					"Trust Email"
 				],
 				"missing": []
+			},
+			"auto-redirect": {
+				"found": [
+					"Identity provider",
+					"Auto redirect"
+				],
+				"missing": []
 			}
 		},
 		"directoryLogin": {
@@ -860,6 +871,53 @@
 			"readsTheCookie": false,
 			"findsAToken": false,
 			"throughTheServer": 200
+		},
+		"autoRedirect": {
+			"before": {
+				"goesTo": null,
+				"buttons": [
+					"acme"
+				],
+				"asksForPassword": true
+			},
+			"after": {
+				"goesTo": "acme",
+				"buttons": [],
+				"asksForPassword": false
+			}
+		},
+		"companyDomains": {
+			"exact": {
+				"atASubdomain": {
+					"goesTo": null,
+					"buttons": [
+						"acme",
+						"globex"
+					],
+					"asksForPassword": true
+				}
+			},
+			"pattern": {
+				"atASubdomain": {
+					"goesTo": "acme",
+					"buttons": [],
+					"asksForPassword": false
+				},
+				"atTheDomain": {
+					"goesTo": "acme",
+					"buttons": [],
+					"asksForPassword": false
+				}
+			}
+		},
+		"passwordHere": {
+			"goesTo": null,
+			"buttons": [
+				"acme",
+				"globex"
+			],
+			"asksForPassword": true,
+			"loggedIn": true
 		}
 	}
 }
