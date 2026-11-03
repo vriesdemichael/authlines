@@ -46,7 +46,10 @@ function messageShape(message: RecordedMessage) {
 		path: message.url ? pathOf(message.url) : undefined,
 		query: message.url ? queryNames(message.url) : undefined,
 		status: message.status,
-		headers: Object.keys(message.headers).sort(),
+		// A header holding nothing is not written to the file, so a run in memory does not count it.
+		headers: Object.keys(message.headers)
+			.filter((name) => message.headers[name] !== undefined)
+			.sort(),
 		location: message.headers.location ? pathOf(message.headers.location) : undefined,
 		locationQuery: message.headers.location ? queryNames(message.headers.location) : undefined,
 		body: message.body === undefined ? undefined : bodyShape(message.body),

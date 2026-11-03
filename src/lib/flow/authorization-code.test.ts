@@ -916,3 +916,20 @@ describe('presets', () => {
 		}
 	);
 });
+
+describe('with a server behind the page', () => {
+	const { settings } = change(defaultSettings, 'appRuns', 'bff');
+	const held = () => holdingsAt(evaluate(flow, settings), 'page-gets-answer');
+
+	it('keeps the tokens at the server, and the browser only gets a cookie', () => {
+		expect(held().app).toContain('access-token');
+		expect(held().app).toContain('refresh-token');
+		expect(held().browser).toContain('app-session');
+		expect(held().browser).not.toContain('access-token');
+		expect(held().browser).not.toContain('refresh-token');
+	});
+
+	it('brings along what it needs, so that nobody has to know it is a confidential client', () => {
+		expect(settings).toMatchObject({ clientType: 'confidential', pkce: true });
+	});
+});

@@ -515,6 +515,22 @@ export const mapTracks: readonly MapTrack[] = [
 					step: 'token-response'
 				}),
 				node({
+					id: 'server-behind-the-page',
+					alsoAskedAs: [
+						'backend for frontend',
+						'httponly cookie',
+						'session cookie',
+						'localStorage',
+						'store tokens in the browser'
+					],
+					answer:
+						'Nowhere in the page stops a script that runs there, because it can ask for tokens just as the page does. A server behind the page can do the login instead, and give the browser a cookie no script can read. A script can still send requests through it.',
+					title: 'Where should a page keep its tokens?',
+					summary: 'With a server behind it, the page has none.',
+					preset: 'behind-the-page',
+					step: 'set-session'
+				}),
+				node({
 					id: 'secret-in-the-page',
 					answer:
 						'Then it is not a secret: anyone who can load the page can read it, so it should not count as proof of which app this is. Make it a client with no secret, and turn on PKCE. If it may also act for itself, that secret gets tokens with no user.',
@@ -522,16 +538,6 @@ export const mapTracks: readonly MapTrack[] = [
 					summary: 'Then it is not a secret, and anyone can read it.',
 					preset: 'browser-app',
 					step: 'token-request'
-				}),
-				node({
-					id: 'force-a-login',
-					answer:
-						'Send prompt=login with the request. The identity provider shows the form, though it knows the browser. To be sure it happened, check auth_time in the ID token, if it has one: a provider only has to send it when the app asks for it.',
-					title: 'How do I make someone log in again?',
-					summary: 'A session is usually good enough. One parameter says not this time.',
-					mode: 'advanced',
-					preset: 'sso-insists',
-					step: 'second-authorize'
 				})
 			]
 		]
@@ -689,6 +695,16 @@ export const mapNodes: readonly MapNode[] = mapTracks.flatMap((track) => track.c
  * they were about through the question that took them over.
  */
 export const offTheMap: readonly MapNode[] = [
+	node({
+		id: 'force-a-login',
+		answer:
+			'Send prompt=login with the request. The identity provider shows the form, though it knows the browser. To be sure it happened, check auth_time in the ID token, if it has one: a provider only has to send it when the app asks for it.',
+		title: 'How do I make someone log in again?',
+		summary: 'A session is usually good enough. One parameter says not this time.',
+		mode: 'advanced',
+		preset: 'sso-insists',
+		step: 'second-authorize'
+	}),
 	node({
 		id: 'no-user-no-refresh',
 		flow: 'client-credentials',

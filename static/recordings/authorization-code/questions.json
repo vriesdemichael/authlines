@@ -1,6 +1,13 @@
 {
 	"keycloak": "26.8.1",
 	"recordedAt": "2026-11-01",
+	"askedOn": {
+		"directoryLogin": "2026-11-03",
+		"directoryDown": "2026-11-03",
+		"trustEmail": "2026-11-03",
+		"console.trust-email": "2026-11-03",
+		"scriptBehindThePage": "2026-11-03"
+	},
 	"answers": {
 		"validRedirectUris": {
 			"before": {
@@ -848,6 +855,11 @@
 			"after": {
 				"emailVerified": true
 			}
+		},
+		"scriptBehindThePage": {
+			"readsTheCookie": false,
+			"findsAToken": false,
+			"throughTheServer": 200
 		}
 	}
 }

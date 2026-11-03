@@ -18,6 +18,12 @@ const ERRORS = 'src/lib/search/errors.ts';
 
 export const breakages = [
 	{
+		name: 'behind the page: the tokens reach the browser',
+		file: 'src/lib/flow/authorization-code.ts',
+		from: "name: 'Set-Cookie',\n\t\t\t\t\tplace: 'header',\n\t\t\t\t\tartifact: 'app-session',",
+		to: "name: 'Set-Cookie',\n\t\t\t\t\tplace: 'header',\n\t\t\t\t\tartifact: 'access-token',"
+	},
+	{
 		name: 'directory: another provider stays on beside it',
 		file: 'src/lib/flow/settings.ts',
 		from: 'setsWhenOn: { broker: false },',
@@ -823,7 +829,13 @@ export const breakages = [
 	{
 		name: 'check: headers left out',
 		file: SHAPE,
-		from: 'headers: Object.keys(message.headers).sort(),',
+		from: 'headers: Object.keys(message.headers)\n\t\t\t.filter((name) => message.headers[name] !== undefined)\n\t\t\t.sort(),',
+		to: ''
+	},
+	{
+		name: 'check: a header holding nothing counts',
+		file: SHAPE,
+		from: '\t\t\t.filter((name) => message.headers[name] !== undefined)\n',
 		to: ''
 	},
 	{

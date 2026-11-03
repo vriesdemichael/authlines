@@ -109,6 +109,11 @@ const presets: readonly Preset[] = [
 		settings: { appRuns: 'page', oidc: true, clientType: 'public', pkce: true }
 	},
 	{
+		id: 'behind-the-page',
+		title: 'An app in the page, with a server behind it',
+		settings: { appRuns: 'bff', clientType: 'confidential', pkce: true }
+	},
+	{
 		id: 'in-the-page',
 		title: 'An app in the page',
 		settings: { appRuns: 'page', clientType: 'public', pkce: true }

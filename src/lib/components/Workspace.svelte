@@ -899,6 +899,7 @@
 			{links}
 			{elsewhere}
 			changed={last.setting}
+			changedTo={last.setting ? appState.settings[last.setting] : undefined}
 			onterm={explainTerm}
 			{notes}
 			serverNamed={appState.serverNotes}

@@ -30,6 +30,14 @@ describe('the weekly check of a recording', () => {
 		expect(differs(plain, changed)).toBe('');
 	});
 
+	it('finds nothing in a header that holds nothing, which a file would not have', () => {
+		const run = copy(plain);
+		const request = run.messages.find((message) => message.direction === 'request');
+		if (!request) throw new Error('No request');
+		(request.headers as Record<string, string | undefined>).origin = undefined;
+		expect(differs(plain, run)).toBe('');
+	});
+
 	it('notices messages in another order', () => {
 		const changed = copy(plain);
 		changed.messages.reverse();

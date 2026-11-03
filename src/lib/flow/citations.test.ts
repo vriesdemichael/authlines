@@ -78,6 +78,14 @@ const CITED: readonly [step: string, SourceId, section: string, phrase: string][
 	],
 	['service-token-response', 'rfc6749', '4.4.3', 'refresh token SHOULD NOT be included'],
 	['token-request', 'rfc10017', '6.3.3.1', 'should not be treated as confidential secrets'],
+	[
+		'token-response',
+		'rfc10017',
+		'6.1.2.3',
+		'Server-side sessions expose only a session identifier'
+	],
+	['set-session', 'rfc10017', '6.1.3.2', 'The BFF MUST enable the HttpOnly flag'],
+	['page-calls-api', 'rfc10017', '6.1', 'the attacker is able to send'],
 	['token-response', 'rfc10017', '8.5', 'none of these options can fully mitigate'],
 	['token-response', 'rfc10017', '5.1.3', 'still be able to request a new set of tokens'],
 	['token-response', 'rfc10017', '6.1.4.1', 'nothing will be able to prevent such attacks'],

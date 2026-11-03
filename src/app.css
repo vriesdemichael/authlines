@@ -83,7 +83,8 @@ body {
 }
 
 /* What remembers. */
-[data-artifact='session'] {
+[data-artifact='session'],
+[data-artifact='app-session'] {
 	--chip: var(--remembers);
 	--chip-soft: var(--remembers-soft);
 }

@@ -73,7 +73,7 @@ function headerLines(headers: Record<string, string>): Line[] {
 					before: `${name}: ${value.slice(0, start)}`,
 					value: token,
 					after: value.slice(end),
-					name: 'session',
+					name: value.startsWith('KEYCLOAK') ? 'session' : 'cookie',
 					decoded: token
 				}
 			];
@@ -186,6 +186,7 @@ const MADE_IN_THE_RUN = new Set([
 	'id_token',
 	'refresh_token',
 	'session',
+	'cookie',
 	'device_code',
 	'user_code'
 ]);

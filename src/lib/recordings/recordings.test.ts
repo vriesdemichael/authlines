@@ -387,6 +387,21 @@ describe('the words on a refresh token used twice', () => {
 	});
 });
 
+describe('the questions a real server was asked', () => {
+	it('say when one was asked after the rest, and only of answers that are there', () => {
+		const {
+			recordedAt,
+			askedOn = {},
+			answers
+		} = JSON.parse(readFileSync(`${FOLDER}/questions.json`, 'utf8'));
+		for (const [key, on] of Object.entries<string>(askedOn)) {
+			const [first, page] = key.split('.');
+			expect(page ? answers[first][page] : answers[first], key).toBeDefined();
+			expect(on >= recordedAt, key).toBe(true);
+		}
+	});
+});
+
 describe('the words on what an API answered', () => {
 	it.each([
 		['api-no-token', 401, 'Bearer', 'asks for a token', '401 with no error'],
@@ -402,6 +417,38 @@ describe('the words on what an API answered', () => {
 		const step = stepsOf(recording).find(({ id }) => id === 'api-response');
 		expect(step?.plain).toContain(plain);
 		expect(step?.label).toBe(label);
+	});
+});
+
+describe('a server behind the page', () => {
+	const recording = read('behind-the-page');
+	const toTheAppsServer = recording.messages.filter(
+		({ url, direction }) => direction === 'request' && url?.startsWith('http://localhost:9100')
+	);
+
+	it('sends the cookie the screen says, with the flags it says', () => {
+		const given = recording.messages.find(({ step }) => step === 'set-session');
+		expect(given?.headers['set-cookie']).toMatch(/; Path=\/; Secure; HttpOnly; SameSite=Strict$/);
+		const sent = recording.messages.find(({ step }) => step === 'page-calls-api');
+		expect(sent?.headers.cookie).toContain('__Host-Http-session=');
+		expect(given?.headers['set-cookie']).toContain(sent?.headers.cookie);
+	});
+
+	it('never lets the browser send a token, and the server does', () => {
+		expect(toTheAppsServer.length).toBeGreaterThan(3);
+		for (const message of toTheAppsServer) expect(JSON.stringify(message)).not.toContain('eyJ');
+		expect(
+			recording.messages.find(({ step }) => step === 'api-request')?.headers.authorization
+		).toMatch(/^Bearer eyJ/);
+	});
+
+	it('says what a real page could and could not do', () => {
+		const { answers } = JSON.parse(readFileSync(`${FOLDER}/questions.json`, 'utf8'));
+		expect(answers.scriptBehindThePage).toEqual({
+			readsTheCookie: false,
+			findsAToken: false,
+			throughTheServer: 200
+		});
 	});
 });
 

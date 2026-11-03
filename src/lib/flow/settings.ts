@@ -20,7 +20,7 @@ export interface Settings {
 	deviceEnds: 'agrees' | 'says-no' | 'runs-out';
 	deviceAttack: 'nobody' | 'sends-code' | 'reads-code';
 	address: 'registered' | 'other';
-	appRuns: 'server' | 'page';
+	appRuns: 'server' | 'page' | 'bff';
 	oldWay: boolean;
 	registration: 'manual' | 'dcr' | 'cimd';
 	federation: boolean;
@@ -101,6 +101,8 @@ export interface OptionDef<V extends string = string> {
 	plainly?: string;
 	/** What choosing this brings with it. */
 	sets?: Partial<Settings>;
+	/** Why this one, where what the setting says as a whole would be wrong about it. */
+	why?: string;
 	value: V;
 	label: string;
 	requires?: Requirement;
@@ -622,7 +624,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				is('refresh', false),
 				is('ssoAsks', 'remembered')
 			),
-			because: 'It is part of OpenID Connect, and this shows the plain case.',
+			because: 'It is part of OpenID Connect.',
 			sayWhenBlocked: true
 		}
 	},
@@ -635,11 +637,11 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		simple: {
 			label: 'Where does your app run?',
 			summary:
-				'In the page, the tokens end up in the browser, where any script in it can reach them.'
+				'In the page, the tokens end up in the browser, and a script running there can get some for itself. With a server behind it, the page never has one.'
 		},
 		summary:
-			'On a server of its own, or in the page in the user’s browser. In the page there is nowhere to keep a secret, and the tokens end up in the browser.',
-		why: 'The rest of this flow is careful to keep the tokens away from the browser. An app that runs in the page is in the browser, so that care stops at its door, and what can reach the page can reach them.',
+			'On a server of its own, or in the page in the user’s browser, alone or with a server behind it. In the page alone there is nowhere to keep a secret, and the tokens end up in the browser.',
+		why: 'The rest of this flow is careful to keep the tokens away from the browser. An app that runs only in the page is in the browser, so that care stops at its door, and a script running there can get tokens just as the app does.',
 		sources: [
 			{
 				source: 'rfc10017',
@@ -651,7 +653,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			{ value: 'server', label: 'On a server', sets: { clientType: 'confidential' } },
 			{
 				value: 'page',
-				label: 'In the page, in the browser',
+				label: 'In the page',
 				sets: { clientType: 'public', pkce: true },
 				requires: {
 					when: all(
@@ -665,6 +667,31 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 						is('logout', false),
 						is('apiToken', 'good'),
 						is('address', 'registered')
+					),
+					because: 'Not drawn with these settings yet.'
+				}
+			},
+			{
+				value: 'bff',
+				label: 'In the page, with its server',
+				why: 'The page is still in the browser, and no token reaches it: a server of the app’s own does the login and uses the tokens, and gives the browser a cookie no script can read. So a script in the page has no token to take, though it can still send requests through that server.',
+				sets: { clientType: 'confidential', pkce: true },
+				requires: {
+					when: all(
+						is('clientType', 'confidential'),
+						is('pkce', true),
+						is('oidc', false),
+						is('binding', 'bearer'),
+						is('broker', false),
+						is('federation', false),
+						is('attacker', false),
+						is('consent', false),
+						is('sso', false),
+						is('refresh', false),
+						is('logout', false),
+						is('apiToken', 'good'),
+						is('address', 'registered'),
+						is('registration', 'manual')
 					),
 					because: 'Not drawn with these settings yet.'
 				}
@@ -870,6 +897,11 @@ export function normalize(settings: Settings): { settings: Settings; resets: Res
 		}
 	}
 	return { settings: next, resets };
+}
+
+/** Why this is here, which an option can say for itself. */
+export function whyItIsHere(id: SettingId, value: unknown): string {
+	return optionOf(id, value)?.why ?? settingDefs[id].why;
 }
 
 /** What choosing this brings with it, because someone who knows where their app runs should not also have to know these. */

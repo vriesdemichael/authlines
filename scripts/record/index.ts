@@ -180,6 +180,24 @@ function classifyResponse(url: URL, status: number, location: string | null): st
 
 const isDocument = (request: Request) => request.resourceType() === 'document';
 
+/** A page with a server behind it: the app's addresses mean something else, and the rest is as ever. */
+const behindThePage = {
+	request(url: URL) {
+		if (url.origin !== APP) return classifyRequest(url);
+		return (
+			{ '/': 'open-app', '/login': 'bff-login', '/callback': 'callback' }[url.pathname] ?? null
+		);
+	},
+	response(url: URL, status: number, location: string | null) {
+		if (url.origin !== APP) return classifyResponse(url, status, location);
+		return (
+			{ '/': 'page-served', '/login': 'redirect-to-idp', '/callback': 'set-session' }[
+				url.pathname
+			] ?? null
+		);
+	}
+};
+
 /** The one cookie that is the session. The rest of them are how Keycloak keeps its forms going. */
 const SESSION_COOKIE = /(?:^|\n|; )(KEYCLOAK_IDENTITY=[^\n]*)/;
 
@@ -213,6 +231,13 @@ const onADevice = {
 function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 	const inBrowser = (url: string) =>
 		url.startsWith(APP) || url.startsWith(SECOND_APP) || url.startsWith(KEYCLOAK);
+	const behind = run.settings.appRuns === 'bff';
+	// It loads the page and asks again after the login, and the diagram draws that once.
+	const once = (step: string | null, direction: 'request' | 'response') =>
+		behind &&
+		run.messages.some((message) => message.step === step && message.direction === direction)
+			? null
+			: step;
 	page.on('request', (request) => {
 		if (!isDocument(request) || !inBrowser(request.url())) return;
 		const message = requestMessage(
@@ -222,7 +247,9 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 						request.method(),
 						run.settings.deviceEnds === 'says-no'
 					)
-				: classifyRequest(new URL(request.url())),
+				: behind
+					? once(behindThePage.request(new URL(request.url())), 'request')
+					: classifyRequest(new URL(request.url())),
 			request.method(),
 			request.url(),
 			request.headers(),
@@ -240,11 +267,16 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 		);
 	});
 	// What a page calls by itself, for an app that runs there.
-	const fromThePage: Record<string, [string, string]> = {
-		'/protocol/openid-connect/token': ['token-request', 'token-response'],
-		'/protocol/openid-connect/userinfo': ['userinfo-request', 'userinfo-response'],
-		'/resource': ['api-request', 'api-response']
-	};
+	const fromThePage: Record<string, [string, string]> = behind
+		? {
+				'/session': ['session-check', 'no-session'],
+				'/api/resource': ['page-calls-api', 'page-gets-answer']
+			}
+		: {
+				'/protocol/openid-connect/token': ['token-request', 'token-response'],
+				'/protocol/openid-connect/userinfo': ['userinfo-request', 'userinfo-response'],
+				'/resource': ['api-request', 'api-response']
+			};
 	const calledFromThePage = (request: Request) => {
 		if (request.resourceType() !== 'fetch') return null;
 		const { pathname } = new URL(request.url());
@@ -254,18 +286,21 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 	page.on('request', (request) => {
 		const steps = calledFromThePage(request);
 		if (!steps) return;
-		const at = run.messages.push(requestMessage(steps[0], request.method(), request.url(), {})) - 1;
+		const step = once(steps[0], 'request');
+		const at = run.messages.push(requestMessage(step, request.method(), request.url(), {})) - 1;
 		cookies.push(
 			request.allHeaders().then((headers) => {
 				const message = requestMessage(
-					steps[0],
+					step,
 					request.method(),
 					request.url(),
 					headers,
 					request.postData() ?? ''
 				);
 				// Only here does it mean anything: a form the server sent says only that it has none.
-				message.headers.origin = headers.origin;
+				if (headers.origin) message.headers.origin = headers.origin;
+				// What the browser adds by itself, which the script cannot read.
+				if (behind && headers.cookie) message.headers.cookie = headers.cookie;
 				run.messages[at] = message;
 			})
 		);
@@ -273,10 +308,11 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 	page.on('response', (response: Response) => {
 		const steps = calledFromThePage(response.request());
 		if (!steps) return;
-		const at = run.messages.push(responseMessage(steps[1], response.status(), {})) - 1;
+		const step = once(steps[1], 'response');
+		const at = run.messages.push(responseMessage(step, response.status(), {})) - 1;
 		cookies.push(
 			Promise.all([response.allHeaders(), response.text()]).then(([headers, text]) => {
-				run.messages[at] = responseMessage(steps[1], response.status(), headers, text);
+				run.messages[at] = responseMessage(step, response.status(), headers, text);
 			})
 		);
 	});
@@ -289,9 +325,25 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 					response.request().method(),
 					run.settings.deviceEnds === 'says-no'
 				)
-			: classifyResponse(new URL(response.url()), response.status(), headers.location ?? null);
+			: behind
+				? once(
+						behindThePage.response(
+							new URL(response.url()),
+							response.status(),
+							headers.location ?? null
+						),
+						'response'
+					)
+				: classifyResponse(new URL(response.url()), response.status(), headers.location ?? null);
 		const message = responseMessage(step, response.status(), headers);
 		run.messages.push(message);
+		if (step === 'set-session') {
+			cookies.push(
+				response.allHeaders().then((all) => {
+					message.headers['set-cookie'] = all['set-cookie'];
+				})
+			);
+		}
 		if (!response.url().startsWith(KEYCLOAK)) return;
 		cookies.push(
 			response.allHeaders().then((all) => {
@@ -365,6 +417,57 @@ async function login(browser: Browser, run: Run) {
 	}
 	await Promise.all(cookies);
 	await context.close();
+}
+
+/** Section 6.1 of RFC 10017 says what a script there can still do, so this asks a real page. */
+async function whatAScriptCan(browser: Browser, demo: Demo, admin: Admin) {
+	const settings = normalize({
+		...defaultSettings,
+		appRuns: 'bff',
+		clientType: 'confidential',
+		pkce: true
+	}).settings;
+	const run = runFor(settings);
+	await setUpFor(admin, run.realm, settings);
+	await demo.discover(run);
+	demo.current = run;
+	const context = await browser.newContext();
+	const page = await context.newPage();
+	await page.goto(APP);
+	await page.locator('#username').waitFor();
+	await page.fill('#username', USERNAME);
+	await page.fill('#password', PASSWORD);
+	await page.click('#kc-login');
+	await page.getByRole('heading', { name: 'Logged in' }).waitFor({ timeout: 30_000 });
+	const seen = await page.evaluate(async () => ({
+		cookies: document.cookie,
+		stored: JSON.stringify({ ...localStorage, ...sessionStorage }),
+		throughTheServer: (await fetch('/api/resource')).status
+	}));
+	await context.close();
+	demo.current = null;
+	return {
+		scriptBehindThePage: {
+			readsTheCookie: seen.cookies.includes('session'),
+			findsAToken: seen.stored.includes('eyJ'),
+			throughTheServer: seen.throughTheServer
+		}
+	};
+}
+
+/** Adds answers asked on their own, with when, because the file's date is when all of them were. */
+function addToQuestions(
+	on: string,
+	answers: Record<string, unknown>,
+	looked: Record<string, unknown> = {}
+) {
+	const file = `${FOLDER}/questions.json`;
+	const asked = JSON.parse(readFileSync(file, 'utf8'));
+	Object.assign(asked.answers, answers);
+	Object.assign(asked.answers.console, looked);
+	const keys = [...Object.keys(answers), ...Object.keys(looked).map((page) => `console.${page}`)];
+	asked.askedOn = { ...asked.askedOn, ...Object.fromEntries(keys.map((key) => [key, on])) };
+	writeFileSync(file, `${JSON.stringify(asked, null, '\t')}\n`);
 }
 
 function runFor(settings: Settings): Run {
@@ -762,13 +865,12 @@ async function recordOnlyPresets(ids: readonly string[]) {
 			recordedOn[id] = recordedAt;
 		}
 		if (wanted.some(({ settings }) => settings.federation)) {
-			const file = `${FOLDER}/questions.json`;
-			const asked = JSON.parse(readFileSync(file, 'utf8'));
 			const directoryNotes = noteDefs.filter(({ place }) => place?.page === 'directory-settings');
 			const looked = await lookInConsole(browser, admin, [], directoryNotes);
-			Object.assign(asked.answers, await questionsWithADirectory(admin));
-			Object.assign(asked.answers.console, looked);
-			writeFileSync(file, `${JSON.stringify(asked, null, '\t')}\n`);
+			addToQuestions(recordedAt, await questionsWithADirectory(admin), looked);
+		}
+		if (wanted.some(({ settings }) => settings.appRuns === 'bff')) {
+			addToQuestions(recordedAt, await whatAScriptCan(browser, demo, admin));
 		}
 		const flow = { presets: presets.map(({ id }) => id), steps: [...steps].sort() };
 		const flows = { ...index.flows, [base.id]: flow };
@@ -869,7 +971,10 @@ async function main() {
 			}
 			Object.assign(inConsole, await lookInConsole(browser, admin, features));
 			Object.assign(answers, await questions(browser, demo, admin));
-			if (!features.length) Object.assign(answers, await questionsWithADirectory(admin));
+			if (!features.length) {
+				Object.assign(answers, await questionsWithADirectory(admin));
+				Object.assign(answers, await whatAScriptCan(browser, demo, admin));
+			}
 			if (!features.length) {
 				const info = await admin.call<{ features: ServerFeature[] }>('GET', '/serverinfo');
 				flags = flagsFrom(info.features);
@@ -881,6 +986,9 @@ async function main() {
 
 		if (checking) {
 			const committedIndex = JSON.parse(readFileSync(INDEX, 'utf8')) as RecordingIndex;
+			// As it would be written, because a key holding nothing is gone from the file and not from memory.
+			const asWritten = (recording: Recording) =>
+				JSON.parse(JSON.stringify(recording)) as Recording;
 			const changes = [
 				...whatChanged({
 					recordings: [
@@ -888,7 +996,7 @@ async function main() {
 							committed: JSON.parse(
 								readFileSync(`${FOLDER}/${now.preset}.json`, 'utf8')
 							) as Recording,
-							now
+							now: asWritten(now)
 						})),
 						...withNoUser.map((now) => ({
 							committed: JSON.parse(
@@ -897,13 +1005,13 @@ async function main() {
 									'utf8'
 								)
 							) as Recording,
-							now
+							now: asWritten(now)
 						})),
 						...onDevice.map((now) => ({
 							committed: JSON.parse(
 								readFileSync(`static/recordings/${deviceBase.id}/${now.preset}.json`, 'utf8')
 							) as Recording,
-							now
+							now: asWritten(now)
 						}))
 					],
 					flags: { committed: committedIndex.flags, now: flags },
@@ -919,6 +1027,22 @@ async function main() {
 					? `\nWhat the screen says no longer holds:\n${changes.join('\n')}`
 					: '\nWhat the screen says still holds.'
 			);
+			// What this run recorded, kept apart, so that a difference that comes from where it ran
+			// rather than from the server can be committed from where the check runs.
+			if (failed) {
+				const keep = (folder: string, all: readonly Recording[]) => {
+					mkdirSync(`drift/${folder}`, { recursive: true });
+					for (const recording of all) {
+						writeFileSync(
+							`drift/${folder}/${recording.preset}.json`,
+							`${JSON.stringify(recording, null, '\t')}\n`
+						);
+					}
+				};
+				keep(FOLDER, recordings);
+				keep(`static/recordings/${clientCredentialsBase.id}`, withNoUser);
+				keep(`static/recordings/${deviceBase.id}`, onDevice);
+			}
 		} else {
 			mkdirSync(FOLDER, { recursive: true });
 			const write = (path: string, value: unknown) =>
