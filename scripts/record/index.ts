@@ -1024,6 +1024,22 @@ async function main() {
 					? `\nWhat the screen says no longer holds:\n${changes.join('\n')}`
 					: '\nWhat the screen says still holds.'
 			);
+			// What this run recorded, kept apart, so that a difference that comes from where it ran
+			// rather than from the server can be committed from where the check runs.
+			if (failed) {
+				const keep = (folder: string, all: readonly Recording[]) => {
+					mkdirSync(`drift/${folder}`, { recursive: true });
+					for (const recording of all) {
+						writeFileSync(
+							`drift/${folder}/${recording.preset}.json`,
+							`${JSON.stringify(recording, null, '\t')}\n`
+						);
+					}
+				};
+				keep(FOLDER, recordings);
+				keep(`static/recordings/${clientCredentialsBase.id}`, withNoUser);
+				keep(`static/recordings/${deviceBase.id}`, onDevice);
+			}
 		} else {
 			mkdirSync(FOLDER, { recursive: true });
 			const write = (path: string, value: unknown) =>
