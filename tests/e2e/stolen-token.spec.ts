@@ -6,7 +6,6 @@ const open = async (page: Page, search = '') => {
 	await page.locator('.workspace[data-ready="true"]').waitFor();
 };
 const row = (page: Page, step: string) => page.locator(`[data-step="${step}"]`);
-const label = (page: Page, step: string) => row(page, step).locator('[data-label]').first();
 
 test.describe('a stolen DPoP token (#33)', () => {
 	test('is only on offer with DPoP, and brings someone else onto the diagram', async ({ page }) => {
