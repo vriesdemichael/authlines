@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { authorizationCodeBase as base, flows } from '#lib/flow/index.ts';
-import { evaluate, type Field, type DiagramView, type Step } from '#lib/flow/model.ts';
+import { evaluate, holdingsAt, type Field, type DiagramView, type Step } from '#lib/flow/model.ts';
 import { allValidSettings, defaultSettings, normalize, type Settings } from '#lib/flow/settings.ts';
 import type { ArtifactId } from '#lib/flow/vocabulary.ts';
 import type { RecordedMessage, Recording } from '#lib/recordings/format.ts';
@@ -508,6 +508,17 @@ describe('a customer with a provider of their own', () => {
 			.find(({ id }) => id === 'add-organization')
 			?.fields.find(({ name }) => name === 'domain');
 		expect(domain?.note).toContain('acme.test is only that, and *.acme.test its subdomains too');
+	});
+
+	// The chips are the most prominent claim on the screen, and the point of SAML here is that the
+	// browser carries the answer itself.
+	it('shows the browser holding the assertion, which the recording has it send', () => {
+		const recording = read('companies-saml');
+		const view = evaluate(base.diagrams.flow, recording.settings);
+		expect(holdingsAt(view, 'upstream-callback').browser).toContain('assertion');
+		expect(holdingsAt(view, 'upstream-callback').app).not.toContain('assertion');
+		const sent = recording.messages.find(({ step }) => step === 'upstream-callback');
+		expect(Object.keys(sent?.body as object)).toContain('SAMLResponse');
 	});
 
 	it('trades nothing out of sight with SAML, where OpenID Connect trades a code', () => {

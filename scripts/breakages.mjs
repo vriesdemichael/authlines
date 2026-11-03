@@ -18,6 +18,24 @@ const ERRORS = 'src/lib/search/errors.ts';
 
 export const breakages = [
 	{
+		name: 'companies: SAML trades a code out of sight after all',
+		file: AC,
+		from: "on a connection the browser never sees.',\n\t\t\twhen: all(broker, not(saml)),",
+		to: "on a connection the browser never sees.',\n\t\t\twhen: broker,"
+	},
+	{
+		name: 'companies: the assertion does not go through the browser',
+		file: AC,
+		from: "\t\t\t\t\tartifact: 'assertion',\n\t\t\t\t\tnote: 'Signed by their provider, and readable by anyone who has it',",
+		to: "\t\t\t\t\tnote: 'Signed by their provider, and readable by anyone who has it',"
+	},
+	{
+		name: 'companies: Auto redirect is said to do the opposite',
+		file: NOTES,
+		from: "before: { goesTo: null, buttons: ['acme'], asksForPassword: true },",
+		to: "before: { goesTo: 'acme' },"
+	},
+	{
 		name: 'behind the page: the tokens reach the browser',
 		file: 'src/lib/flow/authorization-code.ts',
 		from: "name: 'Set-Cookie',\n\t\t\t\t\tplace: 'header',\n\t\t\t\t\tartifact: 'app-session',",

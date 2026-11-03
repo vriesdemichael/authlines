@@ -220,7 +220,19 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			id: 'brokered-login',
 			plain: 'The login at the other provider',
 			label: 'Brokered login: here the identity provider is the client',
-			when: broker
+			when: all(broker, not(companies))
+		},
+		{
+			id: 'brokered-login',
+			plain: 'The login at their company',
+			label: 'Brokered login: here the identity provider is the client',
+			when: all(companies, not(saml))
+		},
+		{
+			id: 'brokered-login',
+			plain: 'The login at their company',
+			label: 'Brokered login: in SAML, the identity provider is the service provider',
+			when: saml
 		},
 		{ id: 'nonce-retry', plain: 'A fresh proof', label: 'Nonce retry', when: nonce }
 	],
