@@ -6,6 +6,7 @@ import {
 	REDIRECT_URI,
 	withSecret as confidential
 } from '#lib/recordings/run-yourself.ts';
+import type { Browser } from '@playwright/test';
 import { Admin, KEYCLOAK, PASSWORD, PROXY_FROM_CONTAINER } from './keycloak.ts';
 
 /** Our provider, the one the app knows. */
@@ -317,6 +318,106 @@ export async function questionsWithCompanies(admin: Admin) {
 		const [question] = await admin.call<{ id: string }[]>(
 			'GET',
 			`${realm}/clients?clientId=${QUESTION_CLIENT}`
+		);
+		await admin.call('DELETE', `${realm}/clients/${question.id}`);
+	}
+}
+
+/** Turns someone at a customer off, or on again, as their company's admins would when they leave. */
+export async function turnOff(admin: Admin, customer: Customer, off = true) {
+	const { email } = PERSON_AT[customer];
+	const [person] = await admin.call<{ id: string }[]>(
+		'GET',
+		`/realms/${customer}/users?email=${encodeURIComponent(email)}&exact=true`
+	);
+	const user = await admin.call<object>('GET', `/realms/${customer}/users/${person.id}`);
+	await admin.call('PUT', `/realms/${customer}/users/${person.id}`, { ...user, enabled: !off });
+}
+
+const LEAVING_CLIENT = 'leaving-question';
+
+/**
+ * What a real server does once someone has left, for a browser that has no session here. In a real
+ * browser, because their company's pages are forms that send themselves.
+ */
+export async function questionsWhenSomeoneLeaves(browser: Browser, admin: Admin) {
+	const realm = `/realms/${COMPANIES_REALM}`;
+	await admin.call('POST', `${realm}/clients`, client(LEAVING_CLIENT, { publicClient: true }));
+	await forgetCustomersPeople(admin);
+	const logIn = async (customer: Customer) => {
+		const { email } = PERSON_AT[customer];
+		const context = await browser.newContext();
+		const page = await context.newPage();
+		const query = new URLSearchParams({
+			response_type: 'code',
+			client_id: LEAVING_CLIENT,
+			redirect_uri: REDIRECT_URI
+		});
+		await page.goto(`${KEYCLOAK}${realm}/protocol/openid-connect/auth?${query}`);
+		await page.fill('#username', email);
+		await page.click('#kc-login');
+		await page.locator('#password').waitFor({ timeout: 15_000 });
+		// Their company's page may not know the email: with SAML, nothing passed it on.
+		await page.fill('#username', email);
+		await page.fill('#password', PASSWORD);
+		await page.click('#kc-login');
+		await page
+			.getByRole('heading', { name: 'Done' })
+			.or(page.getByText(/disabled|invalid/i))
+			.first()
+			.waitFor({ timeout: 20_000 });
+		const at = new URL(page.url());
+		const body = await page.locator('body').innerText();
+		await context.close();
+		const loggedIn = at.href.startsWith(REDIRECT_URI);
+		return {
+			loggedIn,
+			atTheirCompany: at.pathname.startsWith(`/realms/${customer}/`),
+			says: loggedIn
+				? null
+				: (body
+						.split(/\n+/)
+						.find((line) => /disabled|invalid/i.test(line))
+						?.trim() ?? null)
+		};
+	};
+	// The same for a customer on SAML and one on OpenID Connect, so the screen can say it of either.
+	const ask = async (customer: Customer) => {
+		const before = await logIn(customer);
+		await turnOff(admin, customer);
+		const withNoSession = await logIn(customer);
+		const [kept] = await admin.call<{ enabled: boolean }[]>(
+			'GET',
+			`${realm}/users?email=${encodeURIComponent(PERSON_AT[customer].email)}&exact=true`
+		);
+		return {
+			before: { loggedIn: before.loggedIn },
+			withNoSession,
+			keptHere: { enabled: kept?.enabled ?? null }
+		};
+	};
+	try {
+		const acme = await ask(SAML_CUSTOMER);
+		const globex = await ask(OIDC_CUSTOMER);
+		const lengths = await admin.call<{
+			ssoSessionIdleTimeout: number;
+			ssoSessionMaxLifespan: number;
+		}>('GET', realm);
+		return {
+			whenSomeoneLeaves: {
+				acme,
+				globex,
+				session: {
+					idleMinutes: lengths.ssoSessionIdleTimeout / 60,
+					maxHours: lengths.ssoSessionMaxLifespan / 3600
+				}
+			}
+		};
+	} finally {
+		for (const customer of CUSTOMERS) await turnOff(admin, customer, false);
+		const [question] = await admin.call<{ id: string }[]>(
+			'GET',
+			`${realm}/clients?clientId=${LEAVING_CLIENT}`
 		);
 		await admin.call('DELETE', `${realm}/clients/${question.id}`);
 	}

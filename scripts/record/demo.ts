@@ -208,6 +208,8 @@ export interface Run {
 	clientId: string;
 	clientSecret: string | null;
 	messages: RecordedMessage[];
+	/** The same browser coming back after they left, which is drawn as a login of its own. */
+	again?: boolean;
 }
 
 /** The app's DPoP key, made once per run, which is the "Generate a key pair" step. */
@@ -315,6 +317,8 @@ export const CLIENT_DOCUMENT = 'http://host.docker.internal:9100/client-document
 
 export class Demo {
 	current: Run | null = null;
+	/** What happens while they are logged in, such as their company turning them off. The recorder sets it. */
+	meanwhile: (() => Promise<void>) | null = null;
 	#keptLogin = { username: '', password: '' };
 
 	/** It asks to be registered, with the one token an admin gave it, and goes on as what it gets back. */
@@ -568,6 +572,7 @@ export class Demo {
 
 		if (settings.upstreamTokens !== 'off') await this.#storedToken(tokens.access_token);
 		if (settings.refresh) await this.#whenItRunsOut(tokens);
+		if (settings.leaves) await this.#afterTheyLeft(tokens);
 		return 'Logged in';
 	}
 
@@ -742,6 +747,34 @@ export class Demo {
 		if (newest.status !== 400) throw new Error(`The newest still works: ${newest.text}`);
 	}
 
+	/** Their company turns them off, and the app goes on with what it has. */
+	async #afterTheyLeft(tokens: Tokens) {
+		const run = this.#run;
+		await this.meanwhile?.();
+		const resource = `${API}/resource`;
+		const still = await call(
+			run,
+			['left-api-request', 'left-api-response'],
+			'GET',
+			resource,
+			this.#authorization('GET', resource, tokens.access_token)
+		);
+		if (still.status !== 200) throw new Error(`The API refused once they left: ${still.text}`);
+		const refreshed = await call(
+			run,
+			['left-refresh', 'left-refresh-response'],
+			'POST',
+			this.#server.token_endpoint,
+			run.clientSecret ? { authorization: basicAuth(run.clientId, run.clientSecret) } : {},
+			{
+				grant_type: 'refresh_token',
+				refresh_token: tokens.refresh_token,
+				...(run.clientSecret ? {} : { client_id: run.clientId })
+			}
+		);
+		if (refreshed.status !== 200) throw new Error(`No refresh once they left: ${refreshed.text}`);
+	}
+
 	async #storedToken(accessToken: string) {
 		const run = this.#run;
 		const url = `${KEYCLOAK}/realms/${run.realm}/broker/${UPSTREAM_REALM}/token`;
@@ -910,6 +943,12 @@ export class Demo {
 					this.lastCode = url.searchParams.get('code') ?? '';
 					response.writeHead(200, { 'content-type': 'text/html' });
 					response.end('<h1>Done</h1>');
+					return;
+				}
+				// Back after they left: the code is what this shows, so it is not traded again.
+				if (this.current.again) {
+					response.writeHead(200, { 'content-type': 'text/html' });
+					response.end('<h1>Back</h1>');
 					return;
 				}
 				if (url.searchParams.get('state') !== this.#state) {

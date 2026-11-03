@@ -44,7 +44,9 @@
 		"in-a-directory": "2026-11-03",
 		"behind-the-page": "2026-11-03",
 		"companies": "2026-11-03",
-		"companies-saml": "2026-11-03"
+		"companies-saml": "2026-11-03",
+		"companies-leaves": "2026-11-03",
+		"companies-oidc-leaves": "2026-11-03"
 	},
 	"flows": {
 		"authorization-code": {
@@ -91,6 +93,8 @@
 				"broker",
 				"companies",
 				"companies-saml",
+				"companies-leaves",
+				"companies-oidc-leaves",
 				"upstream-v1",
 				"upstream-v2",
 				"everything"
@@ -122,6 +126,7 @@
 				"callback",
 				"cimd-document",
 				"cimd-fetch",
+				"code-again",
 				"consent-grant",
 				"consent-page",
 				"dcr-request",
@@ -140,7 +145,12 @@
 				"introspect",
 				"introspect-response",
 				"keys",
+				"left-api-request",
+				"left-api-response",
+				"left-refresh",
+				"left-refresh-response",
 				"logged-out",
+				"login-again",
 				"login-page",
 				"logout-redirect",
 				"logout-redirect-back",

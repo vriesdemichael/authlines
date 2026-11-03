@@ -38,6 +38,8 @@ const broker = is('broker', true);
 /** Each customer has a provider of their own, and the identity provider finds which (issue 118). */
 const companies = is('companies', true);
 const saml = all(companies, is('customerSpeaks', 'saml'));
+/** Their company turns their account off, and what still works here. */
+const leaves = is('leaves', true);
 const storedTokens = any(is('upstreamTokens', 'v1'), is('upstreamTokens', 'v2'));
 const apiV1 = is('upstreamTokens', 'v1');
 const apiV2 = is('upstreamTokens', 'v2');
@@ -261,6 +263,11 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			label: 'Use',
 			why: 'This is what the token was for, and whatever gets the call decides what to do with it.',
 			from: 'userinfo-request'
+		},
+		{
+			label: 'Leave',
+			why: 'Their company turns their account off. What still works here is what a customer asks about.',
+			from: 'company-turns-off'
 		},
 		{
 			label: 'Renew',
@@ -2237,6 +2244,120 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept:
 				'The page has the data and still no token. Every call it makes goes this way, so this server now has to be up and in reach for all of them.',
 			fields: [{ name: 'resource', place: 'body', note: 'What the API said, passed on' }]
+		},
+		{
+			id: 'company-turns-off',
+			when: leaves,
+			from: 'upstream',
+			to: 'upstream',
+			kind: 'internal',
+			plain: 'Their company turns their account off',
+			label: 'Account disabled',
+			concept:
+				"They have left, and their company's admins turn their account off at their own provider. On the server recorded, nothing was set up for their company to tell the identity provider, and nothing told it, or the app."
+		},
+		{
+			id: 'left-api-request',
+			when: leaves,
+			from: 'app',
+			to: 'api',
+			kind: 'request',
+			plain: 'The app calls the API, with the same token',
+			label: 'GET /resource',
+			concept: 'The app still has the token it got before they left, and uses it.',
+			fields: [{ name: 'Authorization: Bearer', place: 'header', artifact: 'access-token' }]
+		},
+		{
+			id: 'left-api-response',
+			when: leaves,
+			from: 'api',
+			to: 'app',
+			kind: 'response',
+			plain: 'It still answers',
+			label: '200 with the resource',
+			concept:
+				'Nothing in the token changed, and it has not run out, so the API answered as before.',
+			fields: [{ name: 'resource', place: 'body', note: 'What the API answers' }]
+		},
+		{
+			id: 'left-refresh',
+			when: leaves,
+			from: 'app',
+			to: 'idp',
+			kind: 'request',
+			plain: 'The app asks for new tokens',
+			label: 'POST /token',
+			concept: 'The app uses its refresh token, as it would any time the access token runs out.',
+			fields: [
+				...refreshFields,
+				{ name: 'refresh_token', place: 'body', artifact: 'refresh-token' }
+			]
+		},
+		{
+			id: 'left-refresh-response',
+			when: leaves,
+			from: 'idp',
+			to: 'app',
+			kind: 'response',
+			plain: 'New tokens, without asking their company',
+			label: '200, new tokens',
+			concept:
+				'The identity provider did not ask their company for a refresh. The session it keeps for them was still good, and so was the account it kept for them, and it gave new tokens.',
+			fields: [
+				{ name: 'access_token', place: 'body', artifact: 'access-token' },
+				{ name: 'token_type=Bearer', place: 'body' },
+				{ name: 'expires_in', place: 'body' },
+				{ name: 'refresh_token', place: 'body', artifact: 'refresh-token' },
+				{ name: 'scope', place: 'body' }
+			]
+		},
+		{
+			id: 'login-again',
+			when: leaves,
+			from: 'browser',
+			to: 'idp',
+			kind: 'request',
+			plain: 'The same browser logs in again',
+			label: 'GET /authorize',
+			concept: 'Later, the same browser comes back to log in to the app.',
+			fields: [
+				{ name: 'response_type=code', place: 'query' },
+				{ name: 'client_id', place: 'query' },
+				{ name: 'redirect_uri', place: 'query' },
+				{ name: 'state', place: 'query' },
+				{ name: 'scope=organization', place: 'query' },
+				{
+					name: 'Cookie',
+					place: 'header',
+					artifact: 'session',
+					note: 'The session from before, which is why nobody is asked'
+				}
+			]
+		},
+		{
+			id: 'code-again',
+			when: leaves,
+			last: true,
+			from: 'idp',
+			to: 'browser',
+			kind: 'response',
+			plain: 'A code, without asking their company',
+			label: '302 back with a code',
+			concept:
+				'The identity provider still has a session for this browser, so it does not ask their company at all, and sends a code straight back.',
+			pitfall: {
+				title: 'When does it stop?',
+				text: [
+					{
+						text: 'The access token it already has works until it runs out. A refresh and a login again work while the session in the middle lasts: the server recorded, as it comes, ends a session after 30 minutes unused, or 10 hours in all, and its guide says a refresh counts as using it, which restarts the 30 minutes and not the 10 hours. Its admins can end it sooner, which was not tried. With either kind of customer, a browser with no session went to their company, whose page said "Account is disabled, contact your administrator.", and the identity provider never heard back. The account it kept for them stayed enabled.'
+					}
+				]
+			},
+			fields: [
+				{ name: 'code', place: 'query' },
+				{ name: 'state', place: 'query' },
+				{ name: 'iss', place: 'query' }
+			]
 		},
 		{
 			id: 'token-runs-out',

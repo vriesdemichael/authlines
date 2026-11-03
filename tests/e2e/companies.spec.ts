@@ -55,6 +55,26 @@ test.describe('customers with providers of their own (#118)', () => {
 		await expect(page.getByTestId('step-detail')).toContainText('certificate');
 	});
 
+	test('shows what still works once someone leaves, and when it stops', async ({ page }) => {
+		await open(page, '&broker=1&companies=1&speaks=saml');
+		await expect(row(page, 'company-turns-off')).toHaveCount(0);
+		await toggle(page, 'leaves').check();
+		await expect(page).toHaveURL(/leaves=1/);
+		for (const step of [
+			'company-turns-off',
+			'left-api-response',
+			'left-refresh-response',
+			'code-again'
+		]) {
+			await expect(row(page, step)).toHaveCount(1);
+		}
+		await open(page, '&broker=1&companies=1&speaks=saml&leaves=1&step=code-again');
+		await page.getByText('When does it stop?').click();
+		await expect(page.getByTestId('step-detail')).toContainText('Account is disabled');
+		await toggle(page, 'companies').uncheck();
+		await expect(page).not.toHaveURL(/leaves=1/);
+	});
+
 	test('is found by the words someone has', async ({ page }) => {
 		await page.goto('./');
 		await page.locator('main[data-ready="true"]').waitFor();

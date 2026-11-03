@@ -10,7 +10,8 @@
 		"autoRedirect": "2026-11-03",
 		"companyDomains": "2026-11-03",
 		"passwordHere": "2026-11-03",
-		"console.auto-redirect": "2026-11-03"
+		"console.auto-redirect": "2026-11-03",
+		"whenSomeoneLeaves": "2026-11-03"
 	},
 	"answers": {
 		"validRedirectUris": {
@@ -918,6 +919,38 @@
 			],
 			"asksForPassword": true,
 			"loggedIn": true
+		},
+		"whenSomeoneLeaves": {
+			"acme": {
+				"before": {
+					"loggedIn": true
+				},
+				"withNoSession": {
+					"loggedIn": false,
+					"atTheirCompany": true,
+					"says": "Account is disabled, contact your administrator."
+				},
+				"keptHere": {
+					"enabled": true
+				}
+			},
+			"globex": {
+				"before": {
+					"loggedIn": true
+				},
+				"withNoSession": {
+					"loggedIn": false,
+					"atTheirCompany": true,
+					"says": "Account is disabled, contact your administrator."
+				},
+				"keptHere": {
+					"enabled": true
+				}
+			},
+			"session": {
+				"idleMinutes": 30,
+				"maxHours": 10
+			}
 		}
 	}
 }

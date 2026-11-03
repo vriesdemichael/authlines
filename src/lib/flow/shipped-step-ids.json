@@ -128,5 +128,12 @@
 	"send-our-details",
 	"customer-registers-us",
 	"send-their-details",
-	"add-organization"
+	"add-organization",
+	"company-turns-off",
+	"left-api-request",
+	"left-api-response",
+	"left-refresh",
+	"left-refresh-response",
+	"login-again",
+	"code-again"
 ]

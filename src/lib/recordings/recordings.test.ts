@@ -214,7 +214,8 @@ describe.each(asCases)('the recording of %s', (preset, recording) => {
 				valueIn('token-response', 'access_token'),
 				valueIn('refresh-response', 'access_token'),
 				valueIn('refresh-again-response', 'access_token'),
-				valueIn('second-token-response', 'access_token')
+				valueIn('second-token-response', 'access_token'),
+				valueIn('left-refresh-response', 'access_token')
 			],
 			'id-token': [
 				valueIn('token-response', 'id_token') ?? valueIn('attacker-token-response', 'id_token'),
@@ -227,7 +228,8 @@ describe.each(asCases)('the recording of %s', (preset, recording) => {
 					valueIn('attacker-token-response', 'refresh_token'),
 				valueIn('refresh-response', 'refresh_token'),
 				valueIn('refresh-again-response', 'refresh_token'),
-				valueIn('second-token-response', 'refresh_token')
+				valueIn('second-token-response', 'refresh_token'),
+				valueIn('left-refresh-response', 'refresh_token')
 			],
 			'upstream-token': [valueIn('upstream-token-response', 'access_token')]
 		};
@@ -519,6 +521,47 @@ describe('a customer with a provider of their own', () => {
 		expect(holdingsAt(view, 'upstream-callback').app).not.toContain('assertion');
 		const sent = recording.messages.find(({ step }) => step === 'upstream-callback');
 		expect(Object.keys(sent?.body as object)).toContain('SAMLResponse');
+	});
+
+	// What a customer most wants to know, so each part comes from a real run and not from me.
+	it('says what still worked after someone left, as two real runs did', () => {
+		for (const preset of ['companies-leaves', 'companies-oidc-leaves']) {
+			const { messages } = read(preset);
+			const status = (step: string) => messages.find((m) => m.step === step)?.status;
+			expect(status('left-api-response'), preset).toBe(200);
+			expect(status('left-refresh-response'), preset).toBe(200);
+			const again = messages.findIndex(({ step }) => step === 'login-again');
+			expect(messages[again + 1].step, preset).toBe('code-again');
+			expect(messages[again + 1].headers.location, preset).toContain('code=');
+			// Nothing went to their company on the way back.
+			expect(
+				messages.slice(again).some(({ url }) => url?.includes('/realms/acme/')),
+				preset
+			).toBe(false);
+			expect(
+				messages.slice(again).some(({ url }) => url?.includes('/realms/globex/')),
+				preset
+			).toBe(false);
+		}
+	});
+
+	it('says when it stops, as a real server answered', () => {
+		const { acme, globex, session } = answers.whenSomeoneLeaves;
+		for (const { withNoSession, keptHere, before } of [acme, globex]) {
+			expect(before.loggedIn).toBe(true);
+			expect(withNoSession).toMatchObject({ loggedIn: false, atTheirCompany: true });
+			expect(withNoSession.says).toBe('Account is disabled, contact your administrator.');
+			expect(keptHere.enabled).toBe(true);
+		}
+		const { withNoSession } = acme;
+		expect(session).toEqual({ idleMinutes: 30, maxHours: 10 });
+		const step = stepsOf(read('companies-leaves')).find(({ id }) => id === 'code-again');
+		const text = step?.pitfall?.text ?? '';
+		expect(text).toContain(withNoSession.says);
+		expect(text).toContain(
+			`${session.idleMinutes} minutes unused, or ${session.maxHours} hours in all`
+		);
+		expect(text).toContain('stayed enabled');
 	});
 
 	it('trades nothing out of sight with SAML, where OpenID Connect trades a code', () => {

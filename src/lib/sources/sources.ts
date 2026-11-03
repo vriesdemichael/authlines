@@ -16,6 +16,7 @@ export type SourceId =
 	| 'keycloak-brokering'
 	| 'keycloak-federation'
 	| 'keycloak-organizations'
+	| 'keycloak-timeouts'
 	| 'saml-core'
 	| 'keycloak-stored-tokens'
 	| 'keycloak-concepts';
@@ -176,6 +177,14 @@ export const sources: Record<SourceId, SourceDef> = {
 		summary:
 			"Keycloak can keep customers apart as organizations, each with its members, domains and identity providers. With organizations on, the login can ask for an email first, and send someone whose email is at one of an organization's domains straight to its provider.",
 		url: 'https://www.keycloak.org/docs/26.8.1/server_admin/#_managing_organizations'
+	},
+	'keycloak-timeouts': {
+		label: 'Keycloak docs: timeouts',
+		title: 'Session and token timeouts',
+		status: 'Keycloak 26.8.1, Server Administration Guide.',
+		summary:
+			'How long sessions and tokens last on a realm. A session ends when it has not been used for SSO Session Idle, and at the latest after SSO Session Max. Logging in again or refreshing a token counts as using it. A token has a lifespan of its own.',
+		url: 'https://www.keycloak.org/docs/26.8.1/server_admin/#_timeouts'
 	},
 	'saml-core': {
 		label: 'SAML 2.0 Core',
