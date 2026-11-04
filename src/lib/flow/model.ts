@@ -218,6 +218,8 @@ export interface Lifeline {
 	plainRole: string;
 	name: string;
 	role: string;
+	/** What a link calls it, for someone's own setup (#168). Only ever a label on the head. */
+	given?: string;
 	knownAs: readonly KnownAs[];
 	concept: string;
 	icon: LifelineIcon;

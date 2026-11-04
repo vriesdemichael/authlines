@@ -292,7 +292,7 @@ Plan early for step text outside the SVG, reduced motion, keyboard control and a
 
 - Plan for "what survives if Auth0 adds a toggle": the Keycloak overlay, flows verified against a real server, and version skew shown openly.
 - Public demand is unproven. Recent interactive tool launches scored 3 to 19 Hacker News points while article explainers reach hundreds, though launch scores are noisy. A blog post may be how people first hear about it, and that belongs in the maintainer's blogs repo. It is distribution and does not change what is being built.
-- LLMs are the real competitor for answers. This application must offer what a chat answer cannot: a stable visual frame and content verified against a real server.
+- LLMs are the real competitor for answers. This application must offer what a chat answer cannot: a stable visual frame and content verified against a real server. **Decided, on 2026-11-04, and built:** so an agent can link to it instead, with the person's own names on the parties of a recorded flow, after the `#` so they never reach a server ([ADR-017](adr/017-a-link-may-name-the-parties-and-nothing-else.md), [#168](https://github.com/vriesdemichael/authlines/issues/168)). The traffic stays the one recorded, and says which value is which name.
 
 ### Visual ambition is a requirement and a cost (Proposed)
 
@@ -330,6 +330,7 @@ An order for later releases. **Proposed**, and expected to change.
 | Logging out | Modifier | Ends the session and leaves the tokens, then shows the same token getting two answers, from an API that only looks at it and one that asks the server. With a second app, that app is told. Interactive coverage looks thin elsewhere |
 | FAPI 2.0, OAuth 2.1 | Later | A composition or a diff over existing toggles |
 | Authz (RBAC, ABAC, ReBAC, UMA) | Later | Multiplies the content |
+| Names from an agent's link, built ([#168](https://github.com/vriesdemichael/authlines/issues/168)) | Not a setting: after the `#` of any link | The heads take someone's own names, with what each party is beside them, and the raw view says which recorded value is which. A flow the agent draws itself is not built |
 
 What an AI agent given a security engineer's job looked for, decided one by one ([#101](https://github.com/vriesdemichael/authlines/issues/101)). **Proposed.**
 

@@ -1,0 +1,17 @@
+# ADR-017: A link may name the parties, after the #, and nothing else
+
+An AI agent helping someone with their own system can link to the recorded flow and settings that match it, and give the parties that person's names: `#v=1&app=Payroll&idp=Entra%20ID`. The maintainer asked for this on 2026-11-04 (#168), so that an agent's explanation comes with a picture to step through, and a chat answer is the competitor premise section 6 names. `/for-agents/` describes the format, made from the flow data so it cannot drift, and `llms.txt` points there.
+
+The names go after the `#`, which a browser never sends, so someone's own system stays in their browser ([ADR-010](010-static-files-on-github-pages.md)). That is the one exception to [ADR-003](003-state-is-in-the-url-and-variants-get-no-page.md): everything else is still in the path and the query, and every way on from the page carries the names along until someone asks for the site's own. A name is plain text of at most 32 characters, with no markup, no address, nothing that looks like a token and nothing that does not show, because a link makes the site show its author's words at its own address. The format has a version, so a link that shipped keeps working. A party the flow does not have, or a name that does not fit, is left out and said beside the diagram, and nothing is drawn that the link did not mean.
+
+The names change the heads and nothing else. A named head is in italics, with what the party is under its name, or beside it on a phone, and selecting it says the link gave that name. A note beside the diagram lists the names and says whoever made the link chose them. Every request and answer stays the one recorded ([ADR-005](005-payloads-are-recorded-never-invented.md)), with the site's own names in it, and the raw view says which recorded value is which named party: "here Payroll is demo-app and Entra ID is the Keycloak realm demo". The maintainer agreed to that on 2026-11-04, after weighing it against a recording with the names put in, and against showing no traffic.
+
+Only names, on a flow the site has, which #168 calls the first level. The agent cannot draw a flow of its own yet: that needs a format for steps from outside, parties of a kind the site does not know, and words nobody checked, and it would lose the recording and the settings to flip. Renaming a party on the page, by a person, is a separate change, and never a plain click, because a click on a head already explains it.
+
+## Not chosen
+
+- **The names in the recorded traffic too**: It would be invented, and a token with them in it no longer verifies. #128 was closed for this.
+- **No traffic once a link names the parties**: It takes away what makes a link here worth more than a chat answer, exactly when someone looks at their own case.
+- **A switch back to the traffic without names**: One more control, where one line in the raw view says the same.
+- **The names in the query**: The query reaches GitHub's servers, and with it the names of someone's own systems.
+- **A link that draws a flow of its own, first**: Nothing in it would be recorded, and the transition has nothing to animate without settings.

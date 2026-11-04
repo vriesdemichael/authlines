@@ -113,6 +113,8 @@ export interface LaneLayout {
 	/** One line, or two when it does not fit, which takes the place of the role. */
 	nameLines: readonly string[];
 	role: string;
+	/** Named by the link that was opened, and not by the site. */
+	given: boolean;
 	icon: LifelineIcon;
 }
 
@@ -346,6 +348,7 @@ export function layoutDiagram(
 		name: nameIn(line, wording),
 		nameLines: linesOfName(nameIn(line, wording), headWidth),
 		role: roleIn(line, wording),
+		given: Boolean(line.given),
 		icon: line.icon
 	}));
 	const laneX = new Map(lanes.map((lane) => [lane.id, lane.x]));

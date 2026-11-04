@@ -40,6 +40,8 @@
 
 	const base = $derived(flows[data.flowId]);
 	const added = $derived(mounted ? page.url.search : '');
+	// Names a link gave the parties, which only the browser ever sees (#168).
+	const named = $derived(mounted ? page.url.hash : '');
 	const fromUrl = $derived(
 		parseState(base, data.diagram, data.node ? nodeSearch(data.node, added) : added)
 	);
@@ -91,7 +93,7 @@
 		})
 	);
 
-	function hrefFor(state: AppState) {
+	function addressFor(state: AppState) {
 		// The address of the question, for as long as the question still holds, so a reload or a link
 		// keeps it.
 		if (question && stillAnswers(question, state)) {
@@ -101,6 +103,14 @@
 		const search = serializeState(base, state);
 		const view = state.diagram === 'setup' ? 'setup' : undefined;
 		return resolve('/[flow]/[[view]]', { flow: base.id, view }) + (search ? `?${search}` : '');
+	}
+
+	// Every way on keeps the names, until someone asks for the site's own.
+	const hrefFor = (state: AppState) => addressFor(state) + named;
+
+	function dropNames() {
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- addressFor resolves it
+		return goto(addressFor(appState), { reset: false });
 	}
 
 	async function loadText(file: string) {
@@ -134,7 +144,7 @@
 		const search = serializeState(other, next);
 		const there = resolve('/[flow]/[[view]]', { flow: id, view: undefined });
 		// eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above
-		return goto(search ? `${there}?${search}` : there);
+		return goto((search ? `${there}?${search}` : there) + named);
 	}
 
 	async function navigate(next: AppState, history: 'push' | 'replace') {
@@ -184,5 +194,7 @@
 		questionOffersList={question?.offersList ?? false}
 		onflow={goToFlow}
 		onnavigate={navigate}
+		linkNames={named}
+		ondropnames={dropNames}
 	/>
 {/key}

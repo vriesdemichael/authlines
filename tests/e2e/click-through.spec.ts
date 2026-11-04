@@ -310,3 +310,68 @@ test.describe('without JavaScript', () => {
 		await expect(page).toHaveTitle('Authorization code flow');
 	});
 });
+
+// An agent's link to someone's own setup: their names on a recorded flow (#168, ADR-017).
+test.describe('a link with names', () => {
+	const named = '#v=1&app=Payroll&idp=Entra%20ID&api=HR%20API';
+	const ready = (page: import('@playwright/test').Page) =>
+		page.locator('.workspace[data-ready="true"]').waitFor();
+	const app = (page: import('@playwright/test').Page) => page.locator('[data-lifeline="app"]');
+
+	test('names the parties, keeps them while stepping, and lets them go', async ({ page }) => {
+		const check = watchForErrors(page);
+		await page.goto(`${FLOW_PATH}?mode=advanced&step=token-request${named}`);
+		await ready(page);
+		await expect(app(page)).toContainText('Payroll');
+		await expect(app(page)).toContainText('App');
+		await expect(page.getByTestId('names-note')).toContainText('Payroll for the app');
+		await expect(page.getByTestId('names-seam')).toContainText('Payroll is demo-app');
+		await page.getByTestId('next').click();
+		await expect(page).toHaveURL(/step=token-response#v=1&app=Payroll/);
+		await expect(app(page)).toContainText('Payroll');
+		await page.getByTestId('names-off').click();
+		await expect(page).not.toHaveURL(/#/);
+		await expect(app(page)).not.toContainText('Payroll');
+		await expect(page.getByTestId('names-note')).toHaveCount(0);
+		check();
+	});
+
+	test('draws the site’s own names for a link that does not fit, and says why', async ({
+		page
+	}) => {
+		await page.goto(`${FLOW_PATH}#app=Payroll`);
+		await ready(page);
+		await expect(page.getByTestId('names-problems')).toContainText('no version');
+		await expect(app(page)).not.toContainText('Payroll');
+	});
+
+	test('shows a name only as text, and refuses markup', async ({ page }) => {
+		let alerted = false;
+		page.on('dialog', async (dialog) => {
+			alerted = true;
+			await dialog.dismiss();
+		});
+		await page.goto(
+			`${FLOW_PATH}#v=1&app=${encodeURIComponent('<img src=x onerror=alert(1)>')}&idp=${encodeURIComponent('Pay & "roll"')}`
+		);
+		await ready(page);
+		await expect(page.getByTestId('names-problems')).toContainText('has < or >');
+		await expect(page.locator('img[src="x"]')).toHaveCount(0);
+		await expect(page.locator('[data-lifeline="idp"]')).toContainText('Pay & "roll"');
+		expect(alerted).toBe(false);
+	});
+
+	test('opens every example on the page for agents, with nothing left out', async ({ page }) => {
+		await page.goto('for-agents/');
+		const links = await page
+			.getByTestId('example')
+			.evaluateAll((all) => all.map((link) => (link as HTMLAnchorElement).href));
+		expect(links.length).toBeGreaterThan(3);
+		for (const href of links) {
+			await page.goto(href);
+			await ready(page);
+			await expect(page.getByTestId('names-note'), href).toBeVisible();
+			await expect(page.getByTestId('names-problems'), href).toHaveCount(0);
+		}
+	});
+});

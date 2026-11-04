@@ -37,6 +37,8 @@
 		onlarge?: (() => void) | null;
 		/** It is being read like that. */
 		large?: boolean;
+		/** Names a link gave, and which recorded value is which of them (#168). */
+		seam?: string | null;
 	}
 
 	let {
@@ -52,7 +54,8 @@
 		seesStep = () => true,
 		runHref = null,
 		onlarge = null,
-		large = false
+		large = false,
+		seam = null
 	}: Props = $props();
 
 	const message = $derived(recording?.messages.find((candidate) => candidate.step === step.id));
@@ -129,6 +132,9 @@
 				<!-- The browser would not let it be copied, so here it is to select by hand. -->
 				<pre data-testid="copy-by-hand">{command}</pre>
 			{/if}
+		{/if}
+		{#if seam}
+			<p class="seam" data-testid="names-seam">{seam}</p>
 		{/if}
 		<Payload
 			{step}
@@ -223,5 +229,11 @@
 		margin-top: 8px;
 		color: var(--muted);
 		font-size: 11.5px;
+	}
+
+	/* Where the names on the diagram and the recorded values part, said once above the traffic. */
+	.seam {
+		margin: 0 0 8px;
+		font-size: 12px;
 	}
 </style>

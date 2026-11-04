@@ -725,6 +725,20 @@ export const breakages = [
 		to: 'const counts = [true, false].flatMap((plain) => {'
 	},
 
+	// Names from a link (#168).
+	{
+		name: 'names: markup in a name is let through',
+		file: 'src/lib/flow/names.ts',
+		from: "\tif (MARKUP.test(name)) return 'has < or >, and a name is plain text';\n",
+		to: ''
+	},
+	{
+		name: 'names: a name a link gave goes nowhere',
+		file: 'src/lib/flow/wording.ts',
+		from: 'return line.given ?? kindIn(line, wording);',
+		to: 'return kindIn(line, wording);'
+	},
+
 	// The request pushed first.
 	{
 		name: 'par: the browser still carries what was pushed',
