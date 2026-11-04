@@ -16,15 +16,23 @@ export const wordingNames: Readonly<Record<Wording, string>> = {
 /** What it says until someone chooses, because asking for more detail is not asking for new names. */
 export const DEFAULT_WORDING: Wording = 'plain';
 
-type Named = Pick<Lifeline, 'id' | 'plainName' | 'plainRole' | 'name' | 'role'>;
+type Named = Pick<Lifeline, 'id' | 'plainName' | 'plainRole' | 'name' | 'role'> &
+	Partial<Pick<Lifeline, 'given'>>;
 
-export function nameIn(line: Named, wording: Wording): string {
+/** What the party is, in these words, whatever a link calls it. */
+export function kindIn(line: Named, wording: Wording): string {
 	if (wording === 'plain') return line.plainName;
 	const theirs = wording === 'keycloak' ? keycloakName(line.id) : undefined;
 	return theirs?.name ?? line.name;
 }
 
+/** A name a link gave comes first, in every wording, and what the party is goes under it (#168). */
+export function nameIn(line: Named, wording: Wording): string {
+	return line.given ?? kindIn(line, wording);
+}
+
 export function roleIn(line: Named, wording: Wording): string {
+	if (line.given) return kindIn(line, wording);
 	if (wording === 'plain') return line.plainRole;
 	const theirs = wording === 'keycloak' ? keycloakName(line.id) : undefined;
 	return theirs?.role ?? line.role;

@@ -278,8 +278,10 @@
 							/>
 							<text
 								class="name slanted"
+								class:given={lane.given}
 								transform={`translate(4 ${frame.headHeight - 36}) rotate(-34)`}
-								style:opacity={lane.words}>{lane.name}</text
+								style:opacity={lane.words}
+								>{lane.name}{#if lane.given}<tspan class="kind"> · {lane.role}</tspan>{/if}</text
 							>
 						{:else}
 							<rect x={-lane.headWidth / 2} y="5" width={lane.headWidth} height="46" rx="8" />
@@ -289,18 +291,25 @@
 						{:else if lane.headWidth >= FULL_HEAD_WIDTH}
 							<path class="icon" d={ICONS[lane.icon]} transform="translate(-65 16) scale(0.95)" />
 							<g style:opacity={lane.words}>
-								<text class="name" x="-38" y="25">{lane.nameLines[0]}</text>
+								<text class="name" class:given={lane.given} x="-38" y="25">{lane.nameLines[0]}</text
+								>
 								{#if lane.nameLines[1]}
-									<text class="name" x="-38" y="41">{lane.nameLines[1]}</text>
+									<text class="name" class:given={lane.given} x="-38" y="41"
+										>{lane.nameLines[1]}</text
+									>
 								{:else}
 									<text class="role" x="-38" y="41">{lane.role}</text>
 								{/if}
 							</g>
 						{:else}
 							<g style:opacity={lane.words}>
-								<text class="name tight" y="25" text-anchor="middle">{lane.nameLines[0]}</text>
+								<text class="name tight" class:given={lane.given} y="25" text-anchor="middle"
+									>{lane.nameLines[0]}</text
+								>
 								{#if lane.nameLines[1]}
-									<text class="name tight" y="41" text-anchor="middle">{lane.nameLines[1]}</text>
+									<text class="name tight" class:given={lane.given} y="41" text-anchor="middle"
+										>{lane.nameLines[1]}</text
+									>
 								{:else}
 									<text class="role tight" y="41" text-anchor="middle">{lane.role}</text>
 								{/if}
@@ -569,6 +578,17 @@
 
 	.lane-head .name.slanted {
 		font-size: 12px;
+	}
+	/* Named by the link that was opened, which the note beside the diagram says. */
+	.lane-head .name.given {
+		font-style: italic;
+	}
+
+	/* What a party a link named is, beside its name where there is no room under it. */
+	.lane-head .name .kind {
+		fill: var(--muted);
+		font-style: normal;
+		font-weight: 400;
 	}
 
 	.heads-band.scrolled {

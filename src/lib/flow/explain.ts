@@ -2,6 +2,7 @@ import { pathOf } from '#lib/flow/follow.ts';
 import { diagramParts, READING, terms, type Term, type TermPlace } from '#lib/flow/glossary.ts';
 import type { ArtifactId } from '#lib/flow/vocabulary.ts';
 import { evaluate, type BaseFlow, type DiagramView } from '#lib/flow/model.ts';
+import { theKind } from '#lib/flow/names.ts';
 import { normalize, settingDefs } from '#lib/flow/settings.ts';
 import { wordingOf, type AppState } from '#lib/flow/state.ts';
 import { artifacts } from '#lib/flow/vocabulary.ts';
@@ -62,9 +63,12 @@ export function explanationOf(
 	if (explained?.kind === 'lifeline') {
 		const line = view.lifelines.find((candidate) => candidate.id === explained.id);
 		if (!line) return null;
+		// A name from a link says whose it is, and what the party is, before what that party does.
 		return {
 			title: named(line),
-			text: line.concept,
+			text: line.given
+				? `The link you opened calls it ${line.given}. Here it is ${theKind(line.plainName)}. ${line.concept}`
+				: line.concept,
 			...namesOf(line, wording, state.serverNotes),
 			// Seen as someone else, what that one never saw stays hidden here too.
 			seen: (holdings[line.id] ?? []).filter(

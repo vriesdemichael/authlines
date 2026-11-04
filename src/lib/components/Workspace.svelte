@@ -39,6 +39,7 @@
 		type DiagramId,
 		introOf
 	} from '#lib/flow/model.ts';
+	import { namesSaid, parseNames, seamOf, withNames } from '#lib/flow/names.ts';
 	import {
 		defaultSettings,
 		settingDefs,
@@ -123,6 +124,10 @@
 		flowChoices?: readonly { id: string; title: string }[];
 		onflow?: (flow: string) => void;
 		onnavigate: (next: AppState, history: 'push' | 'replace') => void;
+		/** The part of the address after #, where a link can name the parties (#168). */
+		linkNames?: string;
+		/** Back to the site's own names. */
+		ondropnames?: () => void;
 	}
 
 	let {
@@ -144,14 +149,16 @@
 		flowChoices = [],
 		questionOffersList = false,
 		onflow,
-		onnavigate
+		onnavigate,
+		linkNames = '',
+		ondropnames
 	}: Props = $props();
 
 	const flow = $derived(base.diagrams[appState.diagram]);
 	// Every navigation makes a new state, and stepping should not count as the settings changing,
 	// because a new view is what makes the diagram animate.
 	const settingsKey = $derived(JSON.stringify(appState.settings));
-	const view = $derived.by(() => {
+	const unnamed = $derived.by(() => {
 		const diagram = flow;
 		void settingsKey;
 		return evaluate(
@@ -159,6 +166,10 @@
 			untrack(() => appState.settings)
 		);
 	});
+	// The names a link gave go on the heads, and nowhere else (#168, ADR-017).
+	const fromLink = $derived(parseNames(linkNames, base));
+	const view = $derived(withNames(unnamed, fromLink.names));
+	const namedHere = $derived(view.lifelines.filter((line) => line.given));
 	const mode = $derived(appState.mode);
 	const steps = $derived(view.steps);
 	// Measured, because the diagram is laid out for the room it has and not scaled to fit.
@@ -429,6 +440,10 @@
 		};
 	});
 	const recording = $derived(loaded?.preset === wantedPreset ? loaded : null);
+	// The recording keeps its own names, so the raw view says which recorded value is which.
+	const seam = $derived(
+		recording && namedHere.length ? seamOf(recording, view, appState.serverNotes) : null
+	);
 	// It is what the browser showed, so it is not what anyone else saw.
 	const inBrowser = $derived(!appState.eyes || appState.eyes === 'browser');
 	const pageAddress = $derived(
@@ -841,6 +856,29 @@
 	</main>
 
 	<aside class="detail" aria-label="The current step" bind:this={detailPanel}>
+		{#if namedHere.length || fromLink.problems.length}
+			<!-- Whoever made the link chose these, so it says so, and what was recorded stays the site's. -->
+			<section class="named" data-testid="names-note" role="status">
+				{#if namedHere.length}
+					<p>
+						<strong>Names from the link you opened:</strong>
+						{namesSaid(namedHere)}. Whoever made the link chose them. What was recorded is the
+						site's own, from its own server.
+					</p>
+				{/if}
+				{#if fromLink.problems.length}
+					<p>Some of what the link names could not be used:</p>
+					<ul data-testid="names-problems">
+						{#each fromLink.problems as problem (problem)}
+							<li>{problem}</li>
+						{/each}
+					</ul>
+				{/if}
+				<button type="button" class="quiet" data-testid="names-off" onclick={() => ondropnames?.()}>
+					Use the site's names
+				</button>
+			</section>
+		{/if}
 		{#if eyesName}
 			<section class="eyes" data-testid="eyes-note" role="status">
 				<p>
@@ -930,6 +968,7 @@
 						{numberOf}
 						onstep={goToStep}
 						serverNamed={appState.serverNotes}
+						{seam}
 						{notes}
 						{seesStep}
 						{runHref}
@@ -977,6 +1016,7 @@
 					{numberOf}
 					onstep={goToStep}
 					serverNamed={appState.serverNotes}
+					{seam}
 					{notes}
 					{seesStep}
 					large
@@ -1238,7 +1278,8 @@
 		margin-right: auto;
 	}
 
-	.eyes {
+	.eyes,
+	.named {
 		margin: 0 0 14px;
 		padding: 10px 12px;
 		border-radius: 8px;
@@ -1246,8 +1287,14 @@
 		font-size: 12.5px;
 	}
 
-	.eyes p {
+	.eyes p,
+	.named p {
 		margin: 0 0 6px;
+	}
+
+	.named ul {
+		margin: 0 0 6px;
+		padding-left: 18px;
 	}
 
 	.settings-hidden {

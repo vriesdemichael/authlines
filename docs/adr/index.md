@@ -18,3 +18,4 @@ How this project is built and worked on, one rule to a record. Each record says 
 - [ADR-014: A colour means one thing, and what is ahead is faint](014-a-colour-means-one-thing-and-ahead-is-only-a-shape.md)
 - [ADR-015: Keycloak is an overlay on a neutral protocol](015-keycloak-is-an-overlay-on-a-neutral-protocol.md)
 - [ADR-016: A word on screen explains itself](016-a-word-on-screen-explains-itself.md)
+- [ADR-017: A link may name the parties, after the #, and nothing else](017-a-link-may-name-the-parties-and-nothing-else.md)
