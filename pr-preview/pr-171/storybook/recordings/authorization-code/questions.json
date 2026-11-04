@@ -982,12 +982,14 @@
 			"before": {
 				"status": 200,
 				"loginPage": true,
+				"backToTheApp": false,
 				"error": null,
 				"says": null
 			},
 			"after": {
 				"status": 302,
 				"loginPage": false,
+				"backToTheApp": true,
 				"error": "invalid_request",
 				"says": "Pushed Authorization Request is only allowed."
 			}
@@ -1010,6 +1012,10 @@
 			"after": {
 				"status": 201,
 				"says": null
+			},
+			"withNoSecret": {
+				"status": 400,
+				"says": "Invalid parameter: redirect_uri"
 			}
 		}
 	}
