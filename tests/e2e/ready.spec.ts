@@ -193,7 +193,8 @@ test.describe('on a phone', () => {
 		await expect(diagram).toBeVisible();
 		await expect(diagram).toHaveClass(/strip/);
 		await expect(page.locator('[data-lifeline="attacker"]')).toBeInViewport();
-		await expect(page.locator('[data-state="current"] .label')).toBeInViewport();
+		// The row and not its words, which WebKit cannot tell are on screen when they are SVG text.
+		await expect(page.locator('[data-state="current"]')).toBeInViewport();
 		await expect(page.getByTestId('step-detail')).toBeVisible();
 		expect(await noSidewaysScroll(page)).toBe(true);
 	});
