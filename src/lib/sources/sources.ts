@@ -6,6 +6,7 @@ export type SourceId =
 	| 'cimd-draft'
 	| 'rfc7636'
 	| 'rfc9449'
+	| 'rfc9126'
 	| 'rfc9207'
 	| 'rfc8628'
 	| 'rfc9700'
@@ -102,6 +103,15 @@ export const sources: Record<SourceId, SourceDef> = {
 			'Ties a token to a key. The app proves it holds a private key by sending a signed JWT in a DPoP header, and the server binds the tokens it issues to the matching public key. The aim is that a leaked or stolen token cannot be used without the key. It works at the application level, so it also suits apps in a browser, where binding through TLS does not work.',
 		url: 'https://www.rfc-editor.org/rfc/rfc9449.html',
 		textFile: 'rfc9449.txt'
+	},
+	rfc9126: {
+		label: 'RFC 9126',
+		title: 'OAuth 2.0 Pushed Authorization Requests',
+		status: 'Proposed Standard, September 2021.',
+		summary:
+			'Lets the app send its authorization request straight to the authorization server, proving who it is the way it would at the token endpoint, and get back a reference to it. The browser then carries only the client ID and that reference. What the app asked for stays out of the browser, where it could be read or changed, and the server can check it before the user is involved. The app must use a reference once, and a server may require every request to come this way.',
+		url: 'https://www.rfc-editor.org/rfc/rfc9126.html',
+		textFile: 'rfc9126.txt'
 	},
 	rfc9207: {
 		label: 'RFC 9207',

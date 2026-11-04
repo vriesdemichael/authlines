@@ -289,6 +289,7 @@ interface Discovered {
 	authorization_endpoint: string;
 	token_endpoint: string;
 	device_authorization_endpoint?: string;
+	pushed_authorization_request_endpoint?: string;
 	userinfo_endpoint?: string;
 	end_session_endpoint?: string;
 	introspection_endpoint?: string;
@@ -992,6 +993,25 @@ export class Demo {
 				if (this.#verifier) {
 					query.set('code_challenge', sha256(this.#verifier));
 					query.set('code_challenge_method', 'S256');
+				}
+				if (settings.par) {
+					// Pushed first, straight to the identity provider, proving who it is the way it does
+					// when it asks for tokens, and the browser carries only the reference (RFC 9126).
+					const pushed = await call(
+						run,
+						['push-request', 'push-response'],
+						'POST',
+						this.#server.pushed_authorization_request_endpoint ?? '',
+						run.clientSecret ? { authorization: basicAuth(run.clientId, run.clientSecret) } : {},
+						Object.fromEntries(query)
+					);
+					const { request_uri } = jsonOf<{ request_uri: string }>(pushed.text);
+					const reference = new URLSearchParams({ client_id: run.clientId, request_uri });
+					response.writeHead(302, {
+						location: `${this.#server.authorization_endpoint}?${reference}`
+					});
+					response.end();
+					return;
 				}
 				response.writeHead(302, { location: `${this.#server.authorization_endpoint}?${query}` });
 				response.end();

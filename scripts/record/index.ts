@@ -86,7 +86,8 @@ import {
 	questionsWithADirectory,
 	questionsWithApiV1,
 	questionsWithApiV2,
-	questionsWithNoUser
+	questionsWithNoUser,
+	questionsWhenPushed
 } from './questions.ts';
 import { deviceNoteDefs, noteDefs, noUserNoteDefs } from '#lib/keycloak/notes.ts';
 
@@ -156,8 +157,9 @@ function classifyRequest(url: URL, method = 'GET'): string | null {
 	if (path.startsWith(`/realms/${UPSTREAM_REALM}/login-actions/authenticate`)) {
 		return 'upstream-sign-in';
 	}
+	// Only the form being sent. A pushed request gets there by a redirect first, which is not drawn.
 	if (path.startsWith(`/realms/${LOCAL_REALM}/login-actions/authenticate`)) {
-		return 'submit-credentials';
+		return method === 'POST' ? 'submit-credentials' : null;
 	}
 	if (path.startsWith(`/realms/${DIRECTORY_REALM}/login-actions/authenticate`)) {
 		return 'submit-credentials';
@@ -217,6 +219,14 @@ function classifyResponse(
 	}
 	if (
 		url.pathname === `/realms/${DIRECTORY_REALM}/protocol/openid-connect/auth` &&
+		status === 200
+	) {
+		return 'login-page';
+	}
+	// Where a pushed request is sent on to, for the login form.
+	if (
+		url.pathname === `/realms/${LOCAL_REALM}/login-actions/authenticate` &&
+		method === 'GET' &&
 		status === 200
 	) {
 		return 'login-page';
@@ -980,6 +990,13 @@ async function recordOnlyPresets(ids: readonly string[]) {
 			const directoryNotes = noteDefs.filter(({ place }) => place?.page === 'directory-settings');
 			const looked = await lookInConsole(browser, admin, [], directoryNotes);
 			addToQuestions(recordedAt, await questionsWithADirectory(admin), looked);
+		}
+		if (wanted.some(({ settings }) => settings.par)) {
+			const parNotes = noteDefs.filter(({ id }) =>
+				['require-par', 'par-lifespan', 'redirect-checked-at-push'].includes(id)
+			);
+			const looked = await lookInConsole(browser, admin, [], parNotes);
+			addToQuestions(recordedAt, await questionsWhenPushed(admin), looked);
 		}
 		if (wanted.some(({ settings }) => settings.appRuns === 'bff')) {
 			addToQuestions(recordedAt, await whatAScriptCan(browser, demo, admin));

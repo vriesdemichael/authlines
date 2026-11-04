@@ -15,6 +15,7 @@ import { all, any, is, not, type Settings } from '#lib/flow/settings.ts';
 const oidc = is('oidc', true);
 const confidential = is('clientType', 'confidential');
 const pkce = is('pkce', true);
+const par = is('par', true);
 const consent = is('consent', true);
 const inPage = is('appRuns', 'page');
 const behindThePage = is('appRuns', 'bff');
@@ -505,8 +506,15 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			kind: 'internal',
 			plain: 'The app makes up a one-time value',
 			label: 'Generate the verifier and challenge',
-			concept:
-				'The app makes up a random value for this login, the verifier, and keeps it to itself. From it, it works out a fingerprint, the challenge, that cannot be turned back. Only the fingerprint goes through the browser.',
+			concept: [
+				{
+					when: par,
+					text: 'The app makes up a random value for this login, the verifier, and keeps it to itself. From it, it works out a fingerprint, the challenge, that cannot be turned back. The fingerprint goes in the request the app pushes, so here not even that goes through the browser.'
+				},
+				{
+					text: 'The app makes up a random value for this login, the verifier, and keeps it to itself. From it, it works out a fingerprint, the challenge, that cannot be turned back. Only the fingerprint goes through the browser.'
+				}
+			],
 			inPractice: 'A library does this for you, often once you turn it on.',
 			practice: [
 				example('authjs', true, 'does this unless told otherwise'),
@@ -526,6 +534,96 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					note: 'SHA-256 of the verifier',
 					artifact: 'challenge'
 				}
+			]
+		},
+		{
+			id: 'push-request',
+			when: par,
+			cites: [
+				{
+					source: 'rfc9126',
+					section: '2.1',
+					why: 'Section 2.1 says the push carries what a login link would, and that an app with a secret proves who it is the way it would when it asks for tokens.'
+				}
+			],
+			from: 'app',
+			to: 'idp',
+			kind: 'request',
+			plain: 'The app sends its request ahead',
+			label: 'POST /par',
+			concept: [
+				{
+					when: confidential,
+					text: 'Before the browser goes anywhere, the app sends what it would have put in the login link straight to the identity provider, with its secret to show who it is. The identity provider checks it now, the address to send the user back to included.'
+				},
+				{
+					text: 'Before the browser goes anywhere, the app sends what it would have put in the login link straight to the identity provider. With no secret it cannot show who it is, so anyone who knows its client ID could push a request as well, but what it asks for stays out of the browser.'
+				}
+			],
+			inPractice:
+				'A library does this, if it has PAR, often as one option on making the login link. Discovery says where to send it.',
+			practice: [
+				example('openidClient', true, 'with buildAuthorizationUrlWithPAR'),
+				example('passport', false, 'makes the login link itself, and has no PAR')
+			],
+			fields: [
+				{ name: 'response_type=code', place: 'body' },
+				{ name: 'client_id', place: 'body' },
+				{
+					name: 'Authorization: Basic',
+					place: 'header',
+					note: 'The client ID and secret, as when it asks for tokens',
+					artifact: 'secret',
+					when: confidential
+				},
+				{
+					name: 'redirect_uri',
+					place: 'body',
+					note: 'Checked now, before the user is sent anywhere'
+				},
+				{ name: 'state', place: 'body' },
+				{ name: 'scope=openid', place: 'body', when: oidc },
+				{ name: 'nonce', place: 'body', when: oidc },
+				{
+					name: 'code_challenge',
+					place: 'body',
+					note: 'Straight to the identity provider, and never through the browser',
+					artifact: 'challenge',
+					when: pkce
+				},
+				{
+					name: 'code_challenge_method=S256',
+					place: 'body',
+					note: 'How the fingerprint was made: a one-way hash',
+					when: pkce
+				}
+			]
+		},
+		{
+			id: 'push-response',
+			when: par,
+			cites: [
+				{
+					source: 'rfc9126',
+					section: '2.2',
+					why: 'Section 2.2 is this answer: a reference to the request, and how many seconds it lasts.'
+				}
+			],
+			from: 'idp',
+			to: 'app',
+			kind: 'response',
+			plain: 'A reference to it comes back',
+			label: '201 Created',
+			concept:
+				'The identity provider keeps the request, and gives the app a reference to it. With the client ID, that is all the browser will carry. It is meant for one login, and only for a short time.',
+			fields: [
+				{
+					name: 'request_uri',
+					place: 'body',
+					note: 'Stands for the request, for one login',
+					artifact: 'request-uri'
+				},
+				{ name: 'expires_in', place: 'body', note: 'How many seconds the reference lasts' }
 			]
 		},
 		{
@@ -570,7 +668,15 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				example('passport', true, 'from its authorizationURL and clientID options'),
 				example('authjs', true, 'from the issuer and client ID')
 			],
-			fields: [{ name: 'code_challenge', place: 'query', artifact: 'challenge', when: pkce }]
+			fields: [
+				{
+					name: 'code_challenge',
+					place: 'query',
+					artifact: 'challenge',
+					when: all(pkce, not(par))
+				},
+				{ name: 'request_uri', place: 'query', artifact: 'request-uri', when: par }
+			]
 		},
 		{
 			id: 'authorize',
@@ -578,24 +684,38 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					source: 'rfc6749',
 					section: '4.1.2.1',
-					why: 'Section 4.1.2.1 says that with a wrong redirect address, the server should tell the user, and must not send the browser there.'
+					why: 'Section 4.1.2.1 says that with a wrong redirect address, the server should tell the user, and must not send the browser there.',
+					when: not(par)
 				},
 				{
 					source: 'rfc9700',
 					section: '2.1',
-					why: 'Section 2.1 says servers must compare redirect addresses by exact match, which is the current advice this step mentions.'
+					why: 'Section 2.1 says servers must compare redirect addresses by exact match, which is the current advice this step mentions.',
+					when: not(par)
 				},
 				{
 					source: 'rfc7636',
 					section: '4.2',
 					why: 'Section 4.2 has the two ways of making a challenge: plain, where it is the verifier itself, and S256.',
-					when: pkce
+					when: all(pkce, not(par))
 				},
 				{
 					source: 'rfc9700',
 					section: '2.1.1',
 					why: 'Section 2.1.1 says to use a challenge method that does not give the verifier away, and that S256 is the only one that does not.',
-					when: pkce
+					when: all(pkce, not(par))
+				},
+				{
+					source: 'rfc9126',
+					section: '4',
+					why: 'Section 4 is this request: the client ID and the reference. The app must use a reference once, the server should treat it as good for one login, and must refuse one that has run out.',
+					when: par
+				},
+				{
+					source: 'rfc9126',
+					section: '7.5',
+					why: 'Section 7.5 is someone swapping in a reference to another request, which it says state, PKCE or a nonce should be used to prevent.',
+					when: par
 				}
 			],
 			from: 'browser',
@@ -613,6 +733,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: 'The browser asks the identity provider to log the user in and grant the app access. The client ID here is an address, and where to send the user back to gets checked against what the app’s document says.'
 				},
 				{
+					when: par,
+					text: 'The browser asks the identity provider to log the user in, and carries only the app’s client ID and the reference. What the app asked for is already there, and checked, so it is not in this address and cannot be changed on the way. Someone could still swap in a reference to another request, which the spec counts on state, PKCE or a nonce to catch.'
+				},
+				{
 					when: oidc,
 					text: 'The browser asks the identity provider to log the user in. The openid scope asks for proof of who that was as well. The identity provider first checks that the address to send the user back to is one registered in setup.'
 				},
@@ -621,6 +745,8 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				}
 			],
 			pitfall: {
+				// Pushed first, a wrong address is refused at the push, and the browser never gets here.
+				when: not(par),
 				title: 'What if the address does not match?',
 				shot: 'wrong-redirect',
 				shows: "The identity provider's own error page, with no way back to the app.",
@@ -635,7 +761,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				}
 			],
 			fields: [
-				{ name: 'response_type=code', place: 'query' },
+				{ name: 'response_type=code', place: 'query', when: not(par) },
 				{
 					name: 'client_id',
 					place: 'query',
@@ -647,7 +773,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					name: 'redirect_uri',
 					place: 'query',
 					note: 'Must match what was registered in setup',
-					when: all(not(is('address', 'other')), not(fromADocument), not(byLink))
+					when: all(not(is('address', 'other')), not(fromADocument), not(byLink), not(par))
 				},
 				{
 					name: 'redirect_uri',
@@ -667,10 +793,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					note: 'Not one that was registered in setup',
 					when: is('address', 'other')
 				},
-				{ name: 'state', place: 'query', when: not(byLink) },
+				{ name: 'state', place: 'query', when: all(not(byLink), not(par)) },
 				{ name: 'state', place: 'query', note: 'Their own', when: byLink },
-				{ name: 'scope=openid', place: 'query', when: oidc },
-				{ name: 'nonce', place: 'query', when: oidc },
+				{ name: 'scope=openid', place: 'query', when: all(oidc, not(par)) },
+				{ name: 'nonce', place: 'query', when: all(oidc, not(par)) },
 				{
 					name: 'scope=organization',
 					place: 'query',
@@ -688,7 +814,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					place: 'query',
 					note: 'The identity provider keeps this with the code',
 					artifact: 'challenge',
-					when: all(pkce, not(byLink))
+					when: all(pkce, not(byLink), not(par))
 				},
 				{
 					name: 'code_challenge',
@@ -701,7 +827,14 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					name: 'code_challenge_method=S256',
 					place: 'query',
 					note: 'How the fingerprint was made: a one-way hash, which is why it cannot be turned back. RFC 7636 also has plain, where the challenge is the verifier itself, and RFC 9700 says to use a method that does not expose it.',
-					when: pkce
+					when: all(pkce, not(par))
+				},
+				{
+					name: 'request_uri',
+					place: 'query',
+					note: 'Stands for what the app pushed, and is meant for one use',
+					artifact: 'request-uri',
+					when: par
 				}
 			]
 		},
@@ -812,12 +945,23 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'The login page',
 			label: 'Login page',
 			concept: 'The identity provider asks the user to prove who they are, on its own page.',
-			page: {
-				address: 'authorize',
-				shows: "The identity provider's own page, asking for a username and a password.",
-				shot: 'login',
-				marks: ['redirect_uri', 'state']
-			},
+			page: [
+				{
+					// The server recorded sends a pushed request on to its own form first, so the address
+					// is that form's, where it puts some of the request back, encoded.
+					address: 'login-page',
+					shows:
+						"The identity provider's own page, asking for a username and a password. The server recorded moved it to an address of its own, and put the address to send the user back to and the state in it again, encoded as client_data.",
+					shot: 'login',
+					when: par
+				},
+				{
+					address: 'authorize',
+					shows: "The identity provider's own page, asking for a username and a password.",
+					shot: 'login',
+					marks: ['redirect_uri', 'state']
+				}
+			],
 			when: not(broker)
 		},
 		{

@@ -546,6 +546,50 @@ describe('DPoP', () => {
 	});
 });
 
+// RFC 9126, and what Keycloak 26.8.1 did with it (static/recordings/authorization-code/par.json).
+describe('the request pushed first', () => {
+	const stepIn = (settings: Partial<Settings>, id: string) =>
+		view({ par: true, ...settings }).steps.find((step) => step.id === id);
+
+	it('sends the browser with the client ID and the reference, and nothing else', () => {
+		for (const settings of [
+			{},
+			{ oidc: true },
+			{ clientType: 'public' as const, pkce: true },
+			{ oidc: true, consent: true, pkce: true }
+		]) {
+			expect(stepIn(settings, 'authorize')!.fields.map((field) => field.name)).toEqual([
+				'client_id',
+				'request_uri'
+			]);
+		}
+	});
+
+	it('pushes what the link would have carried, direct, before the browser goes anywhere', () => {
+		const push = stepIn({ oidc: true, pkce: true }, 'push-request')!;
+		expect(push.channel).toBe('back');
+		expect(push.fields.map((field) => field.name)).toEqual(
+			expect.arrayContaining(['redirect_uri', 'state', 'scope=openid', 'nonce', 'code_challenge'])
+		);
+		const ids = view({ par: true }).steps.map((step) => step.id);
+		expect(ids.indexOf('push-response')).toBeLessThan(ids.indexOf('redirect-to-idp'));
+		expect(view().steps.map((step) => step.id)).not.toContain('push-request');
+	});
+
+	it('proves who the app is in the push only where it has a secret', () => {
+		const names = (settings: Partial<Settings>) =>
+			stepIn(settings, 'push-request')!.fields.map((field) => field.name);
+		expect(names({})).toContain('Authorization: Basic');
+		expect(names({ clientType: 'public', pkce: true })).not.toContain('Authorization: Basic');
+	});
+
+	// A wrong address is refused at the push, so the browser's request has nothing to go wrong.
+	it('has no pitfall about the address on the browser’s request', () => {
+		expect(stepIn({}, 'authorize')!.pitfall).toBeUndefined();
+		expect(view().steps.find((step) => step.id === 'authorize')!.pitfall).toBeDefined();
+	});
+});
+
 describe('PKCE', () => {
 	const change = diff({}, { pkce: true });
 	const fieldsOf = (id: string, settings: Partial<Settings> = { pkce: true }) =>
@@ -574,7 +618,11 @@ describe('PKCE', () => {
 			const flowView = evaluate(flow, settings);
 			const held = holdingsAt(flowView, flowView.steps.at(-1)!.id);
 			if (settings.appRuns !== 'page') expect(held.browser).not.toContain('verifier');
-			if (settings.pkce) expect(held.browser).toContain('challenge');
+			// Pushed first, the challenge goes straight to the identity provider, and only a reference
+			// to the request goes through the browser (RFC 9126).
+			if (settings.pkce && !settings.par) expect(held.browser).toContain('challenge');
+			if (settings.par) expect(held.browser).not.toContain('challenge');
+			if (settings.par) expect(held.browser).toContain('request-uri');
 		}
 	});
 

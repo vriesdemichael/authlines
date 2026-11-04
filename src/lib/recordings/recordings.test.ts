@@ -268,8 +268,14 @@ describe.each(asCases)('the recording of %s', (preset, recording) => {
 		const trade =
 			recording.settings.attackerGets === 'link' ? 'attacker-token-request' : 'token-request';
 		const body = recorded.find((m) => m.step === trade)?.body as Record<string, string>;
+		// Pushed first, the challenge goes in the push, and the browser never carries it.
+		const pushed = recorded.find((m) => m.step === 'push-request')?.body as
+			Record<string, string> | undefined;
 		const authorize = recorded.find((m) => m.step === 'authorize')!;
-		const challenge = carried(authorize).query.get('code_challenge');
+		if (pushed) expect(carried(authorize).query.get('code_challenge')).toBeNull();
+		const challenge = pushed
+			? (pushed.code_challenge ?? null)
+			: carried(authorize).query.get('code_challenge');
 		if (!recording.settings.pkce) {
 			expect(challenge).toBeNull();
 			expect(body?.code_verifier).toBeUndefined();

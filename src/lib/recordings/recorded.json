@@ -52,7 +52,9 @@
 		"their-link": "2026-11-03",
 		"their-link-any": "2026-11-03",
 		"their-link-any-public": "2026-11-03",
-		"their-link-any-public-pkce": "2026-11-03"
+		"their-link-any-public-pkce": "2026-11-03",
+		"par": "2026-11-04",
+		"par-public-pkce": "2026-11-04"
 	},
 	"flows": {
 		"authorization-code": {
@@ -84,6 +86,8 @@
 				"public",
 				"public-pkce",
 				"oidc-pkce",
+				"par",
+				"par-public-pkce",
 				"browser-app",
 				"behind-the-page",
 				"in-the-page",
@@ -176,6 +180,8 @@
 				"page-calls-api",
 				"page-gets-answer",
 				"page-served",
+				"push-request",
+				"push-response",
 				"real-app-refused",
 				"redirect-to-idp",
 				"redirect-to-upstream",

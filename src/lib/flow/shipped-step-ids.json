@@ -141,5 +141,7 @@
 	"thief-api-response",
 	"attacker-makes-link",
 	"attacker-sends-link",
-	"code-to-attacker"
+	"code-to-attacker",
+	"push-request",
+	"push-response"
 ]

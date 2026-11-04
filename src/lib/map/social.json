@@ -56,6 +56,8 @@
 	"their-link-refused": "What if someone sends a login link of their own?|Refused at the start, by the identity provider.|4|5",
 	"their-link-with-a-secret": "Does a secret stop a login link of theirs?|It stops the trade, and the code still goes to them.|9|5",
 	"their-link-no-pkce": "What does a * get them from an app with no secret?|The tokens, and the API answering them as the user.|11|5",
+	"pushed-first": "Why would an app send its login request ahead?|Only a reference to it goes through the browser.|14|4",
+	"pushed-first-no-secret": "Does pushing the request first help an app with no secret?|It keeps the request out of the browser, and PKCE still does the protecting.|16|4",
 	"dpop-on-the-wire": "What does DPoP add to each call?|A proof, signed with a key that stays in the app.|13|4",
 	"dpop-at-a-bearer-api": "Does DPoP protect a token at an API that does not know it?|Only if the API checks the proof.|16|5",
 	"someone-leaves-oidc": "Does it matter what their provider speaks, when someone leaves?|No, as it was set up: the session in the middle carried on either way.|28|5",

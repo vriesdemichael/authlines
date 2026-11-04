@@ -114,7 +114,9 @@ describe('the notes', () => {
 		const ids = noteDefs.map((note) => note.id);
 		expect(new Set(ids).size).toBe(ids.length);
 		for (const note of noteDefs) {
-			for (const step of note.steps) expect(allSteps, note.id).toContain(step);
+			for (const step of [...note.steps, ...(note.instead?.steps ?? [])]) {
+				expect(allSteps, note.id).toContain(step);
+			}
 		}
 	});
 
@@ -199,7 +201,7 @@ describe('the notes', () => {
 		it('only states a status a real server gave', () => {
 			const shown = JSON.stringify(note.backedBy.shows);
 			for (const settings of allValidSettings()) {
-				for (const step of note.steps) {
+				for (const step of [...note.steps, ...(note.instead?.steps ?? [])]) {
 					for (const said of notesFor('authorization-code', step, settings)) {
 						if (said.id !== note.id) continue;
 						for (const [status] of said.text.matchAll(/\b[1-5]\d\d\b/g)) {

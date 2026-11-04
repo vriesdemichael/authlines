@@ -91,6 +91,8 @@ describe('constraints', () => {
 		// A login link of theirs, in the plain case: OpenID Connect, the client type, PKCE, and what the
 		// app registered.
 		const aLinkOfTheirs = 2 * 2 * 2 * 2;
+		// The request pushed first: OpenID Connect, consent, the client type and PKCE, with nothing else.
+		const pushedFirst = 2 * 2 * 2 * 2;
 		expect(allValidSettings()).toBe(allValidSettings());
 		expect(Object.isFrozen(allValidSettings())).toBe(true);
 		expect(allValidSettings().every((settings) => Object.isFrozen(settings))).toBe(true);
@@ -108,7 +110,8 @@ describe('constraints', () => {
 				withAServerBehindThePage +
 				eachCustomerHasAProvider +
 				aStolenToken +
-				aLinkOfTheirs
+				aLinkOfTheirs +
+				pushedFirst
 		);
 	});
 

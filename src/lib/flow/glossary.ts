@@ -367,6 +367,23 @@ const list: readonly Term[] = [
 		at: flowAt('make-verifier', { pkce: true })
 	},
 	{
+		id: 'par',
+		name: 'PAR',
+		words: ['PAR', 'pushed authorization request', 'pushed authorization requests'],
+		alsoCalled: ['pushed authorization request'],
+		explains: '',
+		setting: 'par',
+		at: flowAt('push-request', { par: true })
+	},
+	{
+		id: 'request-uri',
+		name: 'Request URI',
+		words: ['request URI', 'request URIs', 'request_uri'],
+		explains: '',
+		artifact: 'request-uri',
+		at: flowAt('push-response', { par: true })
+	},
+	{
 		id: 'dpop',
 		name: 'DPoP',
 		words: ['DPoP'],
