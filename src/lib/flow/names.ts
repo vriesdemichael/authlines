@@ -33,7 +33,8 @@ export function partiesOf(base: BaseFlow): string[] {
 	return [...new Set(ids)];
 }
 
-function problemWith(raw: string): string | null {
+/** What is wrong with a name, for the field someone types one into as much as for a link. */
+export function problemWith(raw: string): string | null {
 	const name = raw.trim();
 	if (!name) return 'is empty';
 	// What is wrong with it before how long it is, because that is what whoever wrote it should hear.

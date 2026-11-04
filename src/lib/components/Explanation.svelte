@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import type { Term } from '#lib/flow/glossary.ts';
+	import { LONGEST_NAME } from '#lib/flow/names.ts';
 	import { artifacts, type ArtifactId } from '#lib/flow/vocabulary.ts';
 	import { refLabel, type SourceRef } from '#lib/sources/sources.ts';
 
@@ -29,6 +30,18 @@
 		onexplainartifact?: (id: ArtifactId) => void;
 		onopensource?: (ref: SourceRef) => void;
 		onclose: () => void;
+		/** It is about a party, which someone can give a name of their own (#168). */
+		rename?: Rename | null;
+	}
+
+	interface Rename {
+		/** What a link or someone gave it, if anything. */
+		current: string | null;
+		/** Puts the name on, or says what is wrong with it. */
+		apply: (name: string) => string | null;
+		reset: () => void;
+		/** Opened for this, by a right-click or a long press, so the field is ready. */
+		focus: boolean;
 	}
 
 	let {
@@ -48,8 +61,20 @@
 		following = false,
 		onexplainartifact,
 		onopensource,
-		onclose
+		onclose,
+		rename = null
 	}: Props = $props();
+
+	let typed = $state('');
+	let refused = $state<string | null>(null);
+	let field = $state<HTMLInputElement>();
+	// Typing and pressing the button is what renames, so a stray click on the diagram cannot.
+	function submit(event: SubmitEvent) {
+		event.preventDefault();
+		if (!rename) return;
+		refused = rename.apply(typed);
+		if (!refused) typed = '';
+	}
 
 	// From one word to the next is the same dialog, so whoever pressed it should be told where they are.
 	let heading = $state<HTMLElement>();
@@ -58,6 +83,10 @@
 	$effect(() => {
 		void named;
 		untrack(() => heading)?.focus({ preventScroll: true });
+	});
+	// After the heading, so that someone who asked to rename it can start typing.
+	$effect(() => {
+		if (rename?.focus) untrack(() => field)?.focus({ preventScroll: true });
 	});
 </script>
 
@@ -100,6 +129,30 @@
 				{seeingOnly ? 'See everything again' : 'See only what this one saw'}
 			</button>
 		</p>
+	{/if}
+	{#if rename}
+		<form class="rename" data-testid="rename" onsubmit={submit}>
+			<label for="rename-field">Call it</label>
+			<input
+				id="rename-field"
+				data-testid="rename-field"
+				bind:this={field}
+				bind:value={typed}
+				maxlength={LONGEST_NAME}
+				autocomplete="off"
+				placeholder={rename.current ?? 'A name of your own'}
+			/>
+			<button type="submit" data-testid="rename-apply">Use this name</button>
+			{#if rename.current}
+				<button type="button" class="quiet" data-testid="rename-reset" onclick={rename.reset}>
+					Back to the site's name
+				</button>
+			{/if}
+			{#if refused}
+				<p role="alert" data-testid="rename-refused">This name {refused}.</p>
+			{/if}
+			<p class="aside">Only on the diagram, and in the address after the #. Back undoes it.</p>
+		</form>
 	{/if}
 	{#if onfollow}
 		<p class="seen">
@@ -182,6 +235,30 @@
 	.seen {
 		color: var(--muted);
 		font-size: 12.5px;
+	}
+
+	.rename {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px 8px;
+		align-items: center;
+		margin: 12px 0 0;
+		font-size: 12.5px;
+	}
+
+	.rename input {
+		flex: 1 1 140px;
+		min-width: 0;
+		font: inherit;
+	}
+
+	.rename p {
+		flex-basis: 100%;
+		margin: 0;
+	}
+
+	.rename .aside {
+		color: var(--muted);
 	}
 
 	.parts {

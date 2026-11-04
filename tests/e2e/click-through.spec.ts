@@ -375,3 +375,62 @@ test.describe('a link with names', () => {
 		}
 	});
 });
+
+// Someone naming a party themselves, which a stray click must never do (#168).
+test.describe('naming a party by hand', () => {
+	const ready = (page: import('@playwright/test').Page) =>
+		page.locator('.workspace[data-ready="true"]').waitFor();
+	const head = (page: import('@playwright/test').Page, id: string) =>
+		page.locator(`[data-lifeline="${id}"]`);
+
+	test('a right-click opens the name field, and Back undoes the name', async ({ page }) => {
+		await page.goto(`${FLOW_PATH}?mode=advanced`);
+		await ready(page);
+		await head(page, 'app').locator('rect').first().click({ button: 'right' });
+		await expect(page.getByTestId('rename-field')).toBeFocused();
+		await page.keyboard.type('Payroll');
+		await page.keyboard.press('Enter');
+		await expect(page).toHaveURL(/#v=1&app=Payroll/);
+		await expect(head(page, 'app')).toContainText('Payroll');
+		await page.goBack();
+		await expect(page).not.toHaveURL(/app=Payroll/);
+		await expect(head(page, 'app')).not.toContainText('Payroll');
+	});
+
+	test('refuses a name that does not fit, and says why', async ({ page }) => {
+		await page.goto(`${FLOW_PATH}?mode=advanced&explain=lifeline.idp`);
+		await ready(page);
+		await page.getByTestId('rename-field').fill('<b>Entra</b>');
+		await page.getByTestId('rename-apply').click();
+		await expect(page.getByTestId('rename-refused')).toContainText('has < or >');
+		await expect(page).not.toHaveURL(/#/);
+	});
+
+	test('goes back to the site’s name from the field', async ({ page }) => {
+		await page.goto(`${FLOW_PATH}?mode=advanced&explain=lifeline.app#v=1&app=Payroll&idp=Entra`);
+		await ready(page);
+		await page.getByTestId('rename-reset').click();
+		await expect(page).toHaveURL(/#v=1&idp=Entra$/);
+		await expect(head(page, 'app')).not.toContainText('Payroll');
+		await expect(head(page, 'idp')).toContainText('Entra');
+	});
+
+	test('is not on offer in simple mode, where a click only explains', async ({ page }) => {
+		await page.goto(`${FLOW_PATH}?mode=simple`);
+		await ready(page);
+		await head(page, 'app').locator('rect').first().click();
+		await expect(page.getByTestId('explanation')).toBeVisible();
+		await expect(page.getByTestId('rename')).toHaveCount(0);
+	});
+
+	test('a long press on a touch screen opens the name field', async ({ page }) => {
+		await page.goto(`${FLOW_PATH}?mode=advanced`);
+		await ready(page);
+		const box = (await head(page, 'app').locator('rect').first().boundingBox())!;
+		const at = { clientX: box.x + box.width / 2, clientY: box.y + box.height / 2 };
+		await head(page, 'app').dispatchEvent('pointerdown', { pointerType: 'touch', ...at });
+		await page.waitForTimeout(700);
+		await head(page, 'app').dispatchEvent('pointerup', { pointerType: 'touch', ...at });
+		await expect(page.getByTestId('rename-field')).toBeFocused();
+	});
+});
