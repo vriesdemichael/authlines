@@ -105,7 +105,7 @@ export const viewSwitches: readonly { param: string; says: string }[] = [
 	{ param: 'say=specs', says: 'The specs’ names for the parties. say=keycloak for Keycloak’s.' },
 	{
 		param: 'keycloak=off',
-		says: 'No notes about Keycloak. Use this when the person’s identity provider is something else.'
+		says: 'No notes about Keycloak. Use this when the person’s identity provider is something else, and give it its name with idp=. The traffic shown is still the site’s own Keycloak’s, and the raw view says so.'
 	},
 	{ param: 'eyes=<party>', says: 'The whole flow as one party saw it, such as eyes=browser.' },
 	{ param: 'whole=1', says: 'Every step at once, for a room.' }
@@ -125,8 +125,8 @@ export const examples: readonly Example[] = [
 		path: 'authorization-code/?oidc=1&pkce=1&keycloak=off#v=1&app=Payroll&idp=Entra%20ID&api=HR%20API'
 	},
 	{
-		says: 'The same app, at the step where the code comes back, in advanced mode.',
-		path: 'authorization-code/?mode=advanced&oidc=1&pkce=1&keycloak=off&step=callback#v=1&app=Payroll&idp=Entra%20ID&api=HR%20API'
+		says: 'The same app, where the identity provider sends the code back through the browser, in advanced mode.',
+		path: 'authorization-code/?mode=advanced&oidc=1&pkce=1&keycloak=off&step=redirect-with-code#v=1&app=Payroll&idp=Entra%20ID&api=HR%20API'
 	},
 	{
 		says: 'How that app gets set up with its provider.',
