@@ -232,6 +232,19 @@ test.describe('on a phone', () => {
 	});
 
 	// What the maintainer met: at the bottom of a long step, Next went off screen until a scroll.
+	// Halfway, because at the end a bar that does not stick is on screen anyway (#15, 2026-11-04).
+	test('keeps Back and Next at the bottom halfway through a long step', async ({ page }) => {
+		await page.goto(`${FLOW_PATH}?mode=advanced&oidc=1&step=token-response`);
+		await ready(page);
+		const detail = page.locator('aside.detail');
+		await detail.evaluate((element) => element.scrollTo(0, element.scrollHeight / 2));
+		const bar = (await page.getByTestId('next').boundingBox())!;
+		const panel = (await detail.boundingBox())!;
+		expect(bar.y + bar.height).toBeGreaterThan(panel.y + panel.height - 60);
+		await expect(page.getByTestId('next')).toBeInViewport();
+		expect(await page.evaluate(() => window.scrollY)).toBe(0);
+	});
+
 	test('keeps Back and Next on screen after a long step, scrolled to its end', async ({ page }) => {
 		await page.goto(`${FLOW_PATH}?mode=advanced&oidc=1&step=token-response`);
 		await ready(page);
@@ -259,11 +272,28 @@ test.describe('on a phone', () => {
 		await expect(page.getByTestId('next')).toBeInViewport();
 	});
 
-	test('shows raw traffic without running off the screen', async ({ page }) => {
+	// Folded on a phone, one press away, so a step is not a long scroll (#15, 2026-11-04).
+	test('shows raw traffic when it is opened, without running off the screen', async ({ page }) => {
 		await page.goto(`${FLOW_PATH}?mode=advanced&oidc=1&step=token-response`);
 		await ready(page);
+		await expect(page.getByTestId('payload')).toBeHidden();
+		await page.getByTestId('on-the-wire-open').click();
 		await expect(page.getByTestId('payload')).toBeVisible();
+		await page.getByTestId('carries-open').click();
+		await expect(page.getByTestId('carries')).toContainText('id_token');
 		expect(await noSidewaysScroll(page)).toBe(true);
+	});
+
+	// What is not needed while stepping waits in the sheet, and leaves the room to the step.
+	test('keeps how it is shown in the sheet, and the room for the step', async ({ page }) => {
+		await page.goto(`${FLOW_PATH}?mode=advanced`);
+		await ready(page);
+		await expect(page.getByTestId('how-it-is-shown')).toBeHidden();
+		await expect(page.getByTestId('how-to-read')).toBeVisible();
+		await page.getByTestId('settings-toggle').click();
+		await expect(page.getByTestId('how-it-is-shown')).toBeVisible();
+		await expect(page.getByTestId('how-it-is-shown')).toContainText('See it as');
+		await expect(page.getByTestId('how-it-is-shown')).toContainText('Recorded from');
 	});
 
 	test('has the map, as a plain list', async ({ page }) => {

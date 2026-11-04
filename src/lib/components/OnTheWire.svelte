@@ -14,6 +14,8 @@
 	}
 
 	interface Props {
+		/** On a phone, folded until someone opens it, so a step is not a long scroll (#15). */
+		folded?: boolean;
 		step: Step;
 		/** The one real run for these settings, once it has loaded. */
 		recording: Recording | null;
@@ -55,7 +57,8 @@
 		runHref = null,
 		onlarge = null,
 		large = false,
-		seam = null
+		seam = null,
+		folded = false
 	}: Props = $props();
 
 	const message = $derived(recording?.messages.find((candidate) => candidate.step === step.id));
@@ -84,8 +87,14 @@
 	);
 </script>
 
-<section class="wire" data-testid="on-the-wire">
-	<h3>{message?.log ? 'From the log, not the wire' : 'On the wire'}</h3>
+<svelte:element this={folded ? 'details' : 'section'} class="wire" data-testid="on-the-wire">
+	{#if folded}
+		<summary data-testid="on-the-wire-open">
+			{message?.log ? 'From the log, not the wire' : 'On the wire'}
+		</summary>
+	{:else}
+		<h3>{message?.log ? 'From the log, not the wire' : 'On the wire'}</h3>
+	{/if}
 	{#if onlarge && status === 'loaded' && message}
 		<button type="button" class="large" data-testid="read-large" onclick={onlarge}>
 			Read it large
@@ -171,7 +180,7 @@
 			{/if}
 		</p>
 	{/if}
-</section>
+</svelte:element>
 
 <style>
 	.wire {
