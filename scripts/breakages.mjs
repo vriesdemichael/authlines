@@ -367,8 +367,8 @@ export const breakages = [
 	{
 		name: 'threats: a flow that is here is said not to be',
 		file: ERRORS,
-		from: "	'token exchange',",
-		to: "	'token exchange',\n	'client credentials',\n	'device flow',"
+		from: "	'rfc8252',",
+		to: "	'rfc8252',\n	'client credentials',\n	'device flow',"
 	},
 	// All that is left to someone, in one list.
 	{
@@ -751,6 +751,20 @@ export const breakages = [
 		file: AC,
 		from: "\t\t\t\twhen: not(par),\n\t\t\t\ttitle: 'What if the address does not match?',",
 		to: "\t\t\t\ttitle: 'What if the address does not match?',"
+	},
+
+	// An API that trades the token.
+	{
+		name: 'exchange: the second API is sent the token the app sent',
+		file: AC,
+		from: "artifact: 'exchanged-token',\n\t\t\t\t\tnote: 'The exchanged token, and not the one the app sent'",
+		to: "artifact: 'access-token',\n\t\t\t\t\tnote: 'The exchanged token, and not the one the app sent'"
+	},
+	{
+		name: 'exchange: a note says the status RFC 8693 asks for, not the one the server sent',
+		file: NOTES,
+		from: 'A token that names only account gets a 403 with access_denied',
+		to: 'A token that names only account gets a 400 with access_denied'
 	},
 
 	// A refresh token.

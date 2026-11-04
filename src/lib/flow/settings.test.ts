@@ -93,6 +93,8 @@ describe('constraints', () => {
 		const aLinkOfTheirs = 2 * 2 * 2 * 2;
 		// The request pushed first: OpenID Connect, consent, the client type and PKCE, with nothing else.
 		const pushedFirst = 2 * 2 * 2 * 2;
+		// An API that trades the token: the same four, with nothing else.
+		const exchanged = 2 * 2 * 2 * 2;
 		expect(allValidSettings()).toBe(allValidSettings());
 		expect(Object.isFrozen(allValidSettings())).toBe(true);
 		expect(allValidSettings().every((settings) => Object.isFrozen(settings))).toBe(true);
@@ -111,7 +113,8 @@ describe('constraints', () => {
 				eachCustomerHasAProvider +
 				aStolenToken +
 				aLinkOfTheirs +
-				pushedFirst
+				pushedFirst +
+				exchanged
 		);
 	});
 

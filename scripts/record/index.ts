@@ -87,7 +87,8 @@ import {
 	questionsWithApiV1,
 	questionsWithApiV2,
 	questionsWithNoUser,
-	questionsWhenPushed
+	questionsWhenPushed,
+	questionsWhenExchanged
 } from './questions.ts';
 import { deviceNoteDefs, noteDefs, noUserNoteDefs } from '#lib/keycloak/notes.ts';
 
@@ -920,7 +921,13 @@ interface ServerFeature extends FlagStatus {
 /** The flags the settings name, in what a server on its defaults says about them. */
 function flagsFrom(features: readonly ServerFeature[]): Record<string, FlagStatus> {
 	return Object.fromEntries(
-		flagsInSettings().map(({ name }) => {
+		[
+			...new Set(
+				[...flagsInSettings(), ...noteDefs.flatMap(({ flag }) => flag ?? [])].map(
+					({ name }) => name
+				)
+			)
+		].map((name) => {
 			const onServer = name.toUpperCase().replaceAll(/[-:]/g, '_');
 			const found = features.find((feature) => feature.name === onServer);
 			if (!found) throw new Error(`The server has no feature ${onServer}`);
@@ -998,6 +1005,19 @@ async function recordOnlyPresets(ids: readonly string[]) {
 			const looked = await lookInConsole(browser, admin, [], parNotes);
 			addToQuestions(recordedAt, await questionsWhenPushed(admin), looked);
 		}
+		if (wanted.some(({ settings }) => settings.exchange)) {
+			const exchangeNotes = noteDefs.filter(({ id }) =>
+				['standard-token-exchange', 'exchange-audience', 'exchange-subject'].includes(id)
+			);
+			// On its defaults again, so the console shows a client with nothing added, as the notes do.
+			await setUpFor(admin, LOCAL_REALM, {
+				clientType: 'confidential',
+				consent: false,
+				upstreamTokens: 'v1'
+			});
+			const looked = await lookInConsole(browser, admin, [], exchangeNotes);
+			addToQuestions(recordedAt, await questionsWhenExchanged(admin), looked);
+		}
 		if (wanted.some(({ settings }) => settings.appRuns === 'bff')) {
 			addToQuestions(recordedAt, await whatAScriptCan(browser, demo, admin));
 		}
@@ -1011,7 +1031,16 @@ async function recordOnlyPresets(ids: readonly string[]) {
 		}
 		const flow = { presets: presets.map(({ id }) => id), steps: [...steps].sort() };
 		const flows = { ...index.flows, [base.id]: flow };
-		writeFileSync(INDEX, `${JSON.stringify({ ...index, recordedOn, flows }, null, '\t')}\n`);
+		// What a server on its defaults says about each flag, which one started with a flag would not.
+		const flags = wanted.some(needsCimd)
+			? index.flags
+			: {
+					...index.flags,
+					...flagsFrom(
+						(await admin.call<{ features: ServerFeature[] }>('GET', '/serverinfo')).features
+					)
+				};
+		writeFileSync(INDEX, `${JSON.stringify({ ...index, recordedOn, flows, flags }, null, '\t')}\n`);
 	} finally {
 		await browser.close();
 		demo.stop();
@@ -1112,6 +1141,7 @@ async function main() {
 			Object.assign(answers, await questions(browser, demo, admin));
 			if (!features.length) {
 				Object.assign(answers, await questionsWithADirectory(admin));
+				Object.assign(answers, await questionsWhenExchanged(admin));
 				Object.assign(answers, await whatAScriptCan(browser, demo, admin));
 				Object.assign(answers, await questionsWithCompanies(admin));
 				Object.assign(answers, await questionsWhenSomeoneLeaves(browser, admin));

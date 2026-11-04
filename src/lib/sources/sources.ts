@@ -7,6 +7,7 @@ export type SourceId =
 	| 'rfc7636'
 	| 'rfc9449'
 	| 'rfc9126'
+	| 'rfc8693'
 	| 'rfc9207'
 	| 'rfc8628'
 	| 'rfc9700'
@@ -112,6 +113,15 @@ export const sources: Record<SourceId, SourceDef> = {
 			'Lets the app send its authorization request straight to the authorization server, proving who it is the way it would at the token endpoint, and get back a reference to it. The browser then carries only the client ID and that reference. What the app asked for stays out of the browser, where it could be read or changed, and the server can check it before the user is involved. The app must use a reference once, and a server may require every request to come this way.',
 		url: 'https://www.rfc-editor.org/rfc/rfc9126.html',
 		textFile: 'rfc9126.txt'
+	},
+	rfc8693: {
+		label: 'RFC 8693',
+		title: 'OAuth 2.0 Token Exchange',
+		status: 'Proposed Standard, January 2020.',
+		summary:
+			'Lets a client, which can be an API, hand the authorization server a token it has and get a different one back, usually for the same subject, and meant for somewhere else. An API can trade the access token it was sent for one to send to the service behind it. The new token can stand for the user, which the RFC calls impersonation, or also say who is acting for them, in an act claim, which it calls delegation. It defines the request and the answer, and leaves which exchanges are allowed to the server.',
+		url: 'https://www.rfc-editor.org/rfc/rfc8693.html',
+		textFile: 'rfc8693.txt'
 	},
 	rfc9207: {
 		label: 'RFC 9207',

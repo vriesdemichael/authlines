@@ -27,6 +27,7 @@ const names: Readonly<Record<string, InKeycloak>> = {
 		by: 'Keycloak’s console'
 	},
 	api: { name: 'API', role: 'Has the data' },
+	'second-api': { name: 'Second API', role: 'The API calls it' },
 	'idp-admin': { name: 'Realm admin', role: 'People' }
 };
 

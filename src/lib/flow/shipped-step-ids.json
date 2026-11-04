@@ -143,5 +143,11 @@
 	"attacker-sends-link",
 	"code-to-attacker",
 	"push-request",
-	"push-response"
+	"push-response",
+	"exchange-request",
+	"exchange-response",
+	"second-api-request",
+	"second-api-response",
+	"allow-exchange",
+	"configure-second-api"
 ]

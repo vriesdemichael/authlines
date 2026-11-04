@@ -7,6 +7,7 @@ import {
 	browserWords,
 	directoryWords,
 	idpWords,
+	secondApiWords,
 	secondAppWords,
 	upstreamWords
 } from '#lib/flow/parties.ts';
@@ -53,6 +54,7 @@ const apiV1 = is('upstreamTokens', 'v1');
 const apiV2 = is('upstreamTokens', 'v2');
 const sends = (value: Settings['apiToken']) => is('apiToken', value);
 const apiRefuses = not(sends('good'));
+const exchange = is('exchange', true);
 const logsOut = is('logout', true);
 const secondApp = is('sso', true);
 const secondInsists = all(secondApp, is('ssoAsks', 'insists'));
@@ -243,8 +245,25 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainRole: 'Has the data',
 			...apiWords,
 			icon: 'api',
+			concept: [
+				{
+					when: exchange,
+					text: 'What the app wants to call on behalf of the user. It decides from the token whether to answer, without ever talking to the user. To answer it needs a second API, and to get a token for that one it acts as a client itself, with a client ID and secret of its own.'
+				},
+				{
+					text: 'What the app wants to call on behalf of the user. It decides from the token whether to answer, without ever talking to the user.'
+				}
+			]
+		},
+		{
+			id: 'second-api',
+			plainName: 'Second API',
+			plainRole: 'The API calls it',
+			...secondApiWords,
+			icon: 'api',
+			when: exchange,
 			concept:
-				'What the app wants to call on behalf of the user. It decides from the token whether to answer, without ever talking to the user.'
+				'Another API, which the first one calls for the user, to answer the app. The app never calls it. It takes only a token that names it, so the token the app sent would not get in.'
 		}
 	],
 	groups: [
@@ -305,6 +324,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			label: 'Use',
 			why: 'This is what the token was for, and whatever gets the call decides what to do with it.',
 			from: 'userinfo-request'
+		},
+		{
+			label: 'Pass on',
+			why: 'The API needs another API to answer, which should not take a token meant for the first.',
+			from: 'exchange-request',
+			when: exchange
 		},
 		{
 			label: 'Stolen token',
@@ -2508,6 +2533,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: 'The API checks the token, and that the proof was signed with the key the token names.'
 				},
 				{
+					when: exchange,
+					text: 'The API checks the signature, who issued the token, that it has not expired, and that it names this API, as any API should. Here that matters for the trade too, because the identity provider here only trades a token that names the API asking.'
+				},
+				{
 					text: 'The API checks the signature, who issued the token, that it has not expired, and who it is for. An opaque token it has to ask the server about.'
 				}
 			],
@@ -2535,7 +2564,13 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			],
 			fields: [
 				{ name: 'iss', place: 'token' },
-				{ name: 'aud', place: 'token' },
+				{ name: 'aud', place: 'token', when: not(exchange) },
+				{
+					name: 'aud',
+					place: 'token',
+					note: 'Has to name this API, which it does here',
+					when: exchange
+				},
 				{ name: 'exp', place: 'token' },
 				{
 					name: 'scope',
@@ -2544,6 +2579,127 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				},
 				{ name: 'cnf.jkt', place: 'token', note: 'The key the token is tied to', when: dpop }
 			]
+		},
+		{
+			id: 'exchange-request',
+			when: exchange,
+			cites: [
+				{
+					source: 'rfc8693',
+					section: '2.1',
+					why: 'Section 2.1 is this request: the token it has, what kind of token that is, and which service the new one is for. It also says why the API proves who it is: without that, anyone with a copy of the token could trade it.'
+				},
+				{
+					source: 'rfc8693',
+					section: '2.2.2',
+					why: 'Section 2.2.2 is a refusal: invalid_request for a token the server will not take, and invalid_target, which it should use, for a service it will not issue a token for.'
+				}
+			],
+			from: 'api',
+			to: 'idp',
+			kind: 'request',
+			plain: 'The API trades it for one for the second API',
+			label: 'POST /token',
+			concept:
+				'The token names this API, and the second API should refuse it. So this API sends it to the identity provider, with its own client ID and secret, and asks for a token for the same user that names the second API.',
+			inPractice:
+				'Your code makes this call, unless something in front of the API has token exchange built in: one call to the token endpoint, made the way the app asks for its tokens, with the API’s own client ID and secret.',
+			pitfall: {
+				title: 'What if the identity provider will not trade it?',
+				text: 'It refuses, with an error and a description. RFC 8693 says invalid_request for a token it will not take, and invalid_target for an API it will not issue a token for. The server recorded sent a 400 with invalid_request for an API it would not issue a token for, and for an API not allowed to trade at all. A token that did not name the API asking got a 403 with access_denied. Which APIs may trade, and for which others, is set at the identity provider, so the fix is there and not in the API.'
+			},
+			fields: [
+				{
+					name: 'grant_type=urn:ietf:params:oauth:grant-type:token-exchange',
+					place: 'body',
+					note: 'Asks to trade one token for another'
+				},
+				{
+					name: 'Authorization: Basic',
+					place: 'header',
+					note: 'The client ID and secret of the API, which is the client here'
+				},
+				{
+					name: 'subject_token',
+					place: 'body',
+					note: 'The token it was sent, which says who the user is',
+					artifact: 'access-token'
+				},
+				{ name: 'subject_token_type', place: 'body' },
+				{ name: 'audience', place: 'body', note: 'Which API the new token is for' }
+			]
+		},
+		{
+			id: 'exchange-response',
+			when: exchange,
+			cites: [
+				{
+					source: 'rfc8693',
+					section: '2.2.1',
+					why: 'Section 2.2.1 is this answer, with issued_token_type, and says a refresh token will typically not come with it.'
+				},
+				{
+					source: 'rfc8693',
+					section: '4.1',
+					why: 'Section 4.1 is the act claim, which says that delegation has happened and who is acting. Section 1.1 is the difference between that and a token that only names the user.'
+				}
+			],
+			from: 'idp',
+			to: 'api',
+			kind: 'response',
+			plain: 'A token for the second API comes back',
+			label: '200 with a new token',
+			concept:
+				'A new access token for the same user, which names the second API and not this one. It has no act claim, which is how RFC 8693 has a token say that someone else is acting for the user, so it is about the user alone. Its azp does name the first API, as the one it was issued to. No refresh token comes with it, so a new one takes another trade.',
+			fields: [
+				{
+					name: 'access_token',
+					place: 'body',
+					note: 'For the same user, and for the second API',
+					artifact: 'exchanged-token'
+				},
+				{ name: 'issued_token_type', place: 'body' },
+				{ name: 'token_type', place: 'body' },
+				{ name: 'expires_in', place: 'body' },
+				{ name: 'scope', place: 'body', when: not(oidc) },
+				{
+					name: 'scope',
+					place: 'body',
+					note: 'Without openid, which the token it traded had, and no ID token comes',
+					when: oidc
+				}
+			]
+		},
+		{
+			id: 'second-api-request',
+			when: exchange,
+			from: 'api',
+			to: 'second-api',
+			kind: 'request',
+			plain: 'The API calls the second API with it',
+			label: 'GET /resource',
+			concept:
+				'The first API calls the second as the app called it, with the new token. The second checks it the same way, for its own name.',
+			fields: [
+				{
+					name: 'Authorization: Bearer',
+					place: 'header',
+					artifact: 'exchanged-token',
+					note: 'The exchanged token, and not the one the app sent'
+				}
+			]
+		},
+		{
+			id: 'second-api-response',
+			when: exchange,
+			from: 'second-api',
+			to: 'api',
+			kind: 'response',
+			plain: 'The second API answers',
+			label: '200 with the resource',
+			concept:
+				'The token names it, so it answers. The token the app sent never got here, and a copy of it would not have got in.',
+			fields: [{ name: 'resource', place: 'body', note: 'What the first API needed to answer' }]
 		},
 		{
 			id: 'api-response',
@@ -2585,6 +2741,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					when: sends('noscope'),
 					text: 'A 403 with insufficient_scope. The API accepts this token and it does not allow this, so a new token of the same kind will not help. The app would have to ask for more, and the user may have to agree.'
+				},
+				{
+					when: exchange,
+					text: 'The app has what it came for, some of it from an API it never called. Its token went back to the identity provider that issued it, and never to the second API.'
 				},
 				{ text: 'The app has what it came for, and the user never gave it their password.' }
 			],

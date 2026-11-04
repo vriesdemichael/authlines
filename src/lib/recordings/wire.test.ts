@@ -392,6 +392,6 @@ describe('what gets downloaded', () => {
 
 	it('stays small for the index the application does load', () => {
 		// It grows by a preset's name and steps with each recording, so this is about a kilobyte of room.
-		expect(statSync('src/lib/recordings/recorded.json').size).toBeLessThan(7 * 1024);
+		expect(statSync('src/lib/recordings/recorded.json').size).toBeLessThan(8 * 1024);
 	});
 });

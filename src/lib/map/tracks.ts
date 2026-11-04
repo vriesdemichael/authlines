@@ -775,6 +775,35 @@ export const offTheMap: readonly MapNode[] = [
 		step: 'push-request'
 	}),
 	node({
+		id: 'passed-on',
+		alsoAskedAs: [
+			'token exchange',
+			'rfc 8693',
+			'on behalf of',
+			'downstream api',
+			'subject_token',
+			'call another api'
+		],
+		answer:
+			'Not as it is, because it names the first API, and the next one should refuse it. One way, the one drawn here, is for the first API to trade it at the identity provider, with its own secret, for a token for the same user that names the next API, and send that.',
+		title: 'Can an API pass the user’s token on to another API?',
+		summary: 'It trades it for one meant for the next API.',
+		mode: 'advanced',
+		preset: 'exchange',
+		step: 'exchange-request'
+	}),
+	node({
+		id: 'who-asked',
+		alsoAskedAs: ['act claim', 'impersonation', 'delegation', 'azp'],
+		answer:
+			'On the server recorded, from its azp, which names the first API as the client the token was issued to. There is no act claim, which is how RFC 8693 has a token say who is acting for the user, so the token is about the user alone.',
+		title: 'Can the second API tell another API asked?',
+		summary: 'From azp, and nothing says it acts for the user.',
+		mode: 'advanced',
+		preset: 'exchange-oidc',
+		step: 'exchange-response'
+	}),
+	node({
 		id: 'dpop-on-the-wire',
 		alsoAskedAs: ['dpop proof', 'dpop header'],
 		answer:

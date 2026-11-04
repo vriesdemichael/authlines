@@ -384,6 +384,30 @@ const list: readonly Term[] = [
 		at: flowAt('push-response', { par: true })
 	},
 	{
+		id: 'token-exchange',
+		name: 'Token exchange',
+		words: ['token exchange'],
+		explains: '',
+		setting: 'exchange',
+		at: flowAt('exchange-request', { exchange: true })
+	},
+	{
+		id: 'exchanged-token',
+		name: 'Exchanged token',
+		words: ['exchanged token', 'exchanged tokens'],
+		explains: '',
+		artifact: 'exchanged-token',
+		at: flowAt('exchange-response', { exchange: true })
+	},
+	{
+		id: 'impersonation',
+		name: 'Impersonation',
+		words: ['impersonation'],
+		explains:
+			'In RFC 8693, a token that identifies the user and is given to someone else, who then acts as the user within what it allows. Beside it is delegation, where the token also names who is acting.',
+		at: flowAt('exchange-response', { exchange: true })
+	},
+	{
 		id: 'dpop',
 		name: 'DPoP',
 		words: ['DPoP'],
@@ -398,6 +422,22 @@ const list: readonly Term[] = [
 		explains:
 			'What an API says when it does not accept a token, whichever check it failed: expired, changed, or for someone else.',
 		at: flowAt('api-response', { apiToken: 'expired' })
+	},
+	{
+		id: 'invalid-request',
+		name: 'invalid_request',
+		words: ['invalid_request'],
+		explains:
+			'The error for a request that is wrong or missing something. RFC 8693 also asks for it when the server will not take the token being traded.',
+		at: flowAt('exchange-request', { exchange: true })
+	},
+	{
+		id: 'invalid-target',
+		name: 'invalid_target',
+		words: ['invalid_target'],
+		explains:
+			'The error RFC 8693 says a server should send when it will not issue a token for the API that was asked for.',
+		at: flowAt('exchange-request', { exchange: true })
 	},
 	{
 		id: 'insufficient-scope',
