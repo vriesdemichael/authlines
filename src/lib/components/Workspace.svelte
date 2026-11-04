@@ -552,6 +552,13 @@
 	// something there, as a presenter does, has a clicker that only sends those keys.
 	let tabbedIn = false;
 
+	// A new step is read from its start, which the panel scrolled down for the last one would hide.
+	let detailPanel = $state<HTMLElement>();
+	$effect(() => {
+		void appState.step;
+		untrack(() => detailPanel?.scrollTo({ top: 0 }));
+	});
+
 	function onkeydown(event: KeyboardEvent) {
 		if (event.key === 'Tab') tabbedIn = true;
 		// What is open on top has these keys, and closes itself.
@@ -831,7 +838,7 @@
 		</div>
 	</main>
 
-	<aside class="detail" aria-label="The current step">
+	<aside class="detail" aria-label="The current step" bind:this={detailPanel}>
 		{#if eyesName}
 			<section class="eyes" data-testid="eyes-note" role="status">
 				<p>
@@ -1454,6 +1461,11 @@
 		header {
 			flex-wrap: wrap;
 			padding-right: 140px;
+		}
+
+		/* Shorter rather than on a line of its own, which would take the height from the diagram. */
+		h1 {
+			flex: 1 1 0;
 		}
 
 		.name,

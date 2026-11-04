@@ -234,6 +234,8 @@ test.describe('on a phone', () => {
 		await expect(page.getByTestId('next')).toBeInViewport();
 		await expect(page.getByTestId('back')).toBeInViewport();
 		expect(await page.evaluate(() => window.scrollY)).toBe(0);
+		// And the new step from its start, not where the last one was scrolled to.
+		await expect.poll(() => detail.evaluate((element) => element.scrollTop)).toBe(0);
 	});
 
 	test('opens the settings over everything, and closes them again', async ({ page }) => {
