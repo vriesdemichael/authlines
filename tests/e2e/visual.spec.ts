@@ -127,5 +127,27 @@ for (const scheme of ['light', 'dark'] as const) {
 				await expect(page).toHaveScreenshot(`${name}-${scheme}.png`, { maxDiffPixelRatio: 0.002 });
 			});
 		}
+
+		// A layout of its own (#15, ADR-008): the lanes in a strip, and the picture at its own size.
+		test.describe('on a phone', () => {
+			test.use({ viewport: { width: 375, height: 812 } });
+
+			for (const [name, search] of [
+				['phone-strip', 'mode=simple&attacker=1&step=attacker-token-request'],
+				['phone-full-size', 'mode=simple&step=token-request&size=full']
+			]) {
+				test(name, async ({ page }) => {
+					await open(page, search);
+					await expect(page.getByTestId('recording-loading')).toHaveCount(0);
+					if (search.includes('size=full')) {
+						const diagram = page.getByTestId('diagram');
+						await expect.poll(() => diagram.evaluate((e) => e.scrollLeft)).toBeGreaterThan(0);
+					}
+					await expect(page).toHaveScreenshot(`${name}-${scheme}.png`, {
+						maxDiffPixelRatio: 0.002
+					});
+				});
+			}
+		});
 	});
 }

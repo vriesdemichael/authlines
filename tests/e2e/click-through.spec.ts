@@ -7,6 +7,7 @@ import {
 	expectMatchesModel,
 	FLOW_PATH,
 	open,
+	openWithSettings,
 	visibleStepIds,
 	watchForErrors
 } from './helpers.ts';
@@ -136,7 +137,7 @@ test.describe('settings', () => {
 
 	test('OIDC changes messages and adds steps, in the URL too', async ({ page }) => {
 		const check = watchForErrors(page);
-		await open(page);
+		await openWithSettings(page);
 		await toggle(page, 'oidc').check();
 		await expectMatchesModel(page, 'oidc=1');
 		await expect.poll(() => currentSearch(page)).toBe('oidc=1');
@@ -150,7 +151,7 @@ test.describe('settings', () => {
 		page
 	}) => {
 		const check = watchForErrors(page);
-		await open(page, 'client=public&step=token-request');
+		await openWithSettings(page, 'client=public&step=token-request');
 		const heldByBrowser = page.locator('[data-lifeline="browser"] [data-artifact]');
 		const pitfall = page.getByTestId('step-pitfall');
 		await expect(pitfall).toContainText('gets the tokens');
@@ -161,13 +162,22 @@ test.describe('settings', () => {
 		await expect(page.locator('[data-chip="authorize:code_challenge"]')).toBeVisible();
 		await expect(page.locator('[data-chip="token-request:code_verifier"]')).toBeVisible();
 		await expect(pitfall).toContainText('they get nothing');
-		await expect(heldByBrowser.filter({ hasText: 'challenge' })).toBeVisible();
-		await expect(heldByBrowser.filter({ hasText: 'verifier' })).toHaveCount(0);
+		// A phone has no room under a head for what it has seen, so the head says it when asked.
+		if (await page.getByTestId('diagram').evaluate((element) => element.matches('.strip'))) {
+			await page.getByTestId('settings-toggle').click();
+			// Its box, where a finger goes. The middle of all of it is under the next lane's name.
+			await page.locator('[data-lifeline="browser"] rect').click();
+			await expect(page.getByTestId('explanation-seen')).toContainText('challenge');
+			await expect(page.getByTestId('explanation-seen')).not.toContainText('verifier');
+		} else {
+			await expect(heldByBrowser.filter({ hasText: 'challenge' })).toBeVisible();
+			await expect(heldByBrowser.filter({ hasText: 'verifier' })).toHaveCount(0);
+		}
 		check();
 	});
 
 	test('the back button undoes a setting', async ({ page }) => {
-		await open(page);
+		await openWithSettings(page);
 		await toggle(page, 'oidc').check();
 		await expectMatchesModel(page, 'oidc=1');
 		await page.goBack();
@@ -178,7 +188,7 @@ test.describe('settings', () => {
 	test('a setting that removes the current step moves to the nearest earlier one', async ({
 		page
 	}) => {
-		await open(page, 'oidc=1&step=userinfo-response');
+		await openWithSettings(page, 'oidc=1&step=userinfo-response');
 		await toggle(page, 'oidc').uncheck();
 		await expect(page.locator('[data-state="current"]')).toHaveAttribute(
 			'data-step',
@@ -188,7 +198,7 @@ test.describe('settings', () => {
 	});
 
 	test('brokering adds a lifeline and a nested flow', async ({ page }) => {
-		await open(page);
+		await openWithSettings(page);
 		await toggle(page, 'broker').check();
 		await expectMatchesModel(page, 'broker=1');
 		await expect(page.locator('[data-lifeline="upstream"]')).toBeVisible();
@@ -197,7 +207,7 @@ test.describe('settings', () => {
 	});
 
 	test('a setting is only offered when what it needs holds', async ({ page }) => {
-		await open(page);
+		await openWithSettings(page);
 		await expect(page.locator('[data-setting="dpopNonce"]')).toHaveCount(0);
 		await expect(page.locator('[data-setting="upstreamTokens"]')).toHaveCount(0);
 		await option(page, 'binding', 'dpop').check();
@@ -207,7 +217,7 @@ test.describe('settings', () => {
 	});
 
 	test('an option that cannot apply says why', async ({ page }) => {
-		await open(page, 'client=public&broker=1');
+		await openWithSettings(page, 'client=public&broker=1');
 		await expect(option(page, 'upstreamTokens', 'v2')).toBeDisabled();
 		await expect(page.locator('[data-setting="upstreamTokens"]')).toContainText(
 			'API V2 only works with a confidential client and a Bearer token.'
@@ -215,7 +225,7 @@ test.describe('settings', () => {
 	});
 
 	test('a change that breaks another setting resets it and says so', async ({ page }) => {
-		await open(page, 'broker=1&upstream=v2');
+		await openWithSettings(page, 'broker=1&upstream=v2');
 		await option(page, 'clientType', 'public').check();
 		await expectMatchesModel(page, 'client=public&broker=1');
 		await expect(page.getByTestId('change-summary')).toContainText(
@@ -225,12 +235,12 @@ test.describe('settings', () => {
 
 	test('a link to what is no longer offered falls back to what still is', async ({ page }) => {
 		// This one worked until a recording showed that Keycloak refuses it.
-		await open(page, 'binding=dpop&broker=1&upstream=v2');
+		await openWithSettings(page, 'binding=dpop&broker=1&upstream=v2');
 		await expectMatchesModel(page, 'binding=dpop&broker=1');
 	});
 
 	test('an invalid link falls back to a valid state', async ({ page }) => {
-		await open(page, 'client=public&broker=1&upstream=v2&nonce=1&binding=magic');
+		await openWithSettings(page, 'client=public&broker=1&upstream=v2&nonce=1&binding=magic');
 		await expectMatchesModel(page, 'client=public&broker=1');
 	});
 });
@@ -239,7 +249,7 @@ test.describe('the transition', () => {
 	test.use({ contextOptions: { reducedMotion: 'no-preference' } });
 
 	test('animates a toggle as a change, not a redraw', async ({ page }) => {
-		await open(page);
+		await openWithSettings(page);
 		const before = await page
 			.locator('[data-step="token-request"] line')
 			.first()
@@ -260,7 +270,7 @@ test.describe('the transition', () => {
 	});
 
 	test('keeps the same elements, so nothing is redrawn', async ({ page }) => {
-		await open(page);
+		await openWithSettings(page);
 		await page.getByTestId('diagram').waitFor();
 		await page.locator('[data-step="token-request"]').evaluate((row) => {
 			row.setAttribute('data-kept', 'yes');
@@ -272,7 +282,7 @@ test.describe('the transition', () => {
 
 	test('survives a toggle flipped mid-transition', async ({ page }) => {
 		const check = watchForErrors(page);
-		await open(page);
+		await openWithSettings(page);
 		const broker = page.locator('[data-setting="broker"] input');
 		await broker.check();
 		await broker.uncheck();
@@ -283,7 +293,7 @@ test.describe('the transition', () => {
 	});
 
 	test('opening a link does not animate', async ({ page }) => {
-		await open(page, 'broker=1');
+		await openWithSettings(page, 'broker=1');
 		await expect(page.getByTestId('diagram')).toHaveAttribute('data-animating', 'false');
 		await expectMatchesModel(page, 'broker=1');
 	});

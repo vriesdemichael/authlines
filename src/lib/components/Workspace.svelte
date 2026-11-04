@@ -58,6 +58,7 @@
 		withList,
 		withRaw,
 		withWhole,
+		withFullSize,
 		refFor,
 		withWording,
 		wordingOf,
@@ -174,7 +175,8 @@
 	// its own size, moved sideways to the current message, for someone who asks for that (#15).
 	const FULL_SIZE_WIDTH = 720;
 	let phone = $state(false);
-	let fullSize = $state(false);
+	// In the address, so a reload or a link keeps it, and it does nothing wider than a phone.
+	const fullSize = $derived(appState.fullSize);
 	$effect(() => {
 		const query = window.matchMedia('(max-width: 767px)');
 		const check = () => (phone = query.matches);
@@ -779,7 +781,7 @@
 					class="quiet"
 					data-testid="full-size"
 					aria-pressed={fullSize}
-					onclick={() => (fullSize = !fullSize)}
+					onclick={() => onnavigate(withFullSize(appState, !fullSize), 'push')}
 				>
 					{fullSize ? 'Fit to the screen' : 'Full size'}
 				</button>

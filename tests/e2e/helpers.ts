@@ -27,6 +27,15 @@ export async function open(page: Page, search = '', diagram: DiagramId = 'flow')
 	await page.locator('.workspace[data-ready="true"]').waitFor();
 }
 
+/** The same, with the settings open, which on a phone means pressing the button for them. */
+export async function openWithSettings(page: Page, search = '', diagram: DiagramId = 'flow') {
+	await open(page, search, diagram);
+	const button = page.getByTestId('settings-toggle');
+	if ((await button.isVisible()) && (await button.getAttribute('aria-expanded')) !== 'true') {
+		await button.click();
+	}
+}
+
 /**
  * Clicks a row where it is on screen. Firefox scrolls to the top when asked to bring something in an
  * SVG into view, which is what a plain click does first, so this measures and scrolls by hand.

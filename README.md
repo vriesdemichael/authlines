@@ -24,6 +24,7 @@ With an app that has no secret, someone who copied the one-time code gets the to
 - **As much detail as you want.** Simple mode says what happens and why. Advanced mode adds the raw requests and answers and, where there is one, which spec says so and the Keycloak setting behind it.
 - **Made to be shown.** The address holds the flow, settings and step, so a link opens exactly what you are looking at. Advanced mode can show every row at once, or the raw traffic large, for a room.
 - **A server you can run yourself.** [A page on the site](https://vriesdemichael.github.io/authlines/run-it-yourself/) gives the commands to run Keycloak at home with Docker, for a real login and real tokens with the settings you came from.
+- **On a phone too.** The diagram stays, with its parties in a narrow strip and each message's words beside it, or at its own size if you ask. Desktop still comes first ([why](docs/adr/008-desktop-first-without-ruling-out-phones.md)).
 
 ## What this is not
 
@@ -31,7 +32,6 @@ With an app that has no secret, someone who copied the one-time code gets the to
 - **A debugger for your own server.** Nothing here talks to your server, or to any other: it replays what was recorded.
 - **A comparison of vendors.** The protocol is explained neutrally, and what is Keycloak's own is a layer on top ([why](docs/adr/015-keycloak-is-an-overlay-on-a-neutral-protocol.md)). It is recorded from Keycloak because anyone can run that, and the rest applies to other login servers too.
 - **An article.** You operate it: pick a question, change settings and step through it.
-- **Ready for phones.** Desktop comes first ([why](docs/adr/008-desktop-first-without-ruling-out-phones.md)).
 
 Something wrong, or a question missing? [Say what is wrong](https://github.com/vriesdemichael/authlines/issues/new?template=something-is-wrong.yml) or [suggest a question](https://github.com/vriesdemichael/authlines/issues/new?template=suggest-a-question.yml).
 

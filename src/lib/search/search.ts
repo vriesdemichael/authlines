@@ -84,7 +84,8 @@ function stateAt(
 		wording: null,
 		list: false,
 		whole: false,
-		raw: false
+		raw: false,
+		fullSize: false
 	};
 }
 
@@ -110,7 +111,8 @@ const stateIn = (
 	wording: null,
 	list: false,
 	whole: false,
-	raw: false
+	raw: false,
+	fullSize: false
 });
 
 function resultAt(kind: ResultKind, title: string, says: string, state: AppState): Result {

@@ -209,8 +209,17 @@ test.describe('on a phone', () => {
 		await expect.poll(() => diagram.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
 		await expect(page.locator('[data-lifeline="idp"]')).toBeInViewport();
 		expect(await noSidewaysScroll(page)).toBe(true);
+		// In the address, so a reload keeps it, moved to the same message again (ADR-003).
+		await expect(page).toHaveURL(/size=full/);
+		await page.reload();
+		await ready(page);
+		await expect(diagram).toHaveClass(/full-size/);
+		await expect.poll(() => diagram.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
 		await page.getByTestId('full-size').click();
 		await expect(diagram).toHaveClass(/strip/);
+		await expect(page).not.toHaveURL(/size=full/);
+		await page.goBack();
+		await expect(diagram).toHaveClass(/full-size/);
 	});
 
 	test('can be stepped through', async ({ page }) => {
