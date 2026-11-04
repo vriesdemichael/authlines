@@ -1,6 +1,0 @@
-# Authlines
-
-> OAuth and OpenID Connect flows as sequence diagrams to step through, recorded from a real Keycloak 26.8.1, with who has seen what at each step.
-
-- [Links for an AI agent](https://vriesdemichael.github.io/authlines/for-agents/): how to link to the recorded flow that matches someone's setup, with their names on the parties.
-- [Run it yourself](https://vriesdemichael.github.io/authlines/run-it-yourself/): the same server on your own machine, with Docker.
