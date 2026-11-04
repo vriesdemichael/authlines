@@ -6,6 +6,7 @@
 		layHeld,
 		TIME_GAP,
 		SELF_LOOP,
+		STRIP_SELF_LOOP,
 		WHOLE_SELF_LOOP,
 		type DiagramLayout
 	} from '#lib/diagram/layout.ts';
@@ -33,6 +34,8 @@
 		eyes?: string | null;
 		/** The steps one thing goes through, and what forms it takes, to light up that path. */
 		followed?: { steps: ReadonlySet<string>; forms: readonly ArtifactId[] } | null;
+		/** As wide as it is laid out, and moved sideways to the current message, on a screen too narrow. */
+		fullSize?: boolean;
 		onselect?: (step: string) => void;
 		onexplainlifeline?: (id: string) => void;
 		onexplainartifact?: (id: ArtifactId) => void;
@@ -50,6 +53,7 @@
 		landing = new Set(),
 		eyes = null,
 		followed = null,
+		fullSize = false,
 		onselect,
 		onexplainlifeline,
 		onexplainartifact
@@ -58,7 +62,8 @@
 	let frame = $state.raw<Frame>(untrack(() => toFrame(layout)));
 	let animating = $state(false);
 	let scroller = $state<HTMLElement>();
-	const loop = $derived(frame.whole ? WHOLE_SELF_LOOP : SELF_LOOP);
+	let root = $state<HTMLElement>();
+	const loop = $derived(frame.whole ? WHOLE_SELF_LOOP : frame.strip ? STRIP_SELF_LOOP : SELF_LOOP);
 	let scrolled = $state(false);
 	let drawn = untrack(() => layout);
 	const BREATHING_ROOM = 60;
@@ -151,6 +156,19 @@
 		const room = Math.max(0, Math.min(BREATHING_ROOM, (view.height - (to - from)) / 2));
 		if (from - room < view.top) scroller.scrollTop -= view.top - (from - room);
 		else if (to + room > view.bottom) scroller.scrollTop += to + room - view.bottom;
+		if (fullSize) keepInViewSideways();
+	}
+
+	/** Its arrow and its words, from one end to the other, or as much of that as there is room for. */
+	function keepInViewSideways() {
+		const row = layout.rows[currentIndex];
+		if (!root || !row) return;
+		const words = row.lines.flatMap((line) => [line.x - 60, line.x + 60]);
+		const left = Math.min(row.x1, row.x2, ...words) - layout.viewX - TIGHT_ROOM * 2;
+		const right = Math.max(row.x1, row.x2, ...words) - layout.viewX + TIGHT_ROOM * 2;
+		const seen = root.clientWidth;
+		if (right - left > seen || left < root.scrollLeft) root.scrollLeft = Math.max(0, left);
+		else if (right > root.scrollLeft + seen) root.scrollLeft = right - seen;
 	}
 
 	// Every frame of a transition, because rows move under it, but not on someone scrolling by hand.
@@ -167,8 +185,12 @@
 	});
 
 	const tipX = (x1: number, x2: number, draw: number) => x1 + (x2 - x1) * draw;
+	const HEAD_LENGTH = 8;
 	const headPoints = (x: number, y: number, direction: number) =>
-		`${x},${y} ${x - 8 * direction},${y - 4.5} ${x - 8 * direction},${y + 4.5}`;
+		`${x},${y} ${x - HEAD_LENGTH * direction},${y - 4.5} ${x - HEAD_LENGTH * direction},${y + 4.5}`;
+	// Into the head's base and no further, because a line as thick as the current one shows past its point.
+	const lineEnd = (x1: number, tip: number) =>
+		Math.abs(tip - x1) <= HEAD_LENGTH ? x1 : tip - (HEAD_LENGTH - 1) * Math.sign(tip - x1);
 
 	function rowState(id: string) {
 		const index = order.get(id);
@@ -193,282 +215,322 @@
 <div
 	class="diagram"
 	class:whole={frame.whole}
+	class:strip={frame.strip}
+	class:full-size={fullSize}
 	data-testid="diagram"
 	data-animating={animating}
 	data-lit={lit?.part}
+	bind:this={root}
 >
-	<div class="heads-band" class:scrolled>
-		<svg
-			class="heads"
-			viewBox={`${frame.viewX} 0 ${frame.viewWidth} ${frame.headHeight}`}
-			role="group"
-			aria-label="Who takes part, and what each has seen so far"
-			data-testid="diagram-heads"
-		>
-			{#each frame.lanes as lane (lane.id)}
-				<line
-					class="lifeline"
-					x1={lane.x}
-					x2={lane.x}
-					y1="51"
-					y2={frame.headHeight}
-					style:opacity={lane.opacity}
-				/>
-				<g
-					class="lane-head"
-					class:fresh={fresh.has(lane.id)}
-					class:lit={lit?.lifeline === lane.id}
-					class:eyes={eyes === lane.id}
-					class:active={currentRow && (lane.id === currentRow.from || lane.id === currentRow.to)}
-					style:opacity={lane.opacity}
-					data-lifeline={lane.leaving ? undefined : lane.id}
-					transform={`translate(${lane.x} 0)`}
-					role="button"
-					tabindex={lane.leaving ? -1 : 0}
-					aria-describedby={`seen-${lane.id}`}
-					onclick={() => {
-						// On its way out, so there is nothing left to explain.
-						if (!lane.leaving) onexplainlifeline?.(lane.id);
-					}}
-					onkeydown={(event) => activate(event, () => onexplainlifeline?.(lane.id))}
-				>
-					<desc id={`seen-${lane.id}`}>Has seen: {heldText(lane.id, holdings[lane.id] ?? [])}.</desc
-					>
-					<rect x={-lane.headWidth / 2} y="5" width={lane.headWidth} height="46" rx="8" />
-					{#if lane.headWidth >= FULL_HEAD_WIDTH}
-						<path class="icon" d={ICONS[lane.icon]} transform="translate(-65 16) scale(0.95)" />
-						<g style:opacity={lane.words}>
-							<text class="name" x="-38" y="25">{lane.nameLines[0]}</text>
-							{#if lane.nameLines[1]}
-								<text class="name" x="-38" y="41">{lane.nameLines[1]}</text>
-							{:else}
-								<text class="role" x="-38" y="41">{lane.role}</text>
-							{/if}
-						</g>
-					{:else}
-						<g style:opacity={lane.words}>
-							<text class="name tight" y="25" text-anchor="middle">{lane.nameLines[0]}</text>
-							{#if lane.nameLines[1]}
-								<text class="name tight" y="41" text-anchor="middle">{lane.nameLines[1]}</text>
-							{:else}
-								<text class="role tight" y="41" text-anchor="middle">{lane.role}</text>
-							{/if}
-						</g>
-					{/if}
-					{#if !lane.leaving && !frame.whole}
-						{#each layHeld(holdings[lane.id] ?? [], frame.heldWidth) as chip (chip.artifact)}
-							{#if lane.id !== eyes && !eyesHold(chip.artifact)}
-								<g data-hidden-held
-									><rect
-										class="bar"
-										x={chip.x}
-										y={chip.y}
-										width={chip.width}
-										height="16"
-										rx="8"
-									/></g
-								>
-							{:else}
-								<!-- Inside a button, so only for the mouse. The keyboard gets to the same words through
-							     the lifeline's own explanation, which lists these as buttons. -->
-								<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-								<g
-									class="held"
-									class:followed={followed?.forms.includes(chip.artifact)}
-									class:off-path={followed && !followed.forms.includes(chip.artifact)}
-									class:landing={travelling && landing.has(`${lane.id}:${chip.artifact}`)}
-									data-artifact={chip.artifact}
-									data-held={`${lane.id}:${chip.artifact}`}
-									onclick={(event) => {
-										event.stopPropagation();
-										onexplainartifact?.(chip.artifact);
-									}}
-								>
-									<rect x={chip.x} y={chip.y} width={chip.width} height="16" rx="8" />
-									<text x={chip.x + chip.width / 2} y={chip.y + 11.5} text-anchor="middle">
-										{chip.text}
-									</text>
-								</g>
-							{/if}
-						{/each}
-					{/if}
-				</g>
-			{/each}
-		</svg>
-	</div>
-
-	<div
-		class="scroller"
-		bind:this={scroller}
-		onscroll={(event) => (scrolled = event.currentTarget.scrollTop > 0)}
-	>
-		<svg
-			class="body"
-			viewBox={`${frame.viewX} 0 ${frame.viewWidth} ${frame.height}`}
-			role="group"
-			aria-label="The messages in this diagram"
-		>
-			{#each frame.lanes as lane (lane.id)}
-				<line
-					class="lifeline"
-					class:active={currentRow && (lane.id === currentRow.from || lane.id === currentRow.to)}
-					x1={lane.x}
-					x2={lane.x}
-					y1="0"
-					y2={frame.height}
-					style:opacity={lane.opacity}
-				/>
-			{/each}
-
-			{#each frame.groups as group (group.id)}
-				<g
-					class="group"
-					style:opacity={group.opacity}
-					data-group={group.leaving ? undefined : group.id}
-				>
-					<rect x={group.x} y={group.y} width={group.width} height={group.height} rx="10" />
-					<text x={group.x + 12} y={group.y + (frame.whole ? 14 : 18)}>{group.label}</text>
-				</g>
-			{/each}
-
-			{#each frame.rows as row (row.id)}
-				{@const state = rowState(row.id)}
-				{@const tip = tipX(row.x1, row.x2, row.draw)}
-				<g
-					class={`row ${row.kind} ${row.channel} ${state}`}
-					class:fresh={fresh.has(row.id)}
-					class:lit={lit?.step === row.id}
-					class:sending={travelling === row.id}
-					class:unseen={hiddenRows.has(row.id)}
-					class:on-path={followed?.steps.has(row.id)}
-					class:off-path={followed && !followed.steps.has(row.id)}
-					style:opacity={row.opacity}
-					data-step={row.leaving ? undefined : row.id}
-					data-state={state}
-					data-channel={row.channel}
-					role="button"
-					tabindex={row.leaving ? -1 : 0}
-					aria-describedby={`route-${row.id}`}
-					aria-current={state === 'current' ? 'step' : undefined}
-					onclick={() => {
-						// On its way out, so it is not a step any more.
-						if (!row.leaving) onselect?.(row.id);
-					}}
-					onkeydown={(event) => {
-						if (event.key === 'Enter' || event.key === ' ') {
-							event.preventDefault();
-							onselect?.(row.id);
-						}
-					}}
-				>
-					<desc id={`route-${row.id}`}>
-						{hiddenRows.has(row.id) ? `${row.route} ${eyesName} was not part of this.` : row.route}
-					</desc>
-					{#if row.kind === 'time'}
-						<!-- A gap in every line, which is how a sequence diagram says that time went by. -->
-						<rect
-							class="gap"
-							x={frame.viewX}
-							y={row.y - TIME_GAP / 2}
-							width={frame.viewWidth}
-							height={TIME_GAP}
-						/>
-					{/if}
-					<rect class="hit" x={frame.viewX} y={row.top} width={frame.viewWidth} height={row.band} />
-					{#if row.kind === 'time'}
-						{#each [row.y - TIME_GAP / 2, row.y + TIME_GAP / 2] as y (y)}
-							<line x1={frame.viewX} x2={frame.viewX + frame.viewWidth} y1={y} y2={y} />
-						{/each}
-					{:else if row.self}
-						<path
-							d={`M ${row.x1} ${row.y - loop.top} h ${row.selfSide * loop.width} v ${loop.height} h ${-row.selfSide * (loop.width - 6)}`}
-							pathLength="1"
-							stroke-dasharray={`${row.draw} 1`}
-						/>
-						<polygon
-							points={headPoints(row.x1, row.y - loop.top + loop.height, -row.selfSide)}
-							style:opacity={row.draw}
-						/>
-					{:else}
-						<line x1={row.x1} x2={tip} y1={row.y} y2={row.y} />
-						<polygon points={headPoints(tip, row.y, Math.sign(row.x2 - row.x1) || 1)} />
-						{#if travelling === row.id && !row.leaving}
-							<!-- Hollow when it has no token or secret in it, like a refusal, so nothing lands. -->
-							<circle
-								class="packet"
-								class:empty={!carries(row.id)}
-								cx={row.x1}
-								cy={row.y}
-								r="5"
-								style:--travel={`${row.x2 - row.x1}px`}
-							/>
-						{/if}
-					{/if}
-					<g
-						class="number"
-						transform={`translate(${row.x1} ${row.self ? row.y - loop.top : row.y})`}
-					>
-						<circle r={frame.numberRadius} />
-						<text y={frame.whole ? 3 : 3.7} text-anchor="middle">{row.number}</text>
-					</g>
-					<!-- The spaces are for anything reading this, because lines are only places on a screen. -->
-					<!-- Every row says what happens, ahead and unseen too, because a numbered line with nothing
-					     on it only made people wonder. What it carries waits until it gets there. -->
-					<text class="label" style:--words={row.words}>
-						{#each row.lines as line, l (l)}
-							<tspan x={line.x} y={line.y} text-anchor={line.anchor}>{`${line.text} `}</tspan>
-						{/each}
-					</text>
-				</g>
-			{/each}
-
-			{#each frame.chips as chip (chip.id)}
-				{@const state = rowState(chip.step)}
-				{#if hiddenRows.has(chip.step)}
-					<rect
-						class={`bar chip-bar ${state}`}
-						style:opacity={chip.opacity}
-						x={chip.x}
-						y={chip.y}
-						width={chip.width}
-						height="18"
-						rx="9"
+	<!-- As wide as the screen, or as wide as it is laid out, with the heads held while it scrolls down. -->
+	<div class="wide" style:width={fullSize ? `${frame.viewWidth}px` : null}>
+		<div class="heads-band" class:scrolled>
+			<svg
+				class="heads"
+				viewBox={`${frame.viewX} 0 ${frame.viewWidth} ${frame.headHeight}`}
+				role="group"
+				aria-label="Who takes part, and what each has seen so far"
+				data-testid="diagram-heads"
+			>
+				{#each frame.lanes as lane (lane.id)}
+					<line
+						class="lifeline"
+						x1={lane.x}
+						x2={lane.x}
+						y1={frame.strip ? frame.headHeight - 6 : 51}
+						y2={frame.headHeight}
+						style:opacity={lane.opacity}
 					/>
-				{:else}
-					<!-- A chip with no token in it is not a button, so the role depends on the chip. -->
-					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 					<g
-						class={`chip ${state}`}
-						class:fresh={fresh.has(chip.id) || fresh.has(chip.step)}
-						class:sending={travelling === chip.step}
-						class:followed={followed?.steps.has(chip.step) &&
-							chip.artifact &&
-							followed.forms.includes(chip.artifact)}
-						class:off-path={followed &&
-							!(
-								followed.steps.has(chip.step) &&
-								chip.artifact &&
-								followed.forms.includes(chip.artifact)
-							)}
-						style:opacity={chip.opacity}
-						data-chip={chip.leaving ? undefined : chip.id}
-						data-artifact={chip.artifact}
-						role={chip.artifact ? 'button' : undefined}
-						tabindex={chip.artifact ? -1 : undefined}
+						class="lane-head"
+						class:fresh={fresh.has(lane.id)}
+						class:lit={lit?.lifeline === lane.id}
+						class:eyes={eyes === lane.id}
+						class:active={currentRow && (lane.id === currentRow.from || lane.id === currentRow.to)}
+						style:opacity={lane.opacity}
+						data-lifeline={lane.leaving ? undefined : lane.id}
+						transform={`translate(${lane.x} 0)`}
+						role="button"
+						tabindex={lane.leaving ? -1 : 0}
+						aria-describedby={`seen-${lane.id}`}
 						onclick={() => {
-							if (chip.artifact && !chip.leaving) onexplainartifact?.(chip.artifact);
+							// On its way out, so there is nothing left to explain.
+							if (!lane.leaving) onexplainlifeline?.(lane.id);
+						}}
+						onkeydown={(event) => activate(event, () => onexplainlifeline?.(lane.id))}
+					>
+						<desc id={`seen-${lane.id}`}
+							>Has seen: {heldText(lane.id, holdings[lane.id] ?? [])}.</desc
+						>
+						{#if frame.strip}
+							<!-- A small head, and its name slanting up over the words, which leaves the room to them. -->
+							<rect
+								x={-lane.headWidth / 2}
+								y={frame.headHeight - 30}
+								width={lane.headWidth}
+								height={lane.headWidth}
+								rx="6"
+							/>
+							<path
+								class="icon"
+								d={ICONS[lane.icon]}
+								transform={`translate(-9 ${frame.headHeight - 27}) scale(0.75)`}
+							/>
+							<text
+								class="name slanted"
+								transform={`translate(4 ${frame.headHeight - 36}) rotate(-34)`}
+								style:opacity={lane.words}>{lane.name}</text
+							>
+						{:else}
+							<rect x={-lane.headWidth / 2} y="5" width={lane.headWidth} height="46" rx="8" />
+						{/if}
+						{#if frame.strip}
+							<!-- Drawn above. -->
+						{:else if lane.headWidth >= FULL_HEAD_WIDTH}
+							<path class="icon" d={ICONS[lane.icon]} transform="translate(-65 16) scale(0.95)" />
+							<g style:opacity={lane.words}>
+								<text class="name" x="-38" y="25">{lane.nameLines[0]}</text>
+								{#if lane.nameLines[1]}
+									<text class="name" x="-38" y="41">{lane.nameLines[1]}</text>
+								{:else}
+									<text class="role" x="-38" y="41">{lane.role}</text>
+								{/if}
+							</g>
+						{:else}
+							<g style:opacity={lane.words}>
+								<text class="name tight" y="25" text-anchor="middle">{lane.nameLines[0]}</text>
+								{#if lane.nameLines[1]}
+									<text class="name tight" y="41" text-anchor="middle">{lane.nameLines[1]}</text>
+								{:else}
+									<text class="role tight" y="41" text-anchor="middle">{lane.role}</text>
+								{/if}
+							</g>
+						{/if}
+						<!-- In a strip there is no room under a head, and selecting it says what it has seen. -->
+						{#if !lane.leaving && !frame.whole && !frame.strip}
+							{#each layHeld(holdings[lane.id] ?? [], frame.heldWidth) as chip (chip.artifact)}
+								{#if lane.id !== eyes && !eyesHold(chip.artifact)}
+									<g data-hidden-held
+										><rect
+											class="bar"
+											x={chip.x}
+											y={chip.y}
+											width={chip.width}
+											height="16"
+											rx="8"
+										/></g
+									>
+								{:else}
+									<!-- Inside a button, so only for the mouse. The keyboard gets to the same words through
+							     the lifeline's own explanation, which lists these as buttons. -->
+									<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+									<g
+										class="held"
+										class:followed={followed?.forms.includes(chip.artifact)}
+										class:off-path={followed && !followed.forms.includes(chip.artifact)}
+										class:landing={travelling && landing.has(`${lane.id}:${chip.artifact}`)}
+										data-artifact={chip.artifact}
+										data-held={`${lane.id}:${chip.artifact}`}
+										onclick={(event) => {
+											event.stopPropagation();
+											onexplainartifact?.(chip.artifact);
+										}}
+									>
+										<rect x={chip.x} y={chip.y} width={chip.width} height="16" rx="8" />
+										<text x={chip.x + chip.width / 2} y={chip.y + 11.5} text-anchor="middle">
+											{chip.text}
+										</text>
+									</g>
+								{/if}
+							{/each}
+						{/if}
+					</g>
+				{/each}
+			</svg>
+		</div>
+
+		<div
+			class="scroller"
+			bind:this={scroller}
+			onscroll={(event) => (scrolled = event.currentTarget.scrollTop > 0)}
+		>
+			<svg
+				class="body"
+				viewBox={`${frame.viewX} 0 ${frame.viewWidth} ${frame.height}`}
+				role="group"
+				aria-label="The messages in this diagram"
+			>
+				{#each frame.lanes as lane (lane.id)}
+					<line
+						class="lifeline"
+						class:active={currentRow && (lane.id === currentRow.from || lane.id === currentRow.to)}
+						x1={lane.x}
+						x2={lane.x}
+						y1="0"
+						y2={frame.height}
+						style:opacity={lane.opacity}
+					/>
+				{/each}
+
+				{#each frame.groups as group (group.id)}
+					<g
+						class="group"
+						style:opacity={group.opacity}
+						data-group={group.leaving ? undefined : group.id}
+					>
+						<rect x={group.x} y={group.y} width={group.width} height={group.height} rx="10" />
+						<text x={group.x + 12} y={group.y + (frame.whole ? 14 : 18)}>{group.label}</text>
+					</g>
+				{/each}
+
+				{#each frame.rows as row (row.id)}
+					{@const state = rowState(row.id)}
+					{@const tip = tipX(row.x1, row.x2, row.draw)}
+					<g
+						class={`row ${row.kind} ${row.channel} ${state}`}
+						class:fresh={fresh.has(row.id)}
+						class:lit={lit?.step === row.id}
+						class:sending={travelling === row.id}
+						class:unseen={hiddenRows.has(row.id)}
+						class:on-path={followed?.steps.has(row.id)}
+						class:off-path={followed && !followed.steps.has(row.id)}
+						style:opacity={row.opacity}
+						data-step={row.leaving ? undefined : row.id}
+						data-state={state}
+						data-channel={row.channel}
+						role="button"
+						tabindex={row.leaving ? -1 : 0}
+						aria-describedby={`route-${row.id}`}
+						aria-current={state === 'current' ? 'step' : undefined}
+						onclick={() => {
+							// On its way out, so it is not a step any more.
+							if (!row.leaving) onselect?.(row.id);
 						}}
 						onkeydown={(event) => {
-							if (chip.artifact) activate(event, () => onexplainartifact?.(chip.artifact!));
+							if (event.key === 'Enter' || event.key === ' ') {
+								event.preventDefault();
+								onselect?.(row.id);
+							}
 						}}
 					>
-						<rect x={chip.x} y={chip.y} width={chip.width} height="18" rx="9" />
-						<text x={chip.x + chip.width / 2} y={chip.y + 13} text-anchor="middle">{chip.text}</text
+						<desc id={`route-${row.id}`}>
+							{hiddenRows.has(row.id)
+								? `${row.route} ${eyesName} was not part of this.`
+								: row.route}
+						</desc>
+						{#if row.kind === 'time'}
+							<!-- A gap in every line, which is how a sequence diagram says that time went by. -->
+							<rect
+								class="gap"
+								x={frame.viewX}
+								y={row.y - TIME_GAP / 2}
+								width={frame.viewWidth}
+								height={TIME_GAP}
+							/>
+						{/if}
+						<rect
+							class="hit"
+							x={frame.viewX}
+							y={row.top}
+							width={frame.viewWidth}
+							height={row.band}
+						/>
+						{#if row.kind === 'time'}
+							{#each [row.y - TIME_GAP / 2, row.y + TIME_GAP / 2] as y (y)}
+								<line x1={frame.viewX} x2={frame.viewX + frame.viewWidth} y1={y} y2={y} />
+							{/each}
+						{:else if row.self}
+							<path
+								d={`M ${row.x1} ${row.y - loop.top} h ${row.selfSide * loop.width} v ${loop.height} h ${-row.selfSide * (loop.width - 6)}`}
+								pathLength="1"
+								stroke-dasharray={`${row.draw} 1`}
+							/>
+							<polygon
+								points={headPoints(row.x1, row.y - loop.top + loop.height, -row.selfSide)}
+								style:opacity={row.draw}
+							/>
+						{:else}
+							<line x1={row.x1} x2={lineEnd(row.x1, tip)} y1={row.y} y2={row.y} />
+							<polygon points={headPoints(tip, row.y, Math.sign(row.x2 - row.x1) || 1)} />
+							{#if travelling === row.id && !row.leaving}
+								<!-- Hollow when it has no token or secret in it, like a refusal, so nothing lands. -->
+								<circle
+									class="packet"
+									class:empty={!carries(row.id)}
+									cx={row.x1}
+									cy={row.y}
+									r="5"
+									style:--travel={`${row.x2 - row.x1}px`}
+								/>
+							{/if}
+						{/if}
+						<g
+							class="number"
+							transform={`translate(${row.x1} ${row.self ? row.y - loop.top : row.y})`}
 						>
+							<circle r={frame.numberRadius} />
+							<text y={frame.whole ? 3 : 3.7} text-anchor="middle">{row.number}</text>
+						</g>
+						<!-- The spaces are for anything reading this, because lines are only places on a screen. -->
+						<!-- Every row says what happens, ahead and unseen too, because a numbered line with nothing
+					     on it only made people wonder. What it carries waits until it gets there. -->
+						<text class="label" style:--words={row.words}>
+							{#each row.lines as line, l (l)}
+								<tspan x={line.x} y={line.y} text-anchor={line.anchor}>{`${line.text} `}</tspan>
+							{/each}
+						</text>
 					</g>
-				{/if}
-			{/each}
-		</svg>
+				{/each}
+
+				{#each frame.chips as chip (chip.id)}
+					{@const state = rowState(chip.step)}
+					{#if hiddenRows.has(chip.step)}
+						<rect
+							class={`bar chip-bar ${state}`}
+							style:opacity={chip.opacity}
+							x={chip.x}
+							y={chip.y}
+							width={chip.width}
+							height="18"
+							rx="9"
+						/>
+					{:else}
+						<!-- A chip with no token in it is not a button, so the role depends on the chip. -->
+						<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+						<g
+							class={`chip ${state}`}
+							class:fresh={fresh.has(chip.id) || fresh.has(chip.step)}
+							class:sending={travelling === chip.step}
+							class:followed={followed?.steps.has(chip.step) &&
+								chip.artifact &&
+								followed.forms.includes(chip.artifact)}
+							class:off-path={followed &&
+								!(
+									followed.steps.has(chip.step) &&
+									chip.artifact &&
+									followed.forms.includes(chip.artifact)
+								)}
+							style:opacity={chip.opacity}
+							data-chip={chip.leaving ? undefined : chip.id}
+							data-artifact={chip.artifact}
+							role={chip.artifact ? 'button' : undefined}
+							tabindex={chip.artifact ? -1 : undefined}
+							onclick={() => {
+								if (chip.artifact && !chip.leaving) onexplainartifact?.(chip.artifact);
+							}}
+							onkeydown={(event) => {
+								if (chip.artifact) activate(event, () => onexplainartifact?.(chip.artifact!));
+							}}
+						>
+							<rect x={chip.x} y={chip.y} width={chip.width} height="18" rx="9" />
+							<text x={chip.x + chip.width / 2} y={chip.y + 13} text-anchor="middle"
+								>{chip.text}</text
+							>
+						</g>
+					{/if}
+				{/each}
+			</svg>
+		</div>
 	</div>
 </div>
 
@@ -481,11 +543,32 @@
 		min-height: 0;
 	}
 
+	.wide {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		min-height: 0;
+	}
+
+	/* Wider than the screen, so it scrolls sideways as a whole, and the heads go with it. */
+	.diagram.full-size {
+		overflow-x: auto;
+		overflow-y: hidden;
+	}
+
+	.diagram.full-size .wide {
+		min-width: 100%;
+	}
+
 	.heads-band {
 		position: relative;
 		z-index: 1;
 		flex: none;
 		background: var(--bg);
+	}
+
+	.lane-head .name.slanted {
+		font-size: 12px;
 	}
 
 	.heads-band.scrolled {

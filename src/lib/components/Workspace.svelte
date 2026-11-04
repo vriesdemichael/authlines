@@ -170,7 +170,23 @@
 	const whole = $derived(appState.whole);
 	const say = $derived(sayer(wording));
 	const spoken = $derived(speak(view, say));
-	const layout = $derived(layoutDiagram(view, mode, room, wording, whole));
+	// A phone draws the lanes in a strip with every message's words beside them, and the whole thing at
+	// its own size, moved sideways to the current message, for someone who asks for that (#15).
+	const FULL_SIZE_WIDTH = 720;
+	let phone = $state(false);
+	let fullSize = $state(false);
+	$effect(() => {
+		const query = window.matchMedia('(max-width: 767px)');
+		const check = () => (phone = query.matches);
+		check();
+		query.addEventListener('change', check);
+		return () => query.removeEventListener('change', check);
+	});
+	const strip = $derived(phone && !fullSize && !whole);
+	const laidOutFor = $derived(
+		phone && fullSize && room ? { width: FULL_SIZE_WIDTH, height: room.height } : room
+	);
+	const layout = $derived(layoutDiagram(view, mode, laidOutFor, wording, whole, strip));
 
 	// Below this the settings do not fit beside the diagram, so they open over it when asked for.
 	let settingsDoNotFit = $state(false);
@@ -536,6 +552,13 @@
 	// something there, as a presenter does, has a clicker that only sends those keys.
 	let tabbedIn = false;
 
+	// A new step is read from its start, which the panel scrolled down for the last one would hide.
+	let detailPanel = $state<HTMLElement>();
+	$effect(() => {
+		void appState.step;
+		untrack(() => detailPanel?.scrollTo({ top: 0 }));
+	});
+
 	function onkeydown(event: KeyboardEvent) {
 		if (event.key === 'Tab') tabbedIn = true;
 		// What is open on top has these keys, and closes itself.
@@ -690,11 +713,6 @@
 		</p>
 	</header>
 
-	<p class="narrow-note" data-testid="narrow-note">
-		This is made for a bigger screen. Here you can read through it step by step, without the
-		diagram.
-	</p>
-
 	{#if !nothingOnOffer}
 		<!-- At the side the settings are on, and in one place, so it can be pressed twice. -->
 		<button
@@ -755,6 +773,17 @@
 			>
 				How to read this
 			</button>
+			{#if phone && !appState.whole}
+				<button
+					type="button"
+					class="quiet"
+					data-testid="full-size"
+					aria-pressed={fullSize}
+					onclick={() => (fullSize = !fullSize)}
+				>
+					{fullSize ? 'Fit to the screen' : 'Full size'}
+				</button>
+			{/if}
 			{#if !simple || appState.whole}
 				<button
 					type="button"
@@ -780,6 +809,7 @@
 					{landing}
 					eyes={appState.eyes}
 					{followed}
+					fullSize={phone && fullSize}
 					currentStep={appState.step}
 					onexplainlifeline={(id) => explain({ kind: 'lifeline', id })}
 					onexplainartifact={(id: ArtifactId) => explain({ kind: 'artifact', id })}
@@ -808,7 +838,7 @@
 		</div>
 	</main>
 
-	<aside class="detail" aria-label="The current step">
+	<aside class="detail" aria-label="The current step" bind:this={detailPanel}>
 		{#if eyesName}
 			<section class="eyes" data-testid="eyes-note" role="status">
 				<p>
@@ -1340,10 +1370,6 @@
 		display: none;
 	}
 
-	.narrow-note {
-		display: none;
-	}
-
 	/* Too narrow for the settings beside the diagram at a readable size, so they open over it. */
 	@media (max-width: 1239px) {
 		.workspace,
@@ -1419,55 +1445,110 @@
 		}
 	}
 
-	/* Everything to read, on a screen too small for the diagram (ADR-008). */
+	/* A phone: the diagram as a strip with the words beside it, the step under it, and Back and Next where
+	   a thumb is (#15, ADR-008). The page itself does not scroll, only the step under the diagram does,
+	   because a bar fixed over a page that scrolls can end up behind a phone's toolbar when a step is
+	   shorter than the last one. */
 	@media (max-width: 767px) {
 		.workspace {
+			position: relative;
 			display: flex;
 			flex-direction: column;
-			height: auto;
-			min-height: 100dvh;
+			height: 100dvh;
+			overflow: hidden;
 		}
 
 		header {
 			flex-wrap: wrap;
+			padding-right: 140px;
+		}
+
+		/* Shorter rather than on a line of its own, which would take the height from the diagram. */
+		h1 {
+			flex: 1 1 0;
 		}
 
 		.name,
-		.status,
-		.diagram,
-		.settings-toggle {
+		.status {
 			display: none;
 		}
 
-		.settings-hidden .settings {
-			display: block;
+		/* A button in the corner, and the settings over everything else while they are open. */
+		.settings-toggle,
+		.settings-toggle.rail {
+			position: absolute;
+			top: 8px;
+			right: 12px;
+			z-index: 5;
+			flex-direction: row;
+			align-items: center;
+			margin: 0;
+			padding: 7px 10px;
+			border: 1px solid var(--line);
+			border-radius: 6px;
 		}
 
-		.narrow-note {
+		.settings-toggle.rail span {
+			align-self: auto;
+			writing-mode: horizontal-tb;
+		}
+
+		.settings,
+		.settings-hidden .settings {
+			display: none;
+		}
+
+		.settings-open .settings {
 			display: block;
-			margin: 0;
-			padding: 10px 16px;
-			background: var(--panel);
-			font-size: 13px;
+			position: fixed;
+			inset: 0;
+			z-index: 4;
+			width: auto;
+			padding: 56px 16px 24px;
+			overflow-y: auto;
+			border: 0;
+			box-shadow: none;
+			background: var(--bg);
+		}
+
+		.diagram {
+			flex: 0 0 auto;
+			height: 54dvh;
+			min-height: 300px;
+		}
+
+		.above {
+			flex-wrap: wrap;
+			gap: 4px 12px;
+			padding: 0 12px;
 		}
 
 		.detail {
-			order: 1;
+			display: flex;
+			flex: 1 1 auto;
+			flex-direction: column;
+			min-height: 0;
+			overflow-y: auto;
+			padding-bottom: 0;
+			border-top: 1px solid var(--line);
 			border-left: 0;
-			overflow-y: visible;
 		}
 
-		/* With no diagram, the parts of it and watching it play have nothing to show. */
+		/* Last in the panel and held at its bottom, under however much or little the step says. */
+		.stepping {
+			order: 99;
+			position: sticky;
+			top: auto;
+			bottom: 0;
+			margin: auto -16px 0;
+			padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+			border-top: 1px solid var(--line);
+			border-bottom: 0;
+		}
+
+		/* Watching it play is for a room, and the parts are in the strip's numbers. */
 		footer {
 			display: none;
-		}
-
-		.settings {
-			order: 3;
-			padding-top: 14px;
-			border-right: 0;
-			border-top: 1px solid var(--line);
-			overflow-y: visible;
 		}
 
 		.source,
@@ -1501,8 +1582,7 @@
 		.settings-toggle,
 		footer,
 		.stepping,
-		.source:not([data-list-open]),
-		.narrow-note {
+		.source:not([data-list-open]) {
 			display: none;
 		}
 

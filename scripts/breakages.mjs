@@ -558,8 +558,8 @@ export const breakages = [
 	{
 		name: 'wording: a choice of words moves a row',
 		file: LAYOUT,
-		from: 'return wordings.map((other) => {',
-		to: 'return [wording].map((other) => {'
+		from: 'return (strip ? [wording] : wordings).map((other) => {',
+		to: 'return (strip ? [wording] : [wording]).map((other) => {'
 	},
 	{
 		name: 'wording: Keycloak’s words stay with the notes off',
@@ -705,6 +705,24 @@ export const breakages = [
 		file: 'src/lib/components/Diagram.svelte',
 		from: '\t.row.future .number text {\n\t\tfill: var(--muted);\n\t}',
 		to: '\t.row.future .number text {\n\t\tfill: var(--muted);\n\t}\n\n\t.row.future .label {\n\t\topacity: 0;\n\t}'
+	},
+	{
+		name: 'phone: the words go over the lanes in the strip',
+		file: 'src/lib/diagram/layout.ts',
+		from: 'const besideTheStrip = margin + (view.lifelines.length - 1) * spacing + STRIP_LOOP_ROOM;',
+		to: 'const besideTheStrip = margin + STRIP_LOOP_ROOM;'
+	},
+	{
+		name: 'phone: a long field runs off the screen',
+		file: 'src/lib/diagram/layout.ts',
+		from: '\tif (field.artifact || chipWidth(field) <= room) return field;',
+		to: '\treturn field;'
+	},
+	{
+		name: 'phone: a row in the strip keeps a line for another mode',
+		file: 'src/lib/diagram/layout.ts',
+		from: 'const counts = (strip ? [simple] : [true, false]).flatMap((plain) => {',
+		to: 'const counts = [true, false].flatMap((plain) => {'
 	},
 
 	// A refresh token.

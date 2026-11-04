@@ -185,13 +185,32 @@ test.describe('on a phone', () => {
 			() => document.documentElement.scrollWidth <= document.documentElement.clientWidth
 		);
 
-	test('says this is made for a bigger screen, and can still be read', async ({ page }) => {
+	// The picture is what explains it, so a phone keeps it, as a strip with the words beside it (#15).
+	test('draws the diagram as a strip, with the words beside it', async ({ page }) => {
 		await page.goto('authorization-code/stolen-code/');
 		await ready(page);
-		await expect(page.getByTestId('narrow-note')).toBeVisible();
+		const diagram = page.getByTestId('diagram');
+		await expect(diagram).toBeVisible();
+		await expect(diagram).toHaveClass(/strip/);
+		await expect(page.locator('[data-lifeline="attacker"]')).toBeInViewport();
+		// The row and not its words, which WebKit cannot tell are on screen when they are SVG text.
+		await expect(page.locator('[data-state="current"]')).toBeInViewport();
 		await expect(page.getByTestId('step-detail')).toBeVisible();
-		await expect(page.getByTestId('diagram')).toBeHidden();
 		expect(await noSidewaysScroll(page)).toBe(true);
+	});
+
+	test('can show it full size, moved sideways to the current message', async ({ page }) => {
+		await page.goto(`${FLOW_PATH}?step=token-request`);
+		await ready(page);
+		await page.getByTestId('full-size').click();
+		const diagram = page.getByTestId('diagram');
+		await expect(diagram).not.toHaveClass(/strip/);
+		await expect(diagram).toHaveClass(/full-size/);
+		await expect.poll(() => diagram.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+		await expect(page.locator('[data-lifeline="idp"]')).toBeInViewport();
+		expect(await noSidewaysScroll(page)).toBe(true);
+		await page.getByTestId('full-size').click();
+		await expect(diagram).toHaveClass(/strip/);
 	});
 
 	test('can be stepped through', async ({ page }) => {
@@ -200,6 +219,34 @@ test.describe('on a phone', () => {
 		await expect(page.getByTestId('step-detail')).toContainText('The user opens the app');
 		await page.getByTestId('next').click();
 		await expect(page.getByTestId('step-detail')).toContainText('The app sends them to log in');
+		await expect(page.getByTestId('next')).toBeInViewport();
+	});
+
+	// What the maintainer met: at the bottom of a long step, Next went off screen until a scroll.
+	test('keeps Back and Next on screen after a long step, scrolled to its end', async ({ page }) => {
+		await page.goto(`${FLOW_PATH}?mode=advanced&oidc=1&step=token-response`);
+		await ready(page);
+		const detail = page.locator('aside.detail');
+		await detail.evaluate((element) => element.scrollTo(0, element.scrollHeight));
+		await expect(page.getByTestId('next')).toBeInViewport();
+		await page.getByTestId('next').click();
+		await expect(page.getByTestId('position')).toContainText('Step 10');
+		await expect(page.getByTestId('next')).toBeInViewport();
+		await expect(page.getByTestId('back')).toBeInViewport();
+		expect(await page.evaluate(() => window.scrollY)).toBe(0);
+		// And the new step from its start, not where the last one was scrolled to.
+		await expect.poll(() => detail.evaluate((element) => element.scrollTop)).toBe(0);
+	});
+
+	test('opens the settings over everything, and closes them again', async ({ page }) => {
+		await page.goto(FLOW_PATH);
+		await ready(page);
+		await expect(page.locator('[data-setting="oidc"]')).toBeHidden();
+		await page.getByTestId('settings-toggle').click();
+		await page.locator('[data-setting="oidc"] input').check();
+		await expect(page).toHaveURL(/oidc=1/);
+		await page.getByTestId('settings-toggle').click();
+		await expect(page.locator('[data-setting="oidc"]')).toBeHidden();
 		await expect(page.getByTestId('next')).toBeInViewport();
 	});
 
@@ -225,8 +272,9 @@ test.describe('on a phone', () => {
 });
 
 test.describe('on a desktop', () => {
-	test('does not say it needs a bigger screen', async ({ page }) => {
+	test('draws the lanes side by side, with nothing to switch', async ({ page }) => {
 		await open(page);
-		await expect(page.getByTestId('narrow-note')).toBeHidden();
+		await expect(page.getByTestId('diagram')).not.toHaveClass(/strip/);
+		await expect(page.getByTestId('full-size')).toHaveCount(0);
 	});
 });
