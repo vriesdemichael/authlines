@@ -1439,33 +1439,70 @@
 	}
 
 	/* A phone: the diagram as a strip with the words beside it, the step under it, and Back and Next where
-	   a thumb is (#15, ADR-008). */
+	   a thumb is (#15, ADR-008). The page itself does not scroll, only the step under the diagram does,
+	   because a bar fixed over a page that scrolls can end up behind a phone's toolbar when a step is
+	   shorter than the last one. */
 	@media (max-width: 767px) {
 		.workspace {
+			position: relative;
 			display: flex;
 			flex-direction: column;
-			height: auto;
-			min-height: 100dvh;
-			padding-bottom: 72px;
+			height: 100dvh;
+			overflow: hidden;
 		}
 
 		header {
 			flex-wrap: wrap;
+			padding-right: 140px;
 		}
 
 		.name,
-		.status,
-		.settings-toggle {
+		.status {
 			display: none;
 		}
 
+		/* A button in the corner, and the settings over everything else while they are open. */
+		.settings-toggle,
+		.settings-toggle.rail {
+			position: absolute;
+			top: 8px;
+			right: 12px;
+			z-index: 5;
+			flex-direction: row;
+			align-items: center;
+			margin: 0;
+			padding: 7px 10px;
+			border: 1px solid var(--line);
+			border-radius: 6px;
+		}
+
+		.settings-toggle.rail span {
+			align-self: auto;
+			writing-mode: horizontal-tb;
+		}
+
+		.settings,
 		.settings-hidden .settings {
+			display: none;
+		}
+
+		.settings-open .settings {
 			display: block;
+			position: fixed;
+			inset: 0;
+			z-index: 4;
+			width: auto;
+			padding: 56px 16px 24px;
+			overflow-y: auto;
+			border: 0;
+			box-shadow: none;
+			background: var(--bg);
 		}
 
 		.diagram {
-			height: 62dvh;
-			min-height: 340px;
+			flex: 0 0 auto;
+			height: 54dvh;
+			min-height: 300px;
 		}
 
 		.above {
@@ -1475,20 +1512,23 @@
 		}
 
 		.detail {
-			order: 1;
-			border-left: 0;
+			display: flex;
+			flex: 1 1 auto;
+			flex-direction: column;
+			min-height: 0;
+			overflow-y: auto;
+			padding-bottom: 0;
 			border-top: 1px solid var(--line);
-			overflow-y: visible;
+			border-left: 0;
 		}
 
+		/* Last in the panel and held at its bottom, under however much or little the step says. */
 		.stepping {
-			position: fixed;
-			right: 0;
-			bottom: 0;
-			left: 0;
+			order: 99;
+			position: sticky;
 			top: auto;
-			z-index: 3;
-			margin: 0;
+			bottom: 0;
+			margin: auto -16px 0;
 			padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
 			border-top: 1px solid var(--line);
 			border-bottom: 0;
@@ -1497,14 +1537,6 @@
 		/* Watching it play is for a room, and the parts are in the strip's numbers. */
 		footer {
 			display: none;
-		}
-
-		.settings {
-			order: 3;
-			padding-top: 14px;
-			border-right: 0;
-			border-top: 1px solid var(--line);
-			overflow-y: visible;
 		}
 
 		.source,

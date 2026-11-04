@@ -222,6 +222,32 @@ test.describe('on a phone', () => {
 		await expect(page.getByTestId('next')).toBeInViewport();
 	});
 
+	// What the maintainer met: at the bottom of a long step, Next went off screen until a scroll.
+	test('keeps Back and Next on screen after a long step, scrolled to its end', async ({ page }) => {
+		await page.goto(`${FLOW_PATH}?mode=advanced&oidc=1&step=token-response`);
+		await ready(page);
+		const detail = page.locator('aside.detail');
+		await detail.evaluate((element) => element.scrollTo(0, element.scrollHeight));
+		await expect(page.getByTestId('next')).toBeInViewport();
+		await page.getByTestId('next').click();
+		await expect(page.getByTestId('position')).toContainText('Step 10');
+		await expect(page.getByTestId('next')).toBeInViewport();
+		await expect(page.getByTestId('back')).toBeInViewport();
+		expect(await page.evaluate(() => window.scrollY)).toBe(0);
+	});
+
+	test('opens the settings over everything, and closes them again', async ({ page }) => {
+		await page.goto(FLOW_PATH);
+		await ready(page);
+		await expect(page.locator('[data-setting="oidc"]')).toBeHidden();
+		await page.getByTestId('settings-toggle').click();
+		await page.locator('[data-setting="oidc"] input').check();
+		await expect(page).toHaveURL(/oidc=1/);
+		await page.getByTestId('settings-toggle').click();
+		await expect(page.locator('[data-setting="oidc"]')).toBeHidden();
+		await expect(page.getByTestId('next')).toBeInViewport();
+	});
+
 	test('shows raw traffic without running off the screen', async ({ page }) => {
 		await page.goto(`${FLOW_PATH}?mode=advanced&oidc=1&step=token-response`);
 		await ready(page);

@@ -185,8 +185,12 @@
 	});
 
 	const tipX = (x1: number, x2: number, draw: number) => x1 + (x2 - x1) * draw;
+	const HEAD_LENGTH = 8;
 	const headPoints = (x: number, y: number, direction: number) =>
-		`${x},${y} ${x - 8 * direction},${y - 4.5} ${x - 8 * direction},${y + 4.5}`;
+		`${x},${y} ${x - HEAD_LENGTH * direction},${y - 4.5} ${x - HEAD_LENGTH * direction},${y + 4.5}`;
+	// Into the head's base and no further, because a line as thick as the current one shows past its point.
+	const lineEnd = (x1: number, tip: number) =>
+		Math.abs(tip - x1) <= HEAD_LENGTH ? x1 : tip - (HEAD_LENGTH - 1) * Math.sign(tip - x1);
 
 	function rowState(id: string) {
 		const index = order.get(id);
@@ -446,7 +450,7 @@
 								style:opacity={row.draw}
 							/>
 						{:else}
-							<line x1={row.x1} x2={tip} y1={row.y} y2={row.y} />
+							<line x1={row.x1} x2={lineEnd(row.x1, tip)} y1={row.y} y2={row.y} />
 							<polygon points={headPoints(tip, row.y, Math.sign(row.x2 - row.x1) || 1)} />
 							{#if travelling === row.id && !row.leaving}
 								<!-- Hollow when it has no token or secret in it, like a refusal, so nothing lands. -->
