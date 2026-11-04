@@ -697,6 +697,43 @@
 	data-ready={animate}
 	data-diagram={appState.diagram}
 >
+	{#snippet howToRead()}
+		<button
+			type="button"
+			class="quiet"
+			data-testid="how-to-read"
+			onclick={() => explainTerm('reading')}
+		>
+			How to read this
+		</button>
+	{/snippet}
+	{#snippet wholeFlow()}
+		<button
+			type="button"
+			class="quiet"
+			data-testid="whole-flow"
+			onclick={() => onnavigate(withWhole(appState, !appState.whole), 'push')}
+		>
+			{appState.whole ? 'Back to the step' : 'See the whole flow'}
+		</button>
+	{/snippet}
+	{#snippet recordedLine()}
+		<p class="recorded">
+			<span data-testid="provenance">{@render recorded()}</span>
+			<button
+				type="button"
+				class="quiet"
+				data-testid="server-notes-quick"
+				onclick={() =>
+					appState.serverNotes
+						? explainTerm('keycloak')
+						: onnavigate(withServerNotes(appState, true), 'push')}
+			>
+				{appState.serverNotes ? 'What is Keycloak?' : 'Show the server notes'}
+			</button>
+		</p>
+	{/snippet}
+
 	<header>
 		<!-- The way forward is after every setting, so it should not take thirty presses to get to. -->
 		<button type="button" class="skip" data-testid="skip-to-controls" onclick={focusControls}>
@@ -723,7 +760,7 @@
 			mode={appState.mode}
 			onchange={(mode) => onnavigate(withMode(appState, mode), 'push')}
 		/>
-		{#if !simple || appState.wording}
+		{#if (!simple || appState.wording) && !phone}
 			<WordsSwitch
 				current={wording}
 				serverNotes={appState.serverNotes}
@@ -790,6 +827,25 @@
 	{/if}
 
 	<aside class="settings" aria-label="Settings">
+		{#if phone}
+			<!-- Not needed while stepping, so on a phone it waits here and leaves the room to the step. -->
+			<section class="shown" data-testid="how-it-is-shown">
+				{#if !simple || appState.wording}
+					<WordsSwitch
+						current={wording}
+						serverNotes={appState.serverNotes}
+						onchange={(chosen) => onnavigate(withWording(appState, chosen), 'push')}
+					/>
+				{/if}
+				{#if !simple || appState.eyes}
+					<EyesSwitch {parties} current={appState.eyes} onchange={seeAs} />
+				{/if}
+				{#if !simple || appState.whole}
+					{@render wholeFlow()}
+				{/if}
+				{@render recordedLine()}
+			</section>
+		{/if}
 		{#if !simple && flowChoices.length > 1}
 			<FlowSwitch flows={flowChoices} current={base.id} onchange={(id) => onflow?.(id)} />
 		{/if}
@@ -813,20 +869,15 @@
 			<DiagramSwitch
 				current={appState.diagram}
 				{hrefs}
-				caption={simple ? '' : say(flow.caption)}
+				caption={simple || phone ? '' : say(flow.caption)}
 				flowName={base.diagrams.flow.named}
 			/>
-			{#if !simple || appState.eyes}
+			{#if (!simple || appState.eyes) && !phone}
 				<EyesSwitch {parties} current={appState.eyes} onchange={seeAs} />
 			{/if}
-			<button
-				type="button"
-				class="quiet"
-				data-testid="how-to-read"
-				onclick={() => explainTerm('reading')}
-			>
-				How to read this
-			</button>
+			{#if !phone}
+				{@render howToRead()}
+			{/if}
 			{#if phone && !appState.whole}
 				<button
 					type="button"
@@ -838,15 +889,8 @@
 					{fullSize ? 'Fit to the screen' : 'Full size'}
 				</button>
 			{/if}
-			{#if !simple || appState.whole}
-				<button
-					type="button"
-					class="quiet"
-					data-testid="whole-flow"
-					onclick={() => onnavigate(withWhole(appState, !appState.whole), 'push')}
-				>
-					{appState.whole ? 'Back to the step' : 'See the whole flow'}
-				</button>
+			{#if (!simple || appState.whole) && !phone}
+				{@render wholeFlow()}
 			{/if}
 		</div>
 		<div class="canvas" bind:clientWidth={canvasWidth} bind:clientHeight={canvasHeight}>
@@ -877,21 +921,10 @@
 		</div>
 		<div class="legend">
 			<ChannelLegend present={channelsHere} />
-			{#if simple}
-				<p class="recorded">
-					<span data-testid="provenance">{@render recorded()}</span>
-					<button
-						type="button"
-						class="quiet"
-						data-testid="server-notes-quick"
-						onclick={() =>
-							appState.serverNotes
-								? explainTerm('keycloak')
-								: onnavigate(withServerNotes(appState, true), 'push')}
-					>
-						{appState.serverNotes ? 'What is Keycloak?' : 'Show the server notes'}
-					</button>
-				</p>
+			{#if phone}
+				{@render howToRead()}
+			{:else if simple}
+				{@render recordedLine()}
 			{/if}
 		</div>
 	</main>
@@ -984,6 +1017,7 @@
 			{notes}
 			serverNamed={appState.serverNotes}
 			known={knownFrom(base, current, appState.settings)}
+			folded={phone}
 		>
 			{#snippet inTheBrowser()}
 				{@const page = spoken.steps[position].page}
@@ -1010,6 +1044,7 @@
 						onstep={goToStep}
 						serverNamed={appState.serverNotes}
 						{seam}
+						folded={phone}
 						{notes}
 						{seesStep}
 						{runHref}
@@ -1602,10 +1637,33 @@
 			background: var(--bg);
 		}
 
+		/* The controls that were above it are in the sheet, so less height still draws more of it. */
 		.diagram {
 			flex: 0 0 auto;
-			height: 54dvh;
-			min-height: 300px;
+			height: 46dvh;
+			min-height: 260px;
+		}
+
+		/* A finger reaching the end of the step should not move the whole screen. */
+		:global(html),
+		:global(body) {
+			overscroll-behavior: none;
+		}
+
+		.shown {
+			display: grid;
+			gap: 10px;
+			margin: 0 0 18px;
+			padding: 0 0 14px;
+			border-bottom: 1px solid var(--line);
+		}
+
+		.shown .recorded {
+			margin: 0;
+		}
+
+		.shown > button {
+			justify-self: start;
 		}
 
 		.above {
@@ -1620,6 +1678,7 @@
 			flex-direction: column;
 			min-height: 0;
 			overflow-y: auto;
+			overscroll-behavior: contain;
 			padding-bottom: 0;
 			border-top: 1px solid var(--line);
 			border-left: 0;

@@ -18,6 +18,8 @@
 	}
 
 	interface Props {
+		/** On a phone, folded until someone opens it, so a step is not a long scroll (#15). */
+		folded?: boolean;
 		step: Step;
 		lifelines: readonly Lifeline[];
 		/** Whose words to name them in, when someone chose. */
@@ -92,7 +94,8 @@
 		previousChannel = null,
 		atEnd = false,
 		onward = null,
-		mapHref = null
+		mapHref = null,
+		folded = false
 	}: Props = $props();
 
 	const simple = $derived(mode === 'simple');
@@ -343,19 +346,25 @@
 	{/if}
 
 	{#if !simple && step.fields.length && !unseenBy}
-		<h3>What it carries</h3>
-		<ul class="fields">
-			{#each step.fields as field (field.name)}
-				<li class:changed={field.changed}>
-					<code>{field.name}</code>
-					<span class="place">{places[field.place]}</span>
-					<span class="note" data-field-why>{whyOf(field)}</span>
-					{#if field.changed}
-						<span class="note cause">From: {field.causes.map(labelOf).join(', ')}</span>
-					{/if}
-				</li>
-			{/each}
-		</ul>
+		<svelte:element this={folded ? 'details' : 'div'} class="carries" data-testid="carries">
+			{#if folded}
+				<summary data-testid="carries-open">What it carries</summary>
+			{:else}
+				<h3>What it carries</h3>
+			{/if}
+			<ul class="fields">
+				{#each step.fields as field (field.name)}
+					<li class:changed={field.changed}>
+						<code>{field.name}</code>
+						<span class="place">{places[field.place]}</span>
+						<span class="note" data-field-why>{whyOf(field)}</span>
+						{#if field.changed}
+							<span class="note cause">From: {field.causes.map(labelOf).join(', ')}</span>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		</svelte:element>
 	{/if}
 </section>
 
