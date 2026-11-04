@@ -17,12 +17,14 @@ import {
 	type AppState,
 	withDiagram,
 	withExplained,
+	withFullSize,
 	withMode,
 	withServerNotes,
 	withSetting,
 	withSourceClosed,
 	withSourceOpen,
-	withSourceSection
+	withSourceSection,
+	withWhole
 } from '#lib/flow/state.ts';
 
 const onFlow = (search: string) => parseState(base, 'flow', search);
@@ -73,7 +75,8 @@ describe('the URL', () => {
 						wording: null,
 						list: false,
 						whole: false,
-						raw: false
+						raw: false,
+						fullSize: false
 					};
 					expect(parseState(base, diagram, serializeState(base, state))).toEqual(state);
 				}
@@ -112,13 +115,24 @@ describe('the URL', () => {
 							wording: onOff ? ('specs' as const) : null,
 							list: onOff,
 							whole: onOff,
-							raw: onOff
+							raw: onOff,
+							fullSize: onOff
 						};
 						expect(parseState(base, 'flow', serializeState(base, state))).toEqual(state);
 					}
 				}
 			}
 		}
+	});
+
+	// A phone that chose the picture at its own size keeps it on a reload, and on a link (ADR-003).
+	it('keeps full size in the address, as the one way out of the strip at a time', () => {
+		const full = withFullSize(onFlow('whole=1'), true);
+		expect(full.whole).toBe(false);
+		expect(serializeState(base, full)).toBe('size=full');
+		expect(onFlow('size=full').fullSize).toBe(true);
+		expect(onFlow('size=large').fullSize).toBe(false);
+		expect(withWhole(full, true).fullSize).toBe(false);
 	});
 
 	it('falls back on values it does not know', () => {
