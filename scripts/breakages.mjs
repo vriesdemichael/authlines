@@ -706,6 +706,18 @@ export const breakages = [
 		from: '\t.row.future .number text {\n\t\tfill: var(--muted);\n\t}',
 		to: '\t.row.future .number text {\n\t\tfill: var(--muted);\n\t}\n\n\t.row.future .label {\n\t\topacity: 0;\n\t}'
 	},
+	{
+		name: 'phone: the words go over the lanes in the strip',
+		file: 'src/lib/diagram/layout.ts',
+		from: 'const besideTheStrip = margin + (view.lifelines.length - 1) * spacing + STRIP_LOOP_ROOM;',
+		to: 'const besideTheStrip = margin + STRIP_LOOP_ROOM;'
+	},
+	{
+		name: 'phone: a long field runs off the screen',
+		file: 'src/lib/diagram/layout.ts',
+		from: '\tif (field.artifact || chipWidth(field) <= room) return field;',
+		to: '\treturn field;'
+	},
 
 	// A refresh token.
 	{

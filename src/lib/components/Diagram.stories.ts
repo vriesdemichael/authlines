@@ -85,6 +85,36 @@ export const TheWholeFlow: Story = {
 	}
 };
 
+/** On a phone: the lanes in a strip, and the words beside them (#15). */
+export const OnAPhone: Story = {
+	args: {
+		layout: layoutDiagram(
+			evaluate(flow, { ...defaultSettings, attacker: true, clientType: 'public' }),
+			'simple',
+			{ width: 375, height: 460 },
+			undefined,
+			false,
+			true
+		),
+		currentStep: 'attacker-token-response',
+		holdings: holdingsAt(
+			evaluate(flow, { ...defaultSettings, attacker: true, clientType: 'public' }),
+			'attacker-token-response'
+		)
+	},
+	parameters: { viewport: { defaultViewport: 'mobile1' } }
+};
+
+/** The same on a phone at its own size, moved sideways to the current message. */
+export const OnAPhoneFullSize: Story = {
+	args: {
+		layout: layoutDiagram(evaluate(flow, defaultSettings), 'simple', { width: 720, height: 460 }),
+		currentStep: 'token-request',
+		fullSize: true
+	},
+	parameters: { viewport: { defaultViewport: 'mobile1' } }
+};
+
 export const InTheSpecsWords: Story = {
 	args: {
 		layout: layoutDiagram(evaluate(flow, defaultSettings), 'simple', undefined, 'specs'),

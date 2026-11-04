@@ -46,6 +46,7 @@ export interface Frame {
 	heldWidth: number;
 	headHeight: number;
 	whole: boolean;
+	strip: boolean;
 	numberRadius: number;
 	lanes: FrameLane[];
 	rows: FrameRow[];
@@ -64,6 +65,7 @@ export function toFrame(layout: DiagramLayout): Frame {
 		heldWidth: layout.heldWidth,
 		headHeight: layout.headHeight,
 		whole: layout.whole,
+		strip: layout.strip,
 		numberRadius: layout.numberRadius,
 		lanes: layout.lanes.map((lane) => ({ ...settled(lane), words: 1 })),
 		rows: layout.rows.map((row) => ({ ...settled(row), words: 1 })),
@@ -144,6 +146,7 @@ export function interpolate(from: Frame, to: Frame, t: number): Frame {
 		heldWidth: to.heldWidth,
 		headHeight: lerp(from.headHeight, to.headHeight, moveAt(t)),
 		whole: to.whole,
+		strip: to.strip,
 		numberRadius: to.numberRadius,
 		lanes: blend(from.lanes, to.lanes, t, (a, b, p) => ({
 			...b,

@@ -286,7 +286,7 @@ In Transformer Explainer's study, video viewers felt they understood as well as 
 
 ### Accessibility and fallback (Proposed)
 
-Plan early for step text outside the SVG, reduced motion, keyboard control and a static render for print and search. Wide diagrams on phones are a known risk. **Decided:** desktop comes first, and phone support comes later once it is clear which functionality fits a smaller workspace. Nothing may make that impossible ([ADR-008](adr/008-desktop-first-without-ruling-out-phones.md)).
+Plan early for step text outside the SVG, reduced motion, keyboard control and a static render for print and search. Wide diagrams on phones are a known risk. **Decided:** desktop comes first, and phone support comes later once it is clear which functionality fits a smaller workspace. Nothing may make that impossible ([ADR-008](adr/008-desktop-first-without-ruling-out-phones.md)). **Decided, on 2026-11-04:** a phone keeps the diagram, because "you need the visuals to guide you. That's the whole premise of this app." **Built, for the maintainer to judge on a real phone:** the lanes in a narrow strip with each message's words beside them, and a switch for the full picture, panned to the current message, as #15 found in the way code review tools turn two columns into one.
 
 ### Competition and demand (Proposed)
 

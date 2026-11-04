@@ -185,13 +185,31 @@ test.describe('on a phone', () => {
 			() => document.documentElement.scrollWidth <= document.documentElement.clientWidth
 		);
 
-	test('says this is made for a bigger screen, and can still be read', async ({ page }) => {
+	// The picture is what explains it, so a phone keeps it, as a strip with the words beside it (#15).
+	test('draws the diagram as a strip, with the words beside it', async ({ page }) => {
 		await page.goto('authorization-code/stolen-code/');
 		await ready(page);
-		await expect(page.getByTestId('narrow-note')).toBeVisible();
+		const diagram = page.getByTestId('diagram');
+		await expect(diagram).toBeVisible();
+		await expect(diagram).toHaveClass(/strip/);
+		await expect(page.locator('[data-lifeline="attacker"]')).toBeInViewport();
+		await expect(page.locator('[data-state="current"] .label')).toBeInViewport();
 		await expect(page.getByTestId('step-detail')).toBeVisible();
-		await expect(page.getByTestId('diagram')).toBeHidden();
 		expect(await noSidewaysScroll(page)).toBe(true);
+	});
+
+	test('can show it full size, moved sideways to the current message', async ({ page }) => {
+		await page.goto(`${FLOW_PATH}?step=token-request`);
+		await ready(page);
+		await page.getByTestId('full-size').click();
+		const diagram = page.getByTestId('diagram');
+		await expect(diagram).not.toHaveClass(/strip/);
+		await expect(diagram).toHaveClass(/full-size/);
+		await expect.poll(() => diagram.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+		await expect(page.locator('[data-lifeline="idp"]')).toBeInViewport();
+		expect(await noSidewaysScroll(page)).toBe(true);
+		await page.getByTestId('full-size').click();
+		await expect(diagram).toHaveClass(/strip/);
 	});
 
 	test('can be stepped through', async ({ page }) => {
@@ -225,8 +243,9 @@ test.describe('on a phone', () => {
 });
 
 test.describe('on a desktop', () => {
-	test('does not say it needs a bigger screen', async ({ page }) => {
+	test('draws the lanes side by side, with nothing to switch', async ({ page }) => {
 		await open(page);
-		await expect(page.getByTestId('narrow-note')).toBeHidden();
+		await expect(page.getByTestId('diagram')).not.toHaveClass(/strip/);
+		await expect(page.getByTestId('full-size')).toHaveCount(0);
 	});
 });

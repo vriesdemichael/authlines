@@ -170,7 +170,23 @@
 	const whole = $derived(appState.whole);
 	const say = $derived(sayer(wording));
 	const spoken = $derived(speak(view, say));
-	const layout = $derived(layoutDiagram(view, mode, room, wording, whole));
+	// A phone draws the lanes in a strip with every message's words beside them, and the whole thing at
+	// its own size, moved sideways to the current message, for someone who asks for that (#15).
+	const FULL_SIZE_WIDTH = 720;
+	let phone = $state(false);
+	let fullSize = $state(false);
+	$effect(() => {
+		const query = window.matchMedia('(max-width: 767px)');
+		const check = () => (phone = query.matches);
+		check();
+		query.addEventListener('change', check);
+		return () => query.removeEventListener('change', check);
+	});
+	const strip = $derived(phone && !fullSize && !whole);
+	const laidOutFor = $derived(
+		phone && fullSize && room ? { width: FULL_SIZE_WIDTH, height: room.height } : room
+	);
+	const layout = $derived(layoutDiagram(view, mode, laidOutFor, wording, whole, strip));
 
 	// Below this the settings do not fit beside the diagram, so they open over it when asked for.
 	let settingsDoNotFit = $state(false);
@@ -690,11 +706,6 @@
 		</p>
 	</header>
 
-	<p class="narrow-note" data-testid="narrow-note">
-		This is made for a bigger screen. Here you can read through it step by step, without the
-		diagram.
-	</p>
-
 	{#if !nothingOnOffer}
 		<!-- At the side the settings are on, and in one place, so it can be pressed twice. -->
 		<button
@@ -755,6 +766,17 @@
 			>
 				How to read this
 			</button>
+			{#if phone && !appState.whole}
+				<button
+					type="button"
+					class="quiet"
+					data-testid="full-size"
+					aria-pressed={fullSize}
+					onclick={() => (fullSize = !fullSize)}
+				>
+					{fullSize ? 'Fit to the screen' : 'Full size'}
+				</button>
+			{/if}
 			{#if !simple || appState.whole}
 				<button
 					type="button"
@@ -780,6 +802,7 @@
 					{landing}
 					eyes={appState.eyes}
 					{followed}
+					fullSize={phone && fullSize}
 					currentStep={appState.step}
 					onexplainlifeline={(id) => explain({ kind: 'lifeline', id })}
 					onexplainartifact={(id: ArtifactId) => explain({ kind: 'artifact', id })}
@@ -1340,10 +1363,6 @@
 		display: none;
 	}
 
-	.narrow-note {
-		display: none;
-	}
-
 	/* Too narrow for the settings beside the diagram at a readable size, so they open over it. */
 	@media (max-width: 1239px) {
 		.workspace,
@@ -1419,13 +1438,15 @@
 		}
 	}
 
-	/* Everything to read, on a screen too small for the diagram (ADR-008). */
+	/* A phone: the diagram as a strip with the words beside it, the step under it, and Back and Next where
+	   a thumb is (#15, ADR-008). */
 	@media (max-width: 767px) {
 		.workspace {
 			display: flex;
 			flex-direction: column;
 			height: auto;
 			min-height: 100dvh;
+			padding-bottom: 72px;
 		}
 
 		header {
@@ -1434,7 +1455,6 @@
 
 		.name,
 		.status,
-		.diagram,
 		.settings-toggle {
 			display: none;
 		}
@@ -1443,21 +1463,38 @@
 			display: block;
 		}
 
-		.narrow-note {
-			display: block;
-			margin: 0;
-			padding: 10px 16px;
-			background: var(--panel);
-			font-size: 13px;
+		.diagram {
+			height: 62dvh;
+			min-height: 340px;
+		}
+
+		.above {
+			flex-wrap: wrap;
+			gap: 4px 12px;
+			padding: 0 12px;
 		}
 
 		.detail {
 			order: 1;
 			border-left: 0;
+			border-top: 1px solid var(--line);
 			overflow-y: visible;
 		}
 
-		/* With no diagram, the parts of it and watching it play have nothing to show. */
+		.stepping {
+			position: fixed;
+			right: 0;
+			bottom: 0;
+			left: 0;
+			top: auto;
+			z-index: 3;
+			margin: 0;
+			padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+			border-top: 1px solid var(--line);
+			border-bottom: 0;
+		}
+
+		/* Watching it play is for a room, and the parts are in the strip's numbers. */
 		footer {
 			display: none;
 		}
@@ -1501,8 +1538,7 @@
 		.settings-toggle,
 		footer,
 		.stepping,
-		.source:not([data-list-open]),
-		.narrow-note {
+		.source:not([data-list-open]) {
 			display: none;
 		}
 

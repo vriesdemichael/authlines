@@ -85,6 +85,20 @@ const WHOLE_GROUP_BOTTOM = 4;
 const SMALLEST_WHOLE_ROW = 11.5;
 const LARGEST_WHOLE_ROW = 34;
 
+/**
+ * On a phone: the lanes in a narrow strip on the left, and each message's words beside it at the size
+ * they have anywhere else, as a list of commits beside its graph is (#15). The names slant above.
+ */
+const STRIP_EDGE = 20;
+const STRIP_SPACING = 28;
+/** Closer than this and two arrows between neighbours cannot be told apart. */
+const STRIP_CLOSEST = 22;
+const STRIP_LOOP_ROOM = 32;
+const STRIP_HEAD = 24;
+const STRIP_HEAD_HEIGHT = 94;
+const STRIP_GROUP_SIDE = 14;
+const PHONE_WIDTH = 375;
+
 /** What the diagram has to fit in, in pixels on screen. */
 export interface Room {
 	width: number;
@@ -168,6 +182,8 @@ export interface DiagramLayout {
 	headHeight: number;
 	/** Every row at once, which leaves out what would not fit. */
 	whole: boolean;
+	/** The lanes in a strip and the words beside them, for a phone. */
+	strip: boolean;
 	/** Its numbers are as big as the rows have room for. */
 	numberRadius: number;
 	lanes: LaneLayout[];
@@ -277,19 +293,52 @@ function fitLanes(count: number, room?: Room) {
 	return { width, margin, spacing: (width - margin * 2) / gaps, headWidth: headFor(margin) };
 }
 
+/** Lanes as close as their arrows can be told apart, and the rest of the width for the words. */
+function fitStrip(count: number, room?: Room) {
+	const width = room?.width ?? PHONE_WIDTH;
+	// No more than half the width, so the words keep the other half however many parties there are.
+	const spacing = clamp(
+		(width / 2 - STRIP_EDGE) / Math.max(1, count - 1),
+		STRIP_CLOSEST,
+		STRIP_SPACING
+	);
+	return {
+		width,
+		margin: STRIP_EDGE,
+		spacing,
+		headWidth: Math.min(STRIP_HEAD, spacing - 3)
+	};
+}
+
+/** A field's own name can be longer than a phone is wide. The detail has all of it. */
+function fitChip(field: Field, room: number): Field {
+	if (field.artifact || chipWidth(field) <= room) return field;
+	const most = Math.max(1, Math.floor((room - CHIP_PADDING) / NAME_CHAR_WIDTH) - 1);
+	return { ...field, name: `${field.name.slice(0, most)}…` };
+}
+
 /** A pure function of the view and the room, so every test sees the same geometry as the page. */
 export function layoutDiagram(
 	inPlainWords: DiagramView,
 	mode: Mode = 'simple',
 	room?: Room,
 	wording: Wording = DEFAULT_WORDING,
-	whole = false
+	whole = false,
+	strip = false
 ): DiagramLayout {
 	const view = speak(inPlainWords, sayer(wording));
 	const simple = mode === 'simple';
-	const { width, margin, spacing, headWidth } = fitLanes(view.lifelines.length, room);
+	const { width, margin, spacing, headWidth } = strip
+		? fitStrip(view.lifelines.length, room)
+		: fitLanes(view.lifelines.length, room);
 	const heldWidth = Math.min(HELD_LINE_WIDTH, spacing - 6);
-	const headHeight = whole ? WHOLE_HEAD_HEIGHT : headHeightOf(view, heldWidth);
+	const headHeight = strip
+		? STRIP_HEAD_HEIGHT
+		: whole
+			? WHOLE_HEAD_HEIGHT
+			: headHeightOf(view, heldWidth);
+	// Beside the strip, past the loop of a message to itself.
+	const besideTheStrip = margin + (view.lifelines.length - 1) * spacing + STRIP_LOOP_ROOM;
 	const lanes: LaneLayout[] = view.lifelines.map((line, i) => ({
 		id: line.id,
 		x: margin + i * spacing,
@@ -311,11 +360,13 @@ export function layoutDiagram(
 		const self = step.from === step.to && !time;
 		const x1 = time ? Math.min(...lanesX) : (laneX.get(step.from) ?? 0);
 		const x2 = time ? Math.max(...lanesX) : (laneX.get(step.to) ?? 0);
-		const selfSide: 1 | -1 = x1 > width - SELF_LABEL_ROOM ? -1 : 1;
-		const beside = x1 + selfSide * (SELF_LOOP_WIDTH + 8);
-		const room = self
-			? (selfSide === 1 ? width - beside : beside) - LABEL_EDGE
-			: Math.abs(x2 - x1) - NUMBER_ROOM * 2;
+		const selfSide: 1 | -1 = strip || x1 <= width - SELF_LABEL_ROOM ? 1 : -1;
+		const beside = strip ? besideTheStrip : x1 + selfSide * (SELF_LOOP_WIDTH + 8);
+		const room = strip
+			? width - beside - LABEL_EDGE
+			: self
+				? (selfSide === 1 ? width - beside : beside) - LABEL_EDGE
+				: Math.abs(x2 - x1) - NUMBER_ROOM * 2;
 		return { time, self, x1, x2, selfSide, beside, room: Math.max(room, 1) };
 	};
 
@@ -325,10 +376,11 @@ export function layoutDiagram(
 		if (whole) return 1;
 		const { self, room } = placeOf(step);
 		const counts = [true, false].flatMap((plain) => {
-			const shown = plain ? chipsOn(step).filter((f) => f.artifact || f.mark) : chipsOn(step);
+			const all = plain ? chipsOn(step).filter((f) => f.artifact || f.mark) : chipsOn(step);
+			const shown = strip ? all.map((field) => fitChip(field, room)) : all;
 			return wordings.map((other) => {
 				const label = sayer(other)(plain ? step.plain : step.label);
-				return self
+				return self && !strip
 					? flow(label, [], room).length + (shown.length ? 1 : 0)
 					: flow(label, shown, room).length;
 			});
@@ -356,9 +408,10 @@ export function layoutDiagram(
 		const { time, self, x1, x2, selfSide, beside, room: words } = placeOf(step);
 
 		if (step.group && previous?.group !== step.group) cursor += groupTop;
-		// More lines go up from an arrow, and down beside a loop.
+		// More lines go up from an arrow, and down beside a loop. Beside the strip, all of them go up.
 		const extra = (linesOf[i] - 1) * LINE_HEIGHT;
-		const y = self ? cursor : cursor + extra;
+		const down = self && !strip;
+		const y = down ? cursor : cursor + extra;
 		const onMessage = chipsOn(step);
 		const shown = whole
 			? []
@@ -379,7 +432,22 @@ export function layoutDiagram(
 			});
 		};
 
-		if (time) {
+		if (strip) {
+			const flowed = flow(
+				label,
+				shown.map((field) => fitChip(field, words)),
+				words
+			);
+			flowed.forEach((line, k) => {
+				const baseline = y + 4 - (flowed.length - 1 - k) * LINE_HEIGHT;
+				if (line.text) lines.push({ text: line.text, x: beside, y: baseline, anchor: 'start' });
+				let x = beside + line.textWidth + (line.text && line.chips.length ? LABEL_TO_CHIP : 0);
+				for (const field of line.chips) {
+					put(field, x, baseline);
+					x += chipWidth(field) + CHIP_GAP;
+				}
+			});
+		} else if (time) {
 			lines.push({ text: label, x: (x1 + x2) / 2, y: y + 4, anchor: 'middle' });
 		} else if (self) {
 			const flowed = whole ? oneLine(label, words) : flow(label, [], words);
@@ -428,7 +496,7 @@ export function layoutDiagram(
 
 		// Not over the arrow of a message to itself, which comes lower than the rest of a row.
 		const above = rows.at(-1);
-		const wanted = y - rowTop - (self ? 0 : extra);
+		const wanted = y - rowTop - (down ? 0 : extra);
 		const top = above?.self ? Math.max(wanted, above.y + SELF_LOOP.height) : wanted;
 
 		rows.push({
@@ -438,7 +506,7 @@ export function layoutDiagram(
 			to: step.to,
 			y,
 			top,
-			band: band + extra + (self ? 4 : 0) - (top - wanted),
+			band: band + extra + (down ? 4 : 0) - (top - wanted),
 			lines,
 			x1,
 			x2,
@@ -453,7 +521,7 @@ export function layoutDiagram(
 					? `${nameOf(step.from)}, internally`
 					: `${nameOf(step.from)} to ${nameOf(step.to)}`
 		});
-		cursor = y + rowHeight + (self ? extra : 0);
+		cursor = y + rowHeight + (down ? extra : 0);
 
 		if (step.group && next?.group !== step.group) {
 			const members = rows.filter(
@@ -461,11 +529,14 @@ export function layoutDiagram(
 			);
 			const xs = members.flatMap((row) => [row.x1, row.x2]);
 			const top = members[0].top - groupTop + rowTop - (whole ? WHOLE_GROUP_GAP : 8);
+			const left = strip ? margin - STRIP_GROUP_SIDE : Math.min(...xs) - GROUP_SIDE;
 			groups.push({
 				id: step.group,
-				x: Math.min(...xs) - GROUP_SIDE,
+				x: left,
 				y: top,
-				width: Math.max(...xs) - Math.min(...xs) + GROUP_SIDE * 2,
+				width: strip
+					? width - left - LABEL_EDGE
+					: Math.max(...xs) - Math.min(...xs) + GROUP_SIDE * 2,
 				height: cursor - top - (whole ? WHOLE_GROUP_BOTTOM : GROUP_BOTTOM),
 				label: (() => {
 					const group = view.groups.find((candidate) => candidate.id === step.group);
@@ -479,12 +550,15 @@ export function layoutDiagram(
 	return {
 		width,
 		height: cursor,
-		roomKey: room ? `${room.width}x${room.height}${whole ? ':whole' : ''}` : '',
+		roomKey: room
+			? `${room.width}x${room.height}${whole ? ':whole' : ''}${strip ? ':strip' : ''}`
+			: '',
 		viewX: Math.min(0, width - (room?.width ?? width)) / 2,
 		viewWidth: Math.max(width, room?.width ?? width),
 		heldWidth,
 		headHeight,
 		whole,
+		strip,
 		numberRadius,
 		lanes,
 		rows,
@@ -558,6 +632,8 @@ export function layHeld(held: readonly ArtifactId[], lineWidth = HELD_LINE_WIDTH
 }
 
 export const SELF_LOOP = { width: SELF_LOOP_WIDTH, height: 18, top: 6 };
+/** Inside the strip, so the words beside it can be close. */
+export const STRIP_SELF_LOOP = { width: 14, height: 14, top: 5 };
 /** Flat enough to stay in its row, when every row has to fit. */
 export const WHOLE_SELF_LOOP = { width: SELF_LOOP_WIDTH, height: 7, top: 3 };
 /** How tall the gap in every line is, where time passes. */
