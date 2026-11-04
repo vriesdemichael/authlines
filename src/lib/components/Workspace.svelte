@@ -39,7 +39,14 @@
 		type DiagramId,
 		introOf
 	} from '#lib/flow/model.ts';
-	import { namesSaid, parseNames, seamOf, withNames } from '#lib/flow/names.ts';
+	import {
+		namesSaid,
+		parseNames,
+		problemWith,
+		seamOf,
+		withNames,
+		type GivenNames
+	} from '#lib/flow/names.ts';
 	import {
 		defaultSettings,
 		settingDefs,
@@ -128,6 +135,8 @@
 		linkNames?: string;
 		/** Back to the site's own names. */
 		ondropnames?: () => void;
+		/** Names someone gave by hand, which go in the address the same way. */
+		onnames?: ((names: GivenNames) => void) | null;
 	}
 
 	let {
@@ -151,7 +160,8 @@
 		onflow,
 		onnavigate,
 		linkNames = '',
-		ondropnames
+		ondropnames,
+		onnames = null
 	}: Props = $props();
 
 	const flow = $derived(base.diagrams[appState.diagram]);
@@ -372,6 +382,33 @@
 			: null
 	);
 	const follow = (thing: ArtifactId | null) => onnavigate(withFollow(appState, thing), 'push');
+
+	// A name of someone's own is typed into the head's explanation, which a right-click or a long press
+	// opens ready for it. A plain click only explains, so nothing is renamed by accident. In advanced
+	// mode first, and the name stays on in simple mode, because it is in the address.
+	let renaming = $state<string | null>(null);
+	const canRename = $derived(!simple && Boolean(onnames));
+	function renameFor(party: string | undefined) {
+		if (!party || !canRename || !onnames) return null;
+		const give = onnames;
+		return {
+			current: fromLink.names[party] ?? null,
+			apply: (name: string) => {
+				const problem = problemWith(name);
+				if (problem) return problem;
+				give({ ...fromLink.names, [party]: name.trim().replace(/\s+/g, ' ') });
+				renaming = null;
+				return null;
+			},
+			reset: () =>
+				give(Object.fromEntries(Object.entries(fromLink.names).filter(([id]) => id !== party))),
+			focus: renaming === party
+		};
+	}
+	function renameLifeline(id: string) {
+		renaming = id;
+		explain({ kind: 'lifeline', id });
+	}
 
 	const explain = (explained: Explained | null) =>
 		onnavigate(withExplained(appState, explained), 'push');
@@ -828,7 +865,11 @@
 					{followed}
 					fullSize={phone && fullSize}
 					currentStep={appState.step}
-					onexplainlifeline={(id) => explain({ kind: 'lifeline', id })}
+					onexplainlifeline={(id) => {
+						renaming = null;
+						explain({ kind: 'lifeline', id });
+					}}
+					onrenamelifeline={canRename ? renameLifeline : null}
 					onexplainartifact={(id: ArtifactId) => explain({ kind: 'artifact', id })}
 					onselect={goToStep}
 				/>
@@ -1063,6 +1104,7 @@
 							)
 					: null}
 				seeingOnly={appState.eyes === explanation.party}
+				rename={renameFor(explanation.party)}
 				onfollow={explanation.follows
 					? () =>
 							onnavigate(

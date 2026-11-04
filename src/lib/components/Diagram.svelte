@@ -38,6 +38,8 @@
 		fullSize?: boolean;
 		onselect?: (step: string) => void;
 		onexplainlifeline?: (id: string) => void;
+		/** A right-click or a long press on a head, to give that party a name of its own (#168). */
+		onrenamelifeline?: ((id: string) => void) | null;
 		onexplainartifact?: (id: ArtifactId) => void;
 	}
 
@@ -56,8 +58,26 @@
 		fullSize = false,
 		onselect,
 		onexplainlifeline,
+		onrenamelifeline = null,
 		onexplainartifact
 	}: Props = $props();
+
+	// A press held on a touch screen is how a phone right-clicks, and moving the finger is not one.
+	const LONG_PRESS_MS = 550;
+	const STILL_ENOUGH = 10;
+	let pressing: ReturnType<typeof setTimeout> | undefined;
+	let pressedAt = { x: 0, y: 0 };
+	const stopPressing = () => clearTimeout(pressing);
+	function startPressing(event: PointerEvent, id: string) {
+		stopPressing();
+		if (event.pointerType !== 'touch' || !onrenamelifeline) return;
+		pressedAt = { x: event.clientX, y: event.clientY };
+		pressing = setTimeout(() => onrenamelifeline?.(id), LONG_PRESS_MS);
+	}
+	function movePressing(event: PointerEvent) {
+		const moved = Math.hypot(event.clientX - pressedAt.x, event.clientY - pressedAt.y);
+		if (moved > STILL_ENOUGH) stopPressing();
+	}
 
 	let frame = $state.raw<Frame>(untrack(() => toFrame(layout)));
 	let animating = $state(false);
@@ -258,6 +278,15 @@
 							if (!lane.leaving) onexplainlifeline?.(lane.id);
 						}}
 						onkeydown={(event) => activate(event, () => onexplainlifeline?.(lane.id))}
+						oncontextmenu={(event) => {
+							if (!onrenamelifeline || lane.leaving) return;
+							event.preventDefault();
+							onrenamelifeline(lane.id);
+						}}
+						onpointerdown={(event) => startPressing(event, lane.id)}
+						onpointerup={stopPressing}
+						onpointermove={movePressing}
+						onpointercancel={stopPressing}
 					>
 						<desc id={`seen-${lane.id}`}
 							>Has seen: {heldText(lane.id, holdings[lane.id] ?? [])}.</desc

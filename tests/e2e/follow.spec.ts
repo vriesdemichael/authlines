@@ -126,11 +126,14 @@ test.describe('getting there', () => {
 
 	test('from the question that it answers', async ({ page }) => {
 		await page.goto('authorization-code/why-a-code/');
+		// Ready first: on a slow machine the button is there before it answers a click.
+		await page.locator('.workspace[data-ready="true"]').waitFor();
 		await page.getByTestId('follow-answer').click();
 		await expect(path(page)).toContainText('Following: code');
 		await expect(page.getByTestId('title')).toHaveText(/Why not just send the token/);
 
 		await page.goto('authorization-code/pkce/');
+		await page.locator('.workspace[data-ready="true"]').waitFor();
 		await page.getByTestId('follow-answer').click();
 		await expect(path(page)).toContainText('Checked here');
 	});

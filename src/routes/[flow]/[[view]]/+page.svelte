@@ -13,6 +13,7 @@
 		stateInFlow,
 		type AppState
 	} from '#lib/flow/state.ts';
+	import { namesHash, type GivenNames } from '#lib/flow/names.ts';
 	import type { Settings } from '#lib/flow/settings.ts';
 	import {
 		nextQuestion,
@@ -108,6 +109,11 @@
 	// Every way on keeps the names, until someone asks for the site's own.
 	const hrefFor = (state: AppState) => addressFor(state) + named;
 
+	function giveNames(names: GivenNames) {
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- addressFor resolves it
+		return goto(addressFor(appState) + namesHash(names), { reset: false });
+	}
+
 	function dropNames() {
 		// eslint-disable-next-line svelte/no-navigation-without-resolve -- addressFor resolves it
 		return goto(addressFor(appState), { reset: false });
@@ -196,5 +202,6 @@
 		onnavigate={navigate}
 		linkNames={named}
 		ondropnames={dropNames}
+		onnames={giveNames}
 	/>
 {/key}
