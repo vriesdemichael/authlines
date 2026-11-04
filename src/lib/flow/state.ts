@@ -69,6 +69,8 @@ export interface AppState {
 	whole: boolean;
 	/** Raw traffic large enough to read from the back of that room. */
 	raw: boolean;
+	/** On a phone, the diagram at its own size and moved sideways, instead of the strip (#15). */
+	fullSize: boolean;
 }
 
 const diagramIds: readonly DiagramId[] = ['flow', 'setup'];
@@ -81,6 +83,7 @@ const FROM_A_STEP = 'step';
 const LIST_PARAM = 'list';
 const WHOLE_PARAM = 'whole';
 const RAW_PARAM = 'raw';
+const SIZE_PARAM = 'size';
 
 /** One step can cite two sections of the same spec, which each say something different. */
 export const refFor = (
@@ -189,7 +192,8 @@ export function parseState(base: BaseFlow, onPath: DiagramId, search: string): A
 		wording: parseWording(params),
 		list: params.get(LIST_PARAM) === '1',
 		whole: params.get(WHOLE_PARAM) === '1',
-		raw: params.get(RAW_PARAM) === '1'
+		raw: params.get(RAW_PARAM) === '1',
+		fullSize: params.get(SIZE_PARAM) === 'full'
 	};
 }
 
@@ -218,6 +222,7 @@ export function serializeState(base: BaseFlow, state: AppState): string {
 	if (state.list) params.set(LIST_PARAM, '1');
 	if (state.whole) params.set(WHOLE_PARAM, '1');
 	if (state.raw) params.set(RAW_PARAM, '1');
+	if (state.fullSize) params.set(SIZE_PARAM, 'full');
 	return params.toString();
 }
 
@@ -247,7 +252,8 @@ export function presetSearch(base: BaseFlow, settings: Partial<Settings>): strin
 		wording: null,
 		list: false,
 		whole: false,
-		raw: false
+		raw: false,
+		fullSize: false
 	});
 }
 
@@ -351,7 +357,17 @@ export function stateInFlow(
 }
 
 export function withWhole(state: AppState, whole: boolean): AppState {
-	return { ...state, whole, raw: whole ? false : state.raw };
+	return {
+		...state,
+		whole,
+		raw: whole ? false : state.raw,
+		fullSize: whole ? false : state.fullSize
+	};
+}
+
+/** Every row fitted and the diagram at its own size are two ways out of the strip, so only one. */
+export function withFullSize(state: AppState, fullSize: boolean): AppState {
+	return { ...state, fullSize, whole: fullSize ? false : state.whole };
 }
 
 export function withRaw(state: AppState, raw: boolean): AppState {

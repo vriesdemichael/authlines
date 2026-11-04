@@ -28,6 +28,13 @@ export default defineConfig({
 	},
 	projects: [
 		{ name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+		// The click-through again on a phone, which has a layout of its own (#15, ADR-008), at the
+		// narrowest width a test holds it to.
+		{
+			name: 'phone',
+			use: { ...devices['Pixel 7'], viewport: { width: 375, height: 812 } },
+			testMatch: /click-through\.spec/
+		},
 		...(ALL_BROWSERS
 			? [
 					// A screenshot is only valid in one browser, and a story or a combination only needs

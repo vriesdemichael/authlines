@@ -286,7 +286,7 @@ In Transformer Explainer's study, video viewers felt they understood as well as 
 
 ### Accessibility and fallback (Proposed)
 
-Plan early for step text outside the SVG, reduced motion, keyboard control and a static render for print and search. Wide diagrams on phones are a known risk. **Decided:** desktop comes first, and phone support comes later once it is clear which functionality fits a smaller workspace. Nothing may make that impossible ([ADR-008](adr/008-desktop-first-without-ruling-out-phones.md)). **Decided, on 2026-11-04:** a phone keeps the diagram, because "you need the visuals to guide you. That's the whole premise of this app." **Built, for the maintainer to judge on a real phone:** the lanes in a narrow strip with each message's words beside them, and a switch for the full picture, panned to the current message, as #15 found in the way code review tools turn two columns into one.
+Plan early for step text outside the SVG, reduced motion, keyboard control and a static render for print and search. Wide diagrams on phones are a known risk. **Decided:** desktop comes first, and phone support comes later once it is clear which functionality fits a smaller workspace. Nothing may make that impossible ([ADR-008](adr/008-desktop-first-without-ruling-out-phones.md)). **Decided, on 2026-11-04:** a phone keeps the diagram, because "you need the visuals to guide you. That's the whole premise of this app." **Built:** the lanes in a narrow strip with each message's words beside them, and a switch for the full picture, panned to the current message, as #15 found in the way code review tools turn two columns into one. The maintainer tried it on a real phone on 2026-11-04: "works natural without losing the overview".
 
 ### Competition and demand (Proposed)
 
@@ -388,7 +388,7 @@ OAuth to OIDC comes first because it takes on the most reported confusion with a
 |---|---|
 | Flow model | Every valid combination builds, invalid ones are rejected, step IDs stay stable |
 | Component states (Storybook) | Each component renders in each of its states in isolation, such as step, field and mode |
-| Click-through (Playwright) | For each named state: walk every step, flip toggles, switch mode, assert the visible steps match the model, use keyboard control, and open a fixed list of URLs that must keep showing the same state. Every valid combination is opened once, in Chromium |
+| Click-through (Playwright) | For each named state: walk every step, flip toggles, switch mode, assert the visible steps match the model, use keyboard control, and open a fixed list of URLs that must keep showing the same state. Every valid combination is opened once, in Chromium, and the click-through runs again at a phone's size |
 | Visual regression | Screenshots of key states in both themes, with animation frozen through reduced motion, and an automated accessibility check on each screen |
 | Keycloak recordings | Regenerate on demand against a pinned Keycloak, 26.8.1 for now, and check weekly against new releases to detect drift ([ADR-005](adr/005-payloads-are-recorded-never-invented.md)). Not on every pull request. A test holds the flow data to the recordings on every change |
 
