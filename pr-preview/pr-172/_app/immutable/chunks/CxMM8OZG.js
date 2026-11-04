@@ -1,0 +1,1 @@
+import{vt as e}from"./Bei48Xex.js";var t=e({open:!1});export{t};
