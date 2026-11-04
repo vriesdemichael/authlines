@@ -50,6 +50,9 @@ export const DEVICE_GRANT_ON = { 'oauth2.device.authorization.grant.enabled': 't
 export const QUICK_DEVICE_CLIENT = 'demo-device-quick';
 export const SOMEONE_ELSE = 'someone-else';
 export const SECOND_REDIRECT_URI = `${SECOND_APP}/callback`;
+/** Someone else's site, which a login link of theirs asks for the code to be sent to. */
+export const ATTACKER_SITE = 'http://localhost:9104';
+export const ATTACKER_REDIRECT_URI = `${ATTACKER_SITE}/catch`;
 export const BACKCHANNEL_URL = 'http://host.docker.internal:9103/backchannel';
 export const API_CLIENT = 'demo-api';
 export const POST_LOGOUT_URI = `${APP}/bye`;
@@ -432,7 +435,7 @@ export async function setUpFor(
 	admin: Admin,
 	realm: string,
 	settings: Pick<Settings, 'clientType' | 'consent' | 'upstreamTokens'> &
-		Partial<Pick<Settings, 'appRuns' | 'apiToken' | 'refresh' | 'reuse' | 'logout'>>
+		Partial<Pick<Settings, 'appRuns' | 'apiToken' | 'refresh' | 'reuse' | 'logout' | 'registered'>>
 ) {
 	const onClients = `/realms/${realm}/clients`;
 	const [old] = await admin.call<{ id: string }[]>(
@@ -445,6 +448,8 @@ export async function setUpFor(
 		onClients,
 		client(CONFIDENTIAL_CLIENT, {
 			...(settings.appRuns === 'page' ? { webOrigins: [APP] } : {}),
+			// What some put there to make Invalid parameter: redirect_uri go away.
+			...(settings.registered === 'any' ? { redirectUris: ['*'] } : {}),
 			...(settings.clientType === 'public' ? { publicClient: true } : confidential),
 			// Set when a client is created through this API, this also turns off Full scope allowed, and
 			// the token has no roles and no audience. Turned on afterwards, as anyone does it in the

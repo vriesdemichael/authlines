@@ -171,6 +171,32 @@ const presets: readonly Preset[] = [
 		settings: { broker: true, companies: true, customerSpeaks: 'saml' }
 	},
 	{
+		id: 'their-link',
+		title: 'A login link of theirs, where the app registered its exact address',
+		settings: { attacker: true, attackerGets: 'link' }
+	},
+	{
+		id: 'their-link-any',
+		title: 'A login link of theirs, where the app registered *',
+		settings: { attacker: true, attackerGets: 'link', registered: 'any' }
+	},
+	{
+		id: 'their-link-any-public',
+		title: 'A login link of theirs, where an app with no secret registered *',
+		settings: { attacker: true, attackerGets: 'link', registered: 'any', clientType: 'public' }
+	},
+	{
+		id: 'their-link-any-public-pkce',
+		title: 'A login link of theirs, where an app with no secret and PKCE registered *',
+		settings: {
+			attacker: true,
+			attackerGets: 'link',
+			registered: 'any',
+			clientType: 'public',
+			pkce: true
+		}
+	},
+	{
 		id: 'dpop-thief',
 		title: 'Someone using a stolen DPoP token, at an API that checks the proof',
 		settings: { binding: 'dpop', tokenThief: true }

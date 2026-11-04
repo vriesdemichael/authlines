@@ -7,6 +7,8 @@ export interface Settings {
 	pkce: boolean;
 	attacker: boolean;
 	attackerUses: 'themselves' | 'real-app';
+	attackerGets: 'copy' | 'link';
+	registered: 'exact' | 'any';
 	binding: 'bearer' | 'dpop';
 	dpopNonce: boolean;
 	broker: boolean;
@@ -287,8 +289,8 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		param: 'attacker',
 		default: false,
 		summary:
-			'Someone copies the code as it crosses the browser and tries to use it. Flip PKCE or the client type to see what changes.',
-		why: 'A protection is hard to believe in until you see what it stops. This changes nothing about what the app does. It shows what someone else could do with the same code, and the answers they get are what a real server gave.',
+			'Someone gets hold of the code and tries to use it. Flip PKCE, the client type or how they get it to see what changes.',
+		why: 'A protection is hard to believe in until you see what it stops. This changes nothing about what the app does. It shows what someone else could do with a code for this app, and the answers they get are what a real server gave.',
 		simple: {
 			label: 'Show someone stealing the code',
 			summary:
@@ -387,8 +389,9 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			{ value: 'real-app', label: 'Hand it to the real app' }
 		],
 		requires: {
-			when: all(is('attacker', true), is('clientType', 'confidential')),
-			because: 'Only an app with a secret needs this. With no secret, they can just trade the code.'
+			when: all(is('attacker', true), is('clientType', 'confidential'), is('attackerGets', 'copy')),
+			because:
+				'Only an app with a secret needs this, and only for a copied code. With no secret, they can just trade it.'
 		},
 		sources: [
 			{
@@ -397,6 +400,67 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				why: 'Section 4.5 is this attack, which it calls authorization code injection, and section 4.5.3 what stops it.'
 			}
 		]
+	},
+	attackerGets: {
+		kind: 'choice',
+		label: 'How they get the code',
+		param: 'gets',
+		default: 'copy',
+		onlyOn: 'authorization-code',
+		summary:
+			'They copy it as it goes by, or they get the user to open a login link of their own, which asks for the code to go to them.',
+		why: 'Anyone can make a login link for any app, because the client ID is in every login address. What keeps the code from going where the link says is the identity provider, which only sends it to an address registered for the app.',
+		sources: [
+			{
+				source: 'rfc9700',
+				section: '4.1.1',
+				why: 'Section 4.1.1 is this attack: a link of theirs, with an address the identity provider should not have let through, and the code sent straight to them.'
+			}
+		],
+		options: [
+			{ value: 'copy', label: 'A copy, as it goes by' },
+			{ value: 'link', label: 'Their own login link', sets: { attackerUses: 'themselves' } }
+		],
+		requires: {
+			when: all(
+				is('attacker', true),
+				is('appRuns', 'server'),
+				is('registration', 'manual'),
+				is('federation', false),
+				is('companies', false),
+				is('consent', false),
+				is('refresh', false),
+				is('sso', false),
+				is('logout', false),
+				is('apiToken', 'good'),
+				is('address', 'registered')
+			),
+			because: 'Only in the plain case so far, with the app on a server.'
+		}
+	},
+	registered: {
+		kind: 'choice',
+		label: 'What the app registered',
+		param: 'registered',
+		default: 'exact',
+		onlyOn: 'authorization-code',
+		summary: 'Its exact address, or *, which some put there to make a redirect_uri error go away.',
+		why: 'The identity provider sends the code only to an address registered for the app. With *, the server recorded took any address at all, so their link got them the code. An exact address stops it, and the identity provider is what checks it.',
+		sources: [
+			{
+				source: 'rfc9700',
+				section: '4.1.3',
+				why: 'Section 4.1.3 is what stops it: the identity provider compares the address with what was registered, exactly.'
+			}
+		],
+		options: [
+			{ value: 'exact', label: 'Its exact address' },
+			{ value: 'any', label: 'A wildcard, *' }
+		],
+		requires: {
+			when: is('attackerGets', 'link'),
+			because: 'Only a link of theirs asks this.'
+		}
 	},
 	binding: {
 		kind: 'choice',

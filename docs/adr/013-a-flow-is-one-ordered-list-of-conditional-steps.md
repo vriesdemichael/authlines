@@ -16,7 +16,7 @@ This also held for another base flow. Client credentials has no browser and no u
 
 A step can be the last one, when a server stops the flow there, so that a refusal does not need a condition on everything after it. A lifeline can join another, when one runs inside the other, so that every arrow moves with it and what they carry ends up there, with no second version of each step.
 
-What a person sees at a step can depend on the settings, as its words can: a step can have a list of pages, each with a condition, and the first that holds is shown. SAML needed it, because the same step is a redirect with OpenID Connect and a page that posts itself with SAML. A page that is not a redirect is at the address of the request it answered.
+What a person sees at a step can depend on the settings, as its words can: a step can have a list of pages, each with a condition, and the first that holds is shown. SAML needed it, because the same step is a redirect with OpenID Connect and a page that posts itself with SAML. A page that is not a redirect is at the address of the request it answered. Which part a step starts can depend on the settings too, because someone else can start the login, and then the part that starts with the app asking has nothing of the app in it.
 
 ## Not chosen
 

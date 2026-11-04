@@ -52,7 +52,10 @@ describe('the path of something', () => {
 			const view = evaluate(base.diagrams.flow, settings);
 			for (const artifact of everything) {
 				for (const stop of pathOf(view, artifact)) {
-					if (/made here/i.test(stop.says)) expect(stop.step).toBe('make-verifier');
+					// The app makes it, or someone else does, for a link of their own.
+					if (/made here/i.test(stop.says)) {
+						expect(['make-verifier', 'attacker-makes-link']).toContain(stop.step);
+					}
 					if (/checked here/i.test(stop.says)) expect(stop.step).toBe('check-verifier');
 				}
 			}

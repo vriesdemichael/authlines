@@ -217,6 +217,8 @@ export const noteDefs: readonly NoteDef[] = [
 		id: 'intercepted-code',
 		steps: ['token-request', 'attacker-token-response'],
 		title: 'Require PKCE',
+		// What was asked is about a copied code. A link of theirs comes with their own verifier.
+		when: not(is('attackerGets', 'link')),
 		text: [
 			{
 				when: all(pkce, not(confidential)),

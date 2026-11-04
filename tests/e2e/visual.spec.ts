@@ -52,6 +52,11 @@ const states: readonly [string, string, 'flow' | 'setup'][] = [
 		'flow'
 	],
 	[
+		'a-link-of-theirs',
+		'attacker=1&gets=link&registered=any&client=public&pkce=1&step=code-to-attacker',
+		'flow'
+	],
+	[
 		'the-whole-flow',
 		'oidc=1&binding=dpop&nonce=1&broker=1&upstream=v1&step=token-request&whole=1',
 		'flow'

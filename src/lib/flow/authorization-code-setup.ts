@@ -10,9 +10,11 @@ const reachesTheApi = not(
 	any(
 		all(is('attacker', true), is('clientType', 'public')),
 		is('attackerUses', 'real-app'),
+		is('attackerGets', 'link'),
 		is('address', 'other')
 	)
 );
+const anyAddress = is('registered', 'any');
 const confidential = is('clientType', 'confidential');
 const broker = is('broker', true);
 const storedTokens = any(is('upstreamTokens', 'v1'), is('upstreamTokens', 'v2'));
@@ -145,11 +147,29 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			label: 'Ask to register the app',
 			concept:
 				'The app team, which is probably you, tells an admin where users may be sent back to, the redirect URIs, and whether the app can keep a secret, the client type. People do this, so there is no HTTP message.',
-			inPractice:
-				'You do this once, and again for each new address the app runs at, because each one has to be listed.',
+			inPractice: [
+				{
+					when: anyAddress,
+					text: 'With *, nothing more has to be listed, which is the trouble: on the server recorded, any address passes, theirs too.'
+				},
+				{
+					text: 'You do this once, and again for each new address the app runs at, because each one has to be listed.'
+				}
+			],
 			links: [{ diagram: 'flow', step: 'authorize', text: 'See where this address gets checked' }],
 			fields: [
-				{ name: 'redirect_uris', place: 'setting', note: 'Checked again during every login' },
+				{
+					name: 'redirect_uris',
+					place: 'setting',
+					note: 'Checked again during every login',
+					when: not(anyAddress)
+				},
+				{
+					name: 'redirect_uris=*',
+					place: 'setting',
+					note: 'On the server recorded, any address at all, so a wrong one stops failing',
+					when: anyAddress
+				},
 				{ name: 'client type', place: 'setting' }
 			]
 		},
@@ -658,7 +678,14 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 				{
 					diagram: 'flow',
 					step: 'open-app',
-					text: 'Setup is done. See what happens when a user arrives'
+					text: 'Setup is done. See what happens when a user arrives',
+					when: not(is('attackerGets', 'link'))
+				},
+				{
+					diagram: 'flow',
+					step: 'attacker-makes-link',
+					text: 'Setup is done. See what someone else does with it',
+					when: is('attackerGets', 'link')
 				}
 			],
 			fields: [{ name: 'keys', place: 'body' }]

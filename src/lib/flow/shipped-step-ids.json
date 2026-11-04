@@ -138,5 +138,8 @@
 	"code-again",
 	"thief-has-token",
 	"thief-api-request",
-	"thief-api-response"
+	"thief-api-response",
+	"attacker-makes-link",
+	"attacker-sends-link",
+	"code-to-attacker"
 ]

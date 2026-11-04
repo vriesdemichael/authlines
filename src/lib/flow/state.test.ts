@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { authorizationCodeBase as base } from '#lib/flow/index.ts';
 import { evaluate, type DiagramId } from '#lib/flow/model.ts';
-import { allValidSettings, defaultSettings, settingDefs } from '#lib/flow/settings.ts';
+import {
+	allValidSettings,
+	defaultSettings,
+	settingDefs,
+	type Settings
+} from '#lib/flow/settings.ts';
 import {
 	nextStep,
 	parseState,
@@ -84,8 +89,10 @@ describe('the URL', () => {
 			{ kind: 'setting', id: 'pkce' }
 		];
 		const source = settingDefs.pkce.sources[0].source;
-		// The old way has no such step, and every other combination does.
-		for (const settings of allValidSettings().filter(({ oldWay }) => !oldWay)) {
+		// The old way has no such step, and nor does a login someone else started with a link of theirs.
+		// Every other combination does.
+		const opensTheApp = ({ oldWay, attackerGets }: Settings) => !oldWay && attackerGets === 'copy';
+		for (const settings of allValidSettings().filter(opensTheApp)) {
 			for (const mode of ['simple', 'advanced'] as const) {
 				for (const explained of explanations) {
 					for (const onOff of [true, false]) {

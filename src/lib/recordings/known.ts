@@ -72,13 +72,14 @@ export function provenance(base: BaseFlow, flow: DiagramDef, settings: Settings)
 		.filter((id) => settings[id] !== defaultSettings[id])
 		.flatMap((id) => settingDefs[id].sources.map((ref) => ref.source));
 	const specs = [...new Set([...flow.specs, ...fromSettings])].filter((id) => !isVendorSource(id));
+	const view = evaluate(flow, settings);
 	return {
 		specs: specs.map((id) => sources[id].label),
 		recorded: recordingFor(base, settings) !== null,
-		// People talking cannot be recorded, so a diagram with them can claim its HTTP and no more.
-		onlyItsHttp: flow.steps.some((step) => step.kind === 'human'),
+		// People talking cannot be recorded, so a diagram with them on it can claim its HTTP and no more.
+		onlyItsHttp: view.steps.some((step) => step.kind === 'human'),
 		// No identity provider has any part in it, so naming one would claim what it never did.
-		noServer: !evaluate(flow, settings).lifelines.some((line) => SERVERS.has(line.id)),
+		noServer: !view.lifelines.some((line) => SERVERS.has(line.id)),
 		keycloak: recordedIndex.keycloak,
 		date: dateOf(base, settings)
 	};

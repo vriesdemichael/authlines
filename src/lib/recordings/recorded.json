@@ -48,7 +48,11 @@
 		"companies-leaves": "2026-11-03",
 		"companies-oidc-leaves": "2026-11-03",
 		"dpop-thief": "2026-11-03",
-		"dpop-thief-bearer-only": "2026-11-03"
+		"dpop-thief-bearer-only": "2026-11-03",
+		"their-link": "2026-11-03",
+		"their-link-any": "2026-11-03",
+		"their-link-any-public": "2026-11-03",
+		"their-link-any-public-pkce": "2026-11-03"
 	},
 	"flows": {
 		"authorization-code": {
@@ -95,6 +99,10 @@
 				"broker",
 				"companies",
 				"companies-saml",
+				"their-link",
+				"their-link-any",
+				"their-link-any-public",
+				"their-link-any-public-pkce",
 				"dpop-thief",
 				"dpop-thief-bearer-only",
 				"companies-leaves",
@@ -131,6 +139,7 @@
 				"cimd-document",
 				"cimd-fetch",
 				"code-again",
+				"code-to-attacker",
 				"consent-grant",
 				"consent-page",
 				"dcr-request",

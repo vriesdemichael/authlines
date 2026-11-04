@@ -264,7 +264,10 @@ describe.each(asCases)('the recording of %s', (preset, recording) => {
 
 	it('has a challenge that really is the fingerprint of the verifier', () => {
 		if (recording.settings.oldWay) return;
-		const body = recorded.find((m) => m.step === 'token-request')?.body as Record<string, string>;
+		// Whoever started the login made the pair, which with a link of theirs is someone else.
+		const trade =
+			recording.settings.attackerGets === 'link' ? 'attacker-token-request' : 'token-request';
+		const body = recorded.find((m) => m.step === trade)?.body as Record<string, string>;
 		const authorize = recorded.find((m) => m.step === 'authorize')!;
 		const challenge = carried(authorize).query.get('code_challenge');
 		if (!recording.settings.pkce) {

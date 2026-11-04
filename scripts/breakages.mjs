@@ -311,14 +311,14 @@ export const breakages = [
 	{
 		name: 'injection: the real user goes on as if nothing happened',
 		file: AC,
-		from: 'const codeGone = any(codeTaken, handedToTheApp);',
-		to: 'const codeGone = codeTaken;'
+		from: 'const codeGone = any(codeTaken, handedToTheApp, byLink);',
+		to: 'const codeGone = any(codeTaken, byLink);'
 	},
 	{
 		name: 'injection: offered where there is no secret to get around',
 		file: 'src/lib/flow/settings.ts',
-		from: "when: all(is('attacker', true), is('clientType', 'confidential')),",
-		to: "when: is('attacker', true),"
+		from: "is('clientType', 'confidential'), is('attackerGets', 'copy')",
+		to: "is('attackerGets', 'copy')"
 	},
 	{
 		name: 'injection: has no nonce check',
