@@ -371,14 +371,16 @@ export function layoutDiagram(
 	};
 
 	// Simple mode says less and some words are longer, and neither a switch of mode nor of words moves
-	// a row, so each keeps the room of the longest.
+	// a row, so each keeps the room of the longest. Beside the strip a row keeps only the room of what
+	// it shows, because there the lines are a list, and a line kept for another mode is a gap that
+	// means nothing. A switch moves the rows there, the way a setting does.
 	const linesOf = inPlainWords.steps.map((step) => {
 		if (whole) return 1;
 		const { self, room } = placeOf(step);
-		const counts = [true, false].flatMap((plain) => {
+		const counts = (strip ? [simple] : [true, false]).flatMap((plain) => {
 			const all = plain ? chipsOn(step).filter((f) => f.artifact || f.mark) : chipsOn(step);
 			const shown = strip ? all.map((field) => fitChip(field, room)) : all;
-			return wordings.map((other) => {
+			return (strip ? [wording] : wordings).map((other) => {
 				const label = sayer(other)(plain ? step.plain : step.label);
 				return self && !strip
 					? flow(label, [], room).length + (shown.length ? 1 : 0)
@@ -392,8 +394,9 @@ export function layoutDiagram(
 		: rowHeightFor(steps, linesOf, room && room.height - headHeight);
 	const band = whole ? rowHeight : Math.max(ROW_BAND, rowHeight - 8);
 	const numberRadius = whole ? Math.min(WHOLE_NUMBER_RADIUS, rowHeight / 2) : NUMBER_RADIUS;
-	// From just under the number above it, which a highlight should not cut through.
-	const rowTop = whole ? rowHeight - numberRadius : ROW_TOP;
+	// From just under the number above it, which a highlight should not cut through. Beside the strip
+	// the lines go down from the arrow, so a row has as much room over its first line as under its last.
+	const rowTop = whole ? rowHeight - numberRadius : strip ? rowHeight / 2 : ROW_TOP;
 	const groupTop = whole ? WHOLE_GROUP_TOP : GROUP_TOP;
 
 	let cursor = whole ? WHOLE_FIRST_ROW_Y : FIRST_ROW_Y;
@@ -408,9 +411,11 @@ export function layoutDiagram(
 		const { time, self, x1, x2, selfSide, beside, room: words } = placeOf(step);
 
 		if (step.group && previous?.group !== step.group) cursor += groupTop;
-		// More lines go up from an arrow, and down beside a loop. Beside the strip, all of them go up.
+		// More lines go up from an arrow, and down beside a loop. Beside the strip they all go down, so the
+		// first line is level with its arrow, and chips still to come leave room under the words and not
+		// beside the arrow, which the maintainer found looked out of line.
 		const extra = (linesOf[i] - 1) * LINE_HEIGHT;
-		const down = self && !strip;
+		const down = self || strip;
 		const y = down ? cursor : cursor + extra;
 		const onMessage = chipsOn(step);
 		const shown = whole
@@ -439,7 +444,7 @@ export function layoutDiagram(
 				words
 			);
 			flowed.forEach((line, k) => {
-				const baseline = y + 4 - (flowed.length - 1 - k) * LINE_HEIGHT;
+				const baseline = y + 4 + k * LINE_HEIGHT;
 				if (line.text) lines.push({ text: line.text, x: beside, y: baseline, anchor: 'start' });
 				let x = beside + line.textWidth + (line.text && line.chips.length ? LABEL_TO_CHIP : 0);
 				for (const field of line.chips) {
@@ -506,7 +511,7 @@ export function layoutDiagram(
 			to: step.to,
 			y,
 			top,
-			band: band + extra + (down ? 4 : 0) - (top - wanted),
+			band: (strip ? rowHeight : band + (down ? 4 : 0)) + extra - (top - wanted),
 			lines,
 			x1,
 			x2,

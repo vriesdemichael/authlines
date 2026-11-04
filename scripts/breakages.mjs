@@ -558,8 +558,8 @@ export const breakages = [
 	{
 		name: 'wording: a choice of words moves a row',
 		file: LAYOUT,
-		from: 'return wordings.map((other) => {',
-		to: 'return [wording].map((other) => {'
+		from: 'return (strip ? [wording] : wordings).map((other) => {',
+		to: 'return (strip ? [wording] : [wording]).map((other) => {'
 	},
 	{
 		name: 'wording: Keycloak’s words stay with the notes off',
@@ -717,6 +717,12 @@ export const breakages = [
 		file: 'src/lib/diagram/layout.ts',
 		from: '\tif (field.artifact || chipWidth(field) <= room) return field;',
 		to: '\treturn field;'
+	},
+	{
+		name: 'phone: a row in the strip keeps a line for another mode',
+		file: 'src/lib/diagram/layout.ts',
+		from: 'const counts = (strip ? [simple] : [true, false]).flatMap((plain) => {',
+		to: 'const counts = [true, false].flatMap((plain) => {'
 	},
 
 	// A refresh token.

@@ -56,6 +56,33 @@ describe('the lanes in a strip, on a phone', () => {
 		}
 	});
 
+	// Chips still to come leave their room under the words, so the words stay beside their arrow.
+	it('puts the first line of words level with its arrow', () => {
+		for (const { name, view, mode } of everyStrip()) {
+			const { rows } = layoutDiagram(view, mode, PHONE, undefined, false, true);
+			for (const row of rows) {
+				if (!row.lines.length) continue;
+				expect(row.lines[0].y - row.y, `${name} ${row.id}`).toBe(4);
+			}
+		}
+	});
+
+	// A list reads by its gaps, so a line kept for another mode or other words, which this one never
+	// fills, looked like a break that meant something. Chips still to come keep theirs.
+	it('keeps as much room under a row as over it, and none for what it never shows', () => {
+		for (const { name, view, mode } of everyStrip()) {
+			const { rows, chips } = layoutDiagram(view, mode, PHONE, undefined, false, true);
+			for (const row of rows) {
+				const baselines = [
+					...row.lines.map((line) => line.y),
+					...chips.filter((chip) => chip.step === row.id).map((chip) => chip.y + 13)
+				];
+				const last = Math.max(row.y + 4, ...baselines) - 4;
+				expect(row.top + row.band - last, `${name} ${row.id}`).toBeCloseTo(row.y - row.top, 6);
+			}
+		}
+	});
+
 	it('keeps rows apart, so a row of two lines does not run into the next', () => {
 		for (const { name, view, mode } of everyStrip()) {
 			const { rows } = layoutDiagram(view, mode, PHONE, undefined, false, true);
