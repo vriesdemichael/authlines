@@ -509,8 +509,8 @@ export const breakages = [
 	{
 		name: 'page: a step in the browser has no window',
 		file: AC,
-		from: "address: 'authorize',\n\t\t\t\tshows: \"The identity provider's own page, asking for a username and a password.\",\n\t\t\t\tshot: 'login',\n\t\t\t\tmarks: ['redirect_uri', 'state']",
-		to: "address: 'open-app',\n\t\t\t\tshows: 'x',\n\t\t\t\tshot: 'login'"
+		from: "address: 'authorize',\n\t\t\t\t\tshows: \"The identity provider's own page, asking for a username and a password.\",\n\t\t\t\t\tshot: 'login',\n\t\t\t\t\tmarks: ['redirect_uri', 'state']",
+		to: "address: 'open-app',\n\t\t\t\t\tshows: 'x',\n\t\t\t\t\tshot: 'login'"
 	},
 	{
 		name: 'page: a page that stopped appearing goes unnoticed',
@@ -723,6 +723,20 @@ export const breakages = [
 		file: 'src/lib/diagram/layout.ts',
 		from: 'const counts = (strip ? [simple] : [true, false]).flatMap((plain) => {',
 		to: 'const counts = [true, false].flatMap((plain) => {'
+	},
+
+	// The request pushed first.
+	{
+		name: 'par: the browser still carries what was pushed',
+		file: AC,
+		from: "{ name: 'state', place: 'query', when: all(not(byLink), not(par)) },",
+		to: "{ name: 'state', place: 'query', when: not(byLink) },"
+	},
+	{
+		name: 'par: the browser is warned about an address it no longer sends',
+		file: AC,
+		from: "\t\t\t\twhen: not(par),\n\t\t\t\ttitle: 'What if the address does not match?',",
+		to: "\t\t\t\ttitle: 'What if the address does not match?',"
 	},
 
 	// A refresh token.

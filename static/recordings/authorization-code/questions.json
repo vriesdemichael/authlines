@@ -11,7 +11,13 @@
 		"companyDomains": "2026-11-03",
 		"passwordHere": "2026-11-03",
 		"console.auto-redirect": "2026-11-03",
-		"whenSomeoneLeaves": "2026-11-03"
+		"whenSomeoneLeaves": "2026-11-03",
+		"requirePar": "2026-11-04",
+		"parLifespan": "2026-11-04",
+		"console.require-par": "2026-11-04",
+		"console.par-lifespan": "2026-11-04",
+		"pushedRedirect": "2026-11-04",
+		"console.redirect-checked-at-push": "2026-11-04"
 	},
 	"answers": {
 		"validRedirectUris": {
@@ -805,6 +811,26 @@
 					"Auto redirect"
 				],
 				"missing": []
+			},
+			"require-par": {
+				"found": [
+					"Advanced settings",
+					"Pushed authorization request required"
+				],
+				"missing": []
+			},
+			"par-lifespan": {
+				"found": [
+					"Lifetime of the Request URI for Pushed Authorization Request"
+				],
+				"missing": []
+			},
+			"redirect-checked-at-push": {
+				"found": [
+					"Access settings",
+					"Valid redirect URIs"
+				],
+				"missing": []
 			}
 		},
 		"directoryLogin": {
@@ -950,6 +976,40 @@
 			"session": {
 				"idleMinutes": 30,
 				"maxHours": 10
+			}
+		},
+		"requirePar": {
+			"before": {
+				"status": 200,
+				"loginPage": true,
+				"error": null,
+				"says": null
+			},
+			"after": {
+				"status": 302,
+				"loginPage": false,
+				"error": "invalid_request",
+				"says": "Pushed Authorization Request is only allowed."
+			}
+		},
+		"parLifespan": {
+			"before": {
+				"status": 201,
+				"expiresIn": 60
+			},
+			"after": {
+				"status": 201,
+				"expiresIn": 30
+			}
+		},
+		"pushedRedirect": {
+			"before": {
+				"status": 400,
+				"says": "Invalid parameter: redirect_uri"
+			},
+			"after": {
+				"status": 201,
+				"says": null
 			}
 		}
 	}

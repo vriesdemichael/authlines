@@ -527,6 +527,8 @@ async function behindTheNotes(browser: Browser, demo: Demo, admin: Admin) {
 		};
 	}
 
+	Object.assign(answers, await questionsWhenPushed(admin));
+
 	{
 		const issuerOf = async (realm: string) => {
 			const answer = await fetch(`${KEYCLOAK}/realms/${realm}/.well-known/openid-configuration`);
@@ -538,6 +540,107 @@ async function behindTheNotes(browser: Browser, demo: Demo, admin: Admin) {
 			realmsDiffer: local !== brokered,
 			endsWithRealm: local.endsWith(`/realms/${LOCAL_REALM}`)
 		};
+	}
+
+	return answers;
+}
+
+/** What the notes on a pushed request say: change the setting, and see the behaviour change. */
+export async function questionsWhenPushed(admin: Admin) {
+	const answers: Record<string, unknown> = {};
+	const onClient = (client: Client) => `/realms/${LOCAL_REALM}/clients/${client.id}`;
+	const change = (client: Client, changes: object) =>
+		admin.call('PUT', onClient(client), { ...client, ...changes });
+
+	{
+		// A client that has to push its request first, asked for a login the ordinary way.
+		const client = await freshClient(admin, 'note-par');
+		const ask = async () => {
+			const answer = await fetch(
+				`${KEYCLOAK}/realms/${LOCAL_REALM}/protocol/openid-connect/auth?${new URLSearchParams({
+					response_type: 'code',
+					client_id: 'note-par',
+					redirect_uri: REDIRECT_URI,
+					state: random()
+				})}`,
+				{ redirect: 'manual' }
+			);
+			const page = await answer.text();
+			const sentBack = new URL(answer.headers.get('location') ?? REDIRECT_URI);
+			return {
+				status: answer.status,
+				loginPage: page.includes('kc-login'),
+				error: sentBack.searchParams.get('error'),
+				says: sentBack.searchParams.get('error_description')
+			};
+		};
+		const before = await ask();
+		await change(client, {
+			attributes: { ...client.attributes, 'require.pushed.authorization.requests': 'true' }
+		});
+		answers.requirePar = { before, after: await ask() };
+	}
+
+	{
+		// How long a pushed request lasts, which is the realm's and not the client's.
+		const push = async () => {
+			const answer = await fetch(
+				`${KEYCLOAK}/realms/${LOCAL_REALM}/protocol/openid-connect/ext/par/request`,
+				{
+					method: 'POST',
+					headers: { 'content-type': 'application/x-www-form-urlencoded' },
+					body: new URLSearchParams({
+						response_type: 'code',
+						client_id: CONFIDENTIAL_CLIENT,
+						client_secret: CLIENT_SECRET,
+						redirect_uri: REDIRECT_URI,
+						state: random()
+					}).toString()
+				}
+			);
+			const json = (await answer.json()) as { expires_in?: number };
+			return { status: answer.status, expiresIn: json.expires_in };
+		};
+		const realm = await admin.call<{ attributes?: Record<string, string> }>(
+			'GET',
+			`/realms/${LOCAL_REALM}`
+		);
+		const lifespan = (seconds: string) =>
+			admin.call('PUT', `/realms/${LOCAL_REALM}`, {
+				attributes: { ...realm.attributes, parRequestUriLifespan: seconds }
+			});
+		const before = await push();
+		await lifespan('30');
+		const after = await push();
+		await lifespan(realm.attributes?.parRequestUriLifespan ?? '60');
+		answers.parLifespan = { before, after };
+	}
+
+	{
+		// An address the client does not have, pushed, which is where it gets refused, and then the
+		// same once the client has it.
+		const client = await freshClient(admin, 'note-par-redirect');
+		const ask = async () => {
+			const answer = await fetch(
+				`${KEYCLOAK}/realms/${LOCAL_REALM}/protocol/openid-connect/ext/par/request`,
+				{
+					method: 'POST',
+					headers: { 'content-type': 'application/x-www-form-urlencoded' },
+					body: new URLSearchParams({
+						response_type: 'code',
+						client_id: 'note-par-redirect',
+						client_secret: CLIENT_SECRET,
+						redirect_uri: `${APP}/elsewhere`,
+						state: random()
+					}).toString()
+				}
+			);
+			const json = (await answer.json()) as { error_description?: string };
+			return { status: answer.status, says: json.error_description ?? null };
+		};
+		const before = await ask();
+		await change(client, { redirectUris: [REDIRECT_URI, `${APP}/elsewhere`] });
+		answers.pushedRedirect = { before, after: await ask() };
 	}
 
 	return answers;

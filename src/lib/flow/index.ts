@@ -103,6 +103,12 @@ const presets: readonly Preset[] = [
 		title: 'OpenID Connect with PKCE',
 		settings: { oidc: true, pkce: true }
 	},
+	{ id: 'par', title: 'The request pushed first', settings: { par: true } },
+	{
+		id: 'par-public-pkce',
+		title: 'The request pushed first, by an app with no secret',
+		settings: { par: true, clientType: 'public', pkce: true }
+	},
 	{
 		id: 'browser-app',
 		title: 'An app in the browser',

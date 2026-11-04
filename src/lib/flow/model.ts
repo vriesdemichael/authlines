@@ -77,6 +77,8 @@ export interface PitfallDef {
 	/** The page someone gets when this goes wrong. */
 	shot?: ShotId;
 	shows?: string;
+	/** Only with these settings, for a step where the same mistake goes wrong somewhere else. */
+	when?: Condition;
 }
 
 export interface Pitfall {
@@ -280,8 +282,10 @@ export function resolveText(text: Text, settings: Settings): string {
 	return match.text;
 }
 
-function resolvePitfall(pitfall: PitfallDef, settings: Settings): Pitfall {
-	return { ...pitfall, text: resolveText(pitfall.text, settings) };
+function resolvePitfall(pitfall: PitfallDef, settings: Settings): Pitfall | undefined {
+	if (pitfall.when && !holds(pitfall.when, settings)) return undefined;
+	const { title, shot, shows } = pitfall;
+	return { title, text: resolveText(pitfall.text, settings), shot, shows };
 }
 
 const present = (when: Condition | undefined, settings: Settings) => !when || holds(when, settings);

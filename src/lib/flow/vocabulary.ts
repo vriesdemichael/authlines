@@ -14,7 +14,8 @@ export type ArtifactId =
 	| 'upstream-token'
 	| 'assertion'
 	| 'device-code'
-	| 'user-code';
+	| 'user-code'
+	| 'request-uri';
 
 export const artifacts: Readonly<
 	Record<ArtifactId, { label: string; short: string; explains: string }>
@@ -107,6 +108,12 @@ export const artifacts: Readonly<
 		short: 'user code',
 		explains:
 			'A short code for a person to read off one device and type into another, which says which waiting app a login is for. Seeing it gets you no token, because the tokens go to whoever has the device code. It is not harmless, though. Someone who types it in first leaves the device logged in as them, and someone who sent you theirs gets the tokens when you type it in.'
+	},
+	'request-uri': {
+		label: 'request URI',
+		short: 'request URI',
+		explains:
+			'A reference to a login request the app sent the identity provider directly. The browser carries it in place of the request, so what the app asked for cannot be read or changed on the way. It works for one login, and only for a short time.'
 	}
 };
 
@@ -127,6 +134,7 @@ const parameterWhy: Readonly<Record<string, string>> = {
 	client_id_issued_at: 'When it was registered',
 	response_type: 'Asks for a code, which is what makes this the code flow.',
 	client_id: 'Says which app this is, as registered in setup.',
+	request_uri: 'Stands for a request the app pushed, for one login.',
 	redirect_uri: 'Has to be the address the code was sent to.',
 	state:
 		"A random value the app checks when the user comes back, so nobody can slip an answer into this user's login. It does not stop someone starting a login in their own browser and handing the app a stolen code, which takes PKCE or a nonce.",

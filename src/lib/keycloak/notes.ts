@@ -56,6 +56,8 @@ export interface NoteDef {
 	title: string;
 	text: Text;
 	when?: Condition;
+	/** With these settings it is on these steps instead, for what a pushed request checks earlier. */
+	instead?: { when: Condition; steps: readonly string[] };
 	place?: ConsolePlace;
 	/** A setting that is not in the console, because the server starts with it. */
 	serverOption?: string;
@@ -103,6 +105,8 @@ export const noteDefs: readonly NoteDef[] = [
 	{
 		id: 'valid-redirect-uris',
 		steps: ['authorize', 'address-refused', 'create-client'],
+		// Pushed first, the address is checked at the push, which has a note of its own.
+		instead: { when: is('par', true), steps: ['create-client'] },
 		title: 'Valid redirect URIs',
 		text: 'The addresses this client may send users back to. Anything else gets a 400, and the page says: Invalid parameter: redirect_uri. It does take a * at the end of an address, which then lets any page on that site get the code, and * alone takes any site at all. An exact match closes both.',
 		place: clientSettings('Access settings', 'Valid redirect URIs'),
@@ -324,6 +328,71 @@ export const noteDefs: readonly NoteDef[] = [
 		backedBy: {
 			question: 'tokenLifespan',
 			shows: { before: { expiresIn: 300 }, after: { expiresIn: 60 } }
+		}
+	},
+	{
+		id: 'redirect-checked-at-push',
+		steps: ['push-request'],
+		when: is('par', true),
+		title: 'Valid redirect URIs',
+		text: 'Checked when the request is pushed. An address that is not one of these gets a 400 at the push, which says: Invalid parameter: redirect_uri, and the user is never sent anywhere.',
+		place: clientSettings('Access settings', 'Valid redirect URIs'),
+		backedBy: {
+			question: 'pushedRedirect',
+			shows: {
+				before: { status: 400, says: 'Invalid parameter: redirect_uri' },
+				after: { status: 201, says: null }
+			}
+		}
+	},
+	{
+		id: 'require-par',
+		steps: ['push-request', 'authorize'],
+		when: is('par', true),
+		title: 'Pushed authorization request required',
+		text: 'Off on a new client, so it takes an ordinary login link as well as a pushed one, and someone else can still start a login for it with a link of their own. On, a link that was not pushed sends the browser back to the app with error=invalid_request and: Pushed Authorization Request is only allowed.',
+		place: {
+			path: [
+				'Clients',
+				YOUR_CLIENT,
+				'Advanced',
+				'Advanced settings',
+				'Pushed authorization request required'
+			],
+			page: 'client-advanced',
+			shows: ['Advanced settings', 'Pushed authorization request required']
+		},
+		backedBy: {
+			question: 'requirePar',
+			shows: {
+				before: { status: 200, loginPage: true, error: null },
+				after: {
+					status: 302,
+					loginPage: false,
+					error: 'invalid_request',
+					says: 'Pushed Authorization Request is only allowed.'
+				}
+			}
+		}
+	},
+	{
+		id: 'par-lifespan',
+		steps: ['push-response'],
+		when: is('par', true),
+		title: 'Lifetime of the Request URI for Pushed Authorization Request',
+		text: 'Sets expires_in on the answer to a push, for the whole realm. It is 60 seconds on a new one, which is how long the browser has to get to the identity provider with the reference.',
+		place: {
+			page: 'realm-tokens',
+			path: [
+				'Realm settings',
+				'Tokens',
+				'Lifetime of the Request URI for Pushed Authorization Request'
+			],
+			shows: ['Lifetime of the Request URI for Pushed Authorization Request']
+		},
+		backedBy: {
+			question: 'parLifespan',
+			shows: { before: { status: 201, expiresIn: 60 }, after: { status: 201, expiresIn: 30 } }
 		}
 	},
 	{
@@ -869,7 +938,10 @@ const notesOfFlow: Readonly<Record<string, readonly NoteDef[]>> = {
 /** The notes on a step of this base flow, in these settings. */
 export function notesFor(flow: string, step: string, settings: Settings): Note[] {
 	return (notesOfFlow[flow] ?? [])
-		.filter((def) => def.steps.includes(step) && (!def.when || holds(def.when, settings)))
+		.filter((def) => {
+			const on = def.instead && holds(def.instead.when, settings) ? def.instead.steps : def.steps;
+			return on.includes(step) && (!def.when || holds(def.when, settings));
+		})
 		.map((def) => ({
 			id: def.id,
 			title: def.title,

@@ -5,6 +5,7 @@ export interface Settings {
 	consent: boolean;
 	clientType: 'public' | 'confidential';
 	pkce: boolean;
+	par: boolean;
 	attacker: boolean;
 	attackerUses: 'themselves' | 'real-app';
 	attackerGets: 'copy' | 'link';
@@ -282,6 +283,43 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				why: 'Section 2.1.1 is the current advice: public clients must use PKCE, and it is recommended for all others.'
 			}
 		]
+	},
+	par: {
+		kind: 'toggle',
+		label: 'PAR',
+		param: 'par',
+		default: false,
+		onlyOn: 'authorization-code',
+		summary:
+			'The app sends its request straight to the identity provider, and the browser carries only a reference.',
+		why: 'Everything in a login link goes through the browser, where it can be read on the way, changed, or end up in a log, and a long one can be too long for an address. Pushed first, it goes direct from the app, which can prove who it is while it is at it, and the identity provider checks it before the user is sent anywhere.',
+		sources: [
+			{
+				source: 'rfc9126',
+				section: '1',
+				why: 'Section 1 says what goes wrong with a request in the address: nothing protects it from being changed or read, and it can get too long. Section 4 is what the browser carries instead.'
+			}
+		],
+		requires: {
+			when: all(
+				is('attacker', false),
+				is('binding', 'bearer'),
+				is('broker', false),
+				is('apiToken', 'good'),
+				is('refresh', false),
+				is('sso', false),
+				is('logout', false),
+				is('address', 'registered'),
+				is('appRuns', 'server'),
+				is('registration', 'manual'),
+				is('oldWay', false),
+				is('federation', false),
+				is('companies', false)
+			),
+			because:
+				'Only drawn so far with OpenID Connect, consent, PKCE and either kind of client, on a server.',
+			sayWhenBlocked: true
+		}
 	},
 	attacker: {
 		kind: 'toggle',
