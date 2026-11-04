@@ -756,7 +756,7 @@ export const offTheMap: readonly MapNode[] = [
 		id: 'pushed-first',
 		alsoAskedAs: ['par', 'pushed authorization request', 'request_uri', 'request uri'],
 		answer:
-			'So that what it asks for stays out of the browser, where it could be read or changed. It sends it straight to the identity provider, with its secret, and the browser carries only a reference that works for one login.',
+			'So that what it asks for stays out of the browser, where it could be read or changed. It sends it straight to the identity provider, with its secret, and the browser carries only its client ID and a reference for one login.',
 		title: 'Why would an app send its login request ahead?',
 		summary: 'Only a reference to it goes through the browser.',
 		mode: 'advanced',

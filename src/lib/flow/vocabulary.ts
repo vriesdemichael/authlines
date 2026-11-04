@@ -113,7 +113,7 @@ export const artifacts: Readonly<
 		label: 'request URI',
 		short: 'request URI',
 		explains:
-			'A reference to a login request the app sent the identity provider directly. The browser carries it in place of the request, so what the app asked for cannot be read or changed on the way. It works for one login, and only for a short time.'
+			'A reference to a login request the app sent the identity provider directly. The browser carries it, with the client ID, in place of the request, so what the app asked for is not in the address and cannot be changed on the way. It is meant for one login, and only for a short time.'
 	}
 };
 

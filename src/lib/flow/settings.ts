@@ -291,7 +291,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		default: false,
 		onlyOn: 'authorization-code',
 		summary:
-			'The app sends its request straight to the identity provider, and the browser carries only a reference.',
+			'The app sends its request straight to the identity provider, and the browser carries only the client ID and a reference.',
 		why: 'Everything in a login link goes through the browser, where it can be read on the way, changed, or end up in a log, and a long one can be too long for an address. Pushed first, it goes direct from the app, which can prove who it is while it is at it, and the identity provider checks it before the user is sent anywhere.',
 		sources: [
 			{

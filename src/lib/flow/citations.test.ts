@@ -47,6 +47,7 @@ const CITED: readonly [step: string, SourceId, section: string, phrase: string][
 	['push-request', 'rfc9126', '2.1', 'directly to the PAR endpoint'],
 	['push-response', 'rfc9126', '2.2', 'expires_in'],
 	['authorize', 'rfc9126', '4', 'MUST only use a "request_uri" value'],
+	['authorize', 'rfc9126', '7.5', 'substitute it into a different'],
 	['old-way-call', 'rfc6749', '1', 'overly broad access'],
 	['old-way-answer', 'rfc6749', '1', 'cannot revoke access to an individual third party'],
 	['address-refused', 'rfc6749', '4.1.2.1', 'MUST NOT automatically redirect'],

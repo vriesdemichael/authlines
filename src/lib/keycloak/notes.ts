@@ -335,13 +335,14 @@ export const noteDefs: readonly NoteDef[] = [
 		steps: ['push-request'],
 		when: is('par', true),
 		title: 'Valid redirect URIs',
-		text: 'Checked when the request is pushed. An address that is not one of these gets a 400 at the push, which says: Invalid parameter: redirect_uri, and the user is never sent anywhere.',
+		text: 'Checked when the request is pushed. An address that is not one of these gets a 400 at the push, which says: Invalid parameter: redirect_uri, so the app has no reference to send the user with. That holds for an app with no secret too.',
 		place: clientSettings('Access settings', 'Valid redirect URIs'),
 		backedBy: {
 			question: 'pushedRedirect',
 			shows: {
 				before: { status: 400, says: 'Invalid parameter: redirect_uri' },
-				after: { status: 201, says: null }
+				after: { status: 201, says: null },
+				withNoSecret: { status: 400, says: 'Invalid parameter: redirect_uri' }
 			}
 		}
 	},
@@ -350,7 +351,7 @@ export const noteDefs: readonly NoteDef[] = [
 		steps: ['push-request', 'authorize'],
 		when: is('par', true),
 		title: 'Pushed authorization request required',
-		text: 'Off on a new client, so it takes an ordinary login link as well as a pushed one, and someone else can still start a login for it with a link of their own. On, a link that was not pushed sends the browser back to the app with error=invalid_request and: Pushed Authorization Request is only allowed.',
+		text: 'Off on a new client, so it takes an ordinary login link as well as a pushed one, and someone else can still start a login for it with a link of their own. On, a link that was not pushed sends the browser back to the app with error=invalid_request and: Pushed Authorization Request is only allowed. For an app with no secret that stops less, because anyone can push a request for it.',
 		place: {
 			path: [
 				'Clients',
@@ -369,6 +370,7 @@ export const noteDefs: readonly NoteDef[] = [
 				after: {
 					status: 302,
 					loginPage: false,
+					backToTheApp: true,
 					error: 'invalid_request',
 					says: 'Pushed Authorization Request is only allowed.'
 				}
@@ -380,7 +382,7 @@ export const noteDefs: readonly NoteDef[] = [
 		steps: ['push-response'],
 		when: is('par', true),
 		title: 'Lifetime of the Request URI for Pushed Authorization Request',
-		text: 'Sets expires_in on the answer to a push, for the whole realm. It is 60 seconds on a new one, which is how long the browser has to get to the identity provider with the reference.',
+		text: 'Sets expires_in on the answer to a push. It is set for the realm, and is 60 seconds on a new one.',
 		place: {
 			page: 'realm-tokens',
 			path: [

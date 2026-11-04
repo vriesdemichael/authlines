@@ -570,6 +570,7 @@ export async function questionsWhenPushed(admin: Admin) {
 			return {
 				status: answer.status,
 				loginPage: page.includes('kc-login'),
+				backToTheApp: (answer.headers.get('location') ?? '').startsWith(REDIRECT_URI),
 				error: sentBack.searchParams.get('error'),
 				says: sentBack.searchParams.get('error_description')
 			};
@@ -640,7 +641,28 @@ export async function questionsWhenPushed(admin: Admin) {
 		};
 		const before = await ask();
 		await change(client, { redirectUris: [REDIRECT_URI, `${APP}/elsewhere`] });
-		answers.pushedRedirect = { before, after: await ask() };
+		const after = await ask();
+		// The same, from an app that has nothing to show who it is.
+		await freshClient(admin, 'note-par-redirect-public', { publicClient: true });
+		const withNoSecret = await fetch(
+			`${KEYCLOAK}/realms/${LOCAL_REALM}/protocol/openid-connect/ext/par/request`,
+			{
+				method: 'POST',
+				headers: { 'content-type': 'application/x-www-form-urlencoded' },
+				body: new URLSearchParams({
+					response_type: 'code',
+					client_id: 'note-par-redirect-public',
+					redirect_uri: `${APP}/elsewhere`,
+					state: random()
+				}).toString()
+			}
+		);
+		const refused = (await withNoSecret.json()) as { error_description?: string };
+		answers.pushedRedirect = {
+			before,
+			after,
+			withNoSecret: { status: withNoSecret.status, says: refused.error_description ?? null }
+		};
 	}
 
 	return answers;

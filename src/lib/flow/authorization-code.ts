@@ -543,7 +543,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					source: 'rfc9126',
 					section: '2.1',
-					why: 'Section 2.1 says the push carries what a login link would, and that the app proves who it is the way it would when it asks for tokens.'
+					why: 'Section 2.1 says the push carries what a login link would, and that an app with a secret proves who it is the way it would when it asks for tokens.'
 				}
 			],
 			from: 'app',
@@ -615,7 +615,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'A reference to it comes back',
 			label: '201 Created',
 			concept:
-				'The identity provider keeps the request, and gives the app a reference to it, which is all the browser will carry. It works for one login, and only for a short time.',
+				'The identity provider keeps the request, and gives the app a reference to it. With the client ID, that is all the browser will carry. It is meant for one login, and only for a short time.',
 			fields: [
 				{
 					name: 'request_uri',
@@ -710,6 +710,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					section: '4',
 					why: 'Section 4 is this request: the client ID and the reference. The app must use a reference once, the server should treat it as good for one login, and must refuse one that has run out.',
 					when: par
+				},
+				{
+					source: 'rfc9126',
+					section: '7.5',
+					why: 'Section 7.5 is someone swapping in a reference to another request, which it says state, PKCE or a nonce should be used to prevent.',
+					when: par
 				}
 			],
 			from: 'browser',
@@ -728,7 +734,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				},
 				{
 					when: par,
-					text: 'The browser asks the identity provider to log the user in, and carries only the app’s client ID and the reference. What the app asked for is already there, and checked, so nothing on the way can read or change it.'
+					text: 'The browser asks the identity provider to log the user in, and carries only the app’s client ID and the reference. What the app asked for is already there, and checked, so it is not in this address and cannot be changed on the way. Someone could still swap in a reference to another request, which the spec counts on state, PKCE or a nonce to catch.'
 				},
 				{
 					when: oidc,
@@ -826,7 +832,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					name: 'request_uri',
 					place: 'query',
-					note: 'Stands for what the app pushed, and works once',
+					note: 'Stands for what the app pushed, and is meant for one use',
 					artifact: 'request-uri',
 					when: par
 				}
@@ -942,10 +948,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			page: [
 				{
 					// The server recorded sends a pushed request on to its own form first, so the address
-					// is that form's, with nothing the app asked for in it.
+					// is that form's, where it puts some of the request back, encoded.
 					address: 'login-page',
 					shows:
-						"The identity provider's own page, asking for a username and a password. Nothing the app asked for is in its address.",
+						"The identity provider's own page, asking for a username and a password. The server recorded moved it to an address of its own, and put the address to send the user back to and the state in it again, encoded as client_data.",
 					shot: 'login',
 					when: par
 				},
