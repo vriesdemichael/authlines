@@ -21,6 +21,8 @@ const pkce = is('pkce', true);
 const dpop = is('binding', 'dpop');
 const apiV1 = is('upstreamTokens', 'v1');
 const apiV2 = is('upstreamTokens', 'v2');
+// Named, not "not the app", so a recording made before this setting existed is the app reading.
+const apiReads = all(apiV2, any(is('upstreamReader', 'api'), is('upstreamReader', 'refused')));
 
 const FLAG_V2 = 'identity-brokering-api:v2';
 
@@ -900,6 +902,34 @@ export const noteDefs: readonly NoteDef[] = [
 		backedBy: {
 			question: 'allowExternalTokens',
 			shows: { before: { status: 200 }, after: { status: 403 } }
+		}
+	},
+	{
+		id: 'api-reads-external-tokens',
+		steps: ['api-retrieve-upstream-token', 'enable-token-storage'],
+		title: 'Allow retrieve external tokens, for the API',
+		text: 'On the API’s own client here, with this provider named in Allowed Identity Providers for External Tokens. A client allowed only another provider, or none, got a 403 with invalid_client and: Client not allowed to retrieve token for the provider. The console only shows it on a server with API V2 on.',
+		when: apiReads,
+		place: {
+			path: [
+				'Clients',
+				'the API',
+				'Settings',
+				'Capability config',
+				'Allow retrieve external tokens'
+			],
+			page: 'api-client-settings',
+			shows: ['Capability config', 'Allow retrieve external tokens'],
+			needsFlag: FLAG_V2
+		},
+		flag: { name: FLAG_V2 },
+		backedBy: {
+			question: 'apiReadsStored',
+			shows: {
+				before: { status: 403, gotUpstreamToken: false },
+				after: { status: 200, gotUpstreamToken: true },
+				byAClientForAnotherProvider: { status: 403, gotUpstreamToken: false }
+			}
 		}
 	},
 	{

@@ -27,6 +27,19 @@ const storedV2: Partial<Settings> = { broker: true, upstreamTokens: 'v2' };
 
 export const knownErrors: readonly KnownError[] = [
 	{
+		text: 'public clients not allowed',
+		means:
+			'A client with no secret asked for a stored upstream token with API V2, which takes a client that proves who it is.',
+		step: 'api-retrieve-upstream-token',
+		settings: {
+			broker: true,
+			upstreamTokens: 'v2',
+			upstreamReader: 'api',
+			clientType: 'public',
+			pkce: true
+		}
+	},
+	{
 		text: 'requested_token_type unsupported',
 		means:
 			'A trade asked for a kind of token the identity provider will not give from a trade. Here that was a refresh token, which the server recorded gives only when set to.',
@@ -282,9 +295,15 @@ export const knownErrors: readonly KnownError[] = [
 	},
 	{
 		text: 'Client not allowed to retrieve token for the provider',
-		means: 'This client has not been allowed to ask for stored tokens.',
-		step: 'retrieve-upstream-token',
-		settings: storedV2
+		means: 'This client has not been allowed to ask for stored tokens, or not for this provider.',
+		// Where a recording has it: an API that is not allowed this provider (#180).
+		step: 'api-upstream-refused',
+		settings: {
+			...storedV2,
+			upstreamReader: 'refused',
+			clientType: 'public',
+			pkce: true
+		}
 	},
 	{
 		text: 'Identity Brokering API feature not enabled',

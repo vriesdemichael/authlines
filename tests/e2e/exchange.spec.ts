@@ -94,3 +94,41 @@ test.describe('a refresh token from the trade', () => {
 		await expect(detail(page)).toContainText('Allow refresh token in Standard Token Exchange');
 	});
 });
+
+// #180: an API reads the user's token at the other provider, so the app can be one with no secret.
+test.describe('the API reading the stored upstream token', () => {
+	const reads = '&broker=1&upstream=v2&client=public&pkce=1';
+
+	test('is a choice under API V2, and moves the reading into the API', async ({ page }) => {
+		await open(page, '&broker=1&upstream=v2');
+		await page.locator('[data-setting="upstreamReader"] input[value="api"]').check();
+		await expect(page).toHaveURL(/reads=api/);
+		for (const step of ['api-retrieve-upstream-token', 'api-upstream-token', 'api-call-upstream']) {
+			await expect(row(page, step)).toHaveCount(1);
+		}
+		await expect(row(page, 'retrieve-upstream-token')).toHaveCount(0);
+	});
+
+	test('keeps the other provider’s token with the API, for an app with no secret', async ({
+		page
+	}) => {
+		await open(page, `${reads}&reads=api&step=api-response`);
+		await expect(
+			page.locator('[data-lifeline="api"] [data-artifact="upstream-token"]')
+		).toBeAttached();
+		await expect(
+			page.locator('[data-lifeline="app"] [data-artifact="upstream-token"]')
+		).toHaveCount(0);
+		await expect(page.getByTestId('dropped-note')).toHaveCount(0);
+	});
+
+	test('draws an API that is not allowed, refused as a real server refused it', async ({
+		page
+	}) => {
+		await open(page, `${reads}&reads=refused&step=api-upstream-refused`);
+		await expect(page.getByTestId('payload')).toContainText(
+			'Client not allowed to retrieve token for the provider'
+		);
+		await expect(row(page, 'api-call-upstream')).toHaveCount(0);
+	});
+});

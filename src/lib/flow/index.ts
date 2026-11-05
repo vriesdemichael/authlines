@@ -249,6 +249,28 @@ const presets: readonly Preset[] = [
 		settings: { broker: true, upstreamTokens: 'v2' }
 	},
 	{
+		id: 'upstream-v2-api',
+		title: 'Stored upstream tokens read by the API, for an app with no secret',
+		settings: {
+			broker: true,
+			upstreamTokens: 'v2',
+			upstreamReader: 'api',
+			clientType: 'public',
+			pkce: true
+		}
+	},
+	{
+		id: 'upstream-v2-refused',
+		title: 'Stored upstream tokens, and an API not allowed them',
+		settings: {
+			broker: true,
+			upstreamTokens: 'v2',
+			upstreamReader: 'refused',
+			clientType: 'public',
+			pkce: true
+		}
+	},
+	{
 		id: 'everything',
 		title: 'Everything on',
 		settings: {

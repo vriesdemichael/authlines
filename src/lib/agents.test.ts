@@ -223,7 +223,8 @@ describe('what a link could not have', () => {
 			{
 				setting: 'upstreamTokens',
 				asked: 'upstream=v2',
-				because: 'API V2 only works with a confidential client and a Bearer token.'
+				because:
+					'API V2 only works with a Bearer token, and for a confidential client, which the app has to be unless an API reads the token.'
 			}
 		]);
 	});

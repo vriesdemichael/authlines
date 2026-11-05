@@ -20,6 +20,9 @@ const broker = is('broker', true);
 const storedTokens = any(is('upstreamTokens', 'v1'), is('upstreamTokens', 'v2'));
 const apiV1 = is('upstreamTokens', 'v1');
 const apiV2 = is('upstreamTokens', 'v2');
+// Named, not "not the app", so a recording made before this setting existed is the app reading.
+const apiReads = all(apiV2, any(is('upstreamReader', 'api'), is('upstreamReader', 'refused')));
+const apiReadRefused = all(apiReads, is('upstreamReader', 'refused'));
 const byHand = is('registration', 'manual');
 const itself = is('registration', 'dcr');
 const document = is('registration', 'cimd');
@@ -477,6 +480,14 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			label: 'Allow token storage',
 			concept: [
 				{
+					when: apiReadRefused,
+					text: 'An admin turns on token storage for the other provider, and registers the API as a client of its own, with a secret. It allows that client to retrieve stored tokens, only not this provider’s. The app’s tokens get the API’s name, because the identity provider here only hands a stored token to a client the token names.'
+				},
+				{
+					when: apiReads,
+					text: 'An admin turns on token storage for the other provider, and registers the API as a client of its own, with a secret, allowed to retrieve this provider’s tokens. The app’s tokens get the API’s name, because the identity provider here only hands a stored token to a client the token names.'
+				},
+				{
 					when: apiV2,
 					text: 'An admin turns on token storage for the other provider, and allows this client to retrieve the tokens.'
 				},
@@ -488,7 +499,35 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			fields: [
 				{ name: 'Store Tokens', place: 'setting' },
 				{ name: 'read-token role', place: 'setting', when: apiV1 },
-				{ name: 'Allow retrieve external tokens', place: 'setting', when: apiV2 }
+				{
+					name: 'Allow retrieve external tokens',
+					place: 'setting',
+					when: all(apiV2, not(apiReads))
+				},
+				{
+					name: 'Allow retrieve external tokens',
+					place: 'setting',
+					note: 'For the API’s own client',
+					when: apiReads
+				},
+				{
+					name: 'Allowed Identity Providers for External Tokens',
+					place: 'setting',
+					note: 'This provider',
+					when: all(apiReads, not(apiReadRefused))
+				},
+				{
+					name: 'Allowed Identity Providers for External Tokens',
+					place: 'setting',
+					note: 'Another provider, and not this one',
+					when: apiReadRefused
+				},
+				{
+					name: 'audience of the API',
+					place: 'setting',
+					note: 'In the app’s tokens, so the API can read with them',
+					when: apiReads
+				}
 			]
 		},
 		{
