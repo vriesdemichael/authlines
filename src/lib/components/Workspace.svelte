@@ -117,6 +117,8 @@
 		onward?: { title: string; summary: string; href: string } | null;
 		/** Where to run the same server at home, with these settings. */
 		runHref?: string | null;
+		/** How to set up an agent to make links with names, said where a link has them. */
+		agentsHref?: string | null;
 		homeHref: string;
 		/** The first screen, for someone who wants to start again and not go to where they were. */
 		startHref?: string;
@@ -149,6 +151,7 @@
 		leftQuestion = null,
 		onward = null,
 		runHref = null,
+		agentsHref = null,
 		homeHref,
 		startHref = homeHref,
 		hrefFor,
@@ -938,6 +941,10 @@
 						<strong>Names from the link you opened:</strong>
 						{namesSaid(namedHere)}. Whoever made the link chose them. What was recorded is the
 						site's own, from its own server.
+						{#if agentsHref}
+							<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the route resolves it -->
+							<a href={agentsHref} data-testid="names-agents">How an agent makes these.</a>
+						{/if}
 					</p>
 				{/if}
 				{#if fromLink.problems.length}

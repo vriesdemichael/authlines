@@ -9,3 +9,7 @@ LICENSE-CONTENT
 NOTICE
 static/
 src/lib/recordings/recorded.json
+
+# Made by pnpm agent-skill from the flow data, and held to it by a test.
+.claude-plugin/
+plugins/

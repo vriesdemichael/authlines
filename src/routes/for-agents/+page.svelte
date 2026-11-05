@@ -1,19 +1,45 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import CopyBlock from '#lib/components/CopyBlock.svelte';
 	import Mark from '#lib/components/Mark.svelte';
-	import { exampleAddress, examples, guide, nameRules, viewSwitches } from '#lib/agents.ts';
-	import { recordedIndex } from '#lib/recordings/known.ts';
+	import {
+		aboutTheAddress,
+		addressFormat,
+		codeParts,
+		claudeCodeInstall,
+		claudeSkillsFolder,
+		exampleAddress,
+		examples,
+		forAnAgent,
+		guide,
+		nameRules,
+		notDrawnSaid,
+		pasteInstruction,
+		SETTING_NOTES,
+		sharedSkillsFolder,
+		viewSwitches
+	} from '#lib/agents.ts';
 	import { sharingTags, SITE_NAME } from '#lib/site.ts';
-	import { SITE_URL } from '#lib/site-url.ts';
 
-	const title = 'Links for an AI agent';
+	const zipHref = resolve('/for-agents/authlines-skill.zip');
+	const markdownHref = resolve('/for-agents/index.html.md');
+
+	const title = 'Use it with your AI agent';
 	const description =
-		'How an agent helping someone can link to the recorded flow that matches their setup, with their own names on the parties.';
+		'Set up your AI agent to link to the recorded flow that matches your system, on the step it is explaining, with your names on the parties.';
 </script>
+
+{#snippet withCode(text: string)}
+	{#each codeParts(text) as part, index (index)}
+		{#if index % 2}<code>{part}</code>{:else}{part}{/if}
+	{/each}
+{/snippet}
 
 <svelte:head>
 	<title>{title}: {SITE_NAME}</title>
 	<meta name="description" content={description} />
+	<!-- The part for an agent, as Markdown, where llms.txt says to look for it (llmstxt.org). -->
+	<link rel="alternate" type="text/markdown" href={markdownHref} />
 	{#each sharingTags( { title, description, path: '/for-agents/' } ) as tag (tag.property ?? tag.name)}
 		<meta {...tag} />
 	{/each}
@@ -23,26 +49,52 @@
 	<p class="brand"><a href={resolve('/')}><Mark /> {SITE_NAME}</a></p>
 	<h1>{title}</h1>
 	<p>
-		{SITE_NAME} draws OAuth and OpenID Connect flows as sequence diagrams, recorded from a real Keycloak
-		{recordedIndex.keycloak}. If you are an agent helping someone with their own system, you can
-		link to the flow and settings that match it, open it on the step you are explaining, and put
-		their names on the parties. They get a diagram to step through, with who has seen what, and the
-		requests a real server sent.
-	</p>
-	<p>
-		Nothing here contacts their system. You describe it with a link, and the site draws its own
-		recording with their names on it.
+		An AI agent helping you with your own system can link here: to the flow that matches it, on the
+		step it is explaining, with your names on the parties. You get a diagram to step through beside
+		its answer, and the requests a real server sent. The names go after the # in the link, so they
+		stay in your browser and never reach this site's server.
 	</p>
 
-	<h2>The address</h2>
-	<pre><code
-			>{SITE_URL}/&lt;flow&gt;/[setup/]?&lt;settings and view&gt;#v=1&amp;&lt;party&gt;=&lt;name&gt;</code
-		></pre>
+	<h2>Set it up</h2>
+	<section data-testid="set-up">
+		<h3>Claude Code</h3>
+		<p>Add it as a plugin, in a Claude Code session:</p>
+		<CopyBlock text={claudeCodeInstall} label="the two commands" />
+
+		<h3>Claude on the web and in the desktop app</h3>
+		<p>
+			<a href={zipHref} download data-testid="skill-zip">Download the skill</a>, then upload it
+			under Customize, Skills. It needs code execution on.
+		</p>
+
+		<h3>Codex, GitHub Copilot, Cursor and Gemini CLI</h3>
+		<p>
+			Unzip the same download into <code>{sharedSkillsFolder}</code>, so that it is
+			<code>{sharedSkillsFolder}authlines/SKILL.md</code>. Claude Code reads
+			<code>{claudeSkillsFolder}</code> the same way, if you would rather not use the plugin.
+		</p>
+
+		<h3>Any other agent</h3>
+		<p>Add this to its instructions:</p>
+		<CopyBlock text={pasteInstruction} label="the instruction" />
+	</section>
+	<p>Then ask it how your own app logs people in. If it does not link here by itself, ask it to.</p>
+
+	<h2>For the agent</h2>
 	<p>
-		Leave out a setting to keep its default. The flow, its settings and the step are in the query,
-		so the link opens exactly that. A setting that does not fit with the others is turned off, and
-		the screen says why.
+		The rest of this page is what the skill tells an agent, and it is also
+		<a href={markdownHref} data-testid="reference-md">one Markdown file</a>.
 	</p>
+	{#each forAnAgent as said (said)}
+		<p>{said}</p>
+	{/each}
+
+	<h2>The address</h2>
+	<pre><code>{addressFormat}</code></pre>
+	<p>{aboutTheAddress}</p>
+
+	<h2>What is not drawn here</h2>
+	<p>{SITE_NAME} does not draw {notDrawnSaid}.</p>
 
 	<h2>Names for the parties</h2>
 	<ul>
@@ -82,11 +134,15 @@
 			<h2>{flow.title}: <code>{flow.id}</code></h2>
 			<p>{flow.summary}</p>
 			<h3>Settings</h3>
+			<p>{SETTING_NOTES}</p>
 			<ul>
 				{#each flow.settings as setting (setting.param)}
 					<li>
 						<code>{setting.param}={setting.values.join(' | ')}</code>: {setting.label}, {setting.byDefault}
 						by default.{setting.only ? ` ${setting.only}` : ''}
+						{#each setting.needs as need (need)}
+							{@render withCode(need)}
+						{/each}
 					</li>
 				{/each}
 			</ul>
@@ -95,14 +151,20 @@
 				<p>Parties:</p>
 				<ul>
 					{#each diagram.parties as party (party.id)}
-						<li><code>{party.id}</code>: {party.kind}, {party.role.toLowerCase()}</li>
+						<li>
+							<code>{party.id}</code>: {party.kind}, {party.role.toLowerCase()}.
+							{#if party.when}{@render withCode(party.when)}{/if}
+						</li>
 					{/each}
 				</ul>
 				<details>
 					<summary>Steps, for step=</summary>
 					<ul>
 						{#each diagram.steps as step (step.id)}
-							<li><code>{step.id}</code>: {step.says}</li>
+							<li>
+								<code>{step.id}</code>: {step.says}.
+								{#if step.when}{@render withCode(step.when)}{/if}
+							</li>
 						{/each}
 					</ul>
 				</details>

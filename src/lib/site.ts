@@ -1,9 +1,6 @@
-/** What this is called, on screen and in what a shared link shows. */
-export const SITE_NAME = 'Authlines';
-
-// On its own, so that a script run with plain Node can read it without Vite's import.meta.env.
-export { SITE_URL } from '#lib/site-url.ts';
-import { SITE_URL } from '#lib/site-url.ts';
+// On their own, so that a script run with plain Node can read them without Vite's import.meta.env.
+export { SITE_NAME, SITE_URL } from '#lib/site-url.ts';
+import { SITE_NAME, SITE_URL } from '#lib/site-url.ts';
 
 /** Whether search engines may index this build. Only production can say so, and only on request. */
 export const INDEXABLE = import.meta.env.VITE_INDEXABLE === 'true';

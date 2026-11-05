@@ -17,7 +17,10 @@ const types = {
 	'.json': 'application/json',
 	'.png': 'image/png',
 	'.svg': 'image/svg+xml',
-	'.txt': 'text/plain'
+	'.txt': 'text/plain',
+	'.md': 'text/markdown',
+	// What Pages sent for a zip on 2026-11-05.
+	'.zip': 'application/x-zip-compressed'
 };
 
 const server = createServer((request, response) => {

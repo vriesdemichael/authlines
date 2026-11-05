@@ -24,7 +24,7 @@ With an app that has no secret, someone who copied the one-time code gets the to
 - **As much detail as you want.** Simple mode says what happens and why. Advanced mode adds the raw requests and answers and, where there is one, which spec says so and the Keycloak setting behind it.
 - **Made to be shown.** The address holds the flow, settings and step, so a link opens exactly what you are looking at. Advanced mode can show every row at once, or the raw traffic large, for a room.
 - **A server you can run yourself.** [A page on the site](https://vriesdemichael.github.io/authlines/run-it-yourself/) gives the commands to run Keycloak at home with Docker, for a real login and real tokens with the settings you came from.
-- **Linkable by an AI agent.** An agent helping someone can link to the flow that matches their setup, with their names on the parties ([how](https://vriesdemichael.github.io/authlines/for-agents/)). The traffic stays the one recorded.
+- **Linkable by an AI agent.** An agent helping someone can link to the flow that matches their setup, with their names on the parties. The traffic stays the one recorded. To set yours up in Claude Code, run `/plugin marketplace add vriesdemichael/authlines` and then `/plugin install authlines@authlines`. For other agents there is a skill to download and an instruction to paste, on [the page for agents](https://vriesdemichael.github.io/authlines/for-agents/).
 - **On a phone too.** The diagram stays, with its parties in a narrow strip and each message's words beside it, or at its own size if you ask. Desktop still comes first ([why](docs/adr/008-desktop-first-without-ruling-out-phones.md)).
 
 ## What this is not

@@ -1,0 +1,14 @@
+{
+	"name": "authlines",
+	"description": "Lets your agent link to the recorded OAuth or OpenID Connect flow on Authlines that matches your system, on the step it is explaining, with your names on the parties.",
+	"owner": {
+		"name": "Michael de Vries"
+	},
+	"plugins": [
+		{
+			"name": "authlines",
+			"source": "./plugins/authlines",
+			"description": "Lets your agent link to the recorded OAuth or OpenID Connect flow on Authlines that matches your system, on the step it is explaining, with your names on the parties."
+		}
+	]
+}

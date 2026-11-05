@@ -187,6 +187,7 @@
 		questionFollows={question?.follows ?? null}
 		{leftQuestion}
 		{onward}
+		agentsHref={resolve('/for-agents')}
 		runHref={base.id === 'authorization-code'
 			? `${resolve('/run-it-yourself')}/?${presetSearch(base, appState.settings)}`
 			: null}

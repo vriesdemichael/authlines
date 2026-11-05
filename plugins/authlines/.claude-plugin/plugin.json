@@ -1,0 +1,10 @@
+{
+	"name": "authlines",
+	"description": "Lets your agent link to the recorded OAuth or OpenID Connect flow on Authlines that matches your system, on the step it is explaining, with your names on the parties.",
+	"author": {
+		"name": "Michael de Vries"
+	},
+	"homepage": "https://vriesdemichael.github.io/authlines/for-agents/",
+	"repository": "https://github.com/vriesdemichael/authlines",
+	"license": "CC-BY-4.0"
+}
