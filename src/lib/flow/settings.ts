@@ -785,12 +785,12 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		onlyOn: 'authorization-code',
 		summary:
 			'Only a token for the second API, or a refresh token as well, so that the API can get another later without the user.',
-		why: 'A token from a trade is short-lived, like any access token, and an API doing a long job for the user needs another one later. A refresh token from the trade is one way, and how long it keeps working is up to the server.',
+		why: 'A token from a trade does not last long, five minutes on the server recorded, and an API doing a long job for the user needs another one later. A refresh token from the trade is one way, and how long it keeps working is up to the server.',
 		sources: [
 			{
 				source: 'rfc8693',
 				section: '2.2.1',
-				why: 'Section 2.2.1 is what the answer to a trade holds. It says a refresh token will typically not come with one, and can where the API has to keep going after the token it traded is no longer good.'
+				why: 'Section 2.2.1 is what the answer to a trade holds. It says a refresh token will typically not come with a trade of one temporary credential for another, and can where the API has to keep going after the token it traded is no longer good.'
 			}
 		],
 		requires: {

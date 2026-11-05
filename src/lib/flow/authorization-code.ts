@@ -2611,7 +2611,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept: [
 				{
 					when: tradeRefresh,
-					text: 'The token names this API, and the second API should refuse it. So this API sends it to the identity provider, with its own client ID and secret, and asks for a token for the same user that names the second API, of the kind that can get another later: a refresh token.'
+					text: 'The token names this API, and the second API should refuse it. So this API sends it to the identity provider, with its own client ID and secret, and asks for a refresh token for the same user, to get tokens that name the second API with.'
 				},
 				{
 					text: 'The token names this API, and the second API should refuse it. So this API sends it to the identity provider, with its own client ID and secret, and asks for a token for the same user that names the second API.'
@@ -2843,7 +2843,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					source: 'rfc8693',
 					section: '2.2.1',
-					why: 'Section 2.2.1 says a refresh token will typically not come with a trade, and can where the client has to keep going after the token it traded is no longer good, with no user there.'
+					why: 'Section 2.2.1 says a refresh token will typically not come with a trade of one temporary credential for another, and can where the client has to keep going after the token it traded is no longer good, as when no user is there.'
 				}
 			],
 			from: 'api',
@@ -2855,7 +2855,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				'The API sends the refresh token it got from the trade, with its own client ID and secret, and asks for a new token for the second API. The user takes no part, and the app knows nothing of it.',
 			pitfall: {
 				title: 'What ends it?',
-				text: "Its own time running out, or the user’s session ending. On the server recorded it was good for 30 minutes, and tied to the session the user logged in with, so once that had ended, this request got a 400 with invalid_grant and: Session not active. The app cannot use it either, and got a 400 with invalid_grant and: Invalid refresh token. Token client and authorized client don't match. RFC 8693 has a refresh token from a trade for where the API has to keep going without the user, and this one does that only while the user is still logged in. Keeping going after the user has gone takes a refresh token that outlives the session, which is not drawn here."
+				text: "The user’s session. On the server recorded, it was tied to the session the user logged in with, and said it was good for 30 minutes, which is how long a session there lasts when idle. Once the session had ended, this request got a 400 with invalid_grant and: Session not active. The app cannot use it either, and got a 400 with invalid_grant and: Invalid refresh token. Token client and authorized client don't match. RFC 8693 has a refresh token from a trade for where the API has to keep going without the user, and this one does that only while the user’s session lasts."
 			},
 			fields: [
 				{ name: 'grant_type=refresh_token', place: 'body' },
@@ -2876,7 +2876,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'A new token for the second API',
 			label: '200 with a new token',
 			concept:
-				'Another access token for the same user and for the second API, and here a new refresh token, which a server does not have to send. The API can call the second API again, until the refresh token runs out or the user’s session ends.',
+				'Another access token for the same user and for the second API, and here a new refresh token, which a server does not have to send. The API can call the second API again while this one works, which here ends with the user’s session.',
 			fields: [
 				{
 					name: 'access_token',
