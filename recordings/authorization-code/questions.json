@@ -26,7 +26,9 @@
 		"console.exchange-audience": "2026-11-05",
 		"secondApiTakes": "2026-11-05",
 		"exchangeRefresh": "2026-11-05",
-		"console.exchange-refresh": "2026-11-05"
+		"console.exchange-refresh": "2026-11-05",
+		"apiReadsStored": "2026-11-05",
+		"console.api-reads-external-tokens": "2026-11-05"
 	},
 	"answers": {
 		"validRedirectUris": {
@@ -866,6 +868,13 @@
 					"Allow refresh token in Standard Token Exchange"
 				],
 				"missing": []
+			},
+			"api-reads-external-tokens": {
+				"found": [
+					"Capability config",
+					"Allow retrieve external tokens"
+				],
+				"missing": []
 			}
 		},
 		"directoryLogin": {
@@ -1135,6 +1144,46 @@
 				"status": 400,
 				"error": "invalid_grant",
 				"says": "Session not active"
+			}
+		},
+		"apiReadsStored": {
+			"theToken": {
+				"azp": "note-reads-app",
+				"aud": [
+					"note-reads-api",
+					"account"
+				]
+			},
+			"before": {
+				"status": 403,
+				"gotUpstreamToken": false,
+				"body": "{\"error\":\"invalid_client\",\"error_description\":\"Client not allowed to retrieve token for the provider\"}"
+			},
+			"after": {
+				"status": 200,
+				"gotUpstreamToken": true,
+				"body": "a successful answer"
+			},
+			"byTheApiWithATokenNotNamingIt": {
+				"aud": "account",
+				"status": 403,
+				"gotUpstreamToken": false,
+				"body": "{\"error\":\"unauthorized_client\",\"error_description\":\"Client is not within the token audience\"}"
+			},
+			"byAClientForAnotherProvider": {
+				"status": 403,
+				"gotUpstreamToken": false,
+				"body": "{\"error\":\"invalid_client\",\"error_description\":\"Client not allowed to retrieve token for the provider\"}"
+			},
+			"byThePublicApp": {
+				"status": 403,
+				"gotUpstreamToken": false,
+				"body": "{\"error\":\"invalid_client\",\"error_description\":\"public clients not allowed\"}"
+			},
+			"byTheApiWithAWrongSecret": {
+				"status": 401,
+				"gotUpstreamToken": false,
+				"body": "{\"error\":\"unauthorized_client\",\"error_description\":\"Invalid client or Invalid client credentials\"}"
 			}
 		}
 	}
