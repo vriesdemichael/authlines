@@ -407,6 +407,10 @@ export const notDrawn: readonly { says: string; term: string }[] = [
 	{ says: 'client certificates', term: 'client certificate' }
 ];
 
+/** Drawn shorter than it can be, so that an agent links to it and says what is left out (#181). */
+export const drawnShorter =
+	'A login that passes through two providers is drawn with one, and `broker=1&step=upstream-authorize` says why.';
+
 /** The list, as a sentence says it. */
 export const notDrawnSaid = new Intl.ListFormat('en', { type: 'disjunction' }).format(
 	notDrawn.map((item) => item.says)
@@ -434,6 +438,7 @@ export function referenceMarkdown(): string {
 		aboutTheAddress,
 		'## What is not drawn here',
 		`${SITE_NAME} does not draw ${notDrawnSaid}.`,
+		drawnShorter,
 		'## Names for the parties',
 		list(nameRules),
 		'## Examples',
@@ -519,6 +524,7 @@ export function skillMarkdown(): string {
 		aboutTheAddress,
 		'## What is not drawn here',
 		`Do not link to something near it. Say that ${SITE_NAME} does not draw ${notDrawnSaid}.`,
+		drawnShorter,
 		'## Names for the parties',
 		list(nameRules),
 		'## How it is shown',

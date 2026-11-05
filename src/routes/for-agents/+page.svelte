@@ -8,6 +8,7 @@
 		codeParts,
 		claudeCodeInstall,
 		claudeSkillsFolder,
+		drawnShorter,
 		exampleAddress,
 		examples,
 		forAnAgent,
@@ -95,6 +96,7 @@
 
 	<h2>What is not drawn here</h2>
 	<p>{SITE_NAME} does not draw {notDrawnSaid}.</p>
+	<p>{@render withCode(drawnShorter)}</p>
 
 	<h2>Names for the parties</h2>
 	<ul>

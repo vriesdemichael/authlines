@@ -1302,6 +1302,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: 'The same request the app made, but now the identity provider is the client asking for a login.'
 				}
 			],
+			pitfall: {
+				// #181: drawn as one hop, and the step says why.
+				title: 'What if the login passes through two providers?',
+				text: 'Then the other provider is a client in turn, and hands the login on to a provider behind it, the way the identity provider does here. Each talks only to the one next to it, so the identity provider never talks to the provider behind, and a token it keeps from this login is the other provider’s. It is drawn once, because each further hop is this same exchange again.',
+				when: not(companies)
+			},
 			when: broker,
 			fields: [
 				{ name: 'SAMLRequest', place: 'body', when: saml },
