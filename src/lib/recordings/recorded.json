@@ -66,7 +66,12 @@
 		"upstream-v2-api": "2026-11-05",
 		"upstream-v2-refused": "2026-11-05",
 		"link-account": "2026-11-05",
-		"link-cancelled": "2026-11-05"
+		"link-cancelled": "2026-11-05",
+		"refresh-broker-pkce": "2026-11-05",
+		"points-at-a-document-oidc": "2026-11-05",
+		"points-at-a-document-broker": "2026-11-05",
+		"sso-broker-pkce": "2026-11-05",
+		"exchange-broker": "2026-11-05"
 	},
 	"flows": {
 		"authorization-code": {
@@ -75,6 +80,8 @@
 				"in-a-directory",
 				"registers-itself",
 				"points-at-a-document",
+				"points-at-a-document-oidc",
+				"points-at-a-document-broker",
 				"the-old-way",
 				"address-refused",
 				"api-no-token",
@@ -86,10 +93,12 @@
 				"refresh-public",
 				"refresh-ends",
 				"refresh-public-ends",
+				"refresh-broker-pkce",
 				"sso",
 				"sso-oidc",
 				"sso-insists",
 				"sso-fresh",
+				"sso-broker-pkce",
 				"logout",
 				"logout-two-apps",
 				"oidc",
@@ -104,6 +113,7 @@
 				"exchange-oidc",
 				"exchange-refresh",
 				"exchange-refresh-oidc",
+				"exchange-broker",
 				"browser-app",
 				"behind-the-page",
 				"in-the-page",

@@ -296,23 +296,7 @@ export async function setUpRealms(admin: Admin) {
 		...client(SECOND_API_CLIENT, confidential),
 		standardFlowEnabled: false
 	});
-	await admin.call('POST', `/realms/${LOCAL_REALM}/client-scopes`, {
-		name: NAMES_THE_SECOND_API,
-		protocol: 'openid-connect',
-		attributes: { 'include.in.token.scope': 'false', 'display.on.consent.screen': 'false' },
-		protocolMappers: [
-			{
-				name: 'audience of the second API',
-				protocol: 'openid-connect',
-				protocolMapper: 'oidc-audience-mapper',
-				config: {
-					'included.client.audience': SECOND_API_CLIENT,
-					'access.token.claim': 'true',
-					'id.token.claim': 'false'
-				}
-			}
-		]
-	});
+	await namesTheSecondApiIn(admin, LOCAL_REALM);
 	await admin.call('POST', `/realms/${LOCAL_REALM}/clients`, {
 		...client(SERVICE_CLIENT, confidential),
 		standardFlowEnabled: false,
@@ -393,8 +377,41 @@ export async function setUpRealms(admin: Admin) {
 		{ alias: 'straight-to-upstream', config: { defaultProvider: UPSTREAM_REALM } }
 	);
 
+	// A second app, a second API and what names it, so that these can be drawn with another provider
+	// too (#186). The first API is made new for each run, below.
+	await admin.call('POST', `/realms/${BROKERED_REALM}/clients`, {
+		...client(SECOND_CLIENT, confidential),
+		redirectUris: [SECOND_REDIRECT_URI]
+	});
+	await admin.call('POST', `/realms/${BROKERED_REALM}/clients`, {
+		...client(SECOND_API_CLIENT, confidential),
+		standardFlowEnabled: false
+	});
+	await namesTheSecondApiIn(admin, BROKERED_REALM);
+
 	await setUpFor(admin, LOCAL_REALM, defaultsForQuestions);
 	await setUpFor(admin, BROKERED_REALM, defaultsForQuestions);
+}
+
+/** A scope that puts the second API in a token's audience, for a client that trades for it. */
+async function namesTheSecondApiIn(admin: Admin, realm: string) {
+	await admin.call('POST', `/realms/${realm}/client-scopes`, {
+		name: NAMES_THE_SECOND_API,
+		protocol: 'openid-connect',
+		attributes: { 'include.in.token.scope': 'false', 'display.on.consent.screen': 'false' },
+		protocolMappers: [
+			{
+				name: 'audience of the second API',
+				protocol: 'openid-connect',
+				protocolMapper: 'oidc-audience-mapper',
+				config: {
+					'included.client.audience': SECOND_API_CLIENT,
+					'access.token.claim': 'true',
+					'id.token.claim': 'false'
+				}
+			}
+		]
+	});
 }
 
 /** What the questions start from: an app with a secret, and stored tokens it can read. */
@@ -476,15 +493,16 @@ export async function letTheApiExchange(
 	admin: Admin,
 	on: boolean,
 	clientId = API_CLIENT,
-	refresh = false
+	refresh = false,
+	realm = LOCAL_REALM
 ) {
-	const onClients = `/realms/${LOCAL_REALM}/clients`;
+	const onClients = `/realms/${realm}/clients`;
 	const [api] = await admin.call<{ id: string; attributes?: Record<string, string> }[]>(
 		'GET',
 		`${onClients}?clientId=${clientId}`
 	);
 	const [scope] = (
-		await admin.call<{ id: string; name: string }[]>('GET', `/realms/${LOCAL_REALM}/client-scopes`)
+		await admin.call<{ id: string; name: string }[]>('GET', `/realms/${realm}/client-scopes`)
 	).filter(({ name }) => name === NAMES_THE_SECOND_API);
 	// Taken away again when not wanted, so the client is on its defaults, as the notes say.
 	const attributes = Object.fromEntries(
@@ -633,6 +651,20 @@ export async function setUpFor(
 				'external.token.idp': reader === 'refused' ? 'some-other-provider' : UPSTREAM_REALM
 			}
 		});
+	}
+	// The first API, trading the token it was sent, as it does without another provider (#186).
+	if (settings.exchange) {
+		await admin.call('POST', onClients, {
+			...client(API_CLIENT, confidential),
+			standardFlowEnabled: false
+		});
+		await letTheApiExchange(
+			admin,
+			true,
+			API_CLIENT,
+			settings.exchangeGives === 'refresh',
+			BROKERED_REALM
+		);
 	}
 	const onProvider = `/realms/${BROKERED_REALM}/identity-provider/instances/${UPSTREAM_REALM}`;
 	const provider = await admin.call<object>('GET', onProvider);

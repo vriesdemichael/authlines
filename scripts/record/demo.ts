@@ -1365,7 +1365,7 @@ export class Demo {
 					url: `${SECOND_API}${request.url}`
 				},
 				{
-					issuers: [`${KEYCLOAK}/realms/${LOCAL_REALM}`],
+					issuers: [LOCAL_REALM, BROKERED_REALM].map((realm) => `${KEYCLOAK}/realms/${realm}`),
 					audience: SECOND_API_CLIENT,
 					keysOf: (issuer) => keysAt(`${issuer}/protocol/openid-connect/certs`),
 					seenProofs: this.#seenProofs

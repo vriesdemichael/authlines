@@ -1404,7 +1404,8 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'What the app is asking for',
 			label: 'Consent page',
 			page: {
-				address: 'submit-credentials',
+				// Where the browser is sent after the login, or after another provider, to be asked (#186).
+				address: 'consent-page',
 				shows:
 					"The identity provider's own page, asking the user to agree to what the app asked for.",
 				shot: 'consent'

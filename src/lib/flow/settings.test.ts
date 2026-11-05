@@ -72,17 +72,18 @@ describe('constraints', () => {
 		const inThePage = 2 * 2;
 		// On the plain flow only, so client type and PKCE, with each way an API can say no.
 		const withApiAnswers = 2 * 2 * 5;
-		// On the plain flow too, but with OpenID Connect and consent, and two answers to using one twice.
-		const withRefresh = 2 * 2 * 2 * 2 * 2;
+		// With OpenID Connect, consent and another provider, and two answers to using one twice (#186).
+		const withRefresh = 2 * 2 * 2 * 2 * 2 * 2;
 		// The second app has its own client, so the first one's type and PKCE do not get in the way.
 		// What it asks for is part of OpenID Connect, so with that off it just goes by the session.
-		const withASecondApp = 2 * 2 * (1 + 3);
+		// With another provider it goes by the session, with OpenID Connect or not (#186).
+		const withASecondApp = 2 * 2 * (1 + 3) + 2 * 2 * 2;
 		// With OpenID Connect, on the plain flow, and with or without a second app to tell.
 		const withLogout = 2 * 2 * 2;
 		// On its own, because nothing else here means anything without an identity provider.
 		const theOldWay = 1;
-		// Each only in the plain case for now, because each brings a different client.
-		const howItRegisters = 2;
+		// Each brings a different client. A document can have OpenID Connect and another provider (#186).
+		const howItRegisters = 1 + 2 * 2;
 		const inADirectory = 1;
 		const withAServerBehindThePage = 1;
 		// Through another provider in the plain case: what their provider speaks, and whether they leave.
@@ -94,8 +95,9 @@ describe('constraints', () => {
 		const aLinkOfTheirs = 2 * 2 * 2 * 2;
 		// The request pushed first: OpenID Connect, consent, the client type and PKCE, with nothing else.
 		const pushedFirst = 2 * 2 * 2 * 2;
-		// An API that trades the token: the same four, each with or without a refresh token from it (#185).
-		const exchanged = 2 * 2 * 2 * 2 * 2;
+		// An API that trades the token: the same four, with or without a refresh token from it (#185), and
+		// with or without another provider (#186).
+		const exchanged = 2 * 2 * 2 * 2 * 2 * 2;
 		// Linking another account, only on the plain flow with a secret, linked or cancelled (#179).
 		const linking = 2;
 		expect(allValidSettings()).toBe(allValidSettings());
