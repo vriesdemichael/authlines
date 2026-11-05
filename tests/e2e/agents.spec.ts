@@ -40,10 +40,11 @@ test.describe('using it with an agent', () => {
 		const markdown = await request.get(new URL(markdownHref!, page.url()).href);
 		expect(markdown.status()).toBe(200);
 		expect(await markdown.text()).toMatch(/^# Authlines: links for an AI agent/);
-		await expect(page.locator('link[rel="alternate"][type="text/markdown"]')).toHaveAttribute(
-			'href',
-			markdownHref!
-		);
+		// The same file, whether it is written relative, as prerendering does, or not, as hydrating does.
+		const alternate = await page
+			.locator('link[rel="alternate"][type="text/markdown"]')
+			.evaluate((link) => (link as HTMLLinkElement).href);
+		expect(alternate).toBe(new URL(markdownHref!, page.url()).href);
 	});
 
 	test('has an llms.txt whose every link opens', async ({ page, request }) => {
