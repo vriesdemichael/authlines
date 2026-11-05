@@ -18,8 +18,18 @@ import { isVendorSource, sources } from '#lib/sources/sources.ts';
 
 export const recordedIndex: RecordingIndex = recorded;
 
-export const settingsOf = (preset: Preset) =>
-	normalize({ ...defaultSettings, ...preset.settings }).settings;
+// Worked out once per preset: finding a recording compares settings with every preset, and the
+// test of every valid combination does that tens of thousands of times.
+const normalized = new WeakMap<Preset, Readonly<Settings>>();
+
+export const settingsOf = (preset: Preset): Readonly<Settings> => {
+	let settings = normalized.get(preset);
+	if (!settings) {
+		settings = Object.freeze(normalize({ ...defaultSettings, ...preset.settings }).settings);
+		normalized.set(preset, settings);
+	}
+	return settings;
+};
 
 const distance = (preset: Preset, settings: Settings) =>
 	settingIds.filter((id) => settingsOf(preset)[id] !== settings[id]).length;
