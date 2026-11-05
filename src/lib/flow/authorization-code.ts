@@ -366,7 +366,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		},
 		{
 			label: 'Link',
-			why: 'Logged in already, the user links an account at another provider, so its tokens are kept.',
+			why: 'Logged in already, the user links an account at another provider, whose tokens can be kept.',
 			from: 'link-start',
 			when: links
 		},
@@ -3030,7 +3030,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept:
 				'The app sends the browser to the identity provider as it does for a login, with one parameter more, which asks for a link to the other provider.',
 			inPractice:
-				'Your code builds this address as it builds a login, and adds the parameter the identity provider uses for this. Here that is kc_action, with the other provider’s name.',
+				'Your code builds this address as it builds a login, and adds the parameter the identity provider uses for this. Here that is kc_action, whose value is the action and the other provider’s name.',
 			fields: [
 				{ name: 'response_type=code', place: 'query' },
 				{ name: 'client_id', place: 'query' },
@@ -3268,7 +3268,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'It keeps the link, and those tokens',
 			label: 'Link the account',
 			concept:
-				'The identity provider notes that this user is also that account at the other provider, and keeps that provider’s tokens beside the user. An app that is allowed can ask for them later.',
+				'The identity provider notes that this user is also that account at the other provider, and here it is set to keep that provider’s tokens. On the server recorded, a client asking afterwards with the user’s token got them, once the user had a role to read them, and was refused before.',
 			fields: []
 		},
 		{
@@ -3288,7 +3288,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: 'The browser goes back to the app, and the address says the user cancelled. On the server recorded it carried a code as well, as an answer to a login does.'
 				},
 				{
-					text: 'The browser goes back to the app, and the address says the link was made. On the server recorded it carried a code as well, as an answer to a login does.'
+					text: 'The browser goes back to the app, and here the address says success. On the server recorded it carried a code as well, as an answer to a login does.'
 				}
 			],
 			fields: [
@@ -3314,10 +3314,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept: [
 				{
 					when: linkCancelled,
-					text: 'The app reads the status, and knows nothing was linked. It can say so, and ask again later.'
+					text: 'The app is told nothing was linked. It can say so, and ask again later.'
 				},
 				{
-					text: 'The app reads the status, and knows the account is linked. From now on it, or an API, can ask the identity provider for that provider’s token, if allowed.'
+					text: 'The app is told the account is linked. The status is only in the address, so it says what happened and proves nothing by itself. The app can then ask the identity provider for that provider’s token, if it is allowed.'
 				}
 			],
 			fields: [

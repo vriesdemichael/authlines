@@ -32,7 +32,8 @@ import {
 	SECOND_API_CLIENT,
 	namesTheApi,
 	TRADE_REFRESH,
-	TRADE_REFRESH_ON
+	TRADE_REFRESH_ON,
+	setUpFor
 } from './keycloak.ts';
 import {
 	DIRECTORY_URL,
@@ -2209,6 +2210,127 @@ export async function questionsWhenTheApiReads(browser: Browser, demo: Demo, adm
 			}),
 			byThePublicApp: await read({ client_id: 'note-reads-app' }),
 			byTheApiWithAWrongSecret: await read({ client_id: 'note-reads-api', client_secret: 'wrong' })
+		}
+	};
+}
+
+/**
+ * What a link leaves behind, asked of a real server (#179): the other provider's tokens kept, which a
+ * client can read with the user's token once the user has the role for it, and the login page
+ * showing no button for a provider that is there only to link.
+ */
+export async function questionsWhenLinked(browser: Browser, demo: Demo, admin: Admin) {
+	const linkSettings = {
+		clientType: 'confidential',
+		consent: false,
+		upstreamTokens: 'v1',
+		linkAccount: true
+	} as const;
+	await setUpFor(admin, LOCAL_REALM, linkSettings);
+	const reader = 'note-link-reader';
+	const [old] = await admin.call<Client[]>(
+		'GET',
+		`/realms/${LOCAL_REALM}/clients?clientId=${reader}`
+	);
+	if (old) await admin.call('DELETE', `/realms/${LOCAL_REALM}/clients/${old.id}`);
+	await freshClient(admin, reader, { directAccessGrantsEnabled: true, standardFlowEnabled: false });
+
+	const authorize = (extra: Record<string, string> = {}) =>
+		`${KEYCLOAK}/realms/${LOCAL_REALM}/protocol/openid-connect/auth?${new URLSearchParams({
+			response_type: 'code',
+			client_id: CONFIDENTIAL_CLIENT,
+			redirect_uri: REDIRECT_URI,
+			state: random(),
+			...extra
+		})}`;
+	// The login page, which is the same whether or not the provider is there to link.
+	const offersIt = async () =>
+		(await (await fetch(authorize())).text()).includes('/broker/upstream/login');
+	const hidden = await offersIt();
+
+	const context = await browser.newContext();
+	const page = await context.newPage();
+	demo.lastCode = '';
+	await page.goto(authorize());
+	await page.fill('#username', USERNAME);
+	await page.fill('#password', PASSWORD);
+	await page.click('#kc-login');
+	await page.getByRole('heading', { name: 'Done' }).waitFor();
+	await page.goto(authorize({ kc_action: `idp_link:${UPSTREAM_REALM}` }));
+	await page
+		.getByRole('button', { name: 'Continue' })
+		.or(page.locator('input[value="Continue"]'))
+		.first()
+		.click();
+	await page.locator('#username').waitFor();
+	await page.fill('#username', USERNAME);
+	await page.fill('#password', PASSWORD);
+	await page.click('#kc-login');
+	await page.getByRole('heading', { name: 'Done' }).waitFor();
+	await context.close();
+
+	const [user] = await admin.call<{ id: string }[]>(
+		'GET',
+		`/realms/${LOCAL_REALM}/users?username=${USERNAME}`
+	);
+	const links = await admin.call<{ identityProvider: string }[]>(
+		'GET',
+		`/realms/${LOCAL_REALM}/users/${user.id}/federated-identity`
+	);
+	const userToken = async () =>
+		(
+			await token(LOCAL_REALM, {
+				grant_type: 'password',
+				client_id: reader,
+				client_secret: CLIENT_SECRET,
+				username: USERNAME,
+				password: PASSWORD
+			})
+		).json.access_token;
+	const read = async () => {
+		const answer = await fetch(`${KEYCLOAK}/realms/${LOCAL_REALM}/broker/${UPSTREAM_REALM}/token`, {
+			headers: { authorization: `Bearer ${await userToken()}` }
+		});
+		const text = await answer.text();
+		return {
+			status: answer.status,
+			gotUpstreamToken: answer.ok && text.includes('access_token'),
+			body: answer.ok ? 'a successful answer' : text.slice(0, 160)
+		};
+	};
+	const withoutTheRole = await read();
+	const [broker] = await admin.call<Client[]>(
+		'GET',
+		`/realms/${LOCAL_REALM}/clients?clientId=broker`
+	);
+	const role = await admin.call<object>(
+		'GET',
+		`/realms/${LOCAL_REALM}/clients/${broker.id}/roles/read-token`
+	);
+	await admin.call(
+		'POST',
+		`/realms/${LOCAL_REALM}/users/${user.id}/role-mappings/clients/${broker.id}`,
+		[role]
+	);
+	const withTheRole = await read();
+	await admin.call(
+		'DELETE',
+		`/realms/${LOCAL_REALM}/users/${user.id}/role-mappings/clients/${broker.id}`,
+		[role]
+	);
+
+	// The same provider, not hidden, for what hiding takes away.
+	const onProvider = `/realms/${LOCAL_REALM}/identity-provider/instances/${UPSTREAM_REALM}`;
+	const provider = await admin.call<object>('GET', onProvider);
+	await admin.call('PUT', onProvider, { ...provider, hideOnLogin: false });
+	const shown = await offersIt();
+	await setUpFor(admin, LOCAL_REALM, { ...linkSettings, linkAccount: false });
+	return {
+		linkedTokens: {
+			linkedTo: links.map(({ identityProvider }) => identityProvider),
+			withoutTheRole,
+			withTheRole,
+			loginPageOffersIt: { hidden, shown }
 		}
 	};
 }

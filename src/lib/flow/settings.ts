@@ -846,8 +846,8 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		default: false,
 		onlyOn: 'authorization-code',
 		summary:
-			'Logged in, the user links an account at another provider, whose tokens the identity provider keeps.',
-		why: 'Some apps have to reach another system for the user, such as their calendar, where the user did not log in. Linking sends them to that provider once, while they are logged in, and the identity provider keeps its tokens beside the user.',
+			'Logged in, the user links an account at another provider, whose tokens the identity provider can keep.',
+		why: 'Some apps have to reach another system for the user, such as their calendar, where the user did not log in. Linking sends them to that provider while they are logged in, and the identity provider can keep its tokens beside the user.',
 		sources: [
 			{
 				source: 'keycloak-account-linking',
@@ -870,10 +870,13 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				is('federation', false),
 				is('companies', false),
 				is('par', false),
-				is('exchange', false)
+				is('exchange', false),
+				is('oidc', false),
+				is('consent', false),
+				is('pkce', false),
+				is('clientType', 'confidential')
 			),
-			because:
-				'Drawn so far with nothing else on but OpenID Connect, consent and PKCE, with either kind of client and the app on a server.',
+			because: 'Drawn so far only on the plain flow, for an app with a secret and nothing else on.',
 			sayWhenBlocked: true
 		}
 	},
@@ -884,11 +887,11 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		default: 'linked',
 		onlyOn: 'authorization-code',
 		summary: 'The user goes on and links it, or cancels at the page that asks.',
-		why: 'The app is told either way, in the address it is sent back to, and has to handle both.',
+		why: 'The app is told either way, here in the address it is sent back to, and has to handle both.',
 		sources: [
 			{
 				source: 'keycloak-account-linking',
-				why: 'This page is how an app asks for a link, and what comes back.'
+				why: 'This page is how an app asks for a link.'
 			}
 		],
 		requires: {

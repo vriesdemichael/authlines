@@ -834,9 +834,9 @@ export const offTheMap: readonly MapNode[] = [
 		id: 'link-account',
 		alsoAskedAs: ['link account', 'connect account', 'account linking', 'kc_action', 'idp_link'],
 		answer:
-			'The app sends the user, still logged in, back to the identity provider with a request to link an account at the other provider. The server recorded asked them to confirm, sent them to log in there, kept that provider’s tokens beside the user, and sent them back to the app with how it went.',
+			'The app sends the user, still logged in, back to the identity provider with a request to link an account at the other provider. The server recorded asked them to confirm, sent them to log in there, kept that provider’s tokens, and sent them back to the app with how it went.',
 		title: 'How does a user link an account at another provider, once logged in?',
-		summary: 'They are sent to log in there once, and the identity provider keeps its tokens.',
+		summary: 'They log in there, and the identity provider can keep its tokens.',
 		mode: 'advanced',
 		preset: 'link-account',
 		step: 'link-ask'

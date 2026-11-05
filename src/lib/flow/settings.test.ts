@@ -96,8 +96,8 @@ describe('constraints', () => {
 		const pushedFirst = 2 * 2 * 2 * 2;
 		// An API that trades the token: the same four, each with or without a refresh token from it (#185).
 		const exchanged = 2 * 2 * 2 * 2 * 2;
-		// Linking another account: the same four, and the user linking it or cancelling (#179).
-		const linking = 2 * 2 * 2 * 2 * 2;
+		// Linking another account, only on the plain flow with a secret, linked or cancelled (#179).
+		const linking = 2;
 		expect(allValidSettings()).toBe(allValidSettings());
 		expect(Object.isFrozen(allValidSettings())).toBe(true);
 		expect(allValidSettings().every((settings) => Object.isFrozen(settings))).toBe(true);

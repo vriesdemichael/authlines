@@ -380,7 +380,7 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plain: 'Add the other provider, to link accounts with',
 			label: 'Add the provider',
 			concept:
-				'An admin adds the other provider to the identity provider, with the client ID and secret it got there, and has it keep the tokens a link brings. Here it is hidden from the login page, so people still log in with their password, and only link it afterwards.',
+				'An admin adds the other provider to the identity provider, with the client ID and secret it got there, and has it keep the tokens a link brings. Here it is hidden from the login page, which then shows no button for it: it is there to link accounts with, not to log in with.',
 			fields: [
 				{ name: 'client_id', place: 'setting', note: 'The one the other provider gave it' },
 				{ name: 'client_secret', place: 'setting' },

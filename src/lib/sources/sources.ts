@@ -236,7 +236,7 @@ export const sources: Record<SourceId, SourceDef> = {
 		title: 'Client initiated account linking',
 		status: 'Keycloak 26.8.1, Server Developer Guide.',
 		summary:
-			'How an app sends a logged-in user to link an account at another identity provider: an ordinary authentication request, with kc_action=idp_link and the provider’s alias added. The user needs a role that lets them manage their account links. An older way, not built on application-initiated actions, is off by default and may be removed.',
+			'How an app sends a logged-in user to link an account at another identity provider: an ordinary authentication request, with kc_action=idp_link and the provider’s alias added. The user needs a role that lets them manage their account links. An older way, with a protocol of its own rather than application-initiated actions, is off by default and may be removed.',
 		url: 'https://www.keycloak.org/docs/26.8.1/server_development/#_client-initiated-account-linking'
 	},
 	'keycloak-concepts': {

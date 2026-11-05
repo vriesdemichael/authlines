@@ -89,7 +89,8 @@ import {
 	questionsWithNoUser,
 	questionsWhenPushed,
 	questionsWhenExchanged,
-	questionsWhenTheApiReads
+	questionsWhenTheApiReads,
+	questionsWhenLinked
 } from './questions.ts';
 import { deviceNoteDefs, noteDefs, noUserNoteDefs } from '#lib/keycloak/notes.ts';
 
@@ -1092,6 +1093,9 @@ async function recordOnlyPresets(ids: readonly string[]) {
 			const looked = await lookInConsole(browser, admin, features, readerNotes);
 			addToQuestions(recordedAt, await questionsWhenTheApiReads(browser, demo, admin), looked);
 		}
+		if (wanted.some(({ settings }) => settings.linkAccount)) {
+			addToQuestions(recordedAt, await questionsWhenLinked(browser, demo, admin));
+		}
 		if (wanted.some(({ settings }) => settings.appRuns === 'bff')) {
 			addToQuestions(recordedAt, await whatAScriptCan(browser, demo, admin));
 		}
@@ -1223,6 +1227,7 @@ async function main() {
 			if (!features.length) {
 				Object.assign(answers, await questionsWithADirectory(admin));
 				Object.assign(answers, await questionsWhenExchanged(admin));
+				Object.assign(answers, await questionsWhenLinked(browser, demo, admin));
 				Object.assign(answers, await whatAScriptCan(browser, demo, admin));
 				Object.assign(answers, await questionsWithCompanies(admin));
 				Object.assign(answers, await questionsWhenSomeoneLeaves(browser, admin));

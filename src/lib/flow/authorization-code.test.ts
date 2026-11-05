@@ -1241,4 +1241,19 @@ describe('linking another account', () => {
 			'add-provider-for-linking'
 		);
 	});
+
+	// What the steps say the server did after the link, from a real run (questions.json).
+	it('says what a real server did with the link, and no more', () => {
+		const said = answers.linkedTokens;
+		expect(said.linkedTo).toContain('upstream');
+		expect(said.withoutTheRole).toMatchObject({ status: 403, gotUpstreamToken: false });
+		expect(said.withTheRole).toMatchObject({ status: 200, gotUpstreamToken: true });
+		expect(said.loginPageOffersIt).toEqual({ hidden: false, shown: true });
+		const store = view({ linkAccount: true }).steps.find((step) => step.id === 'link-store')!;
+		expect(JSON.stringify(store)).toContain('once the user had a role to read them');
+		const hidden = evaluate(setup, { ...defaultSettings, linkAccount: true }).steps.find(
+			(step) => step.id === 'add-provider-for-linking'
+		)!;
+		expect(JSON.stringify(hidden)).toContain('shows no button for it');
+	});
 });

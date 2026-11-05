@@ -405,7 +405,7 @@ Tried on Keycloak 26.8.1 on 2026-11-05 in a throwaway trial, then recorded the s
 - With `kc_action=idp_link:upstream`, Keycloak showed its own page first: Do you want to link your account with upstream?, with Continue and Cancel.
 - Continue went to the other provider's login and back to the broker endpoint, and then to the app with `kc_action=idp_link`, `kc_action_status=success` and a code. The user then had a federated identity at that provider.
 - Cancel went back to the app with `kc_action_status=cancelled`, and a code.
-- Asking again when already linked showed the same page, and Continue came back with `success` and no login at the other provider while that session lasted.
+- Asking again when already linked showed the same page, and Continue came back with `success`, with no login at the other provider asked for.
 - Reading the stored token with API V1, with the user given no role to read it, got 403 and Client [demo-app] not authorized to retrieve tokens from identity provider [upstream].
 - In the trial, the other provider's token, user info and keys addresses had to be ones the container can reach, here through the recorder's proxy, or the link failed with Unexpected error when authenticating with identity provider.
 
