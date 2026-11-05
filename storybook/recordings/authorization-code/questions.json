@@ -29,7 +29,10 @@
 		"console.exchange-refresh": "2026-11-05",
 		"apiReadsStored": "2026-11-05",
 		"console.api-reads-external-tokens": "2026-11-05",
-		"linkedTokens": "2026-11-05"
+		"linkedTokens": "2026-11-05",
+		"offlineTokens": "2026-11-05",
+		"console.session-lifetimes": "2026-11-05",
+		"console.offline-session-lifetimes": "2026-11-05"
 	},
 	"answers": {
 		"validRedirectUris": {
@@ -876,6 +879,20 @@
 					"Allow retrieve external tokens"
 				],
 				"missing": []
+			},
+			"session-lifetimes": {
+				"found": [
+					"SSO Session Idle",
+					"SSO Session Max"
+				],
+				"missing": []
+			},
+			"offline-session-lifetimes": {
+				"found": [
+					"Offline Session Idle",
+					"Offline Session Max Limited"
+				],
+				"missing": []
 			}
 		},
 		"directoryLogin": {
@@ -1204,6 +1221,90 @@
 			"loginPageOffersIt": {
 				"hidden": false,
 				"shown": true
+			}
+		},
+		"offlineTokens": {
+			"before": {
+				"defaults": {
+					"ssoSessionIdleTimeout": 1800,
+					"ssoSessionMaxLifespan": 36000,
+					"offlineSessionIdleTimeout": 2592000,
+					"offlineSessionMaxLifespanEnabled": false,
+					"offlineSessionMaxLifespan": 5184000
+				},
+				"onDefaults": {
+					"online": {
+						"refreshExpiresIn": 1800,
+						"type": "Refresh"
+					},
+					"offline": {
+						"refreshExpiresIn": 2592000,
+						"type": "Offline"
+					}
+				},
+				"signedOutByAnAdmin": {
+					"online": {
+						"status": 400,
+						"says": "Session not active"
+					},
+					"offline": {
+						"status": 200,
+						"says": null
+					}
+				}
+			},
+			"after": {
+				"sessionMaximum": {
+					"asGranted": {
+						"online": {
+							"refreshExpiresIn": 5,
+							"type": "Refresh"
+						},
+						"offline": {
+							"refreshExpiresIn": 2592000,
+							"type": "Offline"
+						}
+					},
+					"tried": {
+						"online": {
+							"status": 400,
+							"says": "Token is not active"
+						},
+						"offline": {
+							"status": 200,
+							"says": null
+						}
+					}
+				},
+				"offlineMaximum": {
+					"refreshExpiresIn": 5,
+					"tried": {
+						"status": 400,
+						"says": "Token is not active"
+					}
+				},
+				"idle": {
+					"asGranted": {
+						"online": {
+							"refreshExpiresIn": 5,
+							"type": "Refresh"
+						},
+						"offline": {
+							"refreshExpiresIn": 5,
+							"type": "Offline"
+						}
+					},
+					"afterSevenSeconds": {
+						"online": {
+							"status": 400,
+							"says": "Token is not active"
+						},
+						"offline": {
+							"status": 400,
+							"says": "Token is not active"
+						}
+					}
+				}
 			}
 		}
 	}
