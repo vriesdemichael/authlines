@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import {
+	codeParts,
+	drawnShorter,
 	examples,
 	guide,
 	notDrawn,
@@ -128,6 +130,17 @@ describe('what the skill says is not drawn', () => {
 			expect(notHereYet, item.term).toContain(item.term);
 			expect(search(item.term).notHereYet, item.term).not.toBeNull();
 		}
+	});
+
+	it('sends a login through two providers to the step that says why it is drawn with one', () => {
+		const [query] = codeParts(drawnShorter).filter((_, index) => index % 2);
+		const { base, state } = opened(`authorization-code/?${query}`);
+		const shown = evaluate(base.diagrams.flow, state.settings).steps.find(
+			(step) => step.id === state.step
+		);
+		expect(state.step).toBe('upstream-authorize');
+		expect(shown?.pitfall?.title).toContain('two providers');
+		expect(shown?.pitfall?.text).toContain('drawn once');
 	});
 });
 

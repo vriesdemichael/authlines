@@ -31,6 +31,8 @@ Leave out a setting to keep its default. The flow, its settings and the step are
 
 Do not link to something near it. Say that Authlines does not draw apps on a phone, a PKCE downgrade, passkeys and WebAuthn, Kerberos, NTLM, or client certificates.
 
+A login that passes through two providers is drawn with one, and `broker=1&step=upstream-authorize` says why.
+
 ## Names for the parties
 
 - They go after #, start with v=1, and name parties by the ids listed for each flow: #v=1&app=Payroll&idp=Entra%20ID.

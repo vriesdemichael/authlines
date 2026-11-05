@@ -160,6 +160,14 @@ describe('what people bring', () => {
 		expect(search('unauthorized_client').results.length).toBeGreaterThan(2);
 	});
 
+	// #181: drawn with one provider, and the step at the other provider says why.
+	it('finds why a login through two providers is drawn with one, with only that setting on', () => {
+		const step = search('a login through two providers').results.find(
+			({ kind }) => kind === 'step'
+		);
+		expect(step?.query).toBe('mode=advanced&broker=1&step=upstream-authorize');
+	});
+
 	it('finds what a pitfall on the other flow says', () => {
 		const found = search('wants its own name in the token');
 		expect(found.results[0]?.flow).toBe('client-credentials');
