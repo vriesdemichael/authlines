@@ -15,6 +15,7 @@ export interface Settings {
 	broker: boolean;
 	upstreamTokens: 'off' | 'v1' | 'v2';
 	apiToken: 'good' | 'none' | 'expired' | 'changed' | 'elsewhere' | 'noscope';
+	exchange: boolean;
 	refresh: boolean;
 	reuse: 'keeps' | 'ends';
 	sso: boolean;
@@ -737,6 +738,44 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			{ value: 'noscope', label: 'A token that does not allow this' }
 		]
 	},
+	exchange: {
+		kind: 'toggle',
+		label: 'Token exchange',
+		param: 'exchange',
+		default: false,
+		onlyOn: 'authorization-code',
+		summary:
+			'The API needs a second API to answer, and trades the token it got for one meant for that API.',
+		why: 'A token says which API it is for, and another API should refuse it. One way for an API that has to call another one for the user, and the one drawn here, is to ask the identity provider for a new token for the same user, meant for the next API, and send that on instead.',
+		sources: [
+			{
+				source: 'rfc8693',
+				section: '1',
+				why: 'Section 1 describes this: an API trading the access token it got for one fit to send to the service behind it. Section 2.1 is the request, and section 1.1 the two things the new token can mean.'
+			}
+		],
+		requires: {
+			when: all(
+				is('attacker', false),
+				is('binding', 'bearer'),
+				is('broker', false),
+				is('apiToken', 'good'),
+				is('refresh', false),
+				is('sso', false),
+				is('logout', false),
+				is('address', 'registered'),
+				is('appRuns', 'server'),
+				is('registration', 'manual'),
+				is('oldWay', false),
+				is('federation', false),
+				is('companies', false),
+				is('par', false)
+			),
+			because:
+				'Only drawn so far with OpenID Connect, consent, PKCE and either kind of client, on a server.',
+			sayWhenBlocked: true
+		}
+	},
 	refresh: {
 		kind: 'toggle',
 		label: 'When the token runs out',
@@ -787,7 +826,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 	},
 	sso: {
 		kind: 'toggle',
-		label: 'Log in to a second app',
+		label: 'A second app',
 		param: 'sso',
 		default: false,
 		summary: 'A second app, the same identity provider, and no password.',

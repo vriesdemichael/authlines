@@ -4,6 +4,7 @@ import { noteDefs, type ConsolePage, type NoteDef } from '#lib/keycloak/notes.ts
 import {
 	Admin,
 	ADMIN_PASSWORD,
+	API_CLIENT,
 	BROKERED_REALM,
 	CONFIDENTIAL_CLIENT,
 	DIRECTORY_REALM,
@@ -36,8 +37,13 @@ export async function lookInConsole(
 		'GET',
 		`/realms/${LOCAL_REALM}/clients?clientId=${CONFIDENTIAL_CLIENT}`
 	);
+	const [api] = await admin.call<{ id: string }[]>(
+		'GET',
+		`/realms/${LOCAL_REALM}/clients?clientId=${API_CLIENT}`
+	);
 	const root = `${KEYCLOAK}/admin/master/console/#`;
 	const onClient = `${root}/${LOCAL_REALM}/clients/${client.id}`;
+	const onTheApi = `${root}/${LOCAL_REALM}/clients/${api.id}`;
 	const [directory] = await admin.call<{ id: string }[]>(
 		'GET',
 		`/realms/${DIRECTORY_REALM}/components?type=org.keycloak.storage.UserStorageProvider`
@@ -52,6 +58,8 @@ export async function lookInConsole(
 		'client-advanced': `${onClient}/advanced`,
 		'client-scopes': `${onClient}/clientScopes`,
 		'client-dedicated-scope': `${onClient}/clientScopes/dedicated`,
+		'api-client-settings': `${onTheApi}/settings`,
+		'api-client-scopes': `${onTheApi}/clientScopes`,
 		'provider-settings': `${root}/${BROKERED_REALM}/identity-providers/oidc/${UPSTREAM_REALM}/settings`,
 		'realm-settings': `${root}/${LOCAL_REALM}/realm-settings`,
 		'realm-sessions': `${root}/${LOCAL_REALM}/realm-settings/sessions`,

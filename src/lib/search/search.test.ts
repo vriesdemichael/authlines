@@ -132,7 +132,7 @@ describe('what people bring', () => {
 	});
 
 	it('says when it only has most of what was typed', () => {
-		const found = search('Invalid audience');
+		const found = search('audience mismatch');
 		expect(found.closest).toBe(true);
 		expect(found.results.map(({ title }) => title).join(' ')).toMatch(/audience/i);
 		expect(search('difference between oauth and something').closest).toBe(true);
@@ -208,7 +208,6 @@ describe('what people bring', () => {
 	});
 
 	it.each([
-		'token exchange',
 		'PKCE downgrade',
 		'native apps',
 		'a custom URL scheme',
@@ -367,6 +366,8 @@ describe('the words someone has', () => {
 		['external idp', 'How do you log in with another provider?'],
 		['token brokering', "How does the app call the other provider's API?"],
 		['upstream token', "How does the app call the other provider's API?"],
+		['token exchange', 'Token exchange'],
+		['on behalf of another api', 'The API trades it for one for the second API'],
 		['what is oauth', 'OAuth'],
 		['what is an identity provider', 'Identity provider'],
 		['what is an issuer?', 'Issuer']

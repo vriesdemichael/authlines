@@ -15,7 +15,8 @@ export type ArtifactId =
 	| 'assertion'
 	| 'device-code'
 	| 'user-code'
-	| 'request-uri';
+	| 'request-uri'
+	| 'exchanged-token';
 
 export const artifacts: Readonly<
 	Record<ArtifactId, { label: string; short: string; explains: string }>
@@ -114,6 +115,12 @@ export const artifacts: Readonly<
 		short: 'request URI',
 		explains:
 			'A reference to a login request the app sent the identity provider directly. The browser carries it, with the client ID, in place of the request, so what the app asked for is not in the address and cannot be changed on the way. It is meant for one login, and only for a short time.'
+	},
+	'exchanged-token': {
+		label: 'exchanged token',
+		short: 'exchanged',
+		explains:
+			'An access token for the same user, which the identity provider issued in return for the one the first API was sent. It names the second API, so the first API sends this one on, and the token that names the first API does not have to work anywhere else.'
 	}
 };
 
@@ -163,6 +170,9 @@ const parameterWhy: Readonly<Record<string, string>> = {
 	'DPoP-Nonce': 'The value to put in the next proof.',
 	'error=use_dpop_nonce': 'Says the proof has to include a nonce from the server.',
 	issued_token_type: 'Says what kind of token this is.',
+	subject_token: 'The token being traded, which says who the user is.',
+	subject_token_type: 'Says what kind of token that is.',
+	audience: 'Which API the new token is for.',
 	'client type': 'Whether the app can keep a secret.',
 	'Store Tokens': 'Makes the identity provider keep what the other provider issued.',
 	'read-token role': "Lets the user's access token read those stored tokens.",

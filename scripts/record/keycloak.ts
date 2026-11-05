@@ -56,6 +56,13 @@ export const ATTACKER_REDIRECT_URI = `${ATTACKER_SITE}/catch`;
 export const BACKCHANNEL_URL = 'http://host.docker.internal:9103/backchannel';
 export const API_CLIENT = 'demo-api';
 export const POST_LOGOUT_URI = `${APP}/bye`;
+/** The API the first one calls for the user, which a token for the first API should not get into. */
+export const SECOND_API = 'http://localhost:9105';
+export const SECOND_API_CLIENT = 'demo-api-two';
+/** What the first API's client gets, so that the server will issue it a token for the second. */
+export const NAMES_THE_SECOND_API = 'names-the-second-api';
+/** Off on a new client. It turns on token exchange for that client, as the one that asks. */
+export const EXCHANGE_ON = { 'standard.token.exchange.enabled': 'true' };
 
 /** So that the API is named in the token, which it has to be before the server will discuss it. */
 export const namesTheApi = {
@@ -281,6 +288,28 @@ export async function setUpRealms(admin: Admin) {
 		...client(API_CLIENT, confidential),
 		standardFlowEnabled: false
 	});
+	// Only a name to put in a token: it never logs anyone in or asks for anything itself.
+	await admin.call('POST', `/realms/${LOCAL_REALM}/clients`, {
+		...client(SECOND_API_CLIENT, confidential),
+		standardFlowEnabled: false
+	});
+	await admin.call('POST', `/realms/${LOCAL_REALM}/client-scopes`, {
+		name: NAMES_THE_SECOND_API,
+		protocol: 'openid-connect',
+		attributes: { 'include.in.token.scope': 'false', 'display.on.consent.screen': 'false' },
+		protocolMappers: [
+			{
+				name: 'audience of the second API',
+				protocol: 'openid-connect',
+				protocolMapper: 'oidc-audience-mapper',
+				config: {
+					'included.client.audience': SECOND_API_CLIENT,
+					'access.token.claim': 'true',
+					'id.token.claim': 'false'
+				}
+			}
+		]
+	});
 	await admin.call('POST', `/realms/${LOCAL_REALM}/clients`, {
 		...client(SERVICE_CLIENT, confidential),
 		standardFlowEnabled: false,
@@ -431,11 +460,45 @@ export async function allowClientDocuments(admin: Admin, realm: string) {
 	});
 }
 
+/**
+ * What an admin does so that the first API may trade a token for one meant for the second: token
+ * exchange on for its client, and a scope it gets that names the second API. Off, both are taken away
+ * again, so a run without it is on a client that is on its defaults.
+ */
+export async function letTheApiExchange(admin: Admin, on: boolean, clientId = API_CLIENT) {
+	const onClients = `/realms/${LOCAL_REALM}/clients`;
+	const [api] = await admin.call<{ id: string; attributes?: Record<string, string> }[]>(
+		'GET',
+		`${onClients}?clientId=${clientId}`
+	);
+	const [scope] = (
+		await admin.call<{ id: string; name: string }[]>('GET', `/realms/${LOCAL_REALM}/client-scopes`)
+	).filter(({ name }) => name === NAMES_THE_SECOND_API);
+	await admin.call('PUT', `${onClients}/${api.id}`, {
+		...api,
+		attributes: { ...api.attributes, 'standard.token.exchange.enabled': String(on) }
+	});
+	const scopeOnIt = `${onClients}/${api.id}/default-client-scopes/${scope.id}`;
+	if (on) await admin.call('PUT', scopeOnIt);
+	else {
+		try {
+			await admin.call('DELETE', scopeOnIt);
+		} catch {
+			// It did not have it.
+		}
+	}
+}
+
 export async function setUpFor(
 	admin: Admin,
 	realm: string,
 	settings: Pick<Settings, 'clientType' | 'consent' | 'upstreamTokens'> &
-		Partial<Pick<Settings, 'appRuns' | 'apiToken' | 'refresh' | 'reuse' | 'logout' | 'registered'>>
+		Partial<
+			Pick<
+				Settings,
+				'appRuns' | 'apiToken' | 'refresh' | 'reuse' | 'logout' | 'registered' | 'exchange'
+			>
+		>
 ) {
 	const onClients = `/realms/${realm}/clients`;
 	const [old] = await admin.call<{ id: string }[]>(
@@ -472,10 +535,13 @@ export async function setUpFor(
 						attributes: { 'post.logout.redirect.uris': POST_LOGOUT_URI },
 						protocolMappers: [namesTheApi]
 					}
-				: {})
+				: {}),
+			// The first API can only trade a token that names it (questions.json).
+			...(settings.exchange ? { protocolMappers: [namesTheApi] } : {})
 		})
 	);
 	await admin.call('PUT', `/realms/${realm}`, { revokeRefreshToken: settings.reuse === 'ends' });
+	if (realm === LOCAL_REALM) await letTheApiExchange(admin, Boolean(settings.exchange));
 
 	if (realm !== BROKERED_REALM) return;
 	const onProvider = `/realms/${BROKERED_REALM}/identity-provider/instances/${UPSTREAM_REALM}`;

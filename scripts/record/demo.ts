@@ -22,6 +22,8 @@ import {
 	POST_LOGOUT_URI,
 	PROXY_PORT,
 	REDIRECT_URI,
+	SECOND_API,
+	SECOND_API_CLIENT,
 	SECOND_APP,
 	SECOND_CLIENT,
 	SERVICE_CLIENT,
@@ -807,6 +809,42 @@ export class Demo {
 		if (newest.status !== 400) throw new Error(`The newest still works: ${newest.text}`);
 	}
 
+	/**
+	 * What the first API does to answer: it trades the token it was sent for one meant for the second
+	 * API, proving who it is with its own secret, and calls that one with the new token (RFC 8693).
+	 */
+	async #fromTheSecondApi(run: Run, subjectToken: string) {
+		const swapped = await call(
+			run,
+			['exchange-request', 'exchange-response'],
+			'POST',
+			this.#server.token_endpoint,
+			{ authorization: basicAuth(API_CLIENT, CLIENT_SECRET) },
+			{
+				grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+				subject_token: subjectToken,
+				subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+				audience: SECOND_API_CLIENT
+			}
+		);
+		const { access_token } = jsonOf<{ access_token?: string }>(swapped.text);
+		if (!access_token) return { status: 502, text: JSON.stringify({ error: swapped.text }) };
+		const passed = await call(
+			run,
+			['second-api-request', 'second-api-response'],
+			'GET',
+			`${SECOND_API}/resource`,
+			{ authorization: `Bearer ${access_token}` }
+		);
+		if (passed.status !== 200) return { status: 502, text: passed.text };
+		return {
+			status: 200,
+			text: JSON.stringify({
+				resource: 'something only this user may see, with some from the second API'
+			})
+		};
+	}
+
 	/** Someone who has a copy of the access token and not the key, so they send it with no proof. */
 	async #someoneElseUses(accessToken: string) {
 		const bearerOnly = this.#run.settings.apiChecks === 'bearer';
@@ -1132,6 +1170,9 @@ export class Demo {
 				response.end(JSON.stringify(active ? { resource: 'yours' } : { error: 'not active' }));
 				return;
 			}
+			// It trades the token for one meant for the API behind it, which it may only do with one that
+			// names it, so here it checks for its own name, as yours should.
+			const passesItOn = Boolean(this.current?.settings.exchange);
 			const problem = await accessTokenProblem(
 				{
 					authorization: request.headers.authorization,
@@ -1144,7 +1185,11 @@ export class Demo {
 						(realm) => `${KEYCLOAK}/realms/${realm}`
 					),
 					// One API that expects its own name, as yours should, which a default client's token lacks.
-					audience: request.url?.startsWith('/my-api/') ? 'my-api' : API_AUDIENCE,
+					audience: passesItOn
+						? API_CLIENT
+						: request.url?.startsWith('/my-api/')
+							? 'my-api'
+							: API_AUDIENCE,
 					keysOf: (issuer) => keysAt(`${issuer}/protocol/openid-connect/certs`),
 					seenProofs: this.#seenProofs,
 					// Another API, written before DPoP, beside the one that knows it.
@@ -1171,6 +1216,15 @@ export class Demo {
 				response.end(JSON.stringify({ error: notAllowed }));
 				return;
 			}
+			if (passesItOn && this.current) {
+				const answer = await this.#fromTheSecondApi(
+					this.current,
+					request.headers.authorization.split(' ')[1]
+				);
+				response.writeHead(answer.status, { 'content-type': 'application/json' });
+				response.end(answer.text);
+				return;
+			}
 			response.writeHead(200, { 'content-type': 'application/json' });
 			response.end(
 				JSON.stringify({
@@ -1180,6 +1234,33 @@ export class Demo {
 							: 'something only this user may see'
 				})
 			);
+		});
+
+		// The API the first one calls, which takes only a token that names it.
+		const secondApi = createServer(async (request, response) => {
+			const problem = await accessTokenProblem(
+				{
+					authorization: request.headers.authorization,
+					method: request.method ?? 'GET',
+					url: `${SECOND_API}${request.url}`
+				},
+				{
+					issuers: [`${KEYCLOAK}/realms/${LOCAL_REALM}`],
+					audience: SECOND_API_CLIENT,
+					keysOf: (issuer) => keysAt(`${issuer}/protocol/openid-connect/certs`),
+					seenProofs: this.#seenProofs
+				}
+			);
+			if (problem) {
+				response.writeHead(401, {
+					'content-type': 'application/json',
+					'www-authenticate': `Bearer error="invalid_token", error_description="${problem}"`
+				});
+				response.end(JSON.stringify({ error: problem }));
+				return;
+			}
+			response.writeHead(200, { 'content-type': 'application/json' });
+			response.end(JSON.stringify({ resource: 'what the second API has for this user' }));
 		});
 
 		// Keycloak's calls to the upstream IdP pass through here on their way to the same Keycloak.
@@ -1293,7 +1374,8 @@ export class Demo {
 		await listen(proxy, `http://0.0.0.0:${PROXY_PORT}`);
 		await listen(second, SECOND_APP);
 		await listen(theirs, ATTACKER_SITE);
-		this.#servers = [app, api, proxy, second, theirs];
+		await listen(secondApi, SECOND_API);
+		this.#servers = [app, api, proxy, second, theirs, secondApi];
 	}
 
 	stop() {

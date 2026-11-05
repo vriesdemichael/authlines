@@ -590,6 +590,68 @@ describe('the request pushed first', () => {
 	});
 });
 
+// RFC 8693, and what Keycloak 26.8.1 did with it (static/recordings/authorization-code/exchange.json).
+describe('an API that trades the token', () => {
+	const ids = (settings: Partial<Settings> = {}) => view(settings).steps.map((step) => step.id);
+
+	it('trades it and calls the second API between checking the token and answering', () => {
+		const on = ids({ exchange: true });
+		const order = [
+			'api-check-token',
+			'exchange-request',
+			'exchange-response',
+			'second-api-request',
+			'second-api-response',
+			'api-response'
+		];
+		expect(order.map((id) => on.indexOf(id))).toEqual(
+			[...order.map((id) => on.indexOf(id))].sort((a, b) => a - b)
+		);
+		expect(order.every((id) => on.includes(id))).toBe(true);
+		expect(ids()).not.toContain('exchange-request');
+		expect(view({ exchange: true }).lifelines.map((line) => line.id)).toContain('second-api');
+		expect(view().lifelines.map((line) => line.id)).not.toContain('second-api');
+	});
+
+	it('leaves the second API with the exchanged token, and never the one the app sent', () => {
+		for (const settings of [{}, { oidc: true }, { clientType: 'public' as const, pkce: true }]) {
+			const flowView = view({ exchange: true, ...settings });
+			const held = holdingsAt(flowView, flowView.steps.at(-1)!.id);
+			expect(held['second-api']).toContain('exchanged-token');
+			expect(held['second-api']).not.toContain('access-token');
+			expect(held.api).toEqual(expect.arrayContaining(['access-token', 'exchanged-token']));
+			expect(held.app).not.toContain('exchanged-token');
+			expect(held.browser).not.toContain('exchanged-token');
+		}
+	});
+
+	it('has the API prove who it is, with nothing of the app’s', () => {
+		const swap = view({ exchange: true }).steps.find((step) => step.id === 'exchange-request')!;
+		expect(swap.channel).toBe('back');
+		expect(swap.fields.map((field) => field.name)).toEqual(
+			expect.arrayContaining(['Authorization: Basic', 'subject_token', 'audience'])
+		);
+		expect(swap.fields.find((field) => field.name === 'Authorization: Basic')?.artifact).toBe(
+			undefined
+		);
+	});
+
+	// What the second API and its concept say, from the demo's second API in a real run.
+	it('has the second API refuse the token the app sent, and take the exchanged one', () => {
+		expect(answers.secondApiTakes).toMatchObject({ appsToken: { status: 401 }, exchanged: 200 });
+		const second = view({ exchange: true }).lifelines.find((line) => line.id === 'second-api');
+		expect(second?.concept).toContain('the token the app sent would not get in');
+	});
+
+	it('sets up the second API, and lets the first one trade', () => {
+		const steps = evaluate(setup, { ...defaultSettings, exchange: true }).steps.map(({ id }) => id);
+		expect(steps).toEqual(expect.arrayContaining(['allow-exchange', 'configure-second-api']));
+		expect(evaluate(setup, defaultSettings).steps.map(({ id }) => id)).not.toContain(
+			'allow-exchange'
+		);
+	});
+});
+
 describe('PKCE', () => {
 	const change = diff({}, { pkce: true });
 	const fieldsOf = (id: string, settings: Partial<Settings> = { pkce: true }) =>

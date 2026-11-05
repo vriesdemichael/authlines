@@ -17,6 +17,10 @@
 		"cimd": {
 			"type": "EXPERIMENTAL",
 			"enabled": false
+		},
+		"token-exchange-standard:v2": {
+			"type": "DEFAULT",
+			"enabled": true
 		}
 	},
 	"recordedOn": {
@@ -54,7 +58,9 @@
 		"their-link-any-public": "2026-11-03",
 		"their-link-any-public-pkce": "2026-11-03",
 		"par": "2026-11-04",
-		"par-public-pkce": "2026-11-04"
+		"par-public-pkce": "2026-11-04",
+		"exchange": "2026-11-04",
+		"exchange-oidc": "2026-11-04"
 	},
 	"flows": {
 		"authorization-code": {
@@ -88,6 +94,8 @@
 				"oidc-pkce",
 				"par",
 				"par-public-pkce",
+				"exchange",
+				"exchange-oidc",
 				"browser-app",
 				"behind-the-page",
 				"in-the-page",
@@ -156,6 +164,8 @@
 				"discovery-document",
 				"email-page",
 				"end-session",
+				"exchange-request",
+				"exchange-response",
 				"fetch-keys",
 				"handed-token-request",
 				"handed-token-response",
@@ -195,6 +205,8 @@
 				"refresh-request",
 				"refresh-response",
 				"retrieve-upstream-token",
+				"second-api-request",
+				"second-api-response",
 				"second-authorize",
 				"second-callback",
 				"second-login-page",

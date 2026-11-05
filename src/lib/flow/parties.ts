@@ -66,11 +66,19 @@ export const upstreamWords: Words = {
 	]
 };
 
+const asAResourceServer: readonly KnownAs[] = [
+	{ word: 'resource server', by: 'OAuth', source: NAMED_BY_OAUTH },
+	{ word: 'resource server', by: 'OpenID Connect', source: NAMED_BY_OIDC }
+];
+
 export const apiWords: Words = {
 	name: 'Resource server',
 	role: 'API',
-	knownAs: [
-		{ word: 'resource server', by: 'OAuth', source: NAMED_BY_OAUTH },
-		{ word: 'resource server', by: 'OpenID Connect', source: NAMED_BY_OIDC }
-	]
+	knownAs: asAResourceServer
+};
+
+export const secondApiWords: Words = {
+	name: 'Second resource server',
+	role: 'Second API',
+	knownAs: asAResourceServer
 };

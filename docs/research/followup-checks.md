@@ -197,7 +197,7 @@ Other points:
 - **Core identity brokering is not listed as a flag.** Neither page says whether it needs one, and the brokering docs mention none.
 - **Token exchange direction:** the specifications page says "Token exchange V2 only supports the internal to internal use-case", so RFC 8693 support is partial. Neither page says which feature enables external-to-internal or internal-to-external exchange.
 - **Names listed with no description or status:** `client-auth-abca`, `identity-assertion-jwt`, `ipa-tuura-federation`. The page does not say whether these relate.
-- **Not read:** the [token exchange guide](https://www.keycloak.org/securing-apps/token-exchange), the [MCP authorization server page](https://www.keycloak.org/securing-apps/mcp-authz-server) and the [chaining page](https://www.keycloak.org/securing-apps/oauth-identity-authorization-chaining-across-domains). Read these before writing content on those topics.
+- **Not read:** the [MCP authorization server page](https://www.keycloak.org/securing-apps/mcp-authz-server) and the [chaining page](https://www.keycloak.org/securing-apps/oauth-identity-authorization-chaining-across-domains). Read these before writing content on those topics.
 
 Release notes found by search add that [Keycloak 26.6.0](https://www.keycloak.org/2026/04/keycloak-2660-released) added experimental CIMD so Keycloak can act as an authorization server for MCP, and promoted federated client authentication and JWT Authorization Grant to supported. This comes from a search summary and was not read in full.
 
@@ -358,3 +358,17 @@ Tried on Keycloak 26.8.1 on 2026-11-04 in two throwaway trials, then recorded th
 - The token request was the usual one, with `redirect_uri` in it, and got tokens.
 
 Not tried: a reference that has run out, which RFC 9126 section 4 says must be refused, PAR with DPoP or another provider, and signed request objects.
+
+## Token exchange on a real server
+
+Tried on Keycloak 26.8.1 on 2026-11-04 in a throwaway trial, then recorded the same day (`exchange` and `exchange-oidc`), against RFC 8693 (Proposed Standard, January 2020). The demo API trades the access token it is sent for one that names a second API, and calls that API with it.
+
+- `token-exchange-standard:v2` is a default feature and on, by `/admin/serverinfo`, which the recorder now reads. The features page lists `token-exchange:v1` and `token-exchange-delegation:v1` as previews, off by default, and neither was tried.
+- The [token exchange guide](https://www.keycloak.org/securing-apps/token-exchange), read on 2026-11-04, says the client asking has to be in the subject token's audience, that a public client cannot ask, and that a refresh token only comes back with Allow refresh token in Standard Token Exchange, on the client's Advanced tab, set to something other than No. It contradicts itself on what version 2 covers: its introduction says only the internal-to-internal case, and its comparison table lists external-to-internal too. It uses impersonation for something other than RFC 8693 section 1.1 does, so the screen does not use the word for this token.
+- It is per client. With Standard Token Exchange off on the API's client (`standard.token.exchange.enabled`), the trade got 400 `invalid_request` and Standard token exchange is not enabled for the requested client. In the console it is under Clients, the client, Settings, Capability config.
+- The token being traded has to name the client that trades it. One that named only `account` got 403 `access_denied` and Client is not within the token audience, where RFC 8693 section 2.2.2 asks for `invalid_request`. An Audience mapper on the app's client, naming the API, fixed it.
+- Asking for `audience=demo-api-two` without a scope that names it got 400 `invalid_request` and Requested audience not available: demo-api-two, where section 2.2.2 says `invalid_target` should be used. A client scope with an Audience mapper for the second API, as a default scope of the API's client, fixed it.
+- The new token named only `demo-api-two`, had the same `sub` and `sid`, `azp` the API's client, and no `act` claim. `resource_access` was empty. With OpenID Connect, `openid` was gone from its scope. The answer said `issued_token_type` an access token, `token_type` Bearer, and had no refresh token and no ID token.
+- In the trial, asking for a refresh token with `requested_token_type` got 400 and requested_token_type unsupported.
+
+Not tried: delegation with `actor_token`, which needs the preview flag, exchanging a token from another provider, and DPoP or mTLS on either side of the trade.

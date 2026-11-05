@@ -58,6 +58,8 @@
 	"their-link-no-pkce": "What does a * get them from an app with no secret?|The tokens, and the API answering them as the user.|11|5",
 	"pushed-first": "Why would an app send its login request ahead?|Only a reference to it goes through the browser.|14|4",
 	"pushed-first-no-secret": "Does pushing the request first help an app with no secret?|It keeps the request out of the browser, and PKCE still does the protecting.|16|4",
+	"passed-on": "Can an API pass the user’s token on to another API?|It trades it for one meant for the next API.|16|5",
+	"who-asked": "Can the second API tell another API asked?|From azp, and nothing says it acts for the user.|19|5",
 	"dpop-on-the-wire": "What does DPoP add to each call?|A proof, signed with a key that stays in the app.|13|4",
 	"dpop-at-a-bearer-api": "Does DPoP protect a token at an API that does not know it?|Only if the API checks the proof.|16|5",
 	"someone-leaves-oidc": "Does it matter what their provider speaks, when someone leaves?|No, as it was set up: the session in the middle carried on either way.|28|5",

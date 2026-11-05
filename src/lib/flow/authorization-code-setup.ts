@@ -1,7 +1,7 @@
 import { withTheOldWayInTheSetup } from '#lib/flow/old-way.ts';
 import type { DiagramDef } from '#lib/flow/model.ts';
 import { example } from '#lib/flow/libraries.ts';
-import { apiWords, appWords, idpWords, upstreamWords } from '#lib/flow/parties.ts';
+import { apiWords, appWords, idpWords, secondApiWords, upstreamWords } from '#lib/flow/parties.ts';
 import { all, any, is, not } from '#lib/flow/settings.ts';
 
 const oidc = is('oidc', true);
@@ -26,6 +26,7 @@ const document = is('registration', 'cimd');
 const inADirectory = is('federation', true);
 const companies = is('companies', true);
 const saml = all(companies, is('customerSpeaks', 'saml'));
+const exchange = is('exchange', true);
 
 /**
  * What happens before any user arrives. It has a diagram of its own, because no user does this: the
@@ -116,6 +117,16 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			icon: 'api',
 			concept:
 				'The API the app will call. It has a setup of its own, because it has to know which tokens to accept.'
+		},
+		{
+			id: 'second-api',
+			plainName: 'Second API',
+			plainRole: 'Checks tokens too',
+			...secondApiWords,
+			icon: 'api',
+			when: exchange,
+			concept:
+				'The API the first one will call for the user. It is set up like the first: which issuer to trust, and its own name, which a token has to carry to get in.'
 		}
 	],
 	groups: [],
@@ -633,8 +644,15 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			kind: 'human',
 			plain: 'You tell the API who to trust',
 			label: 'Configure the API',
-			concept:
-				'The API has to be told which issuer to trust, and what name tokens have to carry for it. Without the second, any token from that issuer gets in, including those meant for another API.',
+			concept: [
+				{
+					when: exchange,
+					text: 'The API has to be told which issuer to trust, and what name tokens have to carry for it. Without the second, any token from that issuer gets in, including those meant for another API. This one also trades tokens, which takes a client ID and secret of its own, from the admin.'
+				},
+				{
+					text: 'The API has to be told which issuer to trust, and what name tokens have to carry for it. Without the second, any token from that issuer gets in, including those meant for another API.'
+				}
+			],
 			inPractice:
 				'A library or a gateway takes these two values, and checks the rest. Do not leave out the audience, which it may let you do.',
 			practice: [
@@ -652,6 +670,56 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			fields: [
 				{ name: 'issuer', place: 'setting' },
 				{ name: 'audience', place: 'setting', note: 'The name a token has to carry for this API' }
+			]
+		},
+		{
+			id: 'allow-exchange',
+			when: exchange,
+			from: 'idp-admin',
+			to: 'idp',
+			kind: 'human',
+			plain: 'Let the API trade tokens',
+			label: 'Allow token exchange',
+			concept:
+				'An admin registers the API as a client of its own, with a secret for the team to give it, and lets it trade tokens. The identity provider is told this API may get tokens for the second. The app’s tokens get the first API’s name, because the identity provider here only trades a token that names the API asking.',
+			fields: [
+				{
+					name: 'client_id',
+					place: 'setting',
+					note: 'The API’s own, because it is a client when it trades'
+				},
+				{ name: 'client_secret', place: 'setting', note: 'The API’s own' },
+				{ name: 'token exchange', place: 'setting', note: 'Allowed for this API' },
+				{
+					name: 'audience of the second API',
+					place: 'setting',
+					note: 'So the API may get tokens for it'
+				},
+				{
+					name: 'audience of the API',
+					place: 'setting',
+					note: 'In the app’s tokens, so the API can trade them'
+				}
+			]
+		},
+		{
+			id: 'configure-second-api',
+			when: exchange,
+			from: 'app-team',
+			to: 'second-api',
+			kind: 'human',
+			plain: 'You tell the second API who to trust',
+			label: 'Configure the second API',
+			concept:
+				'The same two values as the first API, with its own name as the audience. It is not told about the first API: a token that names it is all it needs.',
+			links: [{ diagram: 'flow', step: 'second-api-request', text: 'See the token it gets' }],
+			fields: [
+				{ name: 'issuer', place: 'setting' },
+				{
+					name: 'audience',
+					place: 'setting',
+					note: 'Its own name, which the exchanged token carries'
+				}
 			]
 		},
 		{

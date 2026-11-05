@@ -109,6 +109,12 @@ const presets: readonly Preset[] = [
 		title: 'The request pushed first, by an app with no secret',
 		settings: { par: true, clientType: 'public', pkce: true }
 	},
+	{ id: 'exchange', title: 'An API that passes the call on', settings: { exchange: true } },
+	{
+		id: 'exchange-oidc',
+		title: 'An API that passes the call on, with OpenID Connect',
+		settings: { exchange: true, oidc: true }
+	},
 	{
 		id: 'browser-app',
 		title: 'An app in the browser',

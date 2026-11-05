@@ -27,6 +27,9 @@ import {
 	API_CLIENT,
 	BACKCHANNEL_URL,
 	POST_LOGOUT_URI,
+	NAMES_THE_SECOND_API,
+	SECOND_API,
+	SECOND_API_CLIENT,
 	namesTheApi
 } from './keycloak.ts';
 import {
@@ -546,6 +549,105 @@ async function behindTheNotes(browser: Browser, demo: Demo, admin: Admin) {
 }
 
 /** What the notes on a pushed request say: change the setting, and see the behaviour change. */
+/**
+ * What an API trading a token needs on a real server, each tried without it and with it, on clients
+ * of its own: token exchange on for the API, a scope that names the API it wants a token for, and a
+ * token that names the API asking. The user's token comes from the password grant, which is only how
+ * these questions get one quickly. The flow itself logs in through a browser.
+ */
+export async function questionsWhenExchanged(admin: Admin) {
+	const answers: Record<string, unknown> = {};
+	const asking = 'note-exchange-api';
+	const onClient = (client: Client) => `/realms/${LOCAL_REALM}/clients/${client.id}`;
+	const api = await freshClient(admin, asking, { standardFlowEnabled: false });
+	const named = {
+		...namesTheApi,
+		config: { ...namesTheApi.config, 'included.client.audience': asking }
+	};
+	await freshClient(admin, 'note-exchange-app', {
+		directAccessGrantsEnabled: true,
+		protocolMappers: [named]
+	});
+	await freshClient(admin, 'note-exchange-app-unnamed', { directAccessGrantsEnabled: true });
+	const userToken = async (clientId: string) =>
+		(
+			await token(LOCAL_REALM, {
+				grant_type: 'password',
+				client_id: clientId,
+				client_secret: CLIENT_SECRET,
+				username: USERNAME,
+				password: PASSWORD
+			})
+		).json.access_token;
+	const swap = async (subject: string) => {
+		const result = await token(LOCAL_REALM, {
+			grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+			client_id: asking,
+			client_secret: CLIENT_SECRET,
+			subject_token: subject,
+			subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+			audience: SECOND_API_CLIENT
+		});
+		const claims = result.json.access_token ? claimsOf(result.json.access_token) : null;
+		return {
+			status: result.status,
+			error: result.json.error ?? null,
+			says: result.json.error_description ?? null,
+			aud: claims?.aud ?? null
+		};
+	};
+	const exchangeOn = async (on: boolean) => {
+		const current = await admin.call<Client>('GET', onClient(api));
+		await admin.call('PUT', onClient(api), {
+			...current,
+			attributes: { ...current.attributes, 'standard.token.exchange.enabled': String(on) }
+		});
+	};
+	const [scope] = (
+		await admin.call<{ id: string; name: string }[]>('GET', `/realms/${LOCAL_REALM}/client-scopes`)
+	).filter(({ name }) => name === NAMES_THE_SECOND_API);
+	const scopeOn = `${onClient(api)}/default-client-scopes/${scope.id}`;
+
+	// The switch for the API that asks, with everything else in place.
+	await admin.call('PUT', scopeOn);
+	const subject = await userToken('note-exchange-app');
+	const off = await swap(subject);
+	await exchangeOn(true);
+	answers.exchangeEnabled = { before: off, after: await swap(subject) };
+
+	// The scope that names the second API, with the switch on.
+	await admin.call('DELETE', scopeOn);
+	const withoutTheScope = await swap(subject);
+	await admin.call('PUT', scopeOn);
+	answers.exchangeAudience = { before: withoutTheScope, after: await swap(subject) };
+
+	// A token that names only account, from an app with no mapper, and then one that names the API.
+	const unnamed = await userToken('note-exchange-app-unnamed');
+	answers.exchangeNeedsItsName = {
+		before: { ...(await swap(unnamed)), subjectAud: claimsOf(unnamed).aud },
+		after: { ...(await swap(subject)), subjectAud: claimsOf(subject).aud }
+	};
+
+	// What the demo's second API does with the app's token, and with the one traded for it.
+	const traded = (
+		await token(LOCAL_REALM, {
+			grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+			client_id: asking,
+			client_secret: CLIENT_SECRET,
+			subject_token: subject,
+			subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+			audience: SECOND_API_CLIENT
+		})
+	).json.access_token;
+	const atTheSecondApi = (accessToken: string) =>
+		statusOf(`${SECOND_API}/resource`, { authorization: `Bearer ${accessToken}` });
+	answers.secondApiTakes = {
+		appsToken: await atTheSecondApi(subject),
+		exchanged: (await atTheSecondApi(traded)).status
+	};
+	return answers;
+}
+
 export async function questionsWhenPushed(admin: Admin) {
 	const answers: Record<string, unknown> = {};
 	const onClient = (client: Client) => `/realms/${LOCAL_REALM}/clients/${client.id}`;

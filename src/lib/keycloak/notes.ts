@@ -30,6 +30,8 @@ export type ConsolePage =
 	| 'client-advanced'
 	| 'client-scopes'
 	| 'client-dedicated-scope'
+	| 'api-client-settings'
+	| 'api-client-scopes'
 	| 'provider-settings'
 	| 'realm-settings'
 	| 'realm-sessions'
@@ -403,7 +405,15 @@ export const noteDefs: readonly NoteDef[] = [
 		claims: ['aud'],
 		claimsVerb: 'can be changed with',
 		title: 'Audience mapper',
-		text: "A default client's access token names account as its audience, not your API, so an API that checks the audience refuses it. Here account comes from the default roles client scope, and without that scope there is no audience at all. Add an Audience mapper to the client's dedicated scope to name your API. The demo API here is told to accept account, so that it can run against a default client, which means any default client's token in this realm gets in. Yours should expect its own name.",
+		text: [
+			{
+				when: is('exchange', true),
+				text: "A default client's access token names account as its audience, not your API, so an API that checks the audience refuses it. Here account comes from the default roles client scope, and without that scope there is no audience at all. Add an Audience mapper to the client's dedicated scope to name your API. That is done here, so the token names the first API as well as account, and the first API expects its own name."
+			},
+			{
+				text: "A default client's access token names account as its audience, not your API, so an API that checks the audience refuses it. Here account comes from the default roles client scope, and without that scope there is no audience at all. Add an Audience mapper to the client's dedicated scope to name your API. The demo API here is told to accept account, so that it can run against a default client, which means any default client's token in this realm gets in. Yours should expect its own name."
+			}
+		],
 		place: {
 			path: [
 				'Clients',
@@ -423,6 +433,89 @@ export const noteDefs: readonly NoteDef[] = [
 				before: { aud: 'account', namesTheApi: false, demoApi: 200 },
 				after: { namesTheApi: true },
 				withoutTheRolesScope: { aud: null }
+			}
+		}
+	},
+	{
+		id: 'standard-token-exchange',
+		steps: ['exchange-request', 'allow-exchange'],
+		when: is('exchange', true),
+		flag: { name: 'token-exchange-standard:v2' },
+		title: 'Standard Token Exchange',
+		text: 'Off on a new client, and on here for the API’s client, the one that asks. Off, the trade gets a 400 with invalid_request and: Standard token exchange is not enabled for the requested client.',
+		place: {
+			path: [
+				'Clients',
+				'the first API',
+				'Settings',
+				'Capability config',
+				'Standard Token Exchange'
+			],
+			page: 'api-client-settings',
+			shows: ['Capability config', 'Standard Token Exchange']
+		},
+		backedBy: {
+			question: 'exchangeEnabled',
+			shows: {
+				before: {
+					status: 400,
+					error: 'invalid_request',
+					says: 'Standard token exchange is not enabled for the requested client'
+				},
+				after: { status: 200 }
+			}
+		}
+	},
+	{
+		id: 'exchange-subject',
+		steps: ['exchange-request'],
+		when: is('exchange', true),
+		title: 'Audience mapper',
+		text: 'The token being traded has to name the API that trades it, so the app’s client here has an Audience mapper that names the first API. A token that names only account gets a 403 with access_denied and: Client is not within the token audience. RFC 8693 asks for invalid_request there.',
+		place: {
+			path: [
+				'Clients',
+				YOUR_CLIENT,
+				'Client scopes',
+				'your client-dedicated',
+				'Configure a new mapper',
+				'Audience'
+			],
+			page: 'client-dedicated-scope',
+			opens: 'Configure a new mapper',
+			shows: ['Audience']
+		},
+		backedBy: {
+			question: 'exchangeNeedsItsName',
+			shows: {
+				before: {
+					status: 403,
+					error: 'access_denied',
+					says: 'Client is not within the token audience',
+					subjectAud: 'account'
+				},
+				after: { status: 200 }
+			}
+		}
+	},
+	{
+		id: 'exchange-audience',
+		steps: ['exchange-response', 'allow-exchange'],
+		when: is('exchange', true),
+		claims: ['aud'],
+		claimsVerb: 'comes from',
+		title: 'Client scopes',
+		text: 'The first API’s client has a client scope with an Audience mapper that names the second API, as a default scope. Without it, asking for that audience gets a 400 and: Requested audience not available: demo-api-two. With it, the new token names the second API, and not the first.',
+		place: {
+			path: ['Clients', 'the first API', 'Client scopes', 'Add client scope'],
+			page: 'api-client-scopes',
+			shows: ['Add client scope']
+		},
+		backedBy: {
+			question: 'exchangeAudience',
+			shows: {
+				before: { status: 400, says: 'Requested audience not available: demo-api-two' },
+				after: { status: 200, aud: 'demo-api-two' }
 			}
 		}
 	},
