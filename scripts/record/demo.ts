@@ -366,6 +366,8 @@ export class Demo {
 	#key: ProofKey | null = null;
 	#verifier: string | null = null;
 	#seenProofs = new Set<string>();
+	/** The refresh token the first API got from a trade, for later, when the trade gave one (#185). */
+	#tradedRefresh: string | null = null;
 	/** Someone is handing the real app a stolen code, from a login of their own. */
 	#handed = false;
 	/** What someone else made for a login link of their own, which they keep. */
@@ -632,6 +634,7 @@ export class Demo {
 		}
 
 		if (settings.upstreamTokens !== 'off') await this.#storedToken(tokens.access_token);
+		if (settings.exchangeGives === 'refresh') await this.#tradeAgain(run);
 		if (settings.refresh) await this.#whenItRunsOut(tokens);
 		if (settings.leaves) await this.#afterTheyLeft(tokens);
 		if (settings.tokenThief) await this.#someoneElseUses(tokens.access_token);
@@ -824,11 +827,21 @@ export class Demo {
 				grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
 				subject_token: subjectToken,
 				subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
-				audience: SECOND_API_CLIENT
+				audience: SECOND_API_CLIENT,
+				...(run.settings.exchangeGives === 'refresh'
+					? { requested_token_type: 'urn:ietf:params:oauth:token-type:refresh_token' }
+					: {})
 			}
 		);
-		const { access_token } = jsonOf<{ access_token?: string }>(swapped.text);
+		const { access_token, refresh_token } = jsonOf<{
+			access_token?: string;
+			refresh_token?: string;
+		}>(swapped.text);
 		if (!access_token) return { status: 502, text: JSON.stringify({ error: swapped.text }) };
+		if (run.settings.exchangeGives === 'refresh' && !refresh_token) {
+			return { status: 502, text: JSON.stringify({ error: 'No refresh token from the trade' }) };
+		}
+		this.#tradedRefresh = refresh_token ?? null;
 		const passed = await call(
 			run,
 			['second-api-request', 'second-api-response'],
@@ -843,6 +856,28 @@ export class Demo {
 				resource: 'something only this user may see, with some from the second API'
 			})
 		};
+	}
+
+	/**
+	 * Later, the first API's job goes on: it gets a new token for the second API with the refresh
+	 * token from the trade, proving who it is with its own secret, and no user takes part.
+	 */
+	async #tradeAgain(run: Run) {
+		const refreshToken = this.#tradedRefresh;
+		if (!refreshToken) throw new Error('The trade gave the API no refresh token');
+		const again = await call(
+			run,
+			['trade-refresh-request', 'trade-refresh-response'],
+			'POST',
+			this.#server.token_endpoint,
+			{ authorization: basicAuth(API_CLIENT, CLIENT_SECRET) },
+			{ grant_type: 'refresh_token', refresh_token: refreshToken }
+		);
+		const { access_token } = jsonOf<{ access_token?: string }>(again.text);
+		if (again.status !== 200 || !access_token) {
+			throw new Error(`The API could not refresh the token from the trade: ${again.text}`);
+		}
+		this.#tradedRefresh = null;
 	}
 
 	/** Someone who has a copy of the access token and not the key, so they send it with no proof. */

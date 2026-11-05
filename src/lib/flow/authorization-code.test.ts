@@ -650,6 +650,63 @@ describe('an API that trades the token', () => {
 			'allow-exchange'
 		);
 	});
+
+	// #185: a refresh token from the trade, so the API can keep going without the user.
+	describe('with a refresh token from the trade', () => {
+		const refreshing = { exchange: true, exchangeGives: 'refresh' as const };
+
+		it('asks for it, gets it, and uses it later, after the API has answered', () => {
+			const on = ids(refreshing);
+			const order = [
+				'exchange-request',
+				'exchange-response',
+				'api-response',
+				'trade-runs-out',
+				'trade-refresh-request',
+				'trade-refresh-response'
+			];
+			expect(
+				order.every((id) => on.includes(id)),
+				on.join(' ')
+			).toBe(true);
+			expect(order.map((id) => on.indexOf(id))).toEqual(
+				[...order.map((id) => on.indexOf(id))].sort((a, b) => a - b)
+			);
+			expect(ids({ exchange: true })).not.toContain('trade-refresh-request');
+			const asked = view(refreshing).steps.find((step) => step.id === 'exchange-request')!;
+			expect(asked.fields.map((field) => field.name)).toContain('requested_token_type');
+		});
+
+		it('leaves the refresh token with the first API alone', () => {
+			for (const settings of [{}, { oidc: true }]) {
+				const flowView = view({ ...refreshing, ...settings });
+				const held = holdingsAt(flowView, flowView.steps.at(-1)!.id);
+				expect(held.api).toContain('exchanged-refresh-token');
+				for (const party of ['app', 'browser', 'second-api', 'user']) {
+					expect(held[party] ?? [], party).not.toContain('exchanged-refresh-token');
+				}
+			}
+		});
+
+		// What the pitfall says ends it, from a real server (questions.json).
+		it('says what ends it, as the server said it', () => {
+			const ask = view(refreshing).steps.find((step) => step.id === 'trade-refresh-request')!;
+			const said = answers.exchangeRefresh;
+			expect(said.sessionEnded).toMatchObject({ status: 400, says: 'Session not active' });
+			expect(said.byTheApp.status).toBe(400);
+			expect(ask.pitfall?.text).toContain(said.sessionEnded.says);
+			expect(ask.pitfall?.text).toContain(said.byTheApp.says);
+		});
+
+		it('is allowed in the setup, and only there with it on', () => {
+			const allow = (settings: Partial<Settings>) =>
+				evaluate(setup, { ...defaultSettings, ...settings })
+					.steps.find(({ id }) => id === 'allow-exchange')!
+					.fields.map(({ name }) => name);
+			expect(allow(refreshing)).toContain('refresh token from a trade');
+			expect(allow({ exchange: true })).not.toContain('refresh token from a trade');
+		});
+	});
 });
 
 describe('PKCE', () => {

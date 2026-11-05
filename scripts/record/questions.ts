@@ -30,7 +30,9 @@ import {
 	NAMES_THE_SECOND_API,
 	SECOND_API,
 	SECOND_API_CLIENT,
-	namesTheApi
+	namesTheApi,
+	TRADE_REFRESH,
+	TRADE_REFRESH_ON
 } from './keycloak.ts';
 import {
 	DIRECTORY_URL,
@@ -644,6 +646,67 @@ export async function questionsWhenExchanged(admin: Admin) {
 	answers.secondApiTakes = {
 		appsToken: await atTheSecondApi(subject),
 		exchanged: (await atTheSecondApi(traded)).status
+	};
+
+	// A refresh token from the trade: refused on a new client, and once allowed, for that API alone
+	// and only while the user's session lasts.
+	const said = (result: { status: number; json: Record<string, unknown> }) => ({
+		status: result.status,
+		error: result.json.error ?? null,
+		says: result.json.error_description ?? null
+	});
+	const refreshing = (clientId: string, refreshToken: string) =>
+		token(LOCAL_REALM, {
+			grant_type: 'refresh_token',
+			client_id: clientId,
+			client_secret: CLIENT_SECRET,
+			refresh_token: refreshToken
+		});
+	const ownSession = await userToken('note-exchange-app');
+	const asked = () =>
+		token(LOCAL_REALM, {
+			grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+			client_id: asking,
+			client_secret: CLIENT_SECRET,
+			subject_token: ownSession,
+			subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+			audience: SECOND_API_CLIENT,
+			requested_token_type: 'urn:ietf:params:oauth:token-type:refresh_token'
+		});
+	const before = said(await asked());
+	const current = await admin.call<Client>('GET', onClient(api));
+	await admin.call('PUT', onClient(api), {
+		...current,
+		attributes: { ...current.attributes, [TRADE_REFRESH]: TRADE_REFRESH_ON }
+	});
+	const allowed = await asked();
+	const refreshToken = String(allowed.json.refresh_token ?? '');
+	const accessClaims = allowed.json.access_token
+		? claimsOf(String(allowed.json.access_token))
+		: null;
+	const refreshClaims = refreshToken ? claimsOf(refreshToken) : null;
+	const byTheApi = await refreshing(asking, refreshToken);
+	const byTheApp = said(await refreshing('note-exchange-app', refreshToken));
+	// The user's session ends, as it does when they log out or it runs out.
+	const sid = String(claimsOf(ownSession).sid ?? '');
+	await admin.call('DELETE', `/realms/${LOCAL_REALM}/sessions/${sid}`);
+	const latest = String(byTheApi.json.refresh_token ?? refreshToken);
+	answers.exchangeRefresh = {
+		before,
+		after: {
+			status: allowed.status,
+			issuedTokenType: allowed.json.issued_token_type ?? null,
+			gotRefreshToken: Boolean(refreshToken),
+			accessAud: accessClaims?.aud ?? null,
+			refreshAzp: refreshClaims?.azp ?? null,
+			sameSession: Boolean(sid) && refreshClaims?.sid === sid
+		},
+		byTheApi: {
+			status: byTheApi.status,
+			aud: byTheApi.json.access_token ? claimsOf(String(byTheApi.json.access_token)).aud : null
+		},
+		byTheApp,
+		sessionEnded: said(await refreshing(asking, latest))
 	};
 	return answers;
 }

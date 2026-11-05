@@ -27,6 +27,7 @@ const inADirectory = is('federation', true);
 const companies = is('companies', true);
 const saml = all(companies, is('customerSpeaks', 'saml'));
 const exchange = is('exchange', true);
+const tradeRefresh = all(exchange, is('exchangeGives', 'refresh'));
 
 /**
  * What happens before any user arrives. It has a diagram of its own, because no user does this: the
@@ -680,8 +681,15 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			kind: 'human',
 			plain: 'Let the API trade tokens',
 			label: 'Allow token exchange',
-			concept:
-				'An admin registers the API as a client of its own, with a secret for the team to give it, and lets it trade tokens. The identity provider is told this API may get tokens for the second. The app’s tokens get the first API’s name, because the identity provider here only trades a token that names the API asking.',
+			concept: [
+				{
+					when: tradeRefresh,
+					text: 'An admin registers the API as a client of its own, with a secret for the team to give it, and lets it trade tokens and get a refresh token from a trade, which the identity provider here does not allow on a new client. The identity provider is told this API may get tokens for the second. The app’s tokens get the first API’s name, because the identity provider here only trades a token that names the API asking.'
+				},
+				{
+					text: 'An admin registers the API as a client of its own, with a secret for the team to give it, and lets it trade tokens. The identity provider is told this API may get tokens for the second. The app’s tokens get the first API’s name, because the identity provider here only trades a token that names the API asking.'
+				}
+			],
 			fields: [
 				{
 					name: 'client_id',
@@ -690,6 +698,12 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 				},
 				{ name: 'client_secret', place: 'setting', note: 'The API’s own' },
 				{ name: 'token exchange', place: 'setting', note: 'Allowed for this API' },
+				{
+					name: 'refresh token from a trade',
+					place: 'setting',
+					note: 'Allowed for this API, for as long as the user’s session lasts',
+					when: tradeRefresh
+				},
 				{
 					name: 'audience of the second API',
 					place: 'setting',

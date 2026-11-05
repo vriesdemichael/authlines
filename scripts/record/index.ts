@@ -1007,7 +1007,12 @@ async function recordOnlyPresets(ids: readonly string[]) {
 		}
 		if (wanted.some(({ settings }) => settings.exchange)) {
 			const exchangeNotes = noteDefs.filter(({ id }) =>
-				['standard-token-exchange', 'exchange-audience', 'exchange-subject'].includes(id)
+				[
+					'standard-token-exchange',
+					'exchange-audience',
+					'exchange-subject',
+					'exchange-refresh'
+				].includes(id)
 			);
 			// On its defaults again, so the console shows a client with nothing added, as the notes do.
 			await setUpFor(admin, LOCAL_REALM, {

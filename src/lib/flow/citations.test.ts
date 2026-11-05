@@ -52,6 +52,8 @@ const CITED: readonly [step: string, SourceId, section: string, phrase: string][
 	['exchange-request', 'rfc8693', '2.2.2', 'parameter MUST be the "invalid_request" error code'],
 	['exchange-response', 'rfc8693', '2.2.1', 'A refresh token will typically not be issued'],
 	['exchange-response', 'rfc8693', '4.1', 'to express that delegation has occurred'],
+	['trade-refresh-request', 'rfc6749', '6', 'the client MUST authenticate with the'],
+	['trade-refresh-request', 'rfc8693', '2.2.1', 'user-not-present or offline scenarios'],
 	['old-way-call', 'rfc6749', '1', 'overly broad access'],
 	['old-way-answer', 'rfc6749', '1', 'cannot revoke access to an individual third party'],
 	['address-refused', 'rfc6749', '4.1.2.1', 'MUST NOT automatically redirect'],

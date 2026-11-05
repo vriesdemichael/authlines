@@ -16,7 +16,8 @@ export type ArtifactId =
 	| 'device-code'
 	| 'user-code'
 	| 'request-uri'
-	| 'exchanged-token';
+	| 'exchanged-token'
+	| 'exchanged-refresh-token';
 
 export const artifacts: Readonly<
 	Record<ArtifactId, { label: string; short: string; explains: string }>
@@ -121,6 +122,12 @@ export const artifacts: Readonly<
 		short: 'exchanged',
 		explains:
 			'An access token for the same user, which the identity provider issued in return for the one the first API was sent. It names the second API, so the first API sends this one on, and the token that names the first API does not have to work anywhere else.'
+	},
+	'exchanged-refresh-token': {
+		label: 'exchanged refresh token',
+		short: 'exchanged refresh',
+		explains:
+			'A refresh token the first API got from a trade, so it can get a new token for the second API later, with no user there. Only that API can use it, with its own secret, and on the server recorded it stops working when the user’s session ends.'
 	}
 };
 

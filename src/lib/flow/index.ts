@@ -116,6 +116,16 @@ const presets: readonly Preset[] = [
 		settings: { exchange: true, oidc: true }
 	},
 	{
+		id: 'exchange-refresh',
+		title: 'An API that keeps going with a refresh token from the trade',
+		settings: { exchange: true, exchangeGives: 'refresh' }
+	},
+	{
+		id: 'exchange-refresh-oidc',
+		title: 'An API that keeps going with a refresh token from the trade, with OpenID Connect',
+		settings: { exchange: true, exchangeGives: 'refresh', oidc: true }
+	},
+	{
 		id: 'browser-app',
 		title: 'An app in the browser',
 		settings: { appRuns: 'page', oidc: true, clientType: 'public', pkce: true }

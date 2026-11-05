@@ -63,6 +63,9 @@ export const SECOND_API_CLIENT = 'demo-api-two';
 export const NAMES_THE_SECOND_API = 'names-the-second-api';
 /** Off on a new client. It turns on token exchange for that client, as the one that asks. */
 export const EXCHANGE_ON = { 'standard.token.exchange.enabled': 'true' };
+/** Not set on a new client. Set, a trade may give a refresh token, tied to the user's session (#185). */
+export const TRADE_REFRESH = 'standard.token.exchange.enableRefreshRequestedTokenType';
+export const TRADE_REFRESH_ON = 'SAME_SESSION';
 
 /** So that the API is named in the token, which it has to be before the server will discuss it. */
 export const namesTheApi = {
@@ -465,7 +468,12 @@ export async function allowClientDocuments(admin: Admin, realm: string) {
  * exchange on for its client, and a scope it gets that names the second API. Off, both are taken away
  * again, so a run without it is on a client that is on its defaults.
  */
-export async function letTheApiExchange(admin: Admin, on: boolean, clientId = API_CLIENT) {
+export async function letTheApiExchange(
+	admin: Admin,
+	on: boolean,
+	clientId = API_CLIENT,
+	refresh = false
+) {
 	const onClients = `/realms/${LOCAL_REALM}/clients`;
 	const [api] = await admin.call<{ id: string; attributes?: Record<string, string> }[]>(
 		'GET',
@@ -474,9 +482,17 @@ export async function letTheApiExchange(admin: Admin, on: boolean, clientId = AP
 	const [scope] = (
 		await admin.call<{ id: string; name: string }[]>('GET', `/realms/${LOCAL_REALM}/client-scopes`)
 	).filter(({ name }) => name === NAMES_THE_SECOND_API);
+	// Taken away again when not wanted, so the client is on its defaults, as the notes say.
+	const attributes = Object.fromEntries(
+		Object.entries(api.attributes ?? {}).filter(([name]) => name !== TRADE_REFRESH)
+	);
 	await admin.call('PUT', `${onClients}/${api.id}`, {
 		...api,
-		attributes: { ...api.attributes, 'standard.token.exchange.enabled': String(on) }
+		attributes: {
+			...attributes,
+			'standard.token.exchange.enabled': String(on),
+			...(on && refresh ? { [TRADE_REFRESH]: TRADE_REFRESH_ON } : {})
+		}
 	});
 	const scopeOnIt = `${onClients}/${api.id}/default-client-scopes/${scope.id}`;
 	if (on) await admin.call('PUT', scopeOnIt);
@@ -496,7 +512,14 @@ export async function setUpFor(
 		Partial<
 			Pick<
 				Settings,
-				'appRuns' | 'apiToken' | 'refresh' | 'reuse' | 'logout' | 'registered' | 'exchange'
+				| 'appRuns'
+				| 'apiToken'
+				| 'refresh'
+				| 'reuse'
+				| 'logout'
+				| 'registered'
+				| 'exchange'
+				| 'exchangeGives'
 			>
 		>
 ) {
@@ -541,7 +564,14 @@ export async function setUpFor(
 		})
 	);
 	await admin.call('PUT', `/realms/${realm}`, { revokeRefreshToken: settings.reuse === 'ends' });
-	if (realm === LOCAL_REALM) await letTheApiExchange(admin, Boolean(settings.exchange));
+	if (realm === LOCAL_REALM) {
+		await letTheApiExchange(
+			admin,
+			Boolean(settings.exchange),
+			API_CLIENT,
+			settings.exchangeGives === 'refresh'
+		);
+	}
 
 	if (realm !== BROKERED_REALM) return;
 	const onProvider = `/realms/${BROKERED_REALM}/identity-provider/instances/${UPSTREAM_REALM}`;

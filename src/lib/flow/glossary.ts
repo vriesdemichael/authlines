@@ -400,6 +400,14 @@ const list: readonly Term[] = [
 		at: flowAt('exchange-response', { exchange: true })
 	},
 	{
+		id: 'exchanged-refresh-token',
+		name: 'Exchanged refresh token',
+		words: ['exchanged refresh token', 'exchanged refresh tokens'],
+		explains: '',
+		artifact: 'exchanged-refresh-token',
+		at: flowAt('exchange-response', { exchange: true, exchangeGives: 'refresh' })
+	},
+	{
 		id: 'impersonation',
 		name: 'Impersonation',
 		words: ['impersonation'],
@@ -430,6 +438,14 @@ const list: readonly Term[] = [
 		explains:
 			'The error for a request that is wrong or missing something. RFC 8693 also asks for it when the server will not take the token being traded.',
 		at: flowAt('exchange-request', { exchange: true })
+	},
+	{
+		id: 'invalid-grant',
+		name: 'invalid_grant',
+		words: ['invalid_grant'],
+		explains:
+			'The error a token endpoint sends when the code or refresh token it was given is no good: expired, revoked, or issued to another client. RFC 6749 section 5.2 has the list.',
+		at: flowAt('trade-refresh-request', { exchange: true, exchangeGives: 'refresh' })
 	},
 	{
 		id: 'invalid-target',
