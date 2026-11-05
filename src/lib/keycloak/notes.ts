@@ -130,7 +130,7 @@ export const noteDefs: readonly NoteDef[] = [
 		id: 'loopback-redirects',
 		steps: ['authorize', 'create-client'],
 		title: 'Valid redirect URIs, for a program',
-		text: 'Register http://127.0.0.1/callback and leave the port out. A login asking with any port got through, another path did not, and neither did localhost in its place. localhost and [::1] registered the same way let any port through as well. A * after the port, as in http://127.0.0.1:*, let any port and any path through, so the path is no longer checked.',
+		text: 'Register http://127.0.0.1/callback and leave the port out. Logins at two ports the computer picked went through, and a third port got the login page. Another path got 400 with Invalid parameter: redirect_uri, and so did localhost in its place. Registered as localhost or [::1], an unregistered port got the login page. Registered as http://127.0.0.1:*, another path got it too, so a * after the port lets the path through unchecked.',
 		when: is('appRuns', 'program'),
 		place: clientSettings('Access settings', 'Valid redirect URIs'),
 		backedBy: {

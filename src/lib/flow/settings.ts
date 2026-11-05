@@ -1102,7 +1102,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				'In the page, the tokens end up in the browser, and a script running there can get some for itself. With a server behind it, the page never has one.'
 		},
 		summary:
-			'On a server of its own, in the page in the user’s browser, alone or with a server behind it, or in a program on the user’s computer. In the page alone, or in a program, there is nowhere to keep a secret.',
+			'On a server of its own, in the page in the user’s browser, alone or with a server behind it, or in a program on the user’s computer. In the page alone there is nowhere to keep a secret, and in a program a secret shipped in every copy is no secret.',
 		why: 'The rest of this flow is careful to keep the tokens away from the browser. An app that runs only in the page is in the browser, so that care stops at its door, and a script running there can get tokens just as the app does.',
 		sources: [
 			{
@@ -1162,7 +1162,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				value: 'program',
 				label: 'On their computer',
 				advanced: true,
-				why: 'A command-line tool or a desktop app runs on the user’s own computer, and every copy of it is the same, so there is nowhere to keep a secret. It opens the user’s browser to log in, and hears the answer on a port of its own, on 127.0.0.1.',
+				why: 'A command-line tool or a desktop app runs on the user’s own computer, and a secret shipped in every copy of it would be no secret. It opens the user’s browser to log in, and hears the answer on a port of its own, on 127.0.0.1.',
 				sets: { clientType: 'public', pkce: true },
 				requires: {
 					when: all(

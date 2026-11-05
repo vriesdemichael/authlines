@@ -178,7 +178,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			icon: 'app',
 			when: inAProgram,
 			concept:
-				'A program on the user’s own computer, such as a command-line tool or a desktop app. In OAuth’s terms it is the client, and a public one: every copy of it is the same, so a secret in it would be no secret. It uses the user’s own browser to log in, and never sees the password.'
+				'A program on the user’s own computer, such as a command-line tool or a desktop app. In OAuth’s terms it is the client, and a public one: every copy of it is the same, so a secret in it would be no secret. It uses the user’s own browser to log in, and is never sent the password.'
 		},
 		{
 			id: 'app',
@@ -604,7 +604,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'The user runs the program',
 			label: 'Listen on 127.0.0.1',
 			concept:
-				'The user starts it, a command-line tool say, which RFC 8252 counts as a native app, and it needs them logged in. It opens a port on 127.0.0.1, which only this computer can reach, and lets the computer pick which one, so the answer has somewhere to come back to. It names 127.0.0.1, and not localhost, because a name can be looked up wrongly, and 127.0.0.1 is always this computer.',
+				'The user starts it, a command-line tool say, which RFC 8252 counts as a native app, and it needs them logged in. It opens a port on 127.0.0.1, which only this computer can reach, and lets the computer pick which one, so the answer has somewhere to come back to. It names 127.0.0.1, and not localhost, because RFC 8252 says a name can be looked up wrongly, or leave it listening on more than this computer.',
 			inPractice:
 				'This is your code. Listen only on the address that is this computer, not on every address it has, and close the port once the answer has come.'
 		},
@@ -2066,7 +2066,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept: [
 				{
 					when: inAProgram,
-					text: 'The browser hands the code to the program, at the port it opened, and this never leaves the computer, which is why plain http is all right here. Any program on this computer could listen on a port, though, so the port says nothing about which program this is. The verifier does: only the program that started this login has it.'
+					text: 'The browser hands the code to the program, at the port it opened, and this never leaves the computer, which is why plain http is all right here. On some systems another program may be able to take a code sent to this port, though, so the port does not show which program got it. The verifier does not say which program either, but only whoever started this login has it, so a program that only took the code cannot trade it.'
 				},
 				{
 					when: all(not(confidential), not(pkce), dpop),

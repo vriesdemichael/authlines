@@ -193,7 +193,7 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 				},
 				{
 					when: inAProgram,
-					text: 'You do this once. List the address of the user’s own computer with its path and no port, because the program picks a port each time it runs, and on the server recorded any port got through while another path did not.'
+					text: 'You do this once. List the address of the user’s own computer with its path and no port, because the program picks a port each time it runs, and on the server recorded, logins at ports nobody registered went through, while another path was refused.'
 				},
 				{
 					text: 'You do this once, and again for each new address the app runs at, because each one has to be listed.'
