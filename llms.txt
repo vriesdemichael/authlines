@@ -2,5 +2,14 @@
 
 > OAuth and OpenID Connect flows as sequence diagrams to step through, recorded from a real Keycloak 26.8.1, with who has seen what at each step.
 
-- [Links for an AI agent](https://vriesdemichael.github.io/authlines/for-agents/): how to link to the recorded flow that matches someone's setup, with their names on the parties.
+An agent helping someone with their own system can link to the flow that matches it, on the step it is explaining, with their names on the parties. The names go after the #, so they never reach a server.
+
+## For agents
+
+- [Linking to a flow](https://vriesdemichael.github.io/authlines/for-agents/index.html.md): the address, the names, and every flow's settings, parties and steps, as Markdown.
+- [The skill](https://vriesdemichael.github.io/authlines/for-agents/authlines-skill.zip): the same, as an Agent Skills folder in a zip.
+
+## Optional
+
+- [Use it with your AI agent](https://vriesdemichael.github.io/authlines/for-agents/): how a person sets their agent up.
 - [Run it yourself](https://vriesdemichael.github.io/authlines/run-it-yourself/): the same server on your own machine, with Docker.
