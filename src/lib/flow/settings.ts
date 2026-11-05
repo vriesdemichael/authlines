@@ -18,6 +18,8 @@ export interface Settings {
 	apiToken: 'good' | 'none' | 'expired' | 'changed' | 'elsewhere' | 'noscope';
 	exchange: boolean;
 	exchangeGives: 'token' | 'refresh';
+	linkAccount: boolean;
+	linkEnds: 'linked' | 'cancelled';
 	refresh: boolean;
 	reuse: 'keeps' | 'ends';
 	sso: boolean;
@@ -326,7 +328,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 	},
 	attacker: {
 		kind: 'toggle',
-		label: 'Show an attacker',
+		label: 'An attacker',
 		param: 'attacker',
 		default: false,
 		summary:
@@ -835,6 +837,67 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		options: [
 			{ value: 'token', label: 'A token for the second API' },
 			{ value: 'refresh', label: 'A refresh token as well' }
+		]
+	},
+	linkAccount: {
+		kind: 'toggle',
+		label: 'Account linking',
+		param: 'link',
+		default: false,
+		onlyOn: 'authorization-code',
+		summary:
+			'Logged in, the user links an account at another provider, whose tokens the identity provider keeps.',
+		why: 'Some apps have to reach another system for the user, such as their calendar, where the user did not log in. Linking sends them to that provider once, while they are logged in, and the identity provider keeps its tokens beside the user.',
+		sources: [
+			{
+				source: 'keycloak-account-linking',
+				why: 'This page is how an app asks for a link, with one parameter on an ordinary authorization request.'
+			}
+		],
+		requires: {
+			when: all(
+				is('attacker', false),
+				is('binding', 'bearer'),
+				is('broker', false),
+				is('apiToken', 'good'),
+				is('refresh', false),
+				is('sso', false),
+				is('logout', false),
+				is('address', 'registered'),
+				is('appRuns', 'server'),
+				is('registration', 'manual'),
+				is('oldWay', false),
+				is('federation', false),
+				is('companies', false),
+				is('par', false),
+				is('exchange', false)
+			),
+			because:
+				'Drawn so far with nothing else on but OpenID Connect, consent and PKCE, with either kind of client and the app on a server.',
+			sayWhenBlocked: true
+		}
+	},
+	linkEnds: {
+		kind: 'choice',
+		label: 'How the link ends',
+		param: 'linkends',
+		default: 'linked',
+		onlyOn: 'authorization-code',
+		summary: 'The user goes on and links it, or cancels at the page that asks.',
+		why: 'The app is told either way, in the address it is sent back to, and has to handle both.',
+		sources: [
+			{
+				source: 'keycloak-account-linking',
+				why: 'This page is how an app asks for a link, and what comes back.'
+			}
+		],
+		requires: {
+			when: is('linkAccount', true),
+			because: 'There is no link to end until account linking is on.'
+		},
+		options: [
+			{ value: 'linked', label: 'Linked' },
+			{ value: 'cancelled', label: 'Cancelled' }
 		]
 	},
 	refresh: {

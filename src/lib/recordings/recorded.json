@@ -8,11 +8,11 @@
 		},
 		"identity-brokering-api:v1": {
 			"type": "DEFAULT",
-			"enabled": false
+			"enabled": true
 		},
 		"identity-brokering-api:v2": {
 			"type": "DISABLED_BY_DEFAULT",
-			"enabled": true
+			"enabled": false
 		},
 		"cimd": {
 			"type": "EXPERIMENTAL",
@@ -64,7 +64,9 @@
 		"exchange-refresh": "2026-11-05",
 		"exchange-refresh-oidc": "2026-11-05",
 		"upstream-v2-api": "2026-11-05",
-		"upstream-v2-refused": "2026-11-05"
+		"upstream-v2-refused": "2026-11-05",
+		"link-account": "2026-11-05",
+		"link-cancelled": "2026-11-05"
 	},
 	"flows": {
 		"authorization-code": {
@@ -127,6 +129,8 @@
 				"companies-oidc-leaves",
 				"upstream-v1",
 				"upstream-v2",
+				"link-account",
+				"link-cancelled",
 				"upstream-v2-api",
 				"upstream-v2-refused",
 				"everything"
@@ -188,6 +192,20 @@
 				"left-api-response",
 				"left-refresh",
 				"left-refresh-response",
+				"link-ask",
+				"link-authorize",
+				"link-callback",
+				"link-confirm",
+				"link-confirm-page",
+				"link-done",
+				"link-start",
+				"link-to-upstream",
+				"link-upstream-authorize",
+				"link-upstream-back",
+				"link-upstream-callback",
+				"link-upstream-sign-in",
+				"link-upstream-token-request",
+				"link-upstream-token-response",
 				"logged-out",
 				"login-again",
 				"login-page",

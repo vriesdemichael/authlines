@@ -21,6 +21,7 @@ export type SourceId =
 	| 'keycloak-timeouts'
 	| 'saml-core'
 	| 'keycloak-stored-tokens'
+	| 'keycloak-account-linking'
 	| 'keycloak-concepts';
 
 export interface SourceDef {
@@ -229,6 +230,14 @@ export const sources: Record<SourceId, SourceDef> = {
 		summary:
 			'How an app gets the tokens Keycloak stored from an external identity provider. There are two versions. V1 is deprecated and still on by default, and V2 is the one to migrate to.',
 		url: 'https://www.keycloak.org/docs/26.8.1/server_development/#_identity-brokering-apis-tokens'
+	},
+	'keycloak-account-linking': {
+		label: 'Keycloak docs: account linking',
+		title: 'Client initiated account linking',
+		status: 'Keycloak 26.8.1, Server Developer Guide.',
+		summary:
+			'How an app sends a logged-in user to link an account at another identity provider: an ordinary authentication request, with kc_action=idp_link and the provider’s alias added. The user needs a role that lets them manage their account links. An older way, not built on application-initiated actions, is off by default and may be removed.',
+		url: 'https://www.keycloak.org/docs/26.8.1/server_development/#_client-initiated-account-linking'
 	},
 	'keycloak-concepts': {
 		label: 'Keycloak docs: core concepts',

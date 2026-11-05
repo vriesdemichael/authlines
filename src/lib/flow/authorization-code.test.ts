@@ -1179,3 +1179,66 @@ describe('with a server behind the page', () => {
 		expect(settings).toMatchObject({ clientType: 'confidential', pkce: true });
 	});
 });
+
+// #179: logged in, the user links an account at another provider, whose tokens are kept for later.
+describe('linking another account', () => {
+	const ids = (settings: Partial<Settings>) => view(settings).steps.map((step) => step.id);
+	const inOrder = (on: string[], order: string[]) =>
+		order
+			.map((id) => on.indexOf(id))
+			.every((at, i, all) => at >= 0 && (i === 0 || at > all[i - 1]));
+
+	it('asks, confirms, logs in at the other provider, keeps its tokens, and goes back', () => {
+		const on = ids({ linkAccount: true });
+		expect(
+			inOrder(on, [
+				'api-response',
+				'link-start',
+				'link-ask',
+				'link-authorize',
+				'link-confirm-page',
+				'link-confirm',
+				'link-to-upstream',
+				'link-upstream-authorize',
+				'link-upstream-sign-in',
+				'link-upstream-back',
+				'link-upstream-callback',
+				'link-upstream-token-request',
+				'link-upstream-token-response',
+				'link-store',
+				'link-done',
+				'link-callback'
+			]),
+			on.join(' ')
+		).toBe(true);
+		expect(ids({})).not.toContain('link-start');
+	});
+
+	it('goes straight back when the user cancels, with nothing linked', () => {
+		const on = ids({ linkAccount: true, linkEnds: 'cancelled' });
+		expect(inOrder(on, ['link-confirm', 'link-done', 'link-callback']), on.join(' ')).toBe(true);
+		expect(on).not.toContain('link-to-upstream');
+		expect(on).not.toContain('link-store');
+	});
+
+	it('leaves the other provider’s tokens with the identity provider, and its password there', () => {
+		const flowView = view({ linkAccount: true });
+		const held = holdingsAt(flowView, flowView.steps.at(-1)!.id);
+		expect(held.idp).toContain('upstream-token');
+		expect(held.app ?? []).not.toContain('upstream-token');
+		expect(held.browser ?? []).not.toContain('upstream-token');
+		expect(held.upstream).toContain('password');
+	});
+
+	it('is set up with the other provider added for linking, and the identity provider registered there', () => {
+		const steps = evaluate(setup, { ...defaultSettings, linkAccount: true }).steps.map(
+			({ id }) => id
+		);
+		expect(steps).toEqual(
+			expect.arrayContaining(['register-with-upstream', 'add-provider-for-linking'])
+		);
+		expect(evaluate(setup, defaultSettings).steps.map(({ id }) => id)).not.toContain(
+			'add-provider-for-linking'
+		);
+	});
+});

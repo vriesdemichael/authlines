@@ -156,5 +156,21 @@
 	"api-retrieve-upstream-token",
 	"api-upstream-token",
 	"api-upstream-refused",
-	"api-call-upstream"
+	"api-call-upstream",
+	"link-start",
+	"link-ask",
+	"link-authorize",
+	"link-confirm-page",
+	"link-confirm",
+	"link-to-upstream",
+	"link-upstream-authorize",
+	"link-upstream-sign-in",
+	"link-upstream-back",
+	"link-upstream-callback",
+	"link-upstream-token-request",
+	"link-upstream-token-response",
+	"link-store",
+	"link-done",
+	"link-callback",
+	"add-provider-for-linking"
 ]

@@ -350,7 +350,11 @@ export async function setUpRealms(admin: Admin) {
 		publicClient: false,
 		clientAuthenticatorType: 'client-secret',
 		secret: BROKER_SECRET,
-		redirectUris: [`${KEYCLOAK}/realms/${BROKERED_REALM}/broker/${UPSTREAM_REALM}/endpoint`]
+		redirectUris: [
+			`${KEYCLOAK}/realms/${BROKERED_REALM}/broker/${UPSTREAM_REALM}/endpoint`,
+			// Where a user who logs in with a password links an account there (#179).
+			`${KEYCLOAK}/realms/${LOCAL_REALM}/broker/${UPSTREAM_REALM}/endpoint`
+		]
 	});
 
 	// The calls Keycloak makes to the upstream go through the proxy, so they can be recorded too.
@@ -505,6 +509,42 @@ export async function letTheApiExchange(
 	}
 }
 
+/**
+ * The other provider, in the realm where people log in with a password, only to link an account
+ * at (#179). It keeps the tokens a link brings, and is hidden from the login page, so the login is
+ * the same as without it. Taken away again when not wanted.
+ */
+async function linkingWith(admin: Admin, on: boolean) {
+	const onProviders = `/realms/${LOCAL_REALM}/identity-provider/instances`;
+	try {
+		await admin.call('DELETE', `${onProviders}/${UPSTREAM_REALM}`);
+	} catch {
+		// It was not there.
+	}
+	if (!on) return;
+	const upstream = `realms/${UPSTREAM_REALM}/protocol/openid-connect`;
+	await admin.call('POST', onProviders, {
+		alias: UPSTREAM_REALM,
+		providerId: 'oidc',
+		enabled: true,
+		storeToken: true,
+		hideOnLogin: true,
+		config: {
+			authorizationUrl: `${KEYCLOAK}/${upstream}/auth`,
+			tokenUrl: `${PROXY_FROM_CONTAINER}/${upstream}/token`,
+			userInfoUrl: `${PROXY_FROM_CONTAINER}/${upstream}/userinfo`,
+			jwksUrl: `${PROXY_FROM_CONTAINER}/${upstream}/certs`,
+			useJwksUrl: 'true',
+			validateSignature: 'true',
+			issuer: `${KEYCLOAK}/realms/${UPSTREAM_REALM}`,
+			clientId: BROKER_CLIENT,
+			clientSecret: BROKER_SECRET,
+			clientAuthMethod: 'client_secret_post',
+			defaultScope: 'openid'
+		}
+	});
+}
+
 export async function setUpFor(
 	admin: Admin,
 	realm: string,
@@ -521,6 +561,7 @@ export async function setUpFor(
 				| 'exchange'
 				| 'exchangeGives'
 				| 'upstreamReader'
+				| 'linkAccount'
 			>
 		>
 ) {
@@ -569,6 +610,7 @@ export async function setUpFor(
 	);
 	await admin.call('PUT', `/realms/${realm}`, { revokeRefreshToken: settings.reuse === 'ends' });
 	if (realm === LOCAL_REALM) {
+		await linkingWith(admin, Boolean(settings.linkAccount));
 		await letTheApiExchange(
 			admin,
 			Boolean(settings.exchange),

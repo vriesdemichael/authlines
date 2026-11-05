@@ -17,6 +17,7 @@ const reachesTheApi = not(
 const anyAddress = is('registered', 'any');
 const confidential = is('clientType', 'confidential');
 const broker = is('broker', true);
+const links = is('linkAccount', true);
 const storedTokens = any(is('upstreamTokens', 'v1'), is('upstreamTokens', 'v2'));
 const apiV1 = is('upstreamTokens', 'v1');
 const apiV2 = is('upstreamTokens', 'v2');
@@ -82,6 +83,16 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			icon: 'people',
 			concept:
 				'The people who run the identity provider. They register apps in its admin console. On a small team, or a provider you pay for, this may be you as well.'
+		},
+		{
+			id: 'upstream',
+			plainName: 'Other provider',
+			plainRole: 'The other account',
+			...upstreamWords,
+			icon: 'upstream',
+			concept:
+				'Another identity provider, where users have accounts that the app wants to reach. The identity provider is its client.',
+			when: links
 		},
 		{
 			id: 'upstream',
@@ -349,7 +360,7 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 				'The identity provider is itself a client of the other provider, so it has to be registered there the same way. That is done once, for the identity provider, and not again for each app behind it.',
 			inPractice:
 				'Whoever runs the other provider has to do their half, so this is a conversation with them. If each customer has a provider of their own, it is one conversation for each.',
-			when: all(broker, not(companies)),
+			when: any(all(broker, not(companies)), links),
 			fields: [
 				{
 					name: 'redirect_uris',
@@ -358,6 +369,27 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 				},
 				{ name: 'client_id', place: 'setting' },
 				{ name: 'client_secret', place: 'setting' }
+			]
+		},
+		{
+			id: 'add-provider-for-linking',
+			when: links,
+			from: 'idp-admin',
+			to: 'idp',
+			kind: 'human',
+			plain: 'Add the other provider, to link accounts with',
+			label: 'Add the provider',
+			concept:
+				'An admin adds the other provider to the identity provider, with the client ID and secret it got there, and has it keep the tokens a link brings. Here it is hidden from the login page, so people still log in with their password, and only link it afterwards.',
+			fields: [
+				{ name: 'client_id', place: 'setting', note: 'The one the other provider gave it' },
+				{ name: 'client_secret', place: 'setting' },
+				{ name: 'Store Tokens', place: 'setting', note: 'So the tokens a link brings are kept' },
+				{
+					name: 'Hide on login page',
+					place: 'setting',
+					note: 'So it is for linking, not logging in'
+				}
 			]
 		},
 		{

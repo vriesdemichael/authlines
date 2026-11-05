@@ -52,6 +52,10 @@ const bearerOnly = all(thief, is('apiChecks', 'bearer'));
 const storedTokens = any(is('upstreamTokens', 'v1'), is('upstreamTokens', 'v2'));
 const apiV1 = is('upstreamTokens', 'v1');
 const apiV2 = is('upstreamTokens', 'v2');
+// Logged in, the user links an account at another provider (#179). Named, so old recordings are off.
+const links = is('linkAccount', true);
+const linked = all(links, not(is('linkEnds', 'cancelled')));
+const linkCancelled = all(links, is('linkEnds', 'cancelled'));
 // With API V2, an API can read the stored token with a client of its own, or be refused (#180).
 // Named, not "not the app", so a recording made before this setting existed is the app reading.
 const apiReads = all(apiV2, any(is('upstreamReader', 'api'), is('upstreamReader', 'refused')));
@@ -229,6 +233,16 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		{
 			id: 'upstream',
 			plainName: 'Other provider',
+			plainRole: 'The other account',
+			...upstreamWords,
+			icon: 'upstream',
+			concept:
+				'Another identity provider, where the user has an account that the app wants to reach. The identity provider logs in there as the client, as it would to log the user in.',
+			when: links
+		},
+		{
+			id: 'upstream',
+			plainName: 'Other provider',
 			plainRole: 'Does the login',
 			...upstreamWords,
 			icon: 'upstream',
@@ -274,6 +288,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		}
 	],
 	groups: [
+		{
+			id: 'link-login',
+			plain: 'The login at the other provider, to link it',
+			label: 'Linking: here the identity provider is the client',
+			when: linked
+		},
 		{
 			id: 'brokered-login',
 			plain: 'The login at the other provider',
@@ -343,6 +363,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			why: 'The API’s job outlasts its token, and the refresh token from the trade gets another without the user.',
 			from: 'trade-runs-out',
 			when: tradeRefresh
+		},
+		{
+			label: 'Link',
+			why: 'Logged in already, the user links an account at another provider, so its tokens are kept.',
+			from: 'link-start',
+			when: links
 		},
 		{
 			label: 'Stolen token',
@@ -2979,6 +3005,331 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{ name: 'expires_in', place: 'body' },
 				{ name: 'refresh_token', place: 'body', artifact: 'exchanged-refresh-token' },
 				{ name: 'scope', place: 'body' }
+			]
+		},
+		{
+			id: 'link-start',
+			when: links,
+			from: 'browser',
+			to: 'app',
+			kind: 'request',
+			plain: 'The user asks to link another account',
+			label: 'GET /link',
+			concept:
+				'Still logged in, the user asks the app to connect an account they have at another provider, so the app can reach that system for them later.',
+			fields: []
+		},
+		{
+			id: 'link-ask',
+			when: links,
+			from: 'app',
+			to: 'browser',
+			kind: 'response',
+			plain: 'The app sends them to the identity provider to link it',
+			label: '302 to the identity provider',
+			concept:
+				'The app sends the browser to the identity provider as it does for a login, with one parameter more, which asks for a link to the other provider.',
+			inPractice:
+				'Your code builds this address as it builds a login, and adds the parameter the identity provider uses for this. Here that is kc_action, with the other provider’s name.',
+			fields: [
+				{ name: 'response_type=code', place: 'query' },
+				{ name: 'client_id', place: 'query' },
+				{ name: 'redirect_uri', place: 'query' },
+				{ name: 'state', place: 'query' },
+				{ name: 'kc_action', place: 'query', note: 'Here, a link to the other provider' }
+			]
+		},
+		{
+			id: 'link-authorize',
+			when: links,
+			from: 'browser',
+			to: 'idp',
+			kind: 'request',
+			plain: 'The browser asks the identity provider for the link',
+			label: 'GET /authorize',
+			concept:
+				'An authorization request like the one at the login. The user is still logged in at the identity provider, so it asks for no password.',
+			fields: [
+				{ name: 'response_type=code', place: 'query' },
+				{ name: 'client_id', place: 'query' },
+				{ name: 'redirect_uri', place: 'query' },
+				{ name: 'state', place: 'query' },
+				{
+					name: 'kc_action',
+					place: 'query',
+					note: 'Here, a link to the other provider, by the name it has at the identity provider'
+				},
+				{
+					name: 'Cookie',
+					place: 'header',
+					artifact: 'session',
+					note: 'The session from the login, which is why no password is asked'
+				}
+			]
+		},
+		{
+			id: 'link-confirm-page',
+			when: links,
+			from: 'idp',
+			to: 'browser',
+			kind: 'response',
+			plain: 'The identity provider asks whether to link it',
+			label: '200, a page that asks',
+			concept:
+				'The identity provider here asks the user first, naming the other provider: Do you want to link your account with upstream? They can go on or cancel.',
+			page: {
+				address: 'link-confirm-page',
+				shows:
+					'The identity provider’s own page, naming the other provider and asking whether to link the account there, with Continue and Cancel.'
+			},
+			fields: []
+		},
+		{
+			id: 'link-confirm',
+			when: links,
+			from: 'browser',
+			to: 'idp',
+			kind: 'request',
+			plain: [{ when: linkCancelled, text: 'The user cancels' }, { text: 'The user goes on' }],
+			label: [{ when: linkCancelled, text: 'POST, Cancel' }, { text: 'POST, Continue' }],
+			concept: [
+				{ when: linkCancelled, text: 'The user cancels, and nothing is linked.' },
+				{ text: 'The user goes on, and the identity provider sends them to the other provider.' }
+			],
+			fields: [
+				{ name: 'client_id', place: 'query' },
+				{ name: 'continue', place: 'body', note: 'The button the user pressed', when: linked },
+				{
+					name: 'cancel-aia',
+					place: 'body',
+					note: 'The button the user pressed, by the name the server here gives it',
+					when: linkCancelled
+				},
+				{
+					name: 'Cookie',
+					place: 'header',
+					artifact: 'session',
+					note: 'The session from the login'
+				}
+			]
+		},
+		{
+			id: 'link-to-upstream',
+			group: 'link-login',
+			when: linked,
+			from: 'idp',
+			to: 'browser',
+			kind: 'response',
+			plain: 'Sent on to the other provider',
+			label: '303 to the other provider',
+			concept:
+				'The identity provider sends the browser to the other provider, to log in there with itself as the client.',
+			fields: [
+				{ name: 'response_type', place: 'query' },
+				{ name: 'client_id', place: 'query' },
+				{ name: 'redirect_uri', place: 'query' },
+				{ name: 'state', place: 'query' },
+				{ name: 'scope', place: 'query' },
+				{ name: 'nonce', place: 'query' }
+			]
+		},
+		{
+			id: 'link-upstream-authorize',
+			group: 'link-login',
+			when: linked,
+			from: 'browser',
+			to: 'upstream',
+			kind: 'request',
+			plain: 'The browser asks to log in there',
+			label: 'GET /authorize',
+			concept: 'The request a login makes, with the identity provider as the client asking.',
+			fields: [
+				{ name: 'response_type=code', place: 'query' },
+				{
+					name: 'client_id',
+					place: 'query',
+					note: "The identity provider's own client ID at the other provider"
+				},
+				{ name: 'redirect_uri', place: 'query', note: "The identity provider's broker endpoint" },
+				{ name: 'state', place: 'query' },
+				{ name: 'scope=openid', place: 'query' },
+				{ name: 'nonce', place: 'query' }
+			]
+		},
+		{
+			id: 'link-upstream-sign-in',
+			group: 'link-login',
+			when: linked,
+			from: 'browser',
+			to: 'upstream',
+			kind: 'request',
+			plain: 'The user enters their password there',
+			label: 'Sign in',
+			concept:
+				'The user signs in with their account at the other provider. Neither the app nor the identity provider sees that password.',
+			fields: [
+				{ name: 'username and password', place: 'body', artifact: 'password' },
+				{ name: 'client_id', place: 'query' }
+			]
+		},
+		{
+			id: 'link-upstream-back',
+			group: 'link-login',
+			when: linked,
+			from: 'upstream',
+			to: 'browser',
+			kind: 'response',
+			plain: 'Sent back with a code',
+			label: '302 back with a code',
+			concept:
+				'The other provider sends the browser back to the identity provider with a one-time code.',
+			fields: [
+				{ name: 'code', place: 'query' },
+				{ name: 'state', place: 'query' },
+				{
+					name: 'iss',
+					place: 'query',
+					note: 'Names the server this came from, so an app that uses more than one can tell which answered'
+				}
+			]
+		},
+		{
+			id: 'link-upstream-callback',
+			group: 'link-login',
+			when: linked,
+			from: 'browser',
+			to: 'idp',
+			kind: 'request',
+			plain: 'The code reaches the identity provider',
+			label: 'Deliver the code',
+			concept: "The browser delivers the code to the identity provider's broker endpoint.",
+			fields: [
+				{ name: 'code', place: 'query' },
+				{ name: 'state', place: 'query' },
+				{
+					name: 'iss',
+					place: 'query',
+					note: 'Names the server this came from, so an app that uses more than one can tell which answered'
+				},
+				{
+					name: 'Cookie',
+					place: 'header',
+					artifact: 'session',
+					note: 'The session from the login, so it links to the same user'
+				}
+			]
+		},
+		{
+			id: 'link-upstream-token-request',
+			group: 'link-login',
+			when: linked,
+			from: 'idp',
+			to: 'upstream',
+			kind: 'request',
+			plain: 'It trades the code for tokens',
+			label: 'POST /token',
+			concept:
+				'The identity provider trades the code for tokens, on a connection the browser never sees.',
+			fields: [
+				{ name: 'grant_type=authorization_code', place: 'body' },
+				{ name: 'code', place: 'body' },
+				{ name: 'redirect_uri', place: 'body' },
+				{ name: 'client_id', place: 'body' },
+				{ name: 'client_secret', place: 'body' }
+			]
+		},
+		{
+			id: 'link-upstream-token-response',
+			group: 'link-login',
+			when: linked,
+			from: 'upstream',
+			to: 'idp',
+			kind: 'response',
+			plain: 'Tokens for the identity provider',
+			label: 'Upstream tokens',
+			concept:
+				'Tokens the other provider issued, for this user there. They are not the login’s: the user logged in at the identity provider, and these come from the account they linked.',
+			fields: [
+				{ name: 'access_token', place: 'body', artifact: 'upstream-token' },
+				{ name: 'id_token', place: 'body' },
+				{ name: 'token_type=Bearer', place: 'body' },
+				{ name: 'expires_in', place: 'body' },
+				{ name: 'refresh_token', place: 'body' },
+				{ name: 'scope', place: 'body' }
+			]
+		},
+		{
+			id: 'link-store',
+			group: 'link-login',
+			when: linked,
+			from: 'idp',
+			to: 'idp',
+			kind: 'internal',
+			plain: 'It keeps the link, and those tokens',
+			label: 'Link the account',
+			concept:
+				'The identity provider notes that this user is also that account at the other provider, and keeps that provider’s tokens beside the user. An app that is allowed can ask for them later.',
+			fields: []
+		},
+		{
+			id: 'link-done',
+			when: links,
+			from: 'idp',
+			to: 'browser',
+			kind: 'response',
+			plain: [
+				{ when: linkCancelled, text: 'Back to the app, without a link' },
+				{ text: 'Back to the app, linked' }
+			],
+			label: [{ when: linkCancelled, text: '302 back, cancelled' }, { text: '302 back, linked' }],
+			concept: [
+				{
+					when: linkCancelled,
+					text: 'The browser goes back to the app, and the address says the user cancelled. On the server recorded it carried a code as well, as an answer to a login does.'
+				},
+				{
+					text: 'The browser goes back to the app, and the address says the link was made. On the server recorded it carried a code as well, as an answer to a login does.'
+				}
+			],
+			fields: [
+				{ name: 'kc_action', place: 'query', note: 'Which action this answers' },
+				{ name: 'kc_action_status', place: 'query', note: 'Here: success, or cancelled' },
+				{ name: 'code', place: 'query' },
+				{ name: 'state', place: 'query' },
+				{
+					name: 'iss',
+					place: 'query',
+					note: 'Names the server this came from, so an app that uses more than one can tell which answered'
+				}
+			]
+		},
+		{
+			id: 'link-callback',
+			when: links,
+			from: 'browser',
+			to: 'app',
+			kind: 'request',
+			plain: 'The app is told how it went',
+			label: 'GET /callback',
+			concept: [
+				{
+					when: linkCancelled,
+					text: 'The app reads the status, and knows nothing was linked. It can say so, and ask again later.'
+				},
+				{
+					text: 'The app reads the status, and knows the account is linked. From now on it, or an API, can ask the identity provider for that provider’s token, if allowed.'
+				}
+			],
+			fields: [
+				{ name: 'kc_action', place: 'query', note: 'Which action this answers' },
+				{ name: 'kc_action_status', place: 'query', note: 'Here: success, or cancelled' },
+				{ name: 'code', place: 'query' },
+				{ name: 'state', place: 'query' },
+				{
+					name: 'iss',
+					place: 'query',
+					note: 'Names the server this came from, so an app that uses more than one can tell which answered'
+				}
 			]
 		},
 		{
