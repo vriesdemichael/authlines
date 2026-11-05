@@ -220,7 +220,7 @@ test.describe('settings', () => {
 		await openWithSettings(page, 'client=public&broker=1');
 		await expect(option(page, 'upstreamTokens', 'v2')).toBeDisabled();
 		await expect(page.locator('[data-setting="upstreamTokens"]')).toContainText(
-			'API V2 only works with a confidential client and a Bearer token.'
+			'API V2 only works with a Bearer token, and for a confidential client, which the app has to be unless an API reads the token.'
 		);
 	});
 
@@ -229,7 +229,7 @@ test.describe('settings', () => {
 		await option(page, 'clientType', 'public').check();
 		await expectMatchesModel(page, 'client=public&broker=1');
 		await expect(page.getByTestId('change-summary')).toContainText(
-			'API V2 only works with a confidential client and a Bearer token.'
+			'API V2 only works with a Bearer token, and for a confidential client, which the app has to be unless an API reads the token.'
 		);
 	});
 

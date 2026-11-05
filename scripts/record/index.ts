@@ -88,7 +88,8 @@ import {
 	questionsWithApiV2,
 	questionsWithNoUser,
 	questionsWhenPushed,
-	questionsWhenExchanged
+	questionsWhenExchanged,
+	questionsWhenTheApiReads
 } from './questions.ts';
 import { deviceNoteDefs, noteDefs, noUserNoteDefs } from '#lib/keycloak/notes.ts';
 
@@ -967,8 +968,18 @@ async function recordOnlyPresets(ids: readonly string[]) {
 	const browser = await chromium.launch();
 	try {
 		// One or the other, because the flag changes what discovery says for everything recorded with it.
+		// API V2 turns V1 off, so a run that needs it has nothing else in it either.
 		const wanted = presets.filter(({ id }) => ids.includes(id));
-		await startKeycloak(version, wanted.some(needsCimd) ? [CIMD_FLAG] : []);
+		const features = wanted.some(needsCimd)
+			? [CIMD_FLAG]
+			: wanted.some(needsV2)
+				? [API_V2_FLAG]
+				: [];
+		const mixed = wanted.some(needsV2) && wanted.some((preset) => !needsV2(preset));
+		if (mixed || (wanted.some(needsV2) && wanted.some(needsCimd))) {
+			throw new Error('Record presets that need API V2 on their own, because it turns V1 off');
+		}
+		await startKeycloak(version, features);
 		const admin = await Admin.connect();
 		const keycloak = await admin.serverVersion();
 		await setUpRealms(admin);
@@ -1022,6 +1033,11 @@ async function recordOnlyPresets(ids: readonly string[]) {
 			});
 			const looked = await lookInConsole(browser, admin, [], exchangeNotes);
 			addToQuestions(recordedAt, await questionsWhenExchanged(admin), looked);
+		}
+		if (wanted.some(({ settings }) => settings.upstreamReader !== 'app')) {
+			const readerNotes = noteDefs.filter(({ id }) => id === 'api-reads-external-tokens');
+			const looked = await lookInConsole(browser, admin, features, readerNotes);
+			addToQuestions(recordedAt, await questionsWhenTheApiReads(browser, demo, admin), looked);
 		}
 		if (wanted.some(({ settings }) => settings.appRuns === 'bff')) {
 			addToQuestions(recordedAt, await whatAScriptCan(browser, demo, admin));
@@ -1101,7 +1117,14 @@ async function main() {
 	try {
 		for (const [features, wanted, questions] of [
 			[[], presets.filter((preset) => !needsV2(preset) && !needsCimd(preset)), questionsWithApiV1],
-			[[API_V2_FLAG], presets.filter(needsV2), questionsWithApiV2],
+			[
+				[API_V2_FLAG],
+				presets.filter(needsV2),
+				async (browser: Browser, demo: Demo, admin: Admin) => ({
+					...(await questionsWithApiV2(browser, demo, admin)),
+					...(await questionsWhenTheApiReads(browser, demo, admin))
+				})
+			],
 			[[CIMD_FLAG], presets.filter(needsCimd), async () => ({})]
 		] as const) {
 			console.log(`Starting Keycloak ${version} ${features.join(' ')}`);

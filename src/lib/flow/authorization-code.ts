@@ -52,6 +52,11 @@ const bearerOnly = all(thief, is('apiChecks', 'bearer'));
 const storedTokens = any(is('upstreamTokens', 'v1'), is('upstreamTokens', 'v2'));
 const apiV1 = is('upstreamTokens', 'v1');
 const apiV2 = is('upstreamTokens', 'v2');
+// With API V2, an API can read the stored token with a client of its own, or be refused (#180).
+// Named, not "not the app", so a recording made before this setting existed is the app reading.
+const apiReads = all(apiV2, any(is('upstreamReader', 'api'), is('upstreamReader', 'refused')));
+const apiReadRefused = all(apiReads, is('upstreamReader', 'refused'));
+const apiReadsIt = all(apiReads, not(is('upstreamReader', 'refused')));
 const sends = (value: Settings['apiToken']) => is('apiToken', value);
 const apiRefuses = not(sends('good'));
 const exchange = is('exchange', true);
@@ -1304,7 +1309,8 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept:
 				'The identity provider trades the code for tokens, on a connection the browser never sees.',
 			when: all(broker, not(saml)),
-			execute: { answer: 'upstream-token-response', when: storedTokens },
+			// Only where a later step uses the upstream token, which an API that is refused never does.
+			execute: { answer: 'upstream-token-response', when: all(storedTokens, not(apiReadRefused)) },
 			fields: [
 				{ name: 'grant_type=authorization_code', place: 'body' },
 				{ name: 'code', place: 'body' },
@@ -2589,6 +2595,85 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			]
 		},
 		{
+			id: 'api-retrieve-upstream-token',
+			when: apiReads,
+			from: 'api',
+			to: 'idp',
+			kind: 'request',
+			plain: 'The API asks for the user’s token at the other provider',
+			label: 'POST /broker/{alias}/token',
+			concept:
+				'The API needs the other provider’s API to answer. It asks the identity provider for the token stored at the login, with a client ID and secret of its own, and the access token the app sent. The app is never sent the other provider’s token.',
+			inPractice:
+				'Your code makes this call in the API, with the API’s own client ID and secret, and the access token the app sent it.',
+			pitfall: {
+				title: 'What if this API is not allowed it?',
+				text: 'The identity provider refuses. On the server recorded, a client not allowed this provider got a 403 with invalid_client and: Client not allowed to retrieve token for the provider. A token that did not name the API got a 403 with unauthorized_client and: Client is not within the token audience. And the app with no secret, asking itself, got a 403 and: public clients not allowed.'
+			},
+			fields: [
+				{ name: 'client_id', place: 'body', note: 'The API’s own' },
+				{ name: 'client_secret', place: 'body', note: 'The API’s own' },
+				{
+					name: 'token',
+					place: 'body',
+					note: 'The access token the app sent, which names the API',
+					artifact: 'access-token'
+				}
+			]
+		},
+		{
+			id: 'api-upstream-token',
+			when: apiReadsIt,
+			from: 'idp',
+			to: 'api',
+			kind: 'response',
+			plain: 'The identity provider hands it to the API',
+			label: 'Upstream access token',
+			concept:
+				'Only the access token the other provider issued, handed to the API, which is allowed this provider. It stays with the API, which needs it.',
+			fields: [
+				{ name: 'access_token', place: 'body', artifact: 'upstream-token' },
+				{ name: 'expires_in', place: 'body' },
+				{ name: 'issued_token_type', place: 'body' }
+			]
+		},
+		{
+			id: 'api-upstream-refused',
+			when: apiReadRefused,
+			from: 'idp',
+			to: 'api',
+			kind: 'response',
+			plain: 'The identity provider refuses: this API is not allowed it',
+			label: '403 invalid_client',
+			concept:
+				'The API is a client the identity provider knows, and it may read stored tokens, only not this provider’s. Which providers each client may read is set at the identity provider here.',
+			fields: [
+				{
+					name: 'error=invalid_client',
+					place: 'body',
+					note: 'Here: not allowed this provider’s tokens'
+				},
+				{
+					name: 'error_description',
+					place: 'body',
+					note: 'Client not allowed to retrieve token for the provider'
+				}
+			]
+		},
+		{
+			id: 'api-call-upstream',
+			when: apiReadsIt,
+			from: 'api',
+			to: 'upstream',
+			kind: 'request',
+			plain: 'The API calls the other provider',
+			label: "Call the upstream's API",
+			concept:
+				"With that token, the API calls the other provider's API for the user, to answer the app.",
+			inPractice: 'This part is your code, using the token as that API asks.',
+			fields: [{ name: 'Authorization: Bearer', place: 'header', artifact: 'upstream-token' }]
+		},
+		{
 			id: 'exchange-request',
 			when: exchange,
 			cites: [
@@ -2749,6 +2834,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			to: 'app',
 			kind: 'response',
 			plain: [
+				{ when: apiReadRefused, text: 'The API cannot answer without it' },
 				{ when: sends('none'), text: 'The API asks for a token' },
 				{ when: sends('expired'), text: 'The API refuses: the token has expired' },
 				{ when: sends('changed'), text: 'The API refuses: the signature is wrong' },
@@ -2757,12 +2843,17 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{ text: 'The API answers' }
 			],
 			label: [
+				{ when: apiReadRefused, text: '502 with an error' },
 				{ when: sends('none'), text: '401 with no error' },
 				{ when: sends('noscope'), text: '403 insufficient_scope' },
 				{ when: apiRefuses, text: '401 invalid_token' },
 				{ text: '200 with the resource' }
 			],
 			concept: [
+				{
+					when: apiReadRefused,
+					text: 'It needed the other provider’s API to answer, and could not get the token for it, so the app gets an error it cannot fix. The demo API recorded here sends a 502, and what an API sends then is up to whoever built it. Which API may read which provider’s tokens is set at the identity provider here, so the fix is there.'
+				},
 				{
 					when: sends('none'),
 					text: 'A 401, and WWW-Authenticate says which kind of token it wants, with no error, because there was no token to be wrong.'
@@ -3892,7 +3983,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: "The app asks for the stored upstream token with the user's access token. A role on the user allows it."
 				}
 			],
-			when: all(storedTokens, stillGoing),
+			when: all(storedTokens, stillGoing, not(apiReads)),
 			fields: [
 				{
 					name: 'Authorization: Bearer',
@@ -3940,7 +4031,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: 'Everything the other provider issued, handed over by the identity provider: the access token, and its ID and refresh tokens too.'
 				}
 			],
-			when: all(storedTokens, stillGoing),
+			when: all(storedTokens, stillGoing, not(apiReads)),
 			fields: [
 				{ name: 'access_token', place: 'body', artifact: 'upstream-token' },
 				{ name: 'expires_in', place: 'body' },
@@ -3960,7 +4051,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			label: "Call the upstream's API",
 			concept: "With that token, the app can call the upstream provider's APIs directly.",
 			inPractice: 'This part is your code, using the token as that API asks.',
-			when: all(storedTokens, stillGoing),
+			when: all(storedTokens, stillGoing, not(apiReads)),
 			fields: [{ name: 'Authorization: Bearer', place: 'header', artifact: 'upstream-token' }]
 		}
 	]

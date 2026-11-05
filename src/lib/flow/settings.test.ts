@@ -57,8 +57,9 @@ describe('what a setting says for itself', () => {
 describe('constraints', () => {
 	it('allow exactly the expected combinations', () => {
 		// oidc (2) x pkce (2) x token type x client and upstream tokens. Confidential has no broker, broker, V1
-		// and V2. Public has no V2, and neither does DPoP, because Keycloak refused its token.
-		const bearer = 4 + 3;
+		// and V2. Public has no V2, and neither does DPoP, because Keycloak refused its token. With V2,
+		// an API can read it or be refused, which an app with no secret can have as well (#180).
+		const bearer = 4 + 3 + 2 + 2;
 		const dpop = 3 + 3;
 		const dpopWithNonce = 3 + 3;
 		const withAttacker = 2 * 2 * 2; // oidc x pkce x client, and only Bearer with no other provider.

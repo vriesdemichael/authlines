@@ -831,6 +831,28 @@ export const offTheMap: readonly MapNode[] = [
 		step: 'exchange-response'
 	}),
 	node({
+		id: 'api-reads-stored',
+		alsoAskedAs: ['external token', 'allowed identity providers', 'broker token'],
+		answer:
+			'Yes, with API V2. On the server recorded, the API asked for it with a client ID and secret of its own, and the access token the app sent, which had to name the API. The other provider’s token stays with the API, and the app can be one with no secret.',
+		title: 'Can an API read the user’s token at the other provider, and not the app?',
+		summary: 'Yes, with a client of its own that is allowed that provider.',
+		mode: 'advanced',
+		preset: 'upstream-v2-api',
+		step: 'api-retrieve-upstream-token'
+	}),
+	node({
+		id: 'api-not-allowed',
+		alsoAskedAs: ['client not allowed to retrieve token for the provider'],
+		answer:
+			'The identity provider refuses it: on the server recorded, a 403 with invalid_client. Which providers each client may read is set at the identity provider there, so the fix is there too.',
+		title: 'What does an API get when it is not allowed that provider?',
+		summary: 'A refusal, so it cannot give the app what it asked for.',
+		mode: 'advanced',
+		preset: 'upstream-v2-refused',
+		step: 'api-upstream-refused'
+	}),
+	node({
 		id: 'dpop-on-the-wire',
 		alsoAskedAs: ['dpop proof', 'dpop header'],
 		answer:

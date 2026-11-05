@@ -448,6 +448,30 @@ const list: readonly Term[] = [
 		at: flowAt('trade-refresh-request', { exchange: true, exchangeGives: 'refresh' })
 	},
 	{
+		id: 'invalid-client',
+		name: 'invalid_client',
+		words: ['invalid_client'],
+		explains:
+			'RFC 6749 section 5.2 has it for a client that fails to prove who it is, such as an unknown one. The server recorded also sent it to a client that may not have what it asked for.',
+		at: flowAt('api-retrieve-upstream-token', {
+			broker: true,
+			upstreamTokens: 'v2',
+			upstreamReader: 'refused'
+		})
+	},
+	{
+		id: 'unauthorized-client',
+		name: 'unauthorized_client',
+		words: ['unauthorized_client'],
+		explains:
+			'RFC 6749 section 5.2 has it for a client that is not allowed this way of asking. The server recorded also sent it for a token that did not name the client asking, and for a wrong secret, which RFC 6749 calls invalid_client.',
+		at: flowAt('api-retrieve-upstream-token', {
+			broker: true,
+			upstreamTokens: 'v2',
+			upstreamReader: 'api'
+		})
+	},
+	{
 		id: 'invalid-target',
 		name: 'invalid_target',
 		words: ['invalid_target'],

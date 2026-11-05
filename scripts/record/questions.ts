@@ -2120,3 +2120,95 @@ export async function questionsWithApiV2(browser: Browser, demo: Demo, admin: Ad
 		})
 	};
 }
+
+/**
+ * Who may read a stored upstream token with API V2: the API, with a client of its own that is
+ * allowed this provider, and the app that logged in kept public (#180). Asked of a real server.
+ */
+export async function questionsWhenTheApiReads(browser: Browser, demo: Demo, admin: Admin) {
+	const onClients = `/realms/${BROKERED_REALM}/clients`;
+	const fresh = async (clientId: string, extra: object) => {
+		const [old] = await admin.call<Client[]>('GET', `${onClients}?clientId=${clientId}`);
+		if (old) await admin.call('DELETE', `${onClients}/${old.id}`);
+		await admin.call('POST', onClients, {
+			clientId,
+			enabled: true,
+			redirectUris: [REDIRECT_URI],
+			clientAuthenticatorType: 'client-secret',
+			secret: CLIENT_SECRET,
+			...extra
+		});
+	};
+	const READS = { 'external.token.enabled': 'true', 'external.token.idp': UPSTREAM_REALM };
+	// The app's token has to name the API that reads with it, as for a trade, so one app names it.
+	const namesTheReader = {
+		...namesTheApi,
+		config: { ...namesTheApi.config, 'included.client.audience': 'note-reads-api' }
+	};
+	await fresh('note-reads-app', {
+		publicClient: true,
+		standardFlowEnabled: true,
+		protocolMappers: [namesTheReader]
+	});
+	await fresh('note-reads-app-unnamed', { publicClient: true, standardFlowEnabled: true });
+	await fresh('note-reads-api', {
+		publicClient: false,
+		standardFlowEnabled: false,
+		attributes: READS
+	});
+	await fresh('note-reads-other', {
+		publicClient: false,
+		standardFlowEnabled: false,
+		attributes: { ...READS, 'external.token.idp': 'some-other-provider' }
+	});
+	await fresh('note-reads-off', { publicClient: false, standardFlowEnabled: false });
+
+	const loggedInAt = async (clientId: string) => {
+		await admin.forgetBrokeredUsers();
+		const { code } = await codeFor(browser, demo, BROKERED_REALM, clientId);
+		const tokens = await token(BROKERED_REALM, {
+			grant_type: 'authorization_code',
+			code,
+			redirect_uri: REDIRECT_URI,
+			client_id: clientId
+		});
+		return tokens.json.access_token;
+	};
+	let accessToken = '';
+	const read = async (body: Record<string, string>, subject = accessToken) => {
+		const answer = await fetch(brokerTokenUrl, {
+			method: 'POST',
+			headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' },
+			body: new URLSearchParams({ token: subject, ...body }).toString()
+		});
+		const text = await answer.text();
+		return {
+			status: answer.status,
+			gotUpstreamToken: answer.ok && text.includes('access_token'),
+			body: answer.ok ? 'a successful answer' : text.slice(0, 200)
+		};
+	};
+	// Each read of a token while its own login is still there, because a login forgets the last user.
+	const unnamed = await loggedInAt('note-reads-app-unnamed');
+	const notNamingIt = {
+		aud: claimsOf(unnamed).aud ?? null,
+		...(await read({ client_id: 'note-reads-api', client_secret: CLIENT_SECRET }, unnamed))
+	};
+	accessToken = await loggedInAt('note-reads-app');
+	const claims = claimsOf(accessToken);
+	return {
+		apiReadsStored: {
+			theToken: { azp: claims.azp, aud: claims.aud ?? null },
+			// The setting the note names: off on a client, and on, for this provider, on the API's.
+			before: await read({ client_id: 'note-reads-off', client_secret: CLIENT_SECRET }),
+			after: await read({ client_id: 'note-reads-api', client_secret: CLIENT_SECRET }),
+			byTheApiWithATokenNotNamingIt: notNamingIt,
+			byAClientForAnotherProvider: await read({
+				client_id: 'note-reads-other',
+				client_secret: CLIENT_SECRET
+			}),
+			byThePublicApp: await read({ client_id: 'note-reads-app' }),
+			byTheApiWithAWrongSecret: await read({ client_id: 'note-reads-api', client_secret: 'wrong' })
+		}
+	};
+}

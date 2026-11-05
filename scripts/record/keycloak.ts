@@ -520,6 +520,7 @@ export async function setUpFor(
 				| 'registered'
 				| 'exchange'
 				| 'exchangeGives'
+				| 'upstreamReader'
 			>
 		>
 ) {
@@ -541,7 +542,7 @@ export async function setUpFor(
 			// the token has no roles and no audience. Turned on afterwards, as anyone does it in the
 			// console, it changes nothing in the token (questions.json).
 			...(settings.consent ? { consentRequired: true, fullScopeAllowed: true } : {}),
-			...(settings.upstreamTokens === 'v2'
+			...(settings.upstreamTokens === 'v2' && (settings.upstreamReader ?? 'app') === 'app'
 				? {
 						attributes: {
 							'external.token.enabled': 'true',
@@ -559,8 +560,11 @@ export async function setUpFor(
 						protocolMappers: [namesTheApi]
 					}
 				: {}),
-			// The first API can only trade a token that names it (questions.json).
-			...(settings.exchange ? { protocolMappers: [namesTheApi] } : {})
+			// The first API can only trade a token that names it (questions.json), and an API reads a
+			// stored token only with one that names it too (#180).
+			...(settings.exchange || (settings.upstreamReader ?? 'app') !== 'app'
+				? { protocolMappers: [namesTheApi] }
+				: {})
 		})
 	);
 	await admin.call('PUT', `/realms/${realm}`, { revokeRefreshToken: settings.reuse === 'ends' });
@@ -574,6 +578,20 @@ export async function setUpFor(
 	}
 
 	if (realm !== BROKERED_REALM) return;
+	// The API, as a client of its own here, allowed this provider's stored tokens or another's (#180).
+	const [oldApi] = await admin.call<{ id: string }[]>('GET', `${onClients}?clientId=${API_CLIENT}`);
+	if (oldApi) await admin.call('DELETE', `${onClients}/${oldApi.id}`);
+	const reader = settings.upstreamReader ?? 'app';
+	if (settings.upstreamTokens === 'v2' && reader !== 'app') {
+		await admin.call('POST', onClients, {
+			...client(API_CLIENT, confidential),
+			standardFlowEnabled: false,
+			attributes: {
+				'external.token.enabled': 'true',
+				'external.token.idp': reader === 'refused' ? 'some-other-provider' : UPSTREAM_REALM
+			}
+		});
+	}
 	const onProvider = `/realms/${BROKERED_REALM}/identity-provider/instances/${UPSTREAM_REALM}`;
 	const provider = await admin.call<object>('GET', onProvider);
 	await admin.call('PUT', onProvider, {

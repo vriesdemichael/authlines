@@ -626,14 +626,21 @@ export class Demo {
 					? { authorization: `Bearer ${sent}` }
 					: this.#authorization('GET', resource, sent)
 		);
-		if (answer.status !== 200 && apiToken === 'good') {
+		// An API not allowed the other provider cannot answer, which is what is drawn (#180).
+		const readsAndRefused =
+			settings.upstreamTokens === 'v2' && settings.upstreamReader === 'refused';
+		if (readsAndRefused && answer.status !== 502) {
+			throw new Error(`The API answered without the other provider's token: ${answer.text}`);
+		}
+		if (answer.status !== 200 && apiToken === 'good' && !readsAndRefused) {
 			throw new Error(`The API refused: ${answer.text}`);
 		}
 		if (answer.status === 200 && apiToken !== 'good') {
 			throw new Error(`The API accepted what it should not: ${apiToken}`);
 		}
 
-		if (settings.upstreamTokens !== 'off') await this.#storedToken(tokens.access_token);
+		const appReads = settings.upstreamTokens !== 'v2' || settings.upstreamReader === 'app';
+		if (settings.upstreamTokens !== 'off' && appReads) await this.#storedToken(tokens.access_token);
 		if (settings.exchangeGives === 'refresh') await this.#tradeAgain(run);
 		if (settings.refresh) await this.#whenItRunsOut(tokens);
 		if (settings.leaves) await this.#afterTheyLeft(tokens);
@@ -878,6 +885,44 @@ export class Demo {
 			throw new Error(`The API could not refresh the token from the trade: ${again.text}`);
 		}
 		this.#tradedRefresh = null;
+	}
+
+	/**
+	 * The API reads the user's token at the other provider with a client of its own, which the app's
+	 * token names, and calls that provider with it to answer. Not allowed the provider, it cannot.
+	 */
+	async #readsTheStoredToken(run: Run, accessToken: string) {
+		const refused = run.settings.upstreamReader === 'refused';
+		const url = `${KEYCLOAK}/realms/${run.realm}/broker/${UPSTREAM_REALM}/token`;
+		const result = await call(
+			run,
+			['api-retrieve-upstream-token', refused ? 'api-upstream-refused' : 'api-upstream-token'],
+			'POST',
+			url,
+			{ accept: 'application/json' },
+			{ client_id: API_CLIENT, client_secret: CLIENT_SECRET, token: accessToken }
+		);
+		if (refused) {
+			// An answer, never a throw: a throw here would take the whole recorder down with it.
+			if (result.status !== 403) return { status: 500, text: `Not refused: ${result.text}` };
+			return {
+				status: 502,
+				text: JSON.stringify({ error: 'could not get the token at the other provider' })
+			};
+		}
+		const upstream = jsonOf<{ access_token?: string }>(result.text).access_token;
+		if (result.status !== 200 || !upstream)
+			return { status: 500, text: `Could not read it: ${result.text}` };
+		const userinfo = `${KEYCLOAK}/realms/${UPSTREAM_REALM}/protocol/openid-connect/userinfo`;
+		await call(run, ['api-call-upstream', null], 'GET', userinfo, {
+			authorization: `Bearer ${upstream}`
+		});
+		return {
+			status: 200,
+			text: JSON.stringify({
+				resource: 'something only this user may see, with some from the other provider'
+			})
+		};
 	}
 
 	/** Someone who has a copy of the access token and not the key, so they send it with no proof. */
@@ -1208,6 +1253,10 @@ export class Demo {
 			// It trades the token for one meant for the API behind it, which it may only do with one that
 			// names it, so here it checks for its own name, as yours should.
 			const passesItOn = Boolean(this.current?.settings.exchange);
+			// Or it reads the user's token at the other provider itself, with a client of its own (#180).
+			const readsStored =
+				this.current?.settings.upstreamTokens === 'v2' &&
+				this.current.settings.upstreamReader !== 'app';
 			const problem = await accessTokenProblem(
 				{
 					authorization: request.headers.authorization,
@@ -1220,11 +1269,12 @@ export class Demo {
 						(realm) => `${KEYCLOAK}/realms/${realm}`
 					),
 					// One API that expects its own name, as yours should, which a default client's token lacks.
-					audience: passesItOn
-						? API_CLIENT
-						: request.url?.startsWith('/my-api/')
-							? 'my-api'
-							: API_AUDIENCE,
+					audience:
+						passesItOn || readsStored
+							? API_CLIENT
+							: request.url?.startsWith('/my-api/')
+								? 'my-api'
+								: API_AUDIENCE,
 					keysOf: (issuer) => keysAt(`${issuer}/protocol/openid-connect/certs`),
 					seenProofs: this.#seenProofs,
 					// Another API, written before DPoP, beside the one that knows it.
@@ -1249,6 +1299,15 @@ export class Demo {
 					'www-authenticate': `Bearer error="insufficient_scope", scope="contacts"`
 				});
 				response.end(JSON.stringify({ error: notAllowed }));
+				return;
+			}
+			if (readsStored && this.current) {
+				const answer = await this.#readsTheStoredToken(
+					this.current,
+					request.headers.authorization.split(' ')[1]
+				);
+				response.writeHead(answer.status, { 'content-type': 'application/json' });
+				response.end(answer.text);
 				return;
 			}
 			if (passesItOn && this.current) {

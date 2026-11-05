@@ -1061,6 +1061,83 @@ describe('stored upstream tokens', () => {
 		);
 		expect(stored?.group).toBe('brokered-login');
 	});
+	// #180: the API reads it with a client of its own, so the app can be one with no secret.
+	describe('read by the API', () => {
+		const reads = (reader: 'api' | 'refused', settings: Partial<Settings> = {}) =>
+			view({ broker: true, upstreamTokens: 'v2', upstreamReader: reader, ...settings });
+		const ids = (result: ReturnType<typeof view>) => result.steps.map((step) => step.id);
+
+		it('moves the retrieval into the API, between its check and its answer', () => {
+			const on = ids(reads('api'));
+			const order = [
+				'api-check-token',
+				'api-retrieve-upstream-token',
+				'api-upstream-token',
+				'api-call-upstream',
+				'api-response'
+			];
+			expect(
+				order.every((id) => on.includes(id)),
+				on.join(' ')
+			).toBe(true);
+			expect(order.map((id) => on.indexOf(id))).toEqual(
+				[...order.map((id) => on.indexOf(id))].sort((a, b) => a - b)
+			);
+			expect(on).not.toContain('retrieve-upstream-token');
+		});
+
+		it('leaves the other provider’s token with the API, and never the app', () => {
+			for (const settings of [{}, { clientType: 'public' as const, pkce: true }]) {
+				const result = reads('api', settings);
+				const held = holdingsAt(result, result.steps.at(-1)!.id);
+				expect(held.api).toContain('upstream-token');
+				expect(held.app ?? []).not.toContain('upstream-token');
+				expect(held.browser ?? []).not.toContain('upstream-token');
+			}
+		});
+
+		it('works for an app with no secret, which cannot read it itself', () => {
+			// Read the way the site reads a link, which turns off what does not fit.
+			const asALink = normalize({
+				...defaultSettings,
+				broker: true,
+				upstreamTokens: 'v2',
+				clientType: 'public'
+			}).settings;
+			expect(asALink.upstreamTokens).toBe('off');
+			expect(ids(view(asALink))).not.toContain('retrieve-upstream-token');
+			expect(ids(reads('api', { clientType: 'public' }))).toContain('api-retrieve-upstream-token');
+		});
+
+		it('draws an API not allowed the provider refused, and unable to answer', () => {
+			const on = ids(reads('refused'));
+			expect(on).toEqual(
+				expect.arrayContaining(['api-retrieve-upstream-token', 'api-upstream-refused'])
+			);
+			expect(on).not.toContain('api-upstream-token');
+			expect(on).not.toContain('api-call-upstream');
+			const answer = reads('refused').steps.find((step) => step.id === 'api-response')!;
+			expect(answer.label).toBe('502 with an error');
+		});
+
+		// What the pitfall says the server answered, from a real run (questions.json).
+		it('says what a real server refused, as it said it', () => {
+			const said = answers.apiReadsStored;
+			const ask = reads('api').steps.find((step) => step.id === 'api-retrieve-upstream-token')!;
+			expect(said.after).toMatchObject({ status: 200, gotUpstreamToken: true });
+			for (const refused of [said.before, said.byAClientForAnotherProvider, said.byThePublicApp]) {
+				expect(refused.status).toBe(403);
+			}
+			expect(ask.pitfall?.text).toContain('Client not allowed to retrieve token for the provider');
+			expect(said.byAClientForAnotherProvider.body).toContain(
+				'Client not allowed to retrieve token for the provider'
+			);
+			expect(said.byThePublicApp.body).toContain('public clients not allowed');
+			expect(said.byTheApiWithATokenNotNamingIt.body).toContain(
+				'Client is not within the token audience'
+			);
+		});
+	});
 });
 
 describe('diffs', () => {

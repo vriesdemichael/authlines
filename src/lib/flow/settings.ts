@@ -14,6 +14,7 @@ export interface Settings {
 	dpopNonce: boolean;
 	broker: boolean;
 	upstreamTokens: 'off' | 'v1' | 'v2';
+	upstreamReader: 'app' | 'api' | 'refused';
 	apiToken: 'good' | 'none' | 'expired' | 'changed' | 'elsewhere' | 'noscope';
 	exchange: boolean;
 	exchangeGives: 'token' | 'refresh';
@@ -699,10 +700,44 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				label: 'API V2',
 				flag: { name: 'identity-brokering-api:v2' },
 				requires: {
-					when: all(is('clientType', 'confidential'), is('binding', 'bearer')),
-					because: 'API V2 only works with a confidential client and a Bearer token.'
+					// The app needs a secret only when it is the one that reads the token (#180).
+					when: all(
+						is('binding', 'bearer'),
+						any(
+							is('clientType', 'confidential'),
+							is('upstreamReader', 'api'),
+							is('upstreamReader', 'refused')
+						)
+					),
+					because:
+						'API V2 only works with a Bearer token, and for a confidential client, which the app has to be unless an API reads the token.'
 				}
 			}
+		]
+	},
+	upstreamReader: {
+		kind: 'choice',
+		label: 'Who reads it',
+		param: 'reads',
+		default: 'app',
+		onlyOn: 'authorization-code',
+		summary:
+			'The app that logged in, or an API it calls, with a client of its own that the identity provider allows this provider.',
+		why: 'Whoever reads the stored token holds a token for the user at the other provider. An API that needs it can read it itself, so the app does not have to and can be one with no secret, and each API can be allowed only the provider it needs.',
+		sources: [
+			{
+				source: 'keycloak-stored-tokens',
+				why: 'This page describes both ways to get the stored tokens, and API V2 is the one drawn here.'
+			}
+		],
+		requires: {
+			when: is('upstreamTokens', 'v2'),
+			because: 'This is drawn with API V2, where whoever reads the token proves who it is.'
+		},
+		options: [
+			{ value: 'app', label: 'The app that logged in' },
+			{ value: 'api', label: 'The API, allowed this provider' },
+			{ value: 'refused', label: 'An API not allowed this provider' }
 		]
 	},
 	apiToken: {

@@ -152,5 +152,9 @@
 	"configure-second-api",
 	"trade-runs-out",
 	"trade-refresh-request",
-	"trade-refresh-response"
+	"trade-refresh-response",
+	"api-retrieve-upstream-token",
+	"api-upstream-token",
+	"api-upstream-refused",
+	"api-call-upstream"
 ]

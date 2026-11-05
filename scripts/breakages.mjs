@@ -778,6 +778,18 @@ export const breakages = [
 		from: "name: 'requested_token_type',",
 		to: "name: 'requested_token_types',"
 	},
+	{
+		name: 'stored tokens: an API not allowed the provider is said to be refused in other words',
+		file: AC,
+		from: 'Client not allowed to retrieve token for the provider. A token that did not name the API',
+		to: 'Client not allowed to read tokens. A token that did not name the API'
+	},
+	{
+		name: 'stored tokens: an API that was refused is said to answer the app anyway',
+		file: AC,
+		from: "{ when: apiReadRefused, text: '502 with an error' },",
+		to: "{ when: apiReadRefused, text: '200 with the resource' },"
+	},
 
 	// A refresh token.
 	{
