@@ -2611,7 +2611,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept: [
 				{
 					when: tradeRefresh,
-					text: 'The token names this API, and the second API should refuse it. So this API sends it to the identity provider, with its own client ID and secret, and asks for a token for the same user that names the second API, and for a refresh token as well, to get another one later.'
+					text: 'The token names this API, and the second API should refuse it. So this API sends it to the identity provider, with its own client ID and secret, and asks for a token for the same user that names the second API, of the kind that can get another later: a refresh token.'
 				},
 				{
 					text: 'The token names this API, and the second API should refuse it. So this API sends it to the identity provider, with its own client ID and secret, and asks for a token for the same user that names the second API.'
@@ -2645,7 +2645,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					name: 'requested_token_type',
 					place: 'body',
-					note: 'A refresh token, which the server has to be set to allow',
+					note: 'The kind of token it wants, a refresh token, which the server here gives only when set to',
 					when: tradeRefresh
 				}
 			]
@@ -2673,7 +2673,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept: [
 				{
 					when: tradeRefresh,
-					text: 'A new access token for the same user, which names the second API and not this one, and a refresh token that only this API can use, with its own secret. The answer says the token it issued is a refresh token, and still carries an access token in the place RFC 8693 keeps for whichever token was asked for.'
+					text: 'The server recorded sent a new access token for the same user, which names the second API and not this one, and beside it a refresh token that only this API can use, with its own secret. It says the token it issued is a refresh token, though the place RFC 8693 keeps for the token asked for holds the access token.'
 				},
 				{
 					text: 'A new access token for the same user, which names the second API and not this one. It has no act claim, which is how RFC 8693 has a token say that someone else is acting for the user, so it is about the user alone. Its azp does name the first API, as the one it was issued to. No refresh token comes with it, so a new one takes another trade.'
@@ -2690,13 +2690,13 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					name: 'issued_token_type',
 					place: 'body',
-					note: 'Says refresh_token, though access_token holds an access token',
+					note: 'Says refresh_token here, though access_token holds an access token',
 					when: tradeRefresh
 				},
 				{
 					name: 'refresh_token',
 					place: 'body',
-					note: 'For this API alone, and tied to the user’s session',
+					note: 'For this API alone, and here tied to the user’s session',
 					artifact: 'exchanged-refresh-token',
 					when: tradeRefresh
 				},
@@ -2826,9 +2826,9 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'Later, the token for the second API runs out',
 			label: 'Later: the exchanged token expires',
 			concept:
-				'Nothing is sent here, because time is what happens. The API’s job for the user is not done, and the token it traded for lasts minutes.',
+				'Nothing is sent here, because time is what happens. The API’s job for the user is not done, and the token it traded for is short-lived.',
 			inPractice:
-				'How long it lasts is up to the server, and it was five minutes on the server recorded. The recording asked for a new one straight away, which the server answers the same way.',
+				'How long it lasts is up to the server, and it was five minutes on the server recorded. The recording asked for a new one straight away, before the first had run out, and the server recorded gave it.',
 			fields: []
 		},
 		{
@@ -2843,7 +2843,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					source: 'rfc8693',
 					section: '2.2.1',
-					why: 'Section 2.2.1 says a refresh token from a trade is for when the client has to keep going after the token it traded is no longer good, with no user there.'
+					why: 'Section 2.2.1 says a refresh token will typically not come with a trade, and can where the client has to keep going after the token it traded is no longer good, with no user there.'
 				}
 			],
 			from: 'api',
@@ -2855,7 +2855,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				'The API sends the refresh token it got from the trade, with its own client ID and secret, and asks for a new token for the second API. The user takes no part, and the app knows nothing of it.',
 			pitfall: {
 				title: 'What ends it?',
-				text: "The user’s session. On the server recorded, a refresh token from a trade is tied to the session the user logged in with, so once that has ended, this request gets a 400 with invalid_grant and: Session not active. The app cannot use it either, and got a 400 with invalid_grant and: Invalid refresh token. Token client and authorized client don't match. RFC 8693 has a refresh token from a trade for when the API has to keep going without the user, and this one does that only while the user is still logged in. The usual way to act after the user has gone is an offline token, which is not drawn here."
+				text: "Its own time running out, or the user’s session ending. On the server recorded it was good for 30 minutes, and tied to the session the user logged in with, so once that had ended, this request got a 400 with invalid_grant and: Session not active. The app cannot use it either, and got a 400 with invalid_grant and: Invalid refresh token. Token client and authorized client don't match. RFC 8693 has a refresh token from a trade for where the API has to keep going without the user, and this one does that only while the user is still logged in. Keeping going after the user has gone takes a refresh token that outlives the session, which is not drawn here."
 			},
 			fields: [
 				{ name: 'grant_type=refresh_token', place: 'body' },
@@ -2876,7 +2876,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'A new token for the second API',
 			label: '200 with a new token',
 			concept:
-				'Another access token for the same user and for the second API, and a new refresh token. The API can call the second API again, for as long as the user’s session lasts.',
+				'Another access token for the same user and for the second API, and here a new refresh token, which a server does not have to send. The API can call the second API again, until the refresh token runs out or the user’s session ends.',
 			fields: [
 				{
 					name: 'access_token',

@@ -812,7 +812,7 @@ export const offTheMap: readonly MapNode[] = [
 			'background job for the user'
 		],
 		answer:
-			'With a refresh token from the trade, which the identity provider has to be set to allow. The API gets a new token for the next API with it, with its own secret and no user there. On the server recorded, it works only while the user’s session lasts.',
+			'With a refresh token from the trade, which the server recorded gives only when it is set to. The API gets a new token for the next API with it, with its own secret and no user there. On the server recorded, it works only while the user’s session lasts.',
 		title: 'Can an API keep calling the next API once its token runs out?',
 		summary: 'With a refresh token from the trade, while the user’s session lasts.',
 		mode: 'advanced',
@@ -823,7 +823,7 @@ export const offTheMap: readonly MapNode[] = [
 		id: 'trade-outlasts',
 		alsoAskedAs: ['session not active', 'offline'],
 		answer:
-			'Not on the server recorded. It is tied to the session the user logged in with, and once that has ended, a refresh gets a 400 with invalid_grant and: Session not active. The usual way to act after the user has gone is an offline token, which is not drawn here.',
+			'Not on the server recorded. It is tied to the session the user logged in with, and once that has ended, a refresh gets a 400 with invalid_grant and: Session not active. Keeping going after the user has gone takes a refresh token that outlives the session, which is not drawn here.',
 		title: 'Does a refresh token from a trade outlast the user’s session?',
 		summary: 'No: it ends with the session it came from.',
 		mode: 'advanced',

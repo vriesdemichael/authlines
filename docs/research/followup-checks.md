@@ -382,6 +382,6 @@ Tried on Keycloak 26.8.1 on 2026-11-05 in a throwaway trial, then recorded the s
 - The answer said `issued_token_type` a refresh token, put the refresh token under `refresh_token`, and kept an access token for the second API under `access_token`. RFC 8693 section 2.2.1 has the requested token under `access_token`, whatever its type.
 - The refresh token had `azp` the API's client and the user's own `sid`, and lasted 1800 seconds against the access token's 300.
 - The API refreshed it with its own secret and got a new access token for the second API, and a new refresh token. The app sending it got 400 `invalid_grant` and Invalid refresh token. Token client and authorized client don't match.
-- Once the user's session was ended, by the admin API in the questions and by logging the user out in the trial, a refresh got 400 `invalid_grant` and Session not active. Section 2.2.1 describes a refresh token from a trade as for when the client has to keep going without the user. This one does that only while the user's session lasts.
+- Once the user's session was ended, by the admin API in the questions and by an admin logging the user out in the trial, a refresh got 400 `invalid_grant` and Session not active. Section 2.2.1 describes a refresh token from a trade as for when the client has to keep going without the user. This one does that only while the user's session lasts.
 
 Not tried: how long it lasts when the session idles or reaches its maximum, the other values of the attribute, and asking for a refresh token without an audience.

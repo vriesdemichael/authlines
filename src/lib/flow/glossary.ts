@@ -444,7 +444,7 @@ const list: readonly Term[] = [
 		name: 'invalid_grant',
 		words: ['invalid_grant'],
 		explains:
-			'The error a token endpoint sends when the code or refresh token it was given is no good: expired, revoked, or issued to another client. RFC 6749 section 5.2 has the list.',
+			'The error a token endpoint sends when what it was given is no good: a code, a password or a refresh token that is invalid, expired, revoked or issued to another client, or a code sent with another redirect address than the login used. RFC 6749 section 5.2 has the list.',
 		at: flowAt('trade-refresh-request', { exchange: true, exchangeGives: 'refresh' })
 	},
 	{

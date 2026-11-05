@@ -29,7 +29,7 @@ export const knownErrors: readonly KnownError[] = [
 	{
 		text: 'requested_token_type unsupported',
 		means:
-			'A trade asked for a refresh token as well, and the identity provider is not set to give one from a trade.',
+			'A trade asked for a kind of token the identity provider will not give from a trade. Here that was a refresh token, which the server recorded gives only when set to.',
 		step: 'exchange-request',
 		settings: { exchange: true, exchangeGives: 'refresh' }
 	},

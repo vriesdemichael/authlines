@@ -701,7 +701,7 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 				{
 					name: 'refresh token from a trade',
 					place: 'setting',
-					note: 'Allowed for this API, for as long as the user’s session lasts',
+					note: 'Allowed for this API, and here tied to the user’s session',
 					when: tradeRefresh
 				},
 				{

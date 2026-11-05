@@ -525,7 +525,7 @@ export const noteDefs: readonly NoteDef[] = [
 		steps: ['exchange-request', 'trade-refresh-request', 'allow-exchange'],
 		when: all(is('exchange', true), is('exchangeGives', 'refresh')),
 		title: 'Allow refresh token in Standard Token Exchange',
-		text: 'Not set on a new client, and set here for the API’s client. Not set, a trade that asks for a refresh token gets a 400 with invalid_request and: requested_token_type unsupported. Set, the refresh token is tied to the user’s session, and once that has ended a refresh gets a 400 with invalid_grant and: Session not active.',
+		text: 'Not set on a new client, and set here for the API’s client to the value that ties the refresh token to the user’s session, the only one tried. Not set, a trade that asks for a refresh token gets a 400 with invalid_request and: requested_token_type unsupported. Set, once the user’s session has ended, a refresh gets a 400 with invalid_grant and: Session not active.',
 		place: {
 			path: [
 				'Clients',
