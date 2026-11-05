@@ -27,6 +27,20 @@ const storedV2: Partial<Settings> = { broker: true, upstreamTokens: 'v2' };
 
 export const knownErrors: readonly KnownError[] = [
 	{
+		text: 'requested_token_type unsupported',
+		means:
+			'A trade asked for a kind of token the identity provider will not give from a trade. Here that was a refresh token, which the server recorded gives only when set to.',
+		step: 'exchange-request',
+		settings: { exchange: true, exchangeGives: 'refresh' }
+	},
+	{
+		text: "Token client and authorized client don't match",
+		means:
+			'A refresh token was sent by a client it was not issued to, such as the app sending the one a trade gave the API.',
+		step: 'trade-refresh-request',
+		settings: { exchange: true, exchangeGives: 'refresh' }
+	},
+	{
 		text: 'Session not active',
 		means:
 			'The session this refresh token belonged to is over, for example because someone logged out.',

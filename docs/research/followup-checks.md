@@ -372,3 +372,16 @@ Tried on Keycloak 26.8.1 on 2026-11-04 in a throwaway trial, then recorded the s
 - In the trial, asking for a refresh token with `requested_token_type` got 400 and requested_token_type unsupported.
 
 Not tried: delegation with `actor_token`, which needs the preview flag, exchanging a token from another provider, and DPoP or mTLS on either side of the trade.
+
+### A refresh token from the trade
+
+Tried on Keycloak 26.8.1 on 2026-11-05 in a throwaway trial, then recorded the same day (`exchange-refresh` and `exchange-refresh-oidc`), for [#185](https://github.com/vriesdemichael/authlines/issues/185).
+
+- Asking for one with `requested_token_type=urn:ietf:params:oauth:token-type:refresh_token` on a new client got 400 `invalid_request` and requested_token_type unsupported.
+- With the API's client attribute `standard.token.exchange.enableRefreshRequestedTokenType` set to `SAME_SESSION`, the same request got 200. In the console it is Clients, the client, Advanced, OpenID Connect Compatibility Modes, Allow refresh token in Standard Token Exchange, a select that says Choose… when not set.
+- The answer said `issued_token_type` a refresh token, put the refresh token under `refresh_token`, and kept an access token for the second API under `access_token`. RFC 8693 section 2.2.1 has the requested token under `access_token`, whatever its type.
+- The refresh token had `azp` the API's client and the user's own `sid`, and lasted 1800 seconds against the access token's 300.
+- The API refreshed it with its own secret and got a new access token for the second API, and a new refresh token. The app sending it got 400 `invalid_grant` and Invalid refresh token. Token client and authorized client don't match.
+- Once the user's session was ended, by the admin API in the questions and by an admin logging the user out in the trial, a refresh got 400 `invalid_grant` and Session not active. Section 2.2.1 describes a refresh token from a trade as for when the client has to keep going without the user. This one does that only while the user's session lasts.
+
+Not tried: how long it lasts when the session idles or reaches its maximum, the other values of the attribute, and asking for a refresh token without an audience.

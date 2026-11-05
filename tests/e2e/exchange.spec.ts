@@ -65,3 +65,32 @@ test.describe('an API that trades the token (#13)', () => {
 		await expect(page.locator('[data-lifeline="second-api"]')).toHaveCount(1);
 	});
 });
+
+// #185: a refresh token from the trade, so the API can keep going without the user.
+test.describe('a refresh token from the trade', () => {
+	test('is a choice that only comes with token exchange, and adds the API keeping going', async ({
+		page
+	}) => {
+		await open(page);
+		await expect(page.locator('[data-setting="exchangeGives"]')).toHaveCount(0);
+		await page.locator('[data-setting="exchange"] input').check();
+		await page.locator('[data-setting="exchangeGives"] input[value="refresh"]').check();
+		await expect(page).toHaveURL(/trade=refresh/);
+		for (const step of ['trade-runs-out', 'trade-refresh-request', 'trade-refresh-response']) {
+			await expect(row(page, step)).toHaveCount(1);
+		}
+		await expect(page.getByTestId('timeline')).toContainText('Keep going');
+	});
+
+	test('shows what a real server sent, and says what ends it', async ({ page }) => {
+		await open(page, '&exchange=1&trade=refresh&step=exchange-response');
+		await expect(page.getByTestId('payload')).toContainText(
+			'urn:ietf:params:oauth:token-type:refresh_token'
+		);
+		await open(page, '&exchange=1&trade=refresh&step=trade-refresh-request');
+		await expect(page.getByTestId('payload')).toContainText('grant_type=refresh_token');
+		await detail(page).getByText('What ends it?').click();
+		await expect(detail(page)).toContainText('Session not active');
+		await expect(detail(page)).toContainText('Allow refresh token in Standard Token Exchange');
+	});
+});

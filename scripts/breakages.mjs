@@ -766,6 +766,18 @@ export const breakages = [
 		from: 'A token that names only account gets a 403 with access_denied',
 		to: 'A token that names only account gets a 400 with access_denied'
 	},
+	{
+		name: 'exchange: the trade is said to end with something the server never said',
+		file: AC,
+		from: 'Session not active. The app cannot use it either',
+		to: 'Session expired. The app cannot use it either'
+	},
+	{
+		name: 'exchange: a trade that should give a refresh token does not ask for one',
+		file: AC,
+		from: "name: 'requested_token_type',",
+		to: "name: 'requested_token_types',"
+	},
 
 	// A refresh token.
 	{

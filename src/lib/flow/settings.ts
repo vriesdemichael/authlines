@@ -16,6 +16,7 @@ export interface Settings {
 	upstreamTokens: 'off' | 'v1' | 'v2';
 	apiToken: 'good' | 'none' | 'expired' | 'changed' | 'elsewhere' | 'noscope';
 	exchange: boolean;
+	exchangeGives: 'token' | 'refresh';
 	refresh: boolean;
 	reuse: 'keeps' | 'ends';
 	sso: boolean;
@@ -775,6 +776,31 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				'Drawn so far with nothing else on but OpenID Connect, consent and PKCE, with either kind of client and the app on a server.',
 			sayWhenBlocked: true
 		}
+	},
+	exchangeGives: {
+		kind: 'choice',
+		label: 'What the trade gives back',
+		param: 'trade',
+		default: 'token',
+		onlyOn: 'authorization-code',
+		summary:
+			'Only a token for the second API, or a refresh token as well, so that the API can get another later without the user.',
+		why: 'A token from a trade does not last long, five minutes on the server recorded, and an API doing a long job for the user needs another one later. A refresh token from the trade is one way, and how long it keeps working is up to the server.',
+		sources: [
+			{
+				source: 'rfc8693',
+				section: '2.2.1',
+				why: 'Section 2.2.1 is what the answer to a trade holds. It says a refresh token will typically not come with a trade of one temporary credential for another, and can where the API has to keep going after the token it traded is no longer good.'
+			}
+		],
+		requires: {
+			when: is('exchange', true),
+			because: 'There is nothing to trade until token exchange is on.'
+		},
+		options: [
+			{ value: 'token', label: 'A token for the second API' },
+			{ value: 'refresh', label: 'A refresh token as well' }
+		]
 	},
 	refresh: {
 		kind: 'toggle',

@@ -31,6 +31,7 @@ export type ConsolePage =
 	| 'client-scopes'
 	| 'client-dedicated-scope'
 	| 'api-client-settings'
+	| 'api-client-advanced'
 	| 'api-client-scopes'
 	| 'provider-settings'
 	| 'realm-settings'
@@ -516,6 +517,39 @@ export const noteDefs: readonly NoteDef[] = [
 			shows: {
 				before: { status: 400, says: 'Requested audience not available: demo-api-two' },
 				after: { status: 200, aud: 'demo-api-two' }
+			}
+		}
+	},
+	{
+		id: 'exchange-refresh',
+		steps: ['exchange-request', 'trade-refresh-request', 'allow-exchange'],
+		when: all(is('exchange', true), is('exchangeGives', 'refresh')),
+		title: 'Allow refresh token in Standard Token Exchange',
+		text: 'Not set on a new client, and set here for the API’s client to the value that ties the refresh token to the user’s session, the only one tried. Not set, a trade that asks for a refresh token gets a 400 with invalid_request and: requested_token_type unsupported. Set, once the user’s session has ended, a refresh gets a 400 with invalid_grant and: Session not active.',
+		place: {
+			path: [
+				'Clients',
+				'the first API',
+				'Advanced',
+				'OpenID Connect Compatibility Modes',
+				'Allow refresh token in Standard Token Exchange'
+			],
+			page: 'api-client-advanced',
+			shows: [
+				'OpenID Connect Compatibility Modes',
+				'Allow refresh token in Standard Token Exchange'
+			]
+		},
+		backedBy: {
+			question: 'exchangeRefresh',
+			shows: {
+				before: {
+					status: 400,
+					error: 'invalid_request',
+					says: 'requested_token_type unsupported'
+				},
+				after: { status: 200, gotRefreshToken: true, sameSession: true },
+				sessionEnded: { status: 400, error: 'invalid_grant', says: 'Session not active' }
 			}
 		}
 	},

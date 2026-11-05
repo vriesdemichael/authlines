@@ -149,5 +149,8 @@
 	"second-api-request",
 	"second-api-response",
 	"allow-exchange",
-	"configure-second-api"
+	"configure-second-api",
+	"trade-runs-out",
+	"trade-refresh-request",
+	"trade-refresh-response"
 ]

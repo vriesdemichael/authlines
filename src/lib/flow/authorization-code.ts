@@ -55,6 +55,8 @@ const apiV2 = is('upstreamTokens', 'v2');
 const sends = (value: Settings['apiToken']) => is('apiToken', value);
 const apiRefuses = not(sends('good'));
 const exchange = is('exchange', true);
+// The trade gives a refresh token too, so the API can keep going without the user (#185).
+const tradeRefresh = all(exchange, is('exchangeGives', 'refresh'));
 const logsOut = is('logout', true);
 const secondApp = is('sso', true);
 const secondInsists = all(secondApp, is('ssoAsks', 'insists'));
@@ -330,6 +332,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			why: 'The API needs another API to answer, which should not take a token meant for the first.',
 			from: 'exchange-request',
 			when: exchange
+		},
+		{
+			label: 'Keep going',
+			why: 'The API’s job outlasts its token, and the refresh token from the trade gets another without the user.',
+			from: 'trade-runs-out',
+			when: tradeRefresh
 		},
 		{
 			label: 'Stolen token',
@@ -2600,8 +2608,15 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			kind: 'request',
 			plain: 'The API trades it for one for the second API',
 			label: 'POST /token',
-			concept:
-				'The token names this API, and the second API should refuse it. So this API sends it to the identity provider, with its own client ID and secret, and asks for a token for the same user that names the second API.',
+			concept: [
+				{
+					when: tradeRefresh,
+					text: 'The token names this API, and the second API should refuse it. So this API sends it to the identity provider, with its own client ID and secret, and asks for a refresh token for the same user, to get tokens that name the second API with.'
+				},
+				{
+					text: 'The token names this API, and the second API should refuse it. So this API sends it to the identity provider, with its own client ID and secret, and asks for a token for the same user that names the second API.'
+				}
+			],
 			inPractice:
 				'Your code makes this call, unless something in front of the API has token exchange built in: one call to the token endpoint, made the way the app asks for its tokens, with the API’s own client ID and secret.',
 			pitfall: {
@@ -2626,7 +2641,13 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					artifact: 'access-token'
 				},
 				{ name: 'subject_token_type', place: 'body' },
-				{ name: 'audience', place: 'body', note: 'Which API the new token is for' }
+				{ name: 'audience', place: 'body', note: 'Which API the new token is for' },
+				{
+					name: 'requested_token_type',
+					place: 'body',
+					note: 'The kind of token it wants, a refresh token, which the server here gives only when set to',
+					when: tradeRefresh
+				}
 			]
 		},
 		{
@@ -2649,8 +2670,15 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			kind: 'response',
 			plain: 'A token for the second API comes back',
 			label: '200 with a new token',
-			concept:
-				'A new access token for the same user, which names the second API and not this one. It has no act claim, which is how RFC 8693 has a token say that someone else is acting for the user, so it is about the user alone. Its azp does name the first API, as the one it was issued to. No refresh token comes with it, so a new one takes another trade.',
+			concept: [
+				{
+					when: tradeRefresh,
+					text: 'The server recorded sent a new access token for the same user, which names the second API and not this one, and beside it a refresh token that only this API can use, with its own secret. It says the token it issued is a refresh token, though the place RFC 8693 keeps for the token asked for holds the access token.'
+				},
+				{
+					text: 'A new access token for the same user, which names the second API and not this one. It has no act claim, which is how RFC 8693 has a token say that someone else is acting for the user, so it is about the user alone. Its azp does name the first API, as the one it was issued to. No refresh token comes with it, so a new one takes another trade.'
+				}
+			],
 			fields: [
 				{
 					name: 'access_token',
@@ -2658,7 +2686,20 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					note: 'For the same user, and for the second API',
 					artifact: 'exchanged-token'
 				},
-				{ name: 'issued_token_type', place: 'body' },
+				{ name: 'issued_token_type', place: 'body', when: not(tradeRefresh) },
+				{
+					name: 'issued_token_type',
+					place: 'body',
+					note: 'Says refresh_token here, though access_token holds an access token',
+					when: tradeRefresh
+				},
+				{
+					name: 'refresh_token',
+					place: 'body',
+					note: 'For this API alone, and here tied to the user’s session',
+					artifact: 'exchanged-refresh-token',
+					when: tradeRefresh
+				},
 				{ name: 'token_type', place: 'body' },
 				{ name: 'expires_in', place: 'body' },
 				{ name: 'scope', place: 'body', when: not(oidc) },
@@ -2775,6 +2816,79 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept:
 				'The page has the data and still no token. Every call it makes goes this way, so this server now has to be up and in reach for all of them.',
 			fields: [{ name: 'resource', place: 'body', note: 'What the API said, passed on' }]
+		},
+		{
+			id: 'trade-runs-out',
+			when: tradeRefresh,
+			from: 'api',
+			to: 'api',
+			kind: 'time',
+			plain: 'Later, the token for the second API runs out',
+			label: 'Later: the exchanged token expires',
+			concept:
+				'Nothing is sent here, because time is what happens. The API’s job for the user is not done, and the token it traded for is short-lived.',
+			inPractice:
+				'How long it lasts is up to the server, and it was five minutes on the server recorded. The recording asked for a new one straight away, before the first had run out, and the server recorded gave it.',
+			fields: []
+		},
+		{
+			id: 'trade-refresh-request',
+			when: tradeRefresh,
+			cites: [
+				{
+					source: 'rfc6749',
+					section: '6',
+					why: 'Section 6 is this request: a refresh token for a new access token, from a client that proves who it is.'
+				},
+				{
+					source: 'rfc8693',
+					section: '2.2.1',
+					why: 'Section 2.2.1 says a refresh token will typically not come with a trade of one temporary credential for another, and can where the client has to keep going after the token it traded is no longer good, as when no user is there.'
+				}
+			],
+			from: 'api',
+			to: 'idp',
+			kind: 'request',
+			plain: 'The API sends the refresh token from the trade',
+			label: 'POST /token',
+			concept:
+				'The API sends the refresh token it got from the trade, with its own client ID and secret, and asks for a new token for the second API. The user takes no part, and the app knows nothing of it.',
+			pitfall: {
+				title: 'What ends it?',
+				text: "The user’s session. On the server recorded, it was tied to the session the user logged in with, and said it was good for 30 minutes, which is how long a session there lasts when idle. Once the session had ended, this request got a 400 with invalid_grant and: Session not active. The app cannot use it either, and got a 400 with invalid_grant and: Invalid refresh token. Token client and authorized client don't match. RFC 8693 has a refresh token from a trade for where the API has to keep going without the user, and this one does that only while the user’s session lasts."
+			},
+			fields: [
+				{ name: 'grant_type=refresh_token', place: 'body' },
+				{
+					name: 'Authorization: Basic',
+					place: 'header',
+					note: 'The client ID and secret of the API, which is the client here'
+				},
+				{ name: 'refresh_token', place: 'body', artifact: 'exchanged-refresh-token' }
+			]
+		},
+		{
+			id: 'trade-refresh-response',
+			when: tradeRefresh,
+			from: 'idp',
+			to: 'api',
+			kind: 'response',
+			plain: 'A new token for the second API',
+			label: '200 with a new token',
+			concept:
+				'Another access token for the same user and for the second API, and here a new refresh token, which a server does not have to send. The API can call the second API again while this one works, which here ends with the user’s session.',
+			fields: [
+				{
+					name: 'access_token',
+					place: 'body',
+					note: 'For the same user, and for the second API',
+					artifact: 'exchanged-token'
+				},
+				{ name: 'token_type', place: 'body' },
+				{ name: 'expires_in', place: 'body' },
+				{ name: 'refresh_token', place: 'body', artifact: 'exchanged-refresh-token' },
+				{ name: 'scope', place: 'body' }
+			]
 		},
 		{
 			id: 'thief-has-token',

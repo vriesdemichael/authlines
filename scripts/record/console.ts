@@ -59,6 +59,7 @@ export async function lookInConsole(
 		'client-scopes': `${onClient}/clientScopes`,
 		'client-dedicated-scope': `${onClient}/clientScopes/dedicated`,
 		'api-client-settings': `${onTheApi}/settings`,
+		'api-client-advanced': `${onTheApi}/advanced`,
 		'api-client-scopes': `${onTheApi}/clientScopes`,
 		'provider-settings': `${root}/${BROKERED_REALM}/identity-providers/oidc/${UPSTREAM_REALM}/settings`,
 		'realm-settings': `${root}/${LOCAL_REALM}/realm-settings`,

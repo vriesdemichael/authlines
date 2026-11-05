@@ -804,6 +804,33 @@ export const offTheMap: readonly MapNode[] = [
 		step: 'exchange-response'
 	}),
 	node({
+		id: 'keeps-going',
+		alsoAskedAs: [
+			'requested_token_type',
+			'refresh token from token exchange',
+			'long running job',
+			'background job for the user'
+		],
+		answer:
+			'With a refresh token from the trade, which the server recorded gives only when it is set to. The API gets a new token for the next API with it, with its own secret and no user there. On the server recorded, it works only while the user’s session lasts.',
+		title: 'Can an API keep calling the next API once its token runs out?',
+		summary: 'With a refresh token from the trade, which here ends with the user’s session.',
+		mode: 'advanced',
+		preset: 'exchange-refresh',
+		step: 'trade-refresh-request'
+	}),
+	node({
+		id: 'trade-outlasts',
+		alsoAskedAs: ['session not active'],
+		answer:
+			'Not on the server recorded. It is tied to the session the user logged in with, and once that has ended, a refresh gets a 400 with invalid_grant and: Session not active.',
+		title: 'Does a refresh token from a trade outlast the user’s session?',
+		summary: 'Not here: it ends with the session it came from.',
+		mode: 'advanced',
+		preset: 'exchange-refresh-oidc',
+		step: 'exchange-response'
+	}),
+	node({
 		id: 'dpop-on-the-wire',
 		alsoAskedAs: ['dpop proof', 'dpop header'],
 		answer:
