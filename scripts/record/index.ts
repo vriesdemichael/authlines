@@ -1044,6 +1044,12 @@ async function recordOnlyPresets(ids: readonly string[]) {
 		if (mixed || (wanted.some(needsV2) && wanted.some(needsCimd))) {
 			throw new Error('Record presets that need API V2 on their own, because it turns V1 off');
 		}
+		// The flag shows in discovery, so a preset with no document recorded beside one would say it (#186).
+		if (wanted.some(needsCimd) && wanted.some((preset) => !needsCimd(preset))) {
+			throw new Error(
+				'Record presets that point at a document on their own, because the flag changes discovery'
+			);
+		}
 		await startKeycloak(version, features);
 		const admin = await Admin.connect();
 		const keycloak = await admin.serverVersion();
