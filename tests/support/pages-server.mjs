@@ -19,7 +19,8 @@ const types = {
 	'.svg': 'image/svg+xml',
 	'.txt': 'text/plain',
 	'.md': 'text/markdown',
-	'.zip': 'application/zip'
+	// What Pages sent for a zip on 2026-11-05.
+	'.zip': 'application/x-zip-compressed'
 };
 
 const server = createServer((request, response) => {

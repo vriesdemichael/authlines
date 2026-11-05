@@ -30,7 +30,10 @@ test.describe('using it with an agent', () => {
 		const zipHref = await page.getByTestId('skill-zip').getAttribute('href');
 		const zip = await request.get(new URL(zipHref!, page.url()).href);
 		expect(zip.status()).toBe(200);
-		expect(zip.headers()['content-type']).toBe('application/zip');
+		// Pages says application/x-zip-compressed, and a browser downloads either.
+		expect(['application/x-zip-compressed', 'application/zip']).toContain(
+			zip.headers()['content-type']
+		);
 		expect((await zip.body()).subarray(0, 4).toString('latin1')).toBe('PK\u0003\u0004');
 
 		const markdownHref = await page.getByTestId('reference-md').getAttribute('href');
