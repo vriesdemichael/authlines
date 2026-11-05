@@ -72,8 +72,9 @@ describe('constraints', () => {
 		const inThePage = 2 * 2;
 		// On the plain flow only, so client type and PKCE, with each way an API can say no.
 		const withApiAnswers = 2 * 2 * 5;
-		// With OpenID Connect, consent and another provider, and two answers to using one twice (#186).
-		const withRefresh = 2 * 2 * 2 * 2 * 2 * 2;
+		// With OpenID Connect and consent, and two answers to using one twice. With another provider, only
+		// the one recorded there, that it keeps working (#186).
+		const withRefresh = 2 * 2 * 2 * 2 * (2 + 1);
 		// The second app has its own client, so the first one's type and PKCE do not get in the way.
 		// What it asks for is part of OpenID Connect, so with that off it just goes by the session.
 		// With another provider it goes by the session, with OpenID Connect or not (#186).
@@ -95,9 +96,9 @@ describe('constraints', () => {
 		const aLinkOfTheirs = 2 * 2 * 2 * 2;
 		// The request pushed first: OpenID Connect, consent, the client type and PKCE, with nothing else.
 		const pushedFirst = 2 * 2 * 2 * 2;
-		// An API that trades the token: the same four, with or without a refresh token from it (#185), and
-		// with or without another provider (#186).
-		const exchanged = 2 * 2 * 2 * 2 * 2 * 2;
+		// An API that trades the token: the same four, with or without a refresh token from it (#185). With
+		// another provider, only without one, as recorded (#186).
+		const exchanged = 2 * 2 * 2 * 2 * (2 + 1);
 		// Linking another account, only on the plain flow with a secret, linked or cancelled (#179).
 		const linking = 2;
 		expect(allValidSettings()).toBe(allValidSettings());

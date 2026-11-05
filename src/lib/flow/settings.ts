@@ -837,7 +837,14 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		},
 		options: [
 			{ value: 'token', label: 'A token for the second API' },
-			{ value: 'refresh', label: 'A refresh token as well' }
+			{
+				value: 'refresh',
+				label: 'A refresh token as well',
+				requires: {
+					when: is('broker', false),
+					because: 'Drawn so far with no other provider.'
+				}
+			}
 		]
 	},
 	linkAccount: {
@@ -950,7 +957,14 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		},
 		options: [
 			{ value: 'keeps', label: 'It keeps working' },
-			{ value: 'ends', label: 'It ends the app’s session' }
+			{
+				value: 'ends',
+				label: 'It ends the app’s session',
+				requires: {
+					when: is('broker', false),
+					because: 'Drawn so far with no other provider.'
+				}
+			}
 		]
 	},
 	sso: {

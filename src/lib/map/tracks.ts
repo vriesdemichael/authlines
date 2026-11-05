@@ -1138,7 +1138,7 @@ export const offTheMap: readonly MapNode[] = [
 		answer:
 			'At its own identity provider, as without one. On the server recorded, the other provider was not asked again, and the app never talked to it.',
 		title: 'With another provider doing the login, where does the app refresh its token?',
-		summary: 'At its own identity provider, and the other one is not asked.',
+		summary: 'At its own identity provider, and here the other one was not asked.',
 		mode: 'advanced',
 		preset: 'refresh-broker-pkce',
 		step: 'refresh-request'
@@ -1149,7 +1149,7 @@ export const offTheMap: readonly MapNode[] = [
 		answer:
 			'On the server recorded, no. The identity provider remembered the browser and sent the second app a code at once, with no login and no trip to the other provider.',
 		title: 'With another provider, is the user sent there again for a second app?',
-		summary: 'No, the identity provider remembers them.',
+		summary: 'No: on the server recorded, it remembered them.',
 		mode: 'advanced',
 		preset: 'sso-broker-pkce',
 		step: 'second-redirect-with-code'

@@ -416,10 +416,10 @@ Not tried: an account at the other provider already linked to someone else, and 
 Recorded on Keycloak 26.8.1 on 2026-11-05, for [#186](https://github.com/vriesdemichael/authlines/issues/186), after an agent mapping a real setup had to split it over several links. Each is one run, in the realm whose login goes straight to the other provider, unless it says otherwise.
 
 - `points-at-a-document-oidc`, in the realm with a password: with `openid` asked for, an app that points at a document got an ID token whose `aud` is the address of its document.
-- `points-at-a-document-broker`: the document was fetched before the browser was sent to the other provider, and the user was asked about the app once they were back, at `login-actions/required-action?execution=OAUTH_GRANT`. The same address is where the user was asked in every recording with consent: the login form posts, and is answered with a redirect there.
+- `points-at-a-document-broker`: the document was fetched before the browser was sent to the other provider, and the user was asked about the app once they were back, at `login-actions/required-action?execution=OAUTH_GRANT`. The same address is where the user was asked in every recording with consent, reached by a redirect after the login: straight after the login form without another provider, and a few hops later with one.
 - `refresh-broker-pkce`: the refresh was at the identity provider's token endpoint, the other provider was not asked, and the old refresh token worked again, as it does without one on these defaults.
 - `sso-broker-pkce`: the second app was answered with a code at once, with no login and no trip to the other provider.
 - `exchange-broker`: the first API traded the token at the identity provider for one naming the second API, with `azp` the first API, and the other provider was not asked.
-- A run that points at a document leaves its client policy in the realm, and a run after it in the same realm failed at the login. Each of these was recorded in a run of its own.
+- A run that points at a document leaves its client policy in the realm. While recording, the run after it in the same realm stopped waiting for the login form, so each of these was recorded in a run of its own.
 
-Not tried: a second app that insists on a login, or asks in a new browser, with another provider, and any of these with stored tokens from the other provider.
+Not tried: a second app that insists on a login, or asks in a new browser, with another provider; a refresh token used twice with the session ending, and a refresh token from a trade, with another provider; and any of these with stored tokens from the other provider.
