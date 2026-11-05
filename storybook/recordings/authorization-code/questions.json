@@ -17,7 +17,14 @@
 		"console.require-par": "2026-11-04",
 		"console.par-lifespan": "2026-11-04",
 		"pushedRedirect": "2026-11-04",
-		"console.redirect-checked-at-push": "2026-11-04"
+		"console.redirect-checked-at-push": "2026-11-04",
+		"exchangeEnabled": "2026-11-04",
+		"exchangeAudience": "2026-11-04",
+		"exchangeNeedsItsName": "2026-11-04",
+		"console.standard-token-exchange": "2026-11-04",
+		"console.exchange-subject": "2026-11-04",
+		"console.exchange-audience": "2026-11-04",
+		"secondApiTakes": "2026-11-04"
 	},
 	"answers": {
 		"validRedirectUris": {
@@ -831,6 +838,25 @@
 					"Valid redirect URIs"
 				],
 				"missing": []
+			},
+			"standard-token-exchange": {
+				"found": [
+					"Capability config",
+					"Standard Token Exchange"
+				],
+				"missing": []
+			},
+			"exchange-subject": {
+				"found": [
+					"Audience"
+				],
+				"missing": []
+			},
+			"exchange-audience": {
+				"found": [
+					"Add client scope"
+				],
+				"missing": []
 			}
 		},
 		"directoryLogin": {
@@ -1017,6 +1043,61 @@
 				"status": 400,
 				"says": "Invalid parameter: redirect_uri"
 			}
+		},
+		"exchangeEnabled": {
+			"before": {
+				"status": 400,
+				"error": "invalid_request",
+				"says": "Standard token exchange is not enabled for the requested client",
+				"aud": null
+			},
+			"after": {
+				"status": 200,
+				"error": null,
+				"says": null,
+				"aud": "demo-api-two"
+			}
+		},
+		"exchangeAudience": {
+			"before": {
+				"status": 400,
+				"error": "invalid_request",
+				"says": "Requested audience not available: demo-api-two",
+				"aud": null
+			},
+			"after": {
+				"status": 200,
+				"error": null,
+				"says": null,
+				"aud": "demo-api-two"
+			}
+		},
+		"exchangeNeedsItsName": {
+			"before": {
+				"status": 403,
+				"error": "access_denied",
+				"says": "Client is not within the token audience",
+				"aud": null,
+				"subjectAud": "account"
+			},
+			"after": {
+				"status": 200,
+				"error": null,
+				"says": null,
+				"aud": "demo-api-two",
+				"subjectAud": [
+					"note-exchange-api",
+					"account"
+				]
+			}
+		},
+		"secondApiTakes": {
+			"appsToken": {
+				"status": 401,
+				"wwwAuthenticate": "Bearer error=\"invalid_token\", error_description=\"not for this API\"",
+				"body": "{\"error\":\"not for this API\"}"
+			},
+			"exchanged": 200
 		}
 	}
 }
