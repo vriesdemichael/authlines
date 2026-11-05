@@ -135,9 +135,10 @@ function classifyRequest(url: URL, method = 'GET'): string | null {
 	if (url.origin === ATTACKER_SITE) return 'code-to-attacker';
 	if (url.origin === SECOND_APP) return path === '/' ? 'second-open-app' : 'second-callback';
 	const forSecond = url.searchParams.get('client_id') === SECOND_CLIENT;
-	if (forSecond && path === `/realms/${LOCAL_REALM}/protocol/openid-connect/auth`) {
-		return 'second-authorize';
-	}
+	const inOurs = [LOCAL_REALM, BROKERED_REALM].map(
+		(realm) => `/realms/${realm}/protocol/openid-connect/auth`
+	);
+	if (forSecond && inOurs.includes(path)) return 'second-authorize';
 	if (forSecond && path.startsWith(`/realms/${LOCAL_REALM}/login-actions/authenticate`)) {
 		return 'second-submit-credentials';
 	}
@@ -171,7 +172,10 @@ function classifyRequest(url: URL, method = 'GET'): string | null {
 	if (path.startsWith(`/realms/${DIRECTORY_REALM}/login-actions/authenticate`)) {
 		return 'submit-credentials';
 	}
-	if (path.startsWith(`/realms/${LOCAL_REALM}/login-actions/consent`)) return 'consent-grant';
+	// With another provider, the question is asked in the realm that hands the login over (#186).
+	for (const realm of [LOCAL_REALM, BROKERED_REALM]) {
+		if (path.startsWith(`/realms/${realm}/login-actions/consent`)) return 'consent-grant';
+	}
 	return null;
 }
 
@@ -243,6 +247,14 @@ function classifyResponse(
 		return 'login-page';
 	}
 	if (url.pathname.startsWith(`/realms/${LOCAL_REALM}/login-actions/`) && status === 200) {
+		return 'consent-page';
+	}
+	// Only the question: the first login through another provider goes on by itself here (#186).
+	if (
+		url.pathname === `/realms/${BROKERED_REALM}/login-actions/required-action` &&
+		url.searchParams.get('execution') === 'OAUTH_GRANT' &&
+		status === 200
+	) {
 		return 'consent-page';
 	}
 	return null;
@@ -1031,6 +1043,12 @@ async function recordOnlyPresets(ids: readonly string[]) {
 		const mixed = wanted.some(needsV2) && wanted.some((preset) => !needsV2(preset));
 		if (mixed || (wanted.some(needsV2) && wanted.some(needsCimd))) {
 			throw new Error('Record presets that need API V2 on their own, because it turns V1 off');
+		}
+		// The flag shows in discovery, so a preset with no document recorded beside one would say it (#186).
+		if (wanted.some(needsCimd) && wanted.some((preset) => !needsCimd(preset))) {
+			throw new Error(
+				'Record presets that point at a document on their own, because the flag changes discovery'
+			);
 		}
 		await startKeycloak(version, features);
 		const admin = await Admin.connect();

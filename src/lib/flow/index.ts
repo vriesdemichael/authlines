@@ -21,6 +21,22 @@ const presets: readonly Preset[] = [
 		settings: { registration: 'cimd', clientType: 'public', pkce: true, consent: true }
 	},
 	{
+		id: 'points-at-a-document-oidc',
+		title: 'An app that points at a document, with OpenID Connect',
+		settings: { registration: 'cimd', clientType: 'public', pkce: true, consent: true, oidc: true }
+	},
+	{
+		id: 'points-at-a-document-broker',
+		title: 'An app that points at a document, with another provider',
+		settings: {
+			registration: 'cimd',
+			clientType: 'public',
+			pkce: true,
+			consent: true,
+			broker: true
+		}
+	},
+	{
 		id: 'the-old-way',
 		title: 'The old way: the app has your password',
 		settings: { oldWay: true }
@@ -59,6 +75,11 @@ const presets: readonly Preset[] = [
 		title: 'Using a refresh token twice ends the app’s session, with no secret',
 		settings: { refresh: true, clientType: 'public', pkce: true, reuse: 'ends' }
 	},
+	{
+		id: 'refresh-broker-pkce',
+		title: 'When the token runs out, with another provider and PKCE',
+		settings: { refresh: true, broker: true, pkce: true }
+	},
 	{ id: 'sso', title: 'A second app', settings: { sso: true } },
 	{
 		id: 'sso-oidc',
@@ -74,6 +95,11 @@ const presets: readonly Preset[] = [
 		id: 'sso-fresh',
 		title: 'A second app, in a new browser',
 		settings: { sso: true, oidc: true, ssoAsks: 'fresh' }
+	},
+	{
+		id: 'sso-broker-pkce',
+		title: 'A second app, with another provider and PKCE',
+		settings: { sso: true, broker: true, pkce: true }
 	},
 	{ id: 'logout', title: 'Logging out', settings: { oidc: true, logout: true } },
 	{
@@ -124,6 +150,11 @@ const presets: readonly Preset[] = [
 		id: 'exchange-refresh-oidc',
 		title: 'An API that keeps going with a refresh token from the trade, with OpenID Connect',
 		settings: { exchange: true, exchangeGives: 'refresh', oidc: true }
+	},
+	{
+		id: 'exchange-broker',
+		title: 'An API that passes the call on, with another provider',
+		settings: { exchange: true, broker: true }
 	},
 	{
 		id: 'browser-app',

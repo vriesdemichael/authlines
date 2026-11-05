@@ -140,6 +140,16 @@ describe.each(asCases)('the recording of %s', (preset, recording) => {
 		expect(missing).toEqual([]);
 	});
 
+	// A flag shows in discovery, so a recording made on a server with one it did not need says so (#186).
+	it('was made on a server with a document flag only if it points at a document', () => {
+		const discovery = recorded.find((message) => message.step === 'discovery-document');
+		if (!discovery) return;
+		const { body } = carried(discovery);
+		expect(Boolean(body.client_id_metadata_document_supported)).toBe(
+			recording.settings.registration === 'cimd'
+		);
+	});
+
 	it('has no message the diagram does not draw', () => {
 		const drawn = new Set(stepsOf(recording).map((step) => step.id));
 		expect(recorded.map((m) => m.step).filter((step) => !drawn.has(step!))).toEqual([]);

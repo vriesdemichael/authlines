@@ -245,11 +245,11 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 					when: all(
 						is('clientType', 'public'),
 						is('pkce', true),
-						is('oidc', false),
 						is('consent', true),
 						is('attacker', false),
 						is('binding', 'bearer'),
-						is('broker', false),
+						is('upstreamTokens', 'off'),
+						is('companies', false),
 						is('apiToken', 'good'),
 						is('refresh', false),
 						is('sso', false),
@@ -258,7 +258,8 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 						is('appRuns', 'server'),
 						is('oldWay', false)
 					),
-					because: 'Only drawn in the plain case so far.'
+					because:
+						'Drawn so far with OpenID Connect or another provider, and nothing else on but what a document needs.'
 				}
 			}
 		]
@@ -796,7 +797,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			when: all(
 				is('attacker', false),
 				is('binding', 'bearer'),
-				is('broker', false),
+				is('upstreamTokens', 'off'),
 				is('apiToken', 'good'),
 				is('refresh', false),
 				is('sso', false),
@@ -810,7 +811,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				is('par', false)
 			),
 			because:
-				'Drawn so far with nothing else on but OpenID Connect, consent and PKCE, with either kind of client and the app on a server.',
+				'Drawn so far with nothing else on but OpenID Connect, consent, PKCE and another provider, with either kind of client and the app on a server.',
 			sayWhenBlocked: true
 		}
 	},
@@ -836,7 +837,14 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		},
 		options: [
 			{ value: 'token', label: 'A token for the second API' },
-			{ value: 'refresh', label: 'A refresh token as well' }
+			{
+				value: 'refresh',
+				label: 'A refresh token as well',
+				requires: {
+					when: is('broker', false),
+					because: 'Drawn so far with no other provider.'
+				}
+			}
 		]
 	},
 	linkAccount: {
@@ -920,7 +928,8 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		requires: {
 			when: all(
 				is('binding', 'bearer'),
-				is('broker', false),
+				is('upstreamTokens', 'off'),
+				is('companies', false),
 				is('attacker', false),
 				is('apiToken', 'good')
 			),
@@ -948,7 +957,14 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		},
 		options: [
 			{ value: 'keeps', label: 'It keeps working' },
-			{ value: 'ends', label: 'It ends the app’s session' }
+			{
+				value: 'ends',
+				label: 'It ends the app’s session',
+				requires: {
+					when: is('broker', false),
+					because: 'Drawn so far with no other provider.'
+				}
+			}
 		]
 	},
 	sso: {
@@ -967,7 +983,8 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		requires: {
 			when: all(
 				is('binding', 'bearer'),
-				is('broker', false),
+				is('upstreamTokens', 'off'),
+				is('companies', false),
 				is('attacker', false),
 				is('consent', false),
 				is('apiToken', 'good'),
@@ -999,12 +1016,18 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			{
 				value: 'insists',
 				label: 'The app insists on a login',
-				requires: { when: is('oidc', true), because: 'prompt is part of OpenID Connect.' }
+				requires: {
+					when: all(is('oidc', true), is('broker', false)),
+					because: 'prompt is part of OpenID Connect, and drawn so far with no other provider.'
+				}
 			},
 			{
 				value: 'fresh',
 				label: 'A new browser, told not to ask',
-				requires: { when: is('oidc', true), because: 'prompt is part of OpenID Connect.' }
+				requires: {
+					when: all(is('oidc', true), is('broker', false)),
+					because: 'prompt is part of OpenID Connect, and drawn so far with no other provider.'
+				}
 			}
 		]
 	},

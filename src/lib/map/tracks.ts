@@ -1108,6 +1108,62 @@ export const offTheMap: readonly MapNode[] = [
 			'A nonce from the server. The spec allows it, and the server recorded here did not ask.',
 		preset: 'dpop-nonce',
 		step: 'nonce-challenge'
+	}),
+	// What a real setup has together, each from a run of its own (#186).
+	node({
+		id: 'document-with-openid',
+		alsoAskedAs: ['cimd openid connect', 'cimd id token'],
+		answer:
+			'Yes. On the server recorded it asked for openid and got an ID token, made out to the address of its document, because that is its client ID.',
+		title: 'Does an app that points at a document get an ID token?',
+		summary: 'Yes, made out to the address of its document.',
+		mode: 'advanced',
+		preset: 'points-at-a-document-oidc',
+		step: 'token-response'
+	}),
+	node({
+		id: 'document-with-another-provider',
+		alsoAskedAs: ['cimd broker', 'cimd external idp'],
+		answer:
+			'On the server recorded, yes. The identity provider fetched the document first, then sent the browser to the other provider, and asked the user about the app once they were back.',
+		title: 'Can an app that points at a document have its users log in at another provider?',
+		summary: 'Yes: the document first, then the other provider, then the question.',
+		mode: 'advanced',
+		preset: 'points-at-a-document-broker',
+		step: 'consent-page'
+	}),
+	node({
+		id: 'refresh-with-another-provider',
+		alsoAskedAs: ['refresh token broker', 'refresh token external idp'],
+		answer:
+			'At its own identity provider, as without one. On the server recorded, the other provider was not asked again, and the app never talked to it.',
+		title: 'With another provider doing the login, where does the app refresh its token?',
+		summary: 'At its own identity provider, and here the other one was not asked.',
+		mode: 'advanced',
+		preset: 'refresh-broker-pkce',
+		step: 'refresh-request'
+	}),
+	node({
+		id: 'second-app-with-another-provider',
+		alsoAskedAs: ['sso broker', 'single sign-on external idp'],
+		answer:
+			'On the server recorded, no. The identity provider remembered the browser and sent the second app a code at once, with no login and no trip to the other provider.',
+		title: 'With another provider, is the user sent there again for a second app?',
+		summary: 'No: on the server recorded, it remembered them.',
+		mode: 'advanced',
+		preset: 'sso-broker-pkce',
+		step: 'second-redirect-with-code'
+	}),
+	node({
+		id: 'exchange-with-another-provider',
+		alsoAskedAs: ['token exchange broker', 'token exchange external idp'],
+		answer:
+			'On the server recorded, yes, like any other. The API traded it at its own identity provider for one meant for the second API, and the other provider was not asked.',
+		title: 'Can an API trade a token from a login at another provider?',
+		summary: 'Yes, at its own identity provider.',
+		mode: 'advanced',
+		preset: 'exchange-broker',
+		step: 'exchange-response'
 	})
 ];
 

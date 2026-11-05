@@ -47,8 +47,12 @@ test.describe('an API that trades the token (#13)', () => {
 		await expect(page.locator('[data-flag="token-exchange-standard:v2"]').first()).toBeAttached();
 	});
 
-	test('is not on offer with another provider, and says why', async ({ page }) => {
+	test('is on offer with another provider, and not with what it stores, and says why', async ({
+		page
+	}) => {
 		await open(page, '&broker=1');
+		await expect(page.locator('[data-setting="exchange"] input')).toBeEnabled();
+		await open(page, '&broker=1&upstream=v1');
 		await expect(page.locator('[data-setting="exchange"] input')).toBeDisabled();
 		await expect(page.locator('[data-setting="exchange"]')).toContainText(
 			'Drawn so far with nothing else on but'
