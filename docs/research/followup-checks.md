@@ -449,3 +449,15 @@ Recorded on Keycloak 26.8.1 on 2026-11-05 (`on-their-computer` and `on-their-com
 - `http://127.0.0.1:*` registered, as a real setup had it, port 51234 got the login page at `/callback` and at `/somewhere-else`.
 
 Not tried: another program on the same computer taking the code, an IPv6 run end to end, and a program with a secret of its own from dynamic registration.
+
+## What the identity provider sends on to the other provider
+
+Asked of Keycloak 26.8.1 on 2026-11-05, for [#182](https://github.com/vriesdemichael/authlines/issues/182) (`upstreamPrompt`, `upstreamScope`, `upstreamPkce`, `upstreamSync` and `upstreamTrustEmail` in `questions.json`). The request upstream was read from the redirects the identity provider sent, with `kc_idp_hint`, and with no login after unless it says so. The other provider is a second realm on the same server.
+
+- **Prompt.** Not set on a new provider. The app sent `prompt=select_account`, and the request upstream had `select_account`. With the provider's Prompt set to `consent`, it had `consent` in its place. The other provider, asked straight with `prompt=not-a-prompt`, showed its login page, so a provider that refuses a value it does not support was not tried.
+- **Scope.** A new provider has no Scopes set. Set to `openid`, as the recorder sets it up, the request upstream had `openid` with the app asking for `openid email`, and set to `openid profile` it had that. Every recording that logs in at another provider with OpenID Connect asks it for `openid`, including those where the app asked for no scope.
+- **PKCE.** Use PKCE is off on a new provider, and the request upstream had no `code_challenge`, including in every recording where the app sent one. Turned on with S256, it had one, and a login through it got tokens.
+- **Sync mode.** The recorder sets it to Import. The first login made the user from the other provider's details. After the user's last name changed there, a later login kept the old one, and with Force it copied the new one.
+- **Trust Email.** Off on a new provider and on in the recorder's setup. With it on, the user made at the first login had a verified email, and with it off, the same user's was not verified, though the other provider had it verified.
+
+Not tried: an upstream that is not Keycloak, a prompt the upstream refuses, and what a token request upstream carries with PKCE on, which a login that got tokens only implies.

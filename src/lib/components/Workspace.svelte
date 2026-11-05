@@ -1059,6 +1059,7 @@
 						marks={page.marks}
 						shows={page.shows}
 						image={page.shot && imageOf ? imageOf(page.shot) : null}
+						upstream={page.shot === 'login-upstream'}
 						everything={appState.mode === 'advanced'}
 						onterm={explainTerm}
 					/>

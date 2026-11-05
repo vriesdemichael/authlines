@@ -93,9 +93,19 @@ import {
 	questionsWhenTheApiReads,
 	questionsWhenLinked,
 	questionsWhenOffline,
-	questionsWithAProgram
+	questionsWithAProgram,
+	questionsOnTheWayUpstream
 } from './questions.ts';
 import { deviceNoteDefs, noteDefs, noUserNoteDefs } from '#lib/keycloak/notes.ts';
+
+/** What the identity provider sends on to the other provider, and copies from there (#182). */
+const UPSTREAM_NOTES = [
+	'upstream-scopes',
+	'upstream-prompt',
+	'upstream-pkce',
+	'upstream-sync',
+	'upstream-trust-email'
+];
 
 const { presets } = base;
 
@@ -1136,6 +1146,11 @@ async function recordOnlyPresets(ids: readonly string[]) {
 			const looked = await lookInConsole(browser, admin, [], programNotes);
 			addToQuestions(recordedAt, await questionsWithAProgram(admin), looked);
 		}
+		if (wanted.some(({ settings }) => settings.broker && !settings.companies)) {
+			const upstreamNotes = noteDefs.filter(({ id }) => UPSTREAM_NOTES.includes(id));
+			const looked = await lookInConsole(browser, admin, [], upstreamNotes);
+			addToQuestions(recordedAt, await questionsOnTheWayUpstream(browser, demo, admin), looked);
+		}
 		if (wanted.some(({ settings }) => settings.linkAccount)) {
 			addToQuestions(recordedAt, await questionsWhenLinked(browser, demo, admin));
 		}
@@ -1273,6 +1288,7 @@ async function main() {
 				Object.assign(answers, await questionsWhenLinked(browser, demo, admin));
 				Object.assign(answers, await questionsWhenOffline(admin));
 				Object.assign(answers, await questionsWithAProgram(admin));
+				Object.assign(answers, await questionsOnTheWayUpstream(browser, demo, admin));
 				Object.assign(answers, await whatAScriptCan(browser, demo, admin));
 				Object.assign(answers, await questionsWithCompanies(admin));
 				Object.assign(answers, await questionsWhenSomeoneLeaves(browser, admin));

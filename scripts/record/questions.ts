@@ -25,6 +25,7 @@ import {
 	UPSTREAM_REALM,
 	USERNAME,
 	API_CLIENT,
+	BROKER_CLIENT,
 	BACKCHANNEL_URL,
 	POST_LOGOUT_URI,
 	NAMES_THE_SECOND_API,
@@ -916,6 +917,183 @@ async function behindTheBrokeringNotes(browser: Browser, demo: Demo, admin: Admi
 		},
 		brokerRedirector: { before: redirecting, after: notRedirecting, withHint }
 	};
+}
+
+/**
+ * What the identity provider sends on to the other provider, which of it is the app's, and what it
+ * copies from there at each login (#182). The request upstream is read from the redirects alone.
+ */
+export async function questionsOnTheWayUpstream(browser: Browser, demo: Demo, admin: Admin) {
+	const onProvider = `/realms/${BROKERED_REALM}/identity-provider/instances/${UPSTREAM_REALM}`;
+	const provider = await admin.call<{ config: Record<string, string> }>('GET', onProvider);
+	const setProvider = (changes: Record<string, unknown>, config: Record<string, string> = {}) =>
+		admin.call('PUT', onProvider, {
+			...provider,
+			...changes,
+			config: { ...provider.config, ...config }
+		});
+	const upstreamAuth = `${KEYCLOAK}/realms/${UPSTREAM_REALM}/protocol/openid-connect/auth`;
+	const hint = { kc_idp_hint: UPSTREAM_REALM };
+	const appAsks = { scope: 'openid email', prompt: 'select_account' };
+
+	const sentUpstream = async (extra: Record<string, string>) => {
+		let next = `${KEYCLOAK}/realms/${BROKERED_REALM}/protocol/openid-connect/auth?${new URLSearchParams(
+			{
+				response_type: 'code',
+				client_id: CONFIDENTIAL_CLIENT,
+				redirect_uri: REDIRECT_URI,
+				state: random(),
+				...hint,
+				...extra
+			}
+		)}`;
+		const cookies = new Map<string, string>();
+		for (let hop = 0; hop < 4; hop++) {
+			const answer = await fetch(next, {
+				redirect: 'manual',
+				headers: { cookie: [...cookies].map(([name, value]) => `${name}=${value}`).join('; ') }
+			});
+			for (const set of answer.headers.getSetCookie()) {
+				const [pair] = set.split(';');
+				const at = pair.indexOf('=');
+				cookies.set(pair.slice(0, at), pair.slice(at + 1));
+			}
+			const location = answer.headers.get('location');
+			if (!location) throw new Error(`No way to the other provider: ${answer.status}`);
+			next = new URL(location, next).toString();
+			if (next.startsWith(upstreamAuth)) {
+				const query = new URL(next).searchParams;
+				return {
+					scope: query.get('scope'),
+					prompt: query.get('prompt'),
+					codeChallenge: query.has('code_challenge'),
+					codeChallengeMethod: query.get('code_challenge_method')
+				};
+			}
+		}
+		throw new Error('Never got to the other provider');
+	};
+
+	const brokeredUser = async () => {
+		const [found] = await admin.call<{ lastName?: string; emailVerified?: boolean }[]>(
+			'GET',
+			`/realms/${BROKERED_REALM}/users`
+		);
+		return { lastName: found?.lastName ?? null, emailVerified: Boolean(found?.emailVerified) };
+	};
+	const logIn = async () => {
+		const { code } = await codeFor(browser, demo, BROKERED_REALM, CONFIDENTIAL_CLIENT, hint);
+		return (await token(BROKERED_REALM, confidentialBody(code))).status;
+	};
+	const [upstreamUser] = await admin.call<{ id: string; lastName: string }[]>(
+		'GET',
+		`/realms/${UPSTREAM_REALM}/users?username=${USERNAME}&exact=true`
+	);
+	const upstreamUserPath = `/realms/${UPSTREAM_REALM}/users/${upstreamUser.id}`;
+	const renameUpstream = async (lastName: string) => {
+		const now = await admin.call<object>('GET', upstreamUserPath);
+		await admin.call('PUT', upstreamUserPath, { ...now, lastName });
+	};
+
+	// What a new provider has for each of these when nobody says.
+	await admin.call('POST', `/realms/${BROKERED_REALM}/identity-provider/instances`, {
+		alias: 'on-its-defaults',
+		providerId: 'oidc',
+		config: { authorizationUrl: `${KEYCLOAK}/x`, tokenUrl: `${KEYCLOAK}/x`, clientId: 'x' }
+	});
+	const onItsDefaults = `/realms/${BROKERED_REALM}/identity-provider/instances/on-its-defaults`;
+	const fresh = await admin.call<{ trustEmail?: boolean; config: Record<string, string> }>(
+		'GET',
+		onItsDefaults
+	);
+	await admin.call('DELETE', onItsDefaults);
+
+	try {
+		const asSetUp = await sentUpstream(appAsks);
+		await setProvider({}, { defaultScope: 'openid profile' });
+		const scopeSet = await sentUpstream(appAsks);
+		await setProvider({}, { prompt: 'consent' });
+		const promptSet = await sentUpstream(appAsks);
+		await setProvider({}, { pkceEnabled: 'true', pkceMethod: 'S256' });
+		const withPkce = await sentUpstream(appAsks);
+		await admin.forgetBrokeredUsers();
+		const pkceLogin = await logIn();
+
+		// What is copied at the first login, and what a later login does when it changed there.
+		await setProvider({});
+		await admin.forgetBrokeredUsers();
+		await logIn();
+		const firstLogin = await brokeredUser();
+		await renameUpstream('Renamed');
+		await logIn();
+		const laterLogin = await brokeredUser();
+		await setProvider({}, { syncMode: 'FORCE' });
+		await logIn();
+		const laterLoginForced = await brokeredUser();
+		await renameUpstream(upstreamUser.lastName);
+
+		await setProvider({ trustEmail: false });
+		await admin.forgetBrokeredUsers();
+		await logIn();
+		const notTrusted = await brokeredUser();
+
+		// The other provider asked straight, with a prompt it does not know.
+		const unknown = await fetch(
+			`${upstreamAuth}?${new URLSearchParams({
+				response_type: 'code',
+				client_id: BROKER_CLIENT,
+				redirect_uri: `${KEYCLOAK}/realms/${BROKERED_REALM}/broker/${UPSTREAM_REALM}/endpoint`,
+				state: random(),
+				scope: 'openid',
+				prompt: 'not-a-prompt'
+			})}`,
+			{ redirect: 'manual' }
+		);
+		const unknownTo = unknown.headers.get('location');
+		const unknownPrompt = {
+			status: unknown.status,
+			error: unknownTo ? new URL(unknownTo).searchParams.get('error') : null,
+			loginPage: unknown.status === 200 && (await unknown.text()).includes('id="username"')
+		};
+
+		return {
+			upstreamPrompt: {
+				byDefault: { prompt: fresh.config.prompt ?? null },
+				appSent: appAsks.prompt,
+				before: { prompt: asSetUp.prompt },
+				after: { prompt: promptSet.prompt },
+				unknownPrompt
+			},
+			upstreamScope: {
+				byDefault: { defaultScope: fresh.config.defaultScope ?? null },
+				appSent: appAsks.scope,
+				before: { setTo: provider.config.defaultScope, sent: asSetUp.scope },
+				after: { setTo: 'openid profile', sent: scopeSet.scope }
+			},
+			upstreamPkce: {
+				byDefault: { pkceEnabled: fresh.config.pkceEnabled ?? null },
+				before: { codeChallenge: asSetUp.codeChallenge },
+				after: { codeChallenge: withPkce.codeChallenge, method: withPkce.codeChallengeMethod },
+				loginWithPkce: { tokenStatus: pkceLogin }
+			},
+			upstreamSync: {
+				byDefault: { syncMode: fresh.config.syncMode ?? null },
+				setUpWith: provider.config.syncMode,
+				firstLogin,
+				before: laterLogin,
+				after: laterLoginForced
+			},
+			upstreamTrustEmail: {
+				byDefault: { trustEmail: Boolean(fresh.trustEmail) },
+				before: firstLogin,
+				after: notTrusted
+			}
+		};
+	} finally {
+		await admin.call('PUT', onProvider, provider);
+		await renameUpstream(upstreamUser.lastName);
+		await admin.forgetBrokeredUsers();
+	}
 }
 
 /** What a server does about an app with no user, each one tried both ways. */

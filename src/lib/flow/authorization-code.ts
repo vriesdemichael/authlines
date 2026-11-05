@@ -1299,7 +1299,11 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: 'The browser posts the request to their company. It names the identity provider by the ID their company was given at setup.'
 				},
 				{
-					text: 'The same request the app made, but now the identity provider is the client asking for a login.'
+					when: pkce,
+					text: 'A request like the one the app made, but now the identity provider is the client asking for a login, with a scope of its own. The app’s PKCE ends at the identity provider: a challenge here would be the identity provider’s own setting, and the server recorded sent none.'
+				},
+				{
+					text: 'A request like the one the app made, but now the identity provider is the client asking for a login, with a scope of its own.'
 				}
 			],
 			pitfall: {
@@ -1326,7 +1330,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					when: not(saml)
 				},
 				{ name: 'state', place: 'query', when: not(saml) },
-				{ name: 'scope=openid', place: 'query', when: not(saml) },
+				{
+					name: 'scope=openid',
+					place: 'query',
+					note: 'What the identity provider is set up to ask this provider for, whatever scope the app asked for',
+					when: not(saml)
+				},
 				{ name: 'nonce', place: 'query', when: not(saml) }
 			]
 		},
@@ -1487,7 +1496,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'It links this person to a user',
 			label: 'Match or create the user',
 			concept:
-				'The identity provider links the external identity to a local user, creating one if needed.',
+				'The identity provider links the external identity to a local user, and where there is none yet, makes one from what the other provider sent. Whether a later login copies those details again, and whether the email counts as checked, is how the identity provider is set up for this provider.',
 			when: broker
 		},
 		{

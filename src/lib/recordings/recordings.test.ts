@@ -369,6 +369,36 @@ describe('the words after a logout', () => {
 	});
 });
 
+// #182: what the identity provider sends on to the other provider is its own, and not the app's.
+describe('the words on the request to the other provider', () => {
+	const brokered = recordings.filter(({ settings }) => settings.broker && !settings.companies);
+	const sent = (recording: Recording, step: string) => {
+		const message = recording.messages.find((candidate) => candidate.step === step);
+		return new URL(message?.url ?? '').searchParams;
+	};
+
+	it.each(brokered.filter(({ settings }) => settings.pkce).map((r) => [r.preset, r] as const))(
+		'%s: the app’s challenge stops at the identity provider, as the step says',
+		(_, recording) => {
+			expect(sent(recording, 'authorize').has('code_challenge')).toBe(true);
+			expect(sent(recording, 'upstream-authorize').has('code_challenge')).toBe(false);
+			const step = stepsOf(recording).find(({ id }) => id === 'upstream-authorize');
+			expect(step?.concept).toContain('the server recorded sent none');
+		}
+	);
+
+	it.each(brokered.map((r) => [r.preset, r] as const))(
+		'%s: asks the other provider for the scope it was set up with, whatever the app asked',
+		(_, recording) => {
+			expect(sent(recording, 'upstream-authorize').get('scope')).toBe('openid');
+		}
+	);
+
+	it('holds the field to that, from an app that asked for none', () => {
+		expect(sent(read('broker'), 'authorize').get('scope')).toBeNull();
+	});
+});
+
 describe('the words on a second app', () => {
 	it.each([
 		['sso-oidc', 'code=', '302 back with a code', 'so no form'],

@@ -10,10 +10,20 @@
 		image?: string | null;
 		/** All of the address, for someone who asked for the detail. */
 		everything?: boolean;
+		/** The picture is the other provider's, which was a second realm on the same server (#182). */
+		upstream?: boolean;
 		onterm?: (id: string) => void;
 	}
 
-	let { address, marks = [], shows, image = null, everything = false, onterm }: Props = $props();
+	let {
+		address,
+		marks = [],
+		shows,
+		image = null,
+		everything = false,
+		upstream = false,
+		onterm
+	}: Props = $props();
 
 	const read = $derived(address ? readAddress(address, marks, { everything }) : null);
 </script>
@@ -40,7 +50,12 @@
 	{#if image}
 		<img src={image} alt={shows} width="640" height="480" data-testid="page-picture" />
 		<figcaption data-testid="page-caption">
-			Keycloak’s own page, as it looks by default. Yours will look different.
+			{#if upstream}
+				The other provider here is a second realm on the same Keycloak, so this is Keycloak’s own
+				page too, as it looks by default. Yours will look different.
+			{:else}
+				Keycloak’s own page, as it looks by default. Yours will look different.
+			{/if}
 		</figcaption>
 	{:else}
 		<p data-testid="page-outline">{shows}</p>
