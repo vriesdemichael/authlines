@@ -132,15 +132,15 @@ describe('what the skill says is not drawn', () => {
 		}
 	});
 
-	it('sends a login through two providers to the step that says why it is drawn with one', () => {
+	it('sends a login handed on again to the step that says why it is drawn as one hop', () => {
 		const [query] = codeParts(drawnShorter).filter((_, index) => index % 2);
 		const { base, state } = opened(`authorization-code/?${query}`);
 		const shown = evaluate(base.diagrams.flow, state.settings).steps.find(
 			(step) => step.id === state.step
 		);
 		expect(state.step).toBe('upstream-authorize');
-		expect(shown?.pitfall?.title).toContain('two providers');
-		expect(shown?.pitfall?.text).toContain('drawn once');
+		expect(shown?.pitfall?.title).toContain('hands the login on again');
+		expect(shown?.pitfall?.text).toContain('drawn as one hop');
 	});
 });
 
@@ -192,12 +192,19 @@ describe('what the reference says a value goes with', () => {
 					value
 				);
 			};
+			// Two that go together only with a third are said apart, and checked below.
+			const withThird = new Set(
+				flow.settings.flatMap((setting) =>
+					setting.withThird.map((line) => inTicks(line).slice(0, 2).join(' '))
+				)
+			);
 			for (const setting of flow.settings) {
 				for (const line of setting.rulesOut) {
 					const [own, ...listed] = inTicks(line);
 					const goesOnly = line.includes(' goes only with ') || line.includes(' goes with none ');
 					for (const [other, query] of withNeeds) {
 						if (other.split('=')[0] === own.split('=')[0]) continue;
+						if (withThird.has(`${own} ${other}`)) continue;
 						const both = `${withNeeds.get(own)}&${query}`;
 						const together = keeps(both, own) && keeps(both, other);
 						const said = listed.includes(other);
@@ -208,6 +215,36 @@ describe('what the reference says a value goes with', () => {
 			}
 		}
 		expect(checked).toBeGreaterThan(500);
+	});
+
+	// An agent read client=public as ruled out with upstream=v2, though reads=api draws them together.
+	it('says what a third has to be there for two that do not go together alone', () => {
+		let checked = 0;
+		for (const flow of guide) {
+			const base = flows[flow.id];
+			const keeps = (query: string) => {
+				const kept = new URLSearchParams(serializeState(base, parseState(base, 'flow', query)));
+				return [...new URLSearchParams(query)].every(([name, value]) => kept.get(name) === value);
+			};
+			const needsOf = (param: string) => {
+				const need = flow.settings
+					.flatMap((setting) => setting.needs)
+					.find((line) => line.startsWith('`' + param + '`'));
+				return need ? `${param}&${inTicks(need)[1]}` : param;
+			};
+			for (const setting of flow.settings) {
+				for (const line of setting.withThird) {
+					const [own, other, ...thirds] = inTicks(line);
+					const both = `${needsOf(own)}&${needsOf(other)}`;
+					expect(keeps(both), `${own} with ${other} alone`).toBe(false);
+					for (const third of thirds) {
+						expect(keeps(`${both}&${third}`), `${own} with ${other} and ${third}`).toBe(true);
+						checked++;
+					}
+				}
+			}
+		}
+		expect(checked).toBeGreaterThan(0);
 	});
 
 	it('says token exchange can have OpenID Connect, consent and PKCE, and needs none of them', () => {

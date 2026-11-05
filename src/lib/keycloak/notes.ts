@@ -953,7 +953,7 @@ export const noteDefs: readonly NoteDef[] = [
 		id: 'upstream-scopes',
 		steps: ['upstream-authorize'],
 		title: 'Scopes',
-		text: 'What Keycloak asks this provider for, whatever the app asked for. Set to openid, the request here had openid, with the app asking for openid email. Set to openid profile, it had openid profile.',
+		text: 'What Keycloak asks this provider for. The app’s own scope did not go on: set to openid, with the app asking for openid email, the request here had openid, and set to openid profile, it had openid profile.',
 		when: plainBroker,
 		place: providerAdvanced('Scopes'),
 		backedBy: {
@@ -969,7 +969,7 @@ export const noteDefs: readonly NoteDef[] = [
 		id: 'upstream-prompt',
 		steps: ['upstream-authorize'],
 		title: 'Prompt',
-		text: 'Not set on a new provider, and then the app’s own prompt goes on: the app sent select_account, and the request here had select_account. Set to consent, it had consent in its place. The other provider here, also Keycloak, showed its login page for a prompt it did not know, so one that refuses a value is not drawn. This is where such a provider gets one it takes.',
+		text: 'Not set on a new provider. Not set, the app’s select_account went on to the request here. Set to consent, the request had consent in its place. Asked straight with a prompt it does not know, the other provider, also Keycloak, showed its login page, so a provider that refuses one was not tried.',
 		when: plainBroker,
 		place: providerAdvanced('Prompt'),
 		backedBy: {
@@ -987,7 +987,7 @@ export const noteDefs: readonly NoteDef[] = [
 		id: 'upstream-pkce',
 		steps: ['upstream-authorize', 'upstream-token-request'],
 		title: 'Use PKCE',
-		text: 'Off on a new provider, and here: the request here had no code_challenge, whatever the app sent. Turned on with S256, it had one, and a login through it still got tokens.',
+		text: 'Off on a new provider, and here: the request here had no code_challenge, and none in any recording here where the app sent one. Turned on with S256, it had one, and the app still got its tokens after a login through it.',
 		when: plainBroker,
 		place: {
 			path: [
@@ -1031,7 +1031,7 @@ export const noteDefs: readonly NoteDef[] = [
 		id: 'upstream-trust-email',
 		steps: ['match-user'],
 		title: 'Trust Email',
-		text: 'Off on a new provider, and on here, so the user made at the first login had a verified email. Turned off, the same user’s email was not verified, though the other provider had it verified.',
+		text: 'Off on a new provider, and on here, so the user made at the first login had a verified email. Turned off, a user made at a new first login had an email that was not verified, though the other provider had it verified. A user who was there already was not tried.',
 		when: plainBroker,
 		place: providerSettings('Trust Email'),
 		backedBy: {

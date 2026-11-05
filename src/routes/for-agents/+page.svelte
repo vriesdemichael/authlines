@@ -141,8 +141,8 @@
 				{#each flow.settings as setting (setting.param)}
 					<li>
 						<code>{setting.param}={setting.values.join(' | ')}</code>: {setting.label}, {setting.byDefault}
-						by default.{setting.only ? ` ${setting.only}` : ''}
-						{#each [...setting.needs, ...setting.rulesOut] as said (said)}
+						by default. {setting.summary}{setting.only ? ` ${setting.only}` : ''}
+						{#each [...setting.needs, ...setting.rulesOut, ...setting.withThird] as said (said)}
 							{@render withCode(said)}
 						{/each}
 					</li>

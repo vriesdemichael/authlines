@@ -161,7 +161,7 @@ describe('what people bring', () => {
 	});
 
 	// #181: drawn with one provider, and the step at the other provider says why.
-	it('finds why a login through two providers is drawn with one, with only that setting on', () => {
+	it('finds why a login through two providers is drawn as one hop, with only that setting on', () => {
 		const step = search('a login through two providers').results.find(
 			({ kind }) => kind === 'step'
 		);

@@ -915,19 +915,17 @@
 			},
 			"upstream-scopes": {
 				"found": [
-					"Advanced settings"
-				],
-				"missing": [
+					"Advanced settings",
 					"Scopes"
-				]
+				],
+				"missing": []
 			},
 			"upstream-prompt": {
 				"found": [
-					"Advanced settings"
-				],
-				"missing": [
+					"Advanced settings",
 					"Prompt"
-				]
+				],
+				"missing": []
 			},
 			"upstream-pkce": {
 				"found": [
