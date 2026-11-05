@@ -29,7 +29,7 @@ Leave out a setting to keep its default. The flow, its settings and the step are
 
 ## What is not drawn here
 
-Do not link to something near it. Say that Authlines does not draw native and mobile apps, a PKCE downgrade, passkeys and WebAuthn, Kerberos, NTLM, or client certificates.
+Do not link to something near it. Say that Authlines does not draw apps on a phone, a PKCE downgrade, passkeys and WebAuthn, Kerberos, NTLM, or client certificates.
 
 ## Names for the parties
 

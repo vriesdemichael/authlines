@@ -196,8 +196,14 @@ export const breakages = [
 	{
 		name: 'settings: saying where an app runs brings nothing with it',
 		file: 'src/lib/flow/settings.ts',
-		from: "sets: { clientType: 'public', pkce: true },",
-		to: ''
+		from: "label: 'In the page',\n\t\t\t\tsets: { clientType: 'public', pkce: true },",
+		to: "label: 'In the page',"
+	},
+	{
+		name: 'program: a program is drawn answered at the app’s own address',
+		file: AC,
+		from: "note: '127.0.0.1 at the port it is listening on, which need not be registered',\n\t\t\t\t\twhen: inAProgram",
+		to: "note: '127.0.0.1 at the port it is listening on, which need not be registered',\n\t\t\t\t\twhen: is('appRuns', 'nowhere')"
 	},
 	{
 		name: 'model: a flow goes on after the server stopped it',
@@ -367,8 +373,8 @@ export const breakages = [
 	{
 		name: 'threats: a flow that is here is said not to be',
 		file: ERRORS,
-		from: "	'rfc8252',",
-		to: "	'rfc8252',\n	'client credentials',\n	'device flow',"
+		from: "	'malicious app',",
+		to: "	'malicious app',\n	'client credentials',\n	'device flow',"
 	},
 	// All that is left to someone, in one list.
 	{

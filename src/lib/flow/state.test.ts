@@ -92,9 +92,10 @@ describe('the URL', () => {
 			{ kind: 'setting', id: 'pkce' }
 		];
 		const source = settingDefs.pkce.sources[0].source;
-		// The old way has no such step, and nor does a login someone else started with a link of theirs.
-		// Every other combination does.
-		const opensTheApp = ({ oldWay, attackerGets }: Settings) => !oldWay && attackerGets === 'copy';
+		// The old way has no such step, and nor does a login someone else started with a link of theirs,
+		// or a program, which opens the browser itself. Every other combination does.
+		const opensTheApp = ({ oldWay, attackerGets, appRuns }: Settings) =>
+			!oldWay && attackerGets === 'copy' && appRuns !== 'program';
 		for (const settings of allValidSettings().filter(opensTheApp)) {
 			for (const mode of ['simple', 'advanced'] as const) {
 				for (const explained of explanations) {

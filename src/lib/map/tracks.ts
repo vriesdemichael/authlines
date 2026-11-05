@@ -1127,6 +1127,47 @@ export const offTheMap: readonly MapNode[] = [
 		preset: 'logout-offline',
 		step: 'refresh-after-logout-response'
 	}),
+	// A program on the user's own computer (#178).
+	node({
+		id: 'program-logs-in',
+		alsoAskedAs: [
+			'command line tool login',
+			'cli login',
+			'desktop app login',
+			'native app',
+			'loopback redirect',
+			'127.0.0.1 redirect'
+		],
+		answer:
+			'It opens the user’s own browser to log in, and hears the answer on a port of 127.0.0.1 that it opened. On the server recorded, an address registered with no port let any port through, as RFC 8252 asks. With no secret to its name, PKCE is what shows the code is its own.',
+		title: 'How does a command-line tool or a desktop app log someone in?',
+		summary: 'Through the user’s browser, and back on a port of its own.',
+		mode: 'advanced',
+		preset: 'on-their-computer',
+		step: 'callback'
+	}),
+	node({
+		id: 'why-not-localhost',
+		alsoAskedAs: ['localhost redirect', 'localhost vs 127.0.0.1'],
+		answer:
+			'RFC 8252 says to use 127.0.0.1, because a name like localhost can be looked up wrongly, or have the program listen on more than the computer itself. On the server recorded, an address registered as 127.0.0.1 refused localhost in its place, and one registered as localhost let any port through as well.',
+		title: 'Why 127.0.0.1, and not localhost?',
+		summary: 'A name can be looked up wrongly, and 127.0.0.1 cannot.',
+		mode: 'advanced',
+		preset: 'on-their-computer',
+		step: 'program-starts'
+	}),
+	node({
+		id: 'program-needs-pkce',
+		alsoAskedAs: ['pkce for native apps', 'pkce cli'],
+		answer:
+			'Any program on the computer could be listening on a port, so the port says nothing about which one got the code. The program has no secret, because every copy is the same. The verifier, which never leaves it, is what shows it started this login.',
+		title: 'Why does a program on someone’s computer need PKCE?',
+		summary: 'Because the port proves nothing, and it has no secret.',
+		mode: 'advanced',
+		preset: 'on-their-computer-oidc',
+		step: 'token-request'
+	}),
 	// What a real setup has together, each from a run of its own (#186).
 	node({
 		id: 'document-with-openid',

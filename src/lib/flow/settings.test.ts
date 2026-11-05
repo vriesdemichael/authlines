@@ -102,6 +102,8 @@ describe('constraints', () => {
 		const exchanged = 2 * 2 * 2 * 2 * (2 + 1);
 		// Linking another account, only on the plain flow with a secret, linked or cancelled (#179).
 		const linking = 2;
+		// A program on the user's computer, in the plain case with PKCE, with or without OpenID Connect.
+		const inAProgram = 2;
 		expect(allValidSettings()).toBe(allValidSettings());
 		expect(Object.isFrozen(allValidSettings())).toBe(true);
 		expect(allValidSettings().every((settings) => Object.isFrozen(settings))).toBe(true);
@@ -122,7 +124,8 @@ describe('constraints', () => {
 				aLinkOfTheirs +
 				pushedFirst +
 				exchanged +
-				linking
+				linking +
+				inAProgram
 		);
 	});
 

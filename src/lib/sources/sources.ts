@@ -12,6 +12,7 @@ export type SourceId =
 	| 'rfc8628'
 	| 'rfc9700'
 	| 'rfc10017'
+	| 'rfc8252'
 	| 'oidc-core'
 	| 'oidc-rp-logout'
 	| 'oidc-backchannel-logout'
@@ -158,6 +159,15 @@ export const sources: Record<SourceId, SourceDef> = {
 			'What an app in the browser has to do, and what it cannot get away from. It goes through what a script running in the page can do, compares a backend that keeps the tokens, one that hands them over, and an app that keeps them itself, and says what each place in the browser does and does not protect.',
 		url: 'https://www.rfc-editor.org/rfc/rfc10017.html',
 		textFile: 'rfc10017.txt'
+	},
+	rfc8252: {
+		label: 'RFC 8252',
+		title: 'OAuth 2.0 for Native Apps',
+		status: 'Best Current Practice (BCP 212), October 2017.',
+		summary:
+			'What an app installed on a device has to do: log in through the user’s own browser rather than a page built into the app, use PKCE because it has no secret worth the name, and get the answer back through an address it owns, a scheme of its own, or a port on 127.0.0.1. It says what each of those does and does not protect.',
+		url: 'https://www.rfc-editor.org/rfc/rfc8252.html',
+		textFile: 'rfc8252.txt'
 	},
 	'oidc-core': {
 		label: 'OpenID Connect Core 1.0',

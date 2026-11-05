@@ -48,6 +48,7 @@ import {
 	CONFIDENTIAL_CLIENT,
 	KEYCLOAK,
 	LOCAL_REALM,
+	LOOPBACK,
 	PASSWORD,
 	REDIRECT_URI,
 	SECOND_APP,
@@ -91,7 +92,8 @@ import {
 	questionsWhenExchanged,
 	questionsWhenTheApiReads,
 	questionsWhenLinked,
-	questionsWhenOffline
+	questionsWhenOffline,
+	questionsWithAProgram
 } from './questions.ts';
 import { deviceNoteDefs, noteDefs, noUserNoteDefs } from '#lib/keycloak/notes.ts';
 
@@ -134,6 +136,8 @@ function classifyRequest(url: URL, method = 'GET'): string | null {
 		if (path.endsWith(`/broker/${customer}/endpoint`)) return 'upstream-callback';
 	}
 	if (url.origin === ATTACKER_SITE) return 'code-to-attacker';
+	// The answer, at the port a program on the user's computer is listening on (#178).
+	if (url.hostname === '127.0.0.1' && path === '/callback') return 'callback';
 	if (url.origin === SECOND_APP) return path === '/' ? 'second-open-app' : 'second-callback';
 	const forSecond = url.searchParams.get('client_id') === SECOND_CLIENT;
 	const inOurs = [LOCAL_REALM, BROKERED_REALM].map(
@@ -225,6 +229,7 @@ function classifyResponse(
 		return 'address-refused';
 	}
 	if (location?.startsWith(REDIRECT_URI)) return 'redirect-with-code';
+	if (location?.startsWith(`${LOOPBACK}:`)) return 'redirect-with-code';
 	if (location?.startsWith(ATTACKER_SITE)) return 'redirect-with-code';
 	if (location?.includes(`/realms/${UPSTREAM_REALM}/protocol/openid-connect/auth`)) {
 		return 'redirect-to-upstream';
@@ -335,7 +340,8 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 		url.startsWith(APP) ||
 		url.startsWith(SECOND_APP) ||
 		url.startsWith(KEYCLOAK) ||
-		url.startsWith(ATTACKER_SITE);
+		url.startsWith(ATTACKER_SITE) ||
+		url.startsWith(`${LOOPBACK}:`);
 	const behind = run.settings.appRuns === 'bff';
 	// It loads the page and asks again after the login, and the diagram draws that once.
 	const once = (step: string | null, direction: 'request' | 'response') =>
@@ -503,7 +509,12 @@ async function login(browser: Browser, run: Run, demo?: Demo) {
 	// A link someone else made, which the user opens, so the app has no part in it.
 	const link = run.settings.attackerGets === 'link';
 	if (link && !demo) throw new Error('A link of theirs needs the demo app to make it');
-	await page.goto(link && demo ? demo.theirLink() : APP);
+	// A program on the user's computer opens the browser at the login address itself (#178).
+	const program = run.settings.appRuns === 'program';
+	if (program && !demo) throw new Error('A program needs the demo app to listen for it');
+	await page.goto(
+		link && demo ? demo.theirLink() : program && demo ? await demo.startProgram() : APP
+	);
 	if (run.settings.address === 'other' || (link && run.settings.registered === 'exact')) {
 		await page.getByText('Invalid parameter: redirect_uri').waitFor();
 		await Promise.all(cookies);
@@ -696,6 +707,7 @@ async function record(
 		} finally {
 			demo.meanwhile = null;
 			if (settings.leaves) await turnOff(admin, customer, false);
+			if (settings.appRuns === 'program') await demo.stopProgram();
 		}
 	}
 	demo.current = null;
@@ -1119,6 +1131,11 @@ async function recordOnlyPresets(ids: readonly string[]) {
 			const looked = await lookInConsole(browser, admin, [], offlineNotes);
 			addToQuestions(recordedAt, await questionsWhenOffline(admin), looked);
 		}
+		if (wanted.some(({ settings }) => settings.appRuns === 'program')) {
+			const programNotes = noteDefs.filter(({ id }) => id === 'loopback-redirects');
+			const looked = await lookInConsole(browser, admin, [], programNotes);
+			addToQuestions(recordedAt, await questionsWithAProgram(admin), looked);
+		}
 		if (wanted.some(({ settings }) => settings.linkAccount)) {
 			addToQuestions(recordedAt, await questionsWhenLinked(browser, demo, admin));
 		}
@@ -1255,6 +1272,7 @@ async function main() {
 				Object.assign(answers, await questionsWhenExchanged(admin));
 				Object.assign(answers, await questionsWhenLinked(browser, demo, admin));
 				Object.assign(answers, await questionsWhenOffline(admin));
+				Object.assign(answers, await questionsWithAProgram(admin));
 				Object.assign(answers, await whatAScriptCan(browser, demo, admin));
 				Object.assign(answers, await questionsWithCompanies(admin));
 				Object.assign(answers, await questionsWhenSomeoneLeaves(browser, admin));

@@ -2,6 +2,7 @@
 // everything that crosses the wire while they do it.
 import { generateKeyPairSync, randomBytes, sign, type KeyObject } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import type { Settings } from '#lib/flow/settings.ts';
 import type { RecordedMessage } from '#lib/recordings/format.ts';
 import { accessTokenProblem, idTokenProblem, scopeProblem, sha256, type Jwk } from './checks.ts';
@@ -19,6 +20,7 @@ import {
 	CONFIDENTIAL_CLIENT,
 	KEYCLOAK,
 	LOCAL_REALM,
+	LOOPBACK,
 	POST_LOGOUT_URI,
 	PROXY_PORT,
 	REDIRECT_URI,
@@ -359,6 +361,10 @@ export class Demo {
 	lastCode = '';
 	/** Logout tokens that came in with no run going, for a question to count. */
 	logoutTokens: string[] = [];
+	/** Where the answer to a login comes back to: the app's own address, or a program's port (#178). */
+	#redirectUri = REDIRECT_URI;
+	#loopback: Server | null = null;
+	#app: Server | null = null;
 	#tokens: Tokens | null = null;
 	#bffSession: string | null = null;
 	#servers: Server[] = [];
@@ -415,7 +421,7 @@ export class Demo {
 		const body: Record<string, string> = {
 			grant_type: 'authorization_code',
 			code,
-			redirect_uri: REDIRECT_URI
+			redirect_uri: this.#redirectUri
 		};
 		if (!run.clientSecret) body.client_id = run.clientId;
 		if (this.#verifier) body.code_verifier = this.#verifier;
@@ -424,6 +430,80 @@ export class Demo {
 			...(this.#key ? { dpop: this.#key.proof('POST', url, nonce ? { nonce } : {}) } : {})
 		};
 		return call(run, steps, 'POST', url, headers, body);
+	}
+
+	/** The address the app sends the browser to, to log in, with what it keeps to check the answer. */
+	async #loginAddress() {
+		const run = this.#run;
+		const { settings } = run;
+		this.#state = random();
+		this.#key = settings.binding === 'dpop' ? new ProofKey() : null;
+		this.#verifier = settings.pkce ? random() + random() : null;
+		this.#nonce = settings.oidc ? random() : null;
+		const query = new URLSearchParams({
+			response_type: 'code',
+			client_id: run.clientId,
+			redirect_uri:
+				settings.address === 'other'
+					? `${new URL(REDIRECT_URI).origin}/not-registered`
+					: this.#redirectUri,
+			state: this.#state
+		});
+		if (this.#nonce) {
+			query.set('scope', 'openid');
+			query.set('nonce', this.#nonce);
+		}
+		// A refresh token meant to outlive the session (#184).
+		if (settings.logoutKeeps === 'offline') {
+			query.set('scope', [query.get('scope'), 'offline_access'].filter(Boolean).join(' '));
+		}
+		// So the token says which customer, which an app selling to companies keeps them apart by.
+		if (settings.companies) {
+			query.set('scope', [query.get('scope'), 'organization'].filter(Boolean).join(' '));
+		}
+		if (this.#key) query.set('dpop_jkt', this.#key.thumbprint);
+		if (this.#verifier) {
+			query.set('code_challenge', sha256(this.#verifier));
+			query.set('code_challenge_method', 'S256');
+		}
+		if (settings.par) {
+			// Pushed first, straight to the identity provider, proving who it is the way it does
+			// when it asks for tokens, and the browser carries only the reference (RFC 9126).
+			const pushed = await call(
+				run,
+				['push-request', 'push-response'],
+				'POST',
+				this.#server.pushed_authorization_request_endpoint ?? '',
+				run.clientSecret ? { authorization: basicAuth(run.clientId, run.clientSecret) } : {},
+				Object.fromEntries(query)
+			);
+			const { request_uri } = jsonOf<{ request_uri: string }>(pushed.text);
+			const reference = new URLSearchParams({ client_id: run.clientId, request_uri });
+			return `${this.#server.authorization_endpoint}?${reference}`;
+		}
+		return `${this.#server.authorization_endpoint}?${query}`;
+	}
+
+	/**
+	 * A program on the user's own computer, which listens on a port of 127.0.0.1 the computer picks,
+	 * and opens the browser at the login address with that port in it (RFC 8252 section 7.3).
+	 */
+	async startProgram() {
+		const app = this.#app;
+		if (!app) throw new Error('The demo app is not running');
+		const loopback = createServer((request, response) => app.emit('request', request, response));
+		await new Promise<void>((resolve) => loopback.listen(0, '127.0.0.1', resolve));
+		this.#loopback = loopback;
+		this.#redirectUri = `${LOOPBACK}:${(loopback.address() as AddressInfo).port}/callback`;
+		return this.#loginAddress();
+	}
+
+	/** Once the answer has come, the port is closed again, as RFC 8252 section 8.3 says to. */
+	async stopProgram() {
+		const loopback = this.#loopback;
+		this.#loopback = null;
+		this.#redirectUri = REDIRECT_URI;
+		if (loopback) await new Promise<void>((resolve) => loopback.close(() => resolve()));
 	}
 
 	/** A login link someone else made for the real app, with an address and a PKCE pair of their own. */
@@ -1119,58 +1199,7 @@ export class Demo {
 				return;
 			}
 			if (url.pathname === '/' || url.pathname === '/login') {
-				const run = this.#run;
-				const { settings } = run;
-				this.#state = random();
-				this.#key = settings.binding === 'dpop' ? new ProofKey() : null;
-				this.#verifier = settings.pkce ? random() + random() : null;
-				this.#nonce = settings.oidc ? random() : null;
-				const query = new URLSearchParams({
-					response_type: 'code',
-					client_id: run.clientId,
-					redirect_uri:
-						settings.address === 'other'
-							? `${new URL(REDIRECT_URI).origin}/not-registered`
-							: REDIRECT_URI,
-					state: this.#state
-				});
-				if (this.#nonce) {
-					query.set('scope', 'openid');
-					query.set('nonce', this.#nonce);
-				}
-				// A refresh token meant to outlive the session (#184).
-				if (settings.logoutKeeps === 'offline') {
-					query.set('scope', [query.get('scope'), 'offline_access'].filter(Boolean).join(' '));
-				}
-				// So the token says which customer, which an app selling to companies keeps them apart by.
-				if (settings.companies) {
-					query.set('scope', [query.get('scope'), 'organization'].filter(Boolean).join(' '));
-				}
-				if (this.#key) query.set('dpop_jkt', this.#key.thumbprint);
-				if (this.#verifier) {
-					query.set('code_challenge', sha256(this.#verifier));
-					query.set('code_challenge_method', 'S256');
-				}
-				if (settings.par) {
-					// Pushed first, straight to the identity provider, proving who it is the way it does
-					// when it asks for tokens, and the browser carries only the reference (RFC 9126).
-					const pushed = await call(
-						run,
-						['push-request', 'push-response'],
-						'POST',
-						this.#server.pushed_authorization_request_endpoint ?? '',
-						run.clientSecret ? { authorization: basicAuth(run.clientId, run.clientSecret) } : {},
-						Object.fromEntries(query)
-					);
-					const { request_uri } = jsonOf<{ request_uri: string }>(pushed.text);
-					const reference = new URLSearchParams({ client_id: run.clientId, request_uri });
-					response.writeHead(302, {
-						location: `${this.#server.authorization_endpoint}?${reference}`
-					});
-					response.end();
-					return;
-				}
-				response.writeHead(302, { location: `${this.#server.authorization_endpoint}?${query}` });
+				response.writeHead(302, { location: await this.#loginAddress() });
 				response.end();
 				return;
 			}
@@ -1522,6 +1551,7 @@ export class Demo {
 		});
 
 		await listen(app, APP);
+		this.#app = app;
 		await listen(api, API);
 		await listen(proxy, `http://0.0.0.0:${PROXY_PORT}`);
 		await listen(second, SECOND_APP);

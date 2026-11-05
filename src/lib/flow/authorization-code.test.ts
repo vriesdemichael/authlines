@@ -15,6 +15,7 @@ import {
 	change,
 	defaultSettings,
 	normalize,
+	settingDefs,
 	unavailable,
 	type Settings
 } from '#lib/flow/settings.ts';
@@ -1316,5 +1317,52 @@ describe('linking another account', () => {
 			(step) => step.id === 'add-provider-for-linking'
 		)!;
 		expect(JSON.stringify(hidden)).toContain('shows no button for it');
+	});
+});
+
+// A command-line tool or a desktop app, hearing the answer on 127.0.0.1 (#178).
+describe('a program on the user’s computer', () => {
+	const on = { appRuns: 'program', clientType: 'public', pkce: true } as const;
+	const ids = (settings: Partial<Settings>) => view(settings).steps.map((step) => step.id);
+
+	it('opens the browser itself, and is answered at the port it opened', () => {
+		const steps = ids(on);
+		expect(steps).not.toContain('open-app');
+		expect(steps).not.toContain('redirect-to-idp');
+		const at = (id: string) => steps.indexOf(id);
+		expect(at('program-starts')).toBe(0);
+		expect(at('program-opens-browser')).toBeGreaterThan(at('make-verifier'));
+		expect(at('make-verifier')).toBeGreaterThan(0);
+		expect(at('authorize')).toBeGreaterThan(at('program-opens-browser'));
+		expect(at('callback')).toBeGreaterThan(at('redirect-with-code'));
+		const authorize = view(on).steps.find((step) => step.id === 'authorize')!;
+		const back = authorize.fields.find((field) => field.name === 'redirect_uri');
+		expect(back?.note).toContain('127.0.0.1');
+	});
+
+	it('has no secret, never sees the password, and keeps the tokens on the computer', () => {
+		const flowView = view(on);
+		const held = holdingsAt(flowView, flowView.steps.at(-1)!.id);
+		expect(held.app).not.toContain('secret');
+		expect(held.app).not.toContain('password');
+		expect(held.app).toContain('access-token');
+		expect(held.app).toContain('verifier');
+	});
+
+	it('is offered in advanced mode first, and only with PKCE and no secret', () => {
+		const option = settingDefs.appRuns.options.find(({ value }) => value === 'program');
+		expect(option?.advanced).toBe(true);
+		expect(change(defaultSettings, 'appRuns', 'program').settings).toMatchObject(on);
+	});
+
+	// What the screen says about the address, from a real server (questions.json).
+	it('says what a real server let through, as it did', () => {
+		const { before, after, localhost, ipv6 } = answers.loopbackRedirects;
+		expect(before.anyPort.status).toBe(200);
+		expect(before.anotherPath).toMatchObject({ status: 400, refused: true });
+		expect(before.localhostInstead).toMatchObject({ status: 400, refused: true });
+		expect(after.anotherPath.status).toBe(200);
+		expect(localhost.anyPort.status).toBe(200);
+		expect(ipv6.anyPort.status).toBe(200);
 	});
 });

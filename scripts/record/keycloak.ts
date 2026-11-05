@@ -39,6 +39,9 @@ export const PKCE_CLIENT = 'demo-public-pkce';
 export const BROKER_CLIENT = 'demo-broker';
 export const BROKER_SECRET = 'throwaway-broker-secret';
 export const SECOND_APP = 'http://localhost:9103';
+/** A program on the user's computer, which listens here on a port the computer picks (#178). */
+export const LOOPBACK = 'http://127.0.0.1';
+export const LOOPBACK_REDIRECT_URI = `${LOOPBACK}/callback`;
 export const SECOND_CLIENT = 'demo-app-two';
 /** An app with no user, which is what the client credentials flow is. */
 export const SERVICE_CLIENT = 'demo-service';
@@ -596,6 +599,8 @@ export async function setUpFor(
 			...(settings.appRuns === 'page' ? { webOrigins: [APP] } : {}),
 			// What some put there to make Invalid parameter: redirect_uri go away.
 			...(settings.registered === 'any' ? { redirectUris: ['*'] } : {}),
+			// Registered with no port, which a loopback address does not need (RFC 8252 section 7.3).
+			...(settings.appRuns === 'program' ? { redirectUris: [LOOPBACK_REDIRECT_URI] } : {}),
 			...(settings.clientType === 'public' ? { publicClient: true } : confidential),
 			// Set when a client is created through this API, this also turns off Full scope allowed, and
 			// the token has no roles and no audience. Turned on afterwards, as anyone does it in the

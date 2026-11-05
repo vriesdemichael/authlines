@@ -123,7 +123,7 @@
 		{:else}
 			<fieldset>
 				<legend>{simple ? (def.simple?.label ?? def.label) : def.label}</legend>
-				{#each def.options as option (option.value)}
+				{#each def.options.filter((option) => !simple || !option.advanced || settings[id] === option.value) as option (option.value)}
 					{@const blocked = blockedBy(id, option.value)}
 					<label class:blocked title={blocked}>
 						<input

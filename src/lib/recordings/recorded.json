@@ -72,7 +72,9 @@
 		"points-at-a-document-broker": "2026-11-05",
 		"sso-broker-pkce": "2026-11-05",
 		"exchange-broker": "2026-11-05",
-		"logout-offline": "2026-11-05"
+		"logout-offline": "2026-11-05",
+		"on-their-computer": "2026-11-05",
+		"on-their-computer-oidc": "2026-11-05"
 	},
 	"flows": {
 		"authorization-code": {
@@ -118,6 +120,8 @@
 				"exchange-broker",
 				"browser-app",
 				"behind-the-page",
+				"on-their-computer",
+				"on-their-computer-oidc",
 				"in-the-page",
 				"attack-public",
 				"attack-public-pkce",

@@ -32,6 +32,8 @@ const companies = is('companies', true);
 const saml = all(companies, is('customerSpeaks', 'saml'));
 const exchange = is('exchange', true);
 const tradeRefresh = all(exchange, is('exchangeGives', 'refresh'));
+// A program on the user's own computer, registered with an address on 127.0.0.1 (#178).
+const inAProgram = is('appRuns', 'program');
 
 /**
  * What happens before any user arrives. It has a diagram of its own, because no user does this: the
@@ -63,8 +65,19 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plainRole: 'The one being set up',
 			...appWords,
 			icon: 'app',
+			when: not(inAProgram),
 			concept:
 				'The application being set up. It has to learn about the identity provider before anyone logs in.'
+		},
+		{
+			id: 'app',
+			plainName: 'Program',
+			plainRole: 'The one being set up',
+			...appWords,
+			icon: 'app',
+			when: inAProgram,
+			concept:
+				'A program for users’ own computers, being set up. Every copy of it learns about the identity provider, and each is the same client.'
 		},
 		{
 			id: 'idp',
@@ -179,6 +192,10 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 					text: 'With *, nothing more has to be listed, which is the trouble: on the server recorded, any address passes, theirs too.'
 				},
 				{
+					when: inAProgram,
+					text: 'You do this once. List the address of the user’s own computer with its path and no port, because the program picks a port each time it runs, and on the server recorded any port got through while another path did not.'
+				},
+				{
 					text: 'You do this once, and again for each new address the app runs at, because each one has to be listed.'
 				}
 			],
@@ -188,7 +205,13 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 					name: 'redirect_uris',
 					place: 'setting',
 					note: 'Checked again during every login',
-					when: not(anyAddress)
+					when: all(not(anyAddress), not(inAProgram))
+				},
+				{
+					name: 'redirect_uris',
+					place: 'setting',
+					note: 'http://127.0.0.1/callback, with no port, because the program picks one',
+					when: inAProgram
 				},
 				{
 					name: 'redirect_uris=*',
@@ -832,7 +855,13 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 					diagram: 'flow',
 					step: 'open-app',
 					text: 'Setup is done. See what happens when a user arrives',
-					when: not(is('attackerGets', 'link'))
+					when: all(not(is('attackerGets', 'link')), not(inAProgram))
+				},
+				{
+					diagram: 'flow',
+					step: 'program-starts',
+					text: 'Setup is done. See what happens when a user runs the program',
+					when: inAProgram
 				},
 				{
 					diagram: 'flow',

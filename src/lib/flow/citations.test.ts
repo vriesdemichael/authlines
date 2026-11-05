@@ -97,6 +97,13 @@ const CITED: readonly [step: string, SourceId, section: string, phrase: string][
 	],
 	['service-token-response', 'rfc6749', '4.4.3', 'refresh token SHOULD NOT be included'],
 	['token-request', 'rfc10017', '6.3.3.1', 'should not be treated as confidential secrets'],
+	// A program on the user's computer (#178).
+	['program-starts', 'rfc8252', '8.3', 'listen on the loopback network interface only'],
+	['program-opens-browser', 'rfc8252', '8.12', 'MUST NOT use embedded user-agents'],
+	['program-opens-browser', 'rfc8252', '6', 'MUST implement the Proof Key for Code Exchange'],
+	['callback', 'rfc8252', '8.1', 'other apps accessing the same loopback interface'],
+	['callback', 'rfc8252', '8.3', 'the HTTP request never leaves the device'],
+	['token-request', 'rfc8252', '8.5', 'should not be treated as confidential secrets'],
 	[
 		'token-response',
 		'rfc10017',

@@ -318,13 +318,13 @@ export const notHereYet: readonly string[] = [
 	// Each takes something the diagrams do not have: see section 7 of the premise.
 	'pkce downgrade',
 	'downgrade attack',
-	'native app',
+	// A program on the user's computer is drawn (#178), and an app on a phone is not.
+	'mobile app',
+	'phone app',
 	'custom scheme',
 	'custom url scheme',
 	'claimed https',
 	'malicious app',
-	'rfc 8252',
-	'rfc8252',
 	// What #147 lists, which has no flow yet. Nothing here may have a result, or it would hide it.
 	'kerberos',
 	'spnego',

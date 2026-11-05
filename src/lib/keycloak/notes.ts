@@ -114,6 +114,8 @@ export const noteDefs: readonly NoteDef[] = [
 		instead: { when: is('par', true), steps: ['create-client'] },
 		title: 'Valid redirect URIs',
 		text: 'The addresses this client may send users back to. Anything else gets a 400, and the page says: Invalid parameter: redirect_uri. It does take a * at the end of an address, which then lets any page on that site get the code, and * alone takes any site at all. An exact match closes both.',
+		// A program's loopback address is let through at any port, which the note of its own says.
+		when: not(is('appRuns', 'program')),
 		place: clientSettings('Access settings', 'Valid redirect URIs'),
 		backedBy: {
 			question: 'validRedirectUris',
@@ -121,6 +123,32 @@ export const noteDefs: readonly NoteDef[] = [
 				before: { status: 400 },
 				after: { status: 200 },
 				wildcard: { atTheEnd: { sameSite: 200, otherSite: 400 }, alone: { otherSite: 200 } }
+			}
+		}
+	},
+	{
+		id: 'loopback-redirects',
+		steps: ['authorize', 'create-client'],
+		title: 'Valid redirect URIs, for a program',
+		text: 'Register http://127.0.0.1/callback and leave the port out. A login asking with any port got through, another path did not, and neither did localhost in its place. localhost and [::1] registered the same way let any port through as well. A * after the port, as in http://127.0.0.1:*, let any port and any path through, so the path is no longer checked.',
+		when: is('appRuns', 'program'),
+		place: clientSettings('Access settings', 'Valid redirect URIs'),
+		backedBy: {
+			question: 'loopbackRedirects',
+			shows: {
+				before: {
+					registered: 'http://127.0.0.1/callback',
+					anyPort: { status: 200 },
+					anotherPath: { status: 400, refused: true },
+					localhostInstead: { status: 400, refused: true }
+				},
+				after: {
+					registered: 'http://127.0.0.1:*',
+					anyPort: { status: 200 },
+					anotherPath: { status: 200 }
+				},
+				localhost: { anyPort: { status: 200 } },
+				ipv6: { anyPort: { status: 200 } }
 			}
 		}
 	},
