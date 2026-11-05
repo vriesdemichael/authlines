@@ -6,12 +6,14 @@
 	import Workspace from '#lib/components/Workspace.svelte';
 	import { flows } from '#lib/flow/index.ts';
 	import {
+		droppedFromLink,
 		parseState,
 		presetSearch,
 		serializeOnNode,
 		serializeState,
 		stateInFlow,
-		type AppState
+		type AppState,
+		type DroppedFromLink
 	} from '#lib/flow/state.ts';
 	import { namesHash, type GivenNames } from '#lib/flow/names.ts';
 	import type { Settings } from '#lib/flow/settings.ts';
@@ -32,8 +34,14 @@
 	let mounted = $state(false);
 	let settled = $state(false);
 
+	// What a link asked for and could not have, read once, as the page opens, and said until someone
+	// changes what is drawn (#177).
+	let dropped = $state.raw<DroppedFromLink[]>([]);
+
 	onMount(async () => {
 		mounted = true;
+		const search = page.url.search;
+		dropped = droppedFromLink(base, data.node ? nodeSearch(data.node, search) : search);
 		await tick();
 		document.documentElement.classList.remove('pending');
 		settled = true;
@@ -154,6 +162,8 @@
 	}
 
 	async function navigate(next: AppState, history: 'push' | 'replace') {
+		// A step moves along what is drawn, and anything else changes it, so the note is done.
+		if (history === 'push') dropped = [];
 		ahead = next;
 		// eslint-disable-next-line svelte/no-navigation-without-resolve -- hrefFor resolves it
 		await goto(hrefFor(next), { replace: history === 'replace', reset: false });
@@ -188,6 +198,7 @@
 		{leftQuestion}
 		{onward}
 		agentsHref={resolve('/for-agents')}
+		{dropped}
 		runHref={base.id === 'authorization-code'
 			? `${resolve('/run-it-yourself')}/?${presetSearch(base, appState.settings)}`
 			: null}

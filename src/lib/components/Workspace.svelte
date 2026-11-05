@@ -78,6 +78,7 @@
 		withSourceOpen,
 		withSourceSection,
 		type AppState,
+		type DroppedFromLink,
 		type Explained
 	} from '#lib/flow/state.ts';
 	import { explanationOf, litBy, stateShowing } from '#lib/flow/explain.ts';
@@ -119,6 +120,8 @@
 		runHref?: string | null;
 		/** How to set up an agent to make links with names, said where a link has them. */
 		agentsHref?: string | null;
+		/** What the link opened asked for and could not have, said in either mode (#177). */
+		dropped?: readonly DroppedFromLink[];
 		homeHref: string;
 		/** The first screen, for someone who wants to start again and not go to where they were. */
 		startHref?: string;
@@ -152,6 +155,7 @@
 		onward = null,
 		runHref = null,
 		agentsHref = null,
+		dropped = [],
 		homeHref,
 		startHref = homeHref,
 		hrefFor,
@@ -239,6 +243,16 @@
 	// Simple mode is the diagram and the step. Each thing it leaves out is one press of Advanced away,
 	// and still there if an address or a question has it on, so nobody is left with no way back.
 	const simple = $derived(appState.mode === 'simple');
+
+	/** A dropped setting by its name on screen, with the value the link asked for and why. */
+	function droppedSaid({ setting, asked, because }: DroppedFromLink): string {
+		const def = settingDefs[setting];
+		const label = simple ? (def.simple?.label ?? def.label) : def.label;
+		const value = asked.slice(asked.indexOf('=') + 1);
+		const option =
+			def.kind === 'choice' ? def.options.find((o) => String(o.value) === value) : null;
+		return `${label}${option ? `: ${option.label}` : ''}. ${because}`;
+	}
 	const nothingOnOffer = $derived(
 		simple &&
 			!base.settings.some((id) => simpleSettingIds.includes(id)) &&
@@ -933,6 +947,17 @@
 	</main>
 
 	<aside class="detail" aria-label="The current step" bind:this={detailPanel}>
+		{#if dropped.length}
+			<!-- A link that asks for what does not go together loses some of it, and says so (#177). -->
+			<section class="named" data-testid="dropped-note" role="status">
+				<p><strong>Turned off from the link you opened:</strong></p>
+				<ul>
+					{#each dropped as off (off.setting)}
+						<li>{droppedSaid(off)}</li>
+					{/each}
+				</ul>
+			</section>
+		{/if}
 		{#if namedHere.length || fromLink.problems.length}
 			<!-- Whoever made the link chose these, so it says so, and what was recorded stays the site's. -->
 			<section class="named" data-testid="names-note" role="status">

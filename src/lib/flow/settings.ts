@@ -318,7 +318,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				is('companies', false)
 			),
 			because:
-				'Only drawn so far with OpenID Connect, consent, PKCE and either kind of client, on a server.',
+				'Drawn so far with nothing else on but OpenID Connect, consent and PKCE, with either kind of client and the app on a server.',
 			sayWhenBlocked: true
 		}
 	},
@@ -772,7 +772,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				is('par', false)
 			),
 			because:
-				'Only drawn so far with OpenID Connect, consent, PKCE and either kind of client, on a server.',
+				'Drawn so far with nothing else on but OpenID Connect, consent and PKCE, with either kind of client and the app on a server.',
 			sayWhenBlocked: true
 		}
 	},

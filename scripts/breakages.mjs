@@ -1380,5 +1380,17 @@ export const breakages = [
 		file: 'src/lib/zip.ts',
 		from: 'l.setUint32(22, data.length, true);',
 		to: 'l.setUint32(22, data.length - 1, true);'
+	},
+	{
+		name: 'agents: two values are said to go together when the link loses one',
+		file: 'src/lib/agents.ts',
+		from: 'return kept[value.id] === value.value && kept[other.id] === other.value;',
+		to: 'return kept[value.id] === value.value || kept[other.id] === other.value;'
+	},
+	{
+		name: 'links: a setting the link asked for is turned off without a word',
+		file: STATE,
+		from: '!params.has(param) || settings[setting] === requested[setting]',
+		to: '!params.has(param) || settings[setting] !== requested[setting]'
 	}
 ];

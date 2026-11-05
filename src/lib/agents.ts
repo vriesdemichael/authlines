@@ -4,7 +4,9 @@ import { LONGEST_NAME, NAMES_VERSION } from '#lib/flow/names.ts';
 import {
 	allValidSettings,
 	defaultSettings,
+	normalize,
 	settingDefs,
+	settingIds,
 	type SettingId,
 	type Settings
 } from '#lib/flow/settings.ts';
@@ -42,6 +44,8 @@ export interface GuideSetting {
 	only?: string;
 	/** Values that need another setting with them, which a link names on its own in vain. */
 	needs: readonly string[];
+	/** Values that others turn off, when a link names both. */
+	rulesOut: readonly string[];
 }
 
 export interface GuideFlow {
@@ -108,6 +112,7 @@ const queryOf = (combination: Combination) => inCode(combination.params.join('&'
 
 interface Value {
 	id: SettingId;
+	value: unknown;
 	param: string;
 	/** The fewest settings that give this value, with it among them. */
 	least: readonly Combination[];
@@ -124,6 +129,7 @@ function valuesOf(base: BaseFlow, combinations: readonly Combination[]): Value[]
 				: def.options.map((option) => option.value).filter((value) => value !== def.default);
 		return values.map((value) => ({
 			id,
+			value,
 			param: paramOf(id, value),
 			least: smallest(combinations, (found) => found.settings[id] === value)
 		}));
@@ -216,6 +222,38 @@ function diagramOf(
 	};
 }
 
+/**
+ * Whether two values can be in one link: each with what it needs, both are still on afterwards, by the
+ * same rules the screen uses (#177). Otherwise the link loses one of them, which one depending on the
+ * rules, so an agent is told to leave the other out.
+ */
+function together(value: Value, other: Value): boolean {
+	const own = value.least[0];
+	const theirs = other.least[0];
+	if (!own || !theirs) return false;
+	const both: Settings = { ...own.settings };
+	for (const id of settingIds) {
+		if (theirs.settings[id] !== defaultSettings[id])
+			Object.assign(both, { [id]: theirs.settings[id] });
+	}
+	const kept = normalize(both).settings;
+	return kept[value.id] === value.value && kept[other.id] === other.value;
+}
+
+/** What one value can and cannot share a link with, among the other settings' values. */
+function pairsOf(value: Value, values: readonly Value[]) {
+	const others = values.filter((other) => other.id !== value.id && other.least[0]);
+	return {
+		goes: others.filter((other) => together(value, other)),
+		not: others.filter((other) => !together(value, other))
+	};
+}
+
+const andList = (said: readonly string[]) =>
+	new Intl.ListFormat('en', { type: 'conjunction' }).format(said);
+const andOr = (said: readonly string[]) =>
+	new Intl.ListFormat('en', { type: 'disjunction' }).format(said);
+
 function settingsOf(base: BaseFlow, combinations: readonly Combination[]): GuideSetting[] {
 	const values = valuesOf(base, combinations);
 	return base.settings.flatMap((id) => {
@@ -232,6 +270,23 @@ function settingsOf(base: BaseFlow, combinations: readonly Combination[]): Guide
 				);
 				return `${inCode(value.param)} needs ${orList(others)} with it.`;
 			});
+		// And what it does not go with, which a link that names both loses without a word (#177).
+		const rulesOut = values
+			.filter((value) => value.id === id)
+			.flatMap((value) => {
+				const { goes, not } = pairsOf(value, values);
+				if (!not.length) return [];
+				const said = (some: readonly Value[]) => some.map((other) => inCode(other.param));
+				// Whichever list is shorter, because a value drawn only in the plain case goes with few.
+				if (goes.length < not.length) {
+					return [
+						goes.length
+							? `${inCode(value.param)} goes only with ${andList(said(goes))} among the other settings, so leave the rest out.`
+							: `${inCode(value.param)} goes with none of the other settings yet, so leave them out.`
+					];
+				}
+				return [`${inCode(value.param)} does not go with ${andOr(said(not))}.`];
+			});
 		return [
 			{
 				param: def.param,
@@ -239,7 +294,8 @@ function settingsOf(base: BaseFlow, combinations: readonly Combination[]): Guide
 				values: all,
 				byDefault,
 				only: def.requires?.because,
-				needs
+				needs,
+				rulesOut
 			}
 		];
 	});
@@ -332,7 +388,7 @@ export const aboutTheAddress =
 
 /** What a setting's own note means, which is written for someone looking at the screen. */
 export const SETTING_NOTES =
-	'Where a setting has a note on when it is offered, the settings the note names can be on or off, and anything else turns it off. Where a value needs others, it says so.';
+	'Each value says what it needs with it, and what it can share a link with, worked out from the rules the screen uses, two settings at a time. A link that names two that do not go together loses one of them.';
 
 /**
  * What people bring that the site does not draw, so that an agent says so instead of linking to
@@ -398,7 +454,8 @@ export function referenceMarkdown(): string {
 					[
 						`${code(`${setting.param}=${setting.values.join(' | ')}`)}: ${setting.label}, ${setting.byDefault} by default.`,
 						setting.only,
-						...setting.needs
+						...setting.needs,
+						...setting.rulesOut
 					]
 						.filter(Boolean)
 						.join(' ')
@@ -451,7 +508,7 @@ export function skillMarkdown(): string {
 		code(addressFormat),
 		[
 			`1. Pick the flow:${NL}${guide.map((flow) => `   - ${flowsLine(flow)}`).join(NL)}`,
-			'2. Add the settings that match their system, and leave the rest out. Add `oidc=1` when the app logs people in to know who they are, because without it the flow only gets access to an API. Some settings need another with them, and one named on its own is turned off, so check the reference.',
+			'2. Add the settings that match their system, and leave the rest out. Add `oidc=1` when the app logs people in to know who they are, because without it the flow only gets access to an API. Some settings need another with them, and some do not go with others. A link loses what does not fit, so check the reference for each value you add.',
 			'3. Add `step=<id>` for the step you are explaining, and leave it out for a question about the whole flow. The reference says which settings each step needs.',
 			`4. Add their names after #, starting with ${code(`v=${NAMES_VERSION}`)}, by the party ids the reference lists. It says which settings draw each party, and a name for one that is not drawn does not show.`,
 			'5. If their identity provider is not Keycloak, or they do not say which it is, add `keycloak=off`, and name it with `idp=` if you know it. If it is Keycloak, keep the notes about it, and you can still give it their name for it.',
