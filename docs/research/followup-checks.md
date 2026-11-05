@@ -438,3 +438,14 @@ Recorded on Keycloak 26.8.1 on 2026-11-05 (`logout-offline`, and `offlineTokens`
 - Asking the server about a token from the question's own client said not active even before the sign-out, so that try was dropped, and the screen says only what the recorded flow showed.
 
 Not tried: consent turned on for the client, revoking an offline token, the client's own lifetimes in its advanced settings, and an offline token through another provider.
+
+## A program on the user's computer, with a loopback address
+
+Recorded on Keycloak 26.8.1 on 2026-11-05 (`on-their-computer` and `on-their-computer-oidc`, and `loopbackRedirects` in `questions.json`), for [#178](https://github.com/vriesdemichael/authlines/issues/178), which the maintainer agreed to draw the same day. [RFC 8252](https://www.rfc-editor.org/rfc/rfc8252.html) section 7.3 says the server must let any port through for a loopback address, section 8.3 says to use 127.0.0.1 and not localhost, and section 6 says a public native app must use PKCE.
+
+- A public client with `http://127.0.0.1/callback` registered, and the recorder's program listening on a port the computer picked (54377, and 65095 with OpenID Connect): the login went through, the code came back to `127.0.0.1` at that port, and the token request with the same address, the verifier and no secret got tokens.
+- Asked for the login page alone with that registration, with no login after: port 51234 got it, `/somewhere-else` at that port got 400 with Invalid parameter: redirect_uri, and `localhost` in place of `127.0.0.1` got the same 400.
+- `http://localhost/callback` registered, `localhost` at port 51234 got the login page, and so did `[::1]` at that port with `http://[::1]/callback`. That is one request each, though RFC 8252 recommends against localhost.
+- `http://127.0.0.1:*` registered, as a real setup had it, port 51234 got the login page at `/callback` and at `/somewhere-else`.
+
+Not tried: another program on the same computer taking the code, an IPv6 run end to end, and a program with a secret of its own from dynamic registration.

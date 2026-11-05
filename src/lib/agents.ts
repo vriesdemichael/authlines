@@ -395,9 +395,10 @@ export const SETTING_NOTES =
  * something near it. Each is a term the search says is not here yet, and a test holds it to that.
  */
 export const notDrawn: readonly { says: string; term: string }[] = [
+	// A program on the user's computer is drawn (#178), and an app on a phone is not.
 	{
-		says: 'native and mobile apps',
-		term: 'native app'
+		says: 'apps on a phone',
+		term: 'mobile app'
 	},
 	{ says: 'a PKCE downgrade', term: 'pkce downgrade' },
 	{ says: 'passkeys and WebAuthn', term: 'passkey' },

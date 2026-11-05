@@ -174,5 +174,7 @@
 	"link-callback",
 	"add-provider-for-linking",
 	"api-after-logout",
-	"api-after-logout-response"
+	"api-after-logout-response",
+	"program-starts",
+	"program-opens-browser"
 ]

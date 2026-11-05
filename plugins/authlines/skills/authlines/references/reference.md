@@ -12,7 +12,7 @@ Leave out a setting to keep its default. The flow, its settings and the step are
 
 ## What is not drawn here
 
-Authlines does not draw native and mobile apps, a PKCE downgrade, passkeys and WebAuthn, Kerberos, NTLM, or client certificates.
+Authlines does not draw apps on a phone, a PKCE downgrade, passkeys and WebAuthn, Kerberos, NTLM, or client certificates.
 
 ## Names for the parties
 
@@ -79,9 +79,9 @@ Each value says what it needs with it, and what it can share a link with, worked
 - `reuse=keeps | ends`: Using a refresh token twice, keeps by default. There is no second use until the token runs out and the first has happened. `reuse=ends` needs `refresh=1` with it. `reuse=ends` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, and `refresh=1` among the other settings, so leave the rest out.
 - `sso=1`: A second app, off by default. This shows the plain case, so other settings do not get in the way of the answer. `sso=1` goes only with `oidc=1`, `client=public`, `pkce=1`, `broker=1`, `second=insists`, `second=fresh`, `logout=1`, and `keeps=offline` among the other settings, so leave the rest out.
 - `second=remembered | insists | fresh`: What happens at the second app, remembered by default. There is no second app until it has been brought on. `second=insists` needs `oidc=1&sso=1` with it. `second=fresh` needs `oidc=1&sso=1` with it. `second=insists` goes only with `oidc=1`, `client=public`, `pkce=1`, and `sso=1` among the other settings, so leave the rest out. `second=fresh` goes only with `oidc=1`, `client=public`, `pkce=1`, and `sso=1` among the other settings, so leave the rest out.
-- `logout=1`: Log out, off by default. It is part of OpenID Connect. `logout=1` needs `oidc=1` with it. `logout=1` goes only with `oidc=1`, `client=public`, `pkce=1`, `sso=1`, and `keeps=offline` among the other settings, so leave the rest out.
+- `logout=1`: Log out, off by default. Part of OpenID Connect. `logout=1` needs `oidc=1` with it. `logout=1` goes only with `oidc=1`, `client=public`, `pkce=1`, `sso=1`, and `keeps=offline` among the other settings, so leave the rest out.
 - `keeps=refresh | offline`: What the app keeps, refresh by default. There is no session to outlive until the user logs out. `keeps=offline` needs `oidc=1&logout=1` with it. `keeps=offline` goes only with `oidc=1`, `client=public`, `pkce=1`, `sso=1`, and `logout=1` among the other settings, so leave the rest out.
-- `runs=server | page | bff`: Where the app runs, server by default. `runs=page` needs `client=public` with it. `runs=bff` needs `pkce=1` with it. `runs=page` goes only with `oidc=1`, `client=public`, and `pkce=1` among the other settings, so leave the rest out. `runs=bff` goes only with `pkce=1` among the other settings, so leave the rest out.
+- `runs=server | page | bff | program`: Where the app runs, server by default. `runs=page` needs `client=public` with it. `runs=bff` needs `pkce=1` with it. `runs=program` needs `client=public&pkce=1` with it. `runs=page` goes only with `oidc=1`, `client=public`, and `pkce=1` among the other settings, so leave the rest out. `runs=bff` goes only with `pkce=1` among the other settings, so leave the rest out. `runs=program` goes only with `oidc=1`, `client=public`, and `pkce=1` among the other settings, so leave the rest out.
 - `address=registered | other`: The address the app asks for, registered by default. It stops before any of those would matter. `address=other` goes only with `oidc=1`, `client=public`, and `pkce=1` among the other settings, so leave the rest out.
 
 ### Authorization code flow: `https://vriesdemichael.github.io/authlines/authorization-code/`
@@ -89,7 +89,7 @@ Each value says what it needs with it, and what it can share a link with, worked
 Parties, for the names after #:
 
 - `browser`: User's browser, where the user is. With `runs=page` it is drawn as Browser and app. With `runs=bff` it is drawn as Browser and page.
-- `app`: App, what the user uses. Not with `runs=page`. With `runs=bff` it is drawn as App’s server.
+- `app`: App, what the user uses. Not with `runs=page`. With `runs=bff` it is drawn as App’s server. With `runs=program` it is drawn as Program.
 - `second-app`: Second app, same provider. Only with `sso=1`.
 - `idp`: Identity provider, logs users in.
 - `attacker`: Someone else, has no business here. Only with `attacker=1`.
@@ -100,8 +100,8 @@ Parties, for the names after #:
 
 Steps, for step=:
 
-- `open-app`: The user opens the app. Not with `gets=link` or `registered=any`.
-- `redirect-to-idp`: The app sends them to log in. Not with `gets=link` or `registered=any` or `runs=page`.
+- `open-app`: The user opens the app. Not with `gets=link` or `registered=any` or `runs=program`.
+- `redirect-to-idp`: The app sends them to log in. Not with `gets=link` or `registered=any` or `runs=page` or `runs=program`.
 - `authorize`: The browser asks to log in.
 - `login-page`: The login page. Not with `gets=link` or `broker=1` or `companies=1` or `speaks=saml` or `leaves=1` or `upstream=v1` or `upstream=v2` or `reads=api` or `reads=refused` or `address=other`.
 - `submit-credentials`: The user enters their password. Not with `gets=link` or `broker=1` or `companies=1` or `speaks=saml` or `leaves=1` or `upstream=v1` or `upstream=v2` or `reads=api` or `reads=refused` or `address=other`.
@@ -232,6 +232,8 @@ Steps, for step=:
 - `backchannel-response`: It says it has logged them out. Only with `oidc=1&sso=1&logout=1`.
 - `api-after-logout`: The service calls the API for the user. Only with `oidc=1&logout=1&keeps=offline`.
 - `api-after-logout-response`: The API answers. Only with `oidc=1&logout=1&keeps=offline`.
+- `program-starts`: The user runs the program. Only with `client=public&pkce=1&runs=program`.
+- `program-opens-browser`: It opens the user’s browser to log in. Only with `client=public&pkce=1&runs=program`.
 - `code-to-attacker`: The code reaches them. Only with `attacker=1&gets=link&registered=any`.
 - `company-turns-off`: Their company turns their account off. Only with `broker=1&companies=1&leaves=1`.
 - `left-api-request`: The app calls the API, with the same token. Only with `broker=1&companies=1&leaves=1`.
@@ -252,7 +254,7 @@ Steps, for step=:
 Parties, for the names after #:
 
 - `app-team`: You, the app team.
-- `app`: App, the one being set up.
+- `app`: App, the one being set up. With `runs=program` it is drawn as Program.
 - `idp`: Identity provider, will log users in.
 - `idp-admin`: Admin, runs the provider.
 - `upstream`: Other provider, the other account. Only with `broker=1` or `link=1`. With `companies=1` or `speaks=saml` or `leaves=1` it is drawn as Their company.

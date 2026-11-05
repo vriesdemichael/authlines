@@ -20,6 +20,8 @@ const par = is('par', true);
 const consent = is('consent', true);
 const inPage = is('appRuns', 'page');
 const behindThePage = is('appRuns', 'bff');
+// A program on the user's own computer, which hears the answer on 127.0.0.1 (#178).
+const inAProgram = is('appRuns', 'program');
 const fromADocument = is('registration', 'cimd');
 const inADirectory = is('federation', true);
 const byHand = is('registration', 'manual');
@@ -143,7 +145,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainRole: 'What the user uses',
 			...appWords,
 			icon: 'app',
-			when: not(behindThePage),
+			when: all(not(behindThePage), not(inAProgram)),
 			joins: { lifeline: 'browser', when: inPage },
 			startsWith: [{ artifact: 'secret', when: confidential }],
 			concept: [
@@ -155,6 +157,28 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: "The application the user wants to use. In OAuth's terms it is the client, and it never sees the user's password."
 				}
 			]
+		},
+		{
+			id: 'app',
+			plainName: 'Program',
+			plainRole: 'On their computer',
+			...appWords,
+			knownAs: [
+				...(appWords.knownAs ?? []),
+				{
+					word: 'native app',
+					by: 'RFC 8252',
+					source: {
+						source: 'rfc8252',
+						section: '3',
+						why: 'Section 3 defines a native app as one the user installs on their device, which a desktop program is.'
+					}
+				}
+			],
+			icon: 'app',
+			when: inAProgram,
+			concept:
+				'A program on the user’s own computer, such as a command-line tool or a desktop app. In OAuth’s terms it is the client, and a public one: every copy of it is the same, so a secret in it would be no secret. It uses the user’s own browser to log in, and is never sent the password.'
 		},
 		{
 			id: 'app',
@@ -469,7 +493,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		},
 		{
 			id: 'open-app',
-			when: not(byLink),
+			when: all(not(byLink), not(inAProgram)),
 			from: 'browser',
 			to: 'app',
 			kind: 'request',
@@ -563,6 +587,26 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				example('passport', false, 'has no DPoP')
 			],
 			when: dpop
+		},
+		{
+			id: 'program-starts',
+			when: inAProgram,
+			cites: [
+				{
+					source: 'rfc8252',
+					section: '8.3',
+					why: 'Section 8.3 says to listen on the loopback address only, to open the port only when starting the login and close it once the answer is back, and to use 127.0.0.1 rather than localhost.'
+				}
+			],
+			from: 'app',
+			to: 'app',
+			kind: 'internal',
+			plain: 'The user runs the program',
+			label: 'Listen on 127.0.0.1',
+			concept:
+				'The user starts it, a command-line tool say, which RFC 8252 counts as a native app, and it needs them logged in. It opens a port on 127.0.0.1, which only this computer can reach, and lets the computer pick which one, so the answer has somewhere to come back to. It names 127.0.0.1, and not localhost, because RFC 8252 says a name can be looked up wrongly, or leave it listening on more than this computer.',
+			inPractice:
+				'This is your code. Listen only on the address that is this computer, not on every address it has, and close the port once the answer has come.'
 		},
 		{
 			id: 'make-verifier',
@@ -692,6 +736,31 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			]
 		},
 		{
+			id: 'program-opens-browser',
+			when: inAProgram,
+			cites: [
+				{
+					source: 'rfc8252',
+					section: '8.12',
+					why: 'Section 8.12 says a program must not log in through a browser built into itself, because it could read every key typed into the login form.'
+				},
+				{
+					source: 'rfc8252',
+					section: '6',
+					why: 'Section 6 says a public client like this must use PKCE, and the server must support it.'
+				}
+			],
+			from: 'app',
+			to: 'app',
+			kind: 'internal',
+			plain: 'It opens the user’s browser to log in',
+			label: 'Open the browser',
+			concept:
+				'No HTTP message here. The program asks the computer to open the login address in the user’s own browser, with 127.0.0.1 and its port as the address to come back to. It is the user’s own browser, and not one inside the program, so the password goes only to the identity provider.',
+			inPractice:
+				'Your code builds the address from the values you gave it in setup, with PKCE, which a program like this has to use, and asks the computer to open it.'
+		},
+		{
 			id: 'page-goes-to-log-in',
 			when: inPage,
 			from: 'app',
@@ -707,7 +776,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		},
 		{
 			id: 'redirect-to-idp',
-			when: all(not(inPage), not(byLink)),
+			when: all(not(inPage), not(byLink), not(inAProgram)),
 			cites: [
 				{
 					source: 'rfc9700',
@@ -838,7 +907,19 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					name: 'redirect_uri',
 					place: 'query',
 					note: 'Must match what was registered in setup',
-					when: all(not(is('address', 'other')), not(fromADocument), not(byLink), not(par))
+					when: all(
+						not(is('address', 'other')),
+						not(fromADocument),
+						not(byLink),
+						not(par),
+						not(inAProgram)
+					)
+				},
+				{
+					name: 'redirect_uri',
+					place: 'query',
+					note: '127.0.0.1 at the port it is listening on, which need not be registered',
+					when: inAProgram
 				},
 				{
 					name: 'redirect_uri',
@@ -1500,6 +1581,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: 'The * matches their address, so the identity provider sends the browser there, with a short-lived, one-time code for the real app. It sets its cookie as well, so it will know this browser next time.'
 				},
 				{
+					when: inAProgram,
+					text: 'The identity provider sets a cookie on its own address, so it will know this browser next time, and sends the browser to 127.0.0.1, at the port the program asked with, with a short-lived, one-time code. That address is this computer, so the code does not leave it.'
+				},
+				{
 					text: 'The identity provider sets a cookie on its own address, so it will know this browser next time, and sends the browser back to the app with a short-lived, one-time code. This goes through the browser, where it can be seen, so it should not be a token.'
 				}
 			],
@@ -1950,6 +2035,18 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					source: 'rfc9700',
 					section: '4.7',
 					why: 'Section 4.7 is the same attack in the current advice, and says that PKCE or a nonce can stand in for state, once the app has made sure the server supports PKCE.'
+				},
+				{
+					source: 'rfc8252',
+					section: '8.1',
+					why: 'Section 8.1 says another program on the same computer may be able to take a code sent to a loopback address, and that PKCE was made for this.',
+					when: inAProgram
+				},
+				{
+					source: 'rfc8252',
+					section: '8.3',
+					why: 'Section 8.3 says plain http is acceptable for a loopback address, because the request never leaves the computer.',
+					when: inAProgram
 				}
 			],
 			from: 'browser',
@@ -1961,9 +2058,16 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					'Whatever the app answers here, a page of its own or a move straight on to another. What matters is the address, because the code is in it, for anything that can see the address.',
 				marks: ['code', 'state']
 			},
-			plain: 'The code reaches the app',
+			plain: [
+				{ when: inAProgram, text: 'The code reaches the program' },
+				{ text: 'The code reaches the app' }
+			],
 			label: 'Deliver the code',
 			concept: [
+				{
+					when: inAProgram,
+					text: 'The browser hands the code to the program, at the port it opened, and this never leaves the computer, which is why plain http is all right here. On some systems another program may be able to take a code sent to this port, though, so the port does not show which program got it. The verifier does not say which program either, but only whoever started this login has it, so a program that only took the code cannot trade it.'
+				},
 				{
 					when: all(not(confidential), not(pkce), dpop),
 					text: "The code reaches the app. It has just been through the browser, with no secret and no PKCE behind it. What protects it is that the login named this app's key, so the code alone gets nobody the tokens."
@@ -1980,8 +2084,15 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: 'The code reaches the app. Someone with only the code cannot trade it without the secret, though that is not quite the end of it, as the question on the next step says.'
 				}
 			],
-			inPractice:
-				'Many frameworks handle this, some only once you turn it on, so check. The address has to be the one you registered, exactly. With a low-level library, comparing state with what this browser was given is your code. Do not skip it.',
+			inPractice: [
+				{
+					when: inAProgram,
+					text: 'Your code takes the code from the address, compares state with what it sent, and closes the port. The address has to be the one registered, apart from the port.'
+				},
+				{
+					text: 'Many frameworks handle this, some only once you turn it on, so check. The address has to be the one you registered, exactly. With a low-level library, comparing state with what this browser was given is your code. Do not skip it.'
+				}
+			],
 			practice: [
 				example('springSecurity', true, 'compares state without being asked'),
 				example('passport', false, 'only compares state with state: true')
@@ -2001,10 +2112,16 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			when: not(byLink),
 			cites: [
 				{
+					source: 'rfc8252',
+					section: '8.5',
+					why: 'Section 8.5 says a secret shipped in a program on users’ computers is no secret, because any user can read their copy, and the server must not take it as proof of which program it is.',
+					when: inAProgram
+				},
+				{
 					source: 'rfc10017',
 					section: '6.3.3.1',
 					why: 'Section 6.3.3.1 says a secret that ships with an app in the browser should not be treated as a secret, and that a server must not take it as proof of who the client is.',
-					when: not(confidential)
+					when: all(not(confidential), not(inAProgram))
 				},
 				{
 					source: 'rfc9700',
@@ -2042,6 +2159,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				example('oidcClientTs', true, 'does this in the browser, with PKCE', not(confidential))
 			],
 			concept: [
+				{
+					when: inAProgram,
+					text: 'The program trades the code for tokens itself, from this computer. It sends no secret: every copy of it is the same, so one in it could be read out of any copy. What shows it started this login is the verifier, which was never in a redirect, so another program that only saw the code cannot do this.'
+				},
 				{
 					when: all(inPage, pkce),
 					text: 'The page trades the code for tokens, on a call from its own script. So this one goes through the browser too, which is the difference an app in the page makes. It has no secret to prove which app it is. The verifier, which was never in a redirect, is what someone who only saw the code does not have.'

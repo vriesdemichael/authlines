@@ -172,6 +172,16 @@ const presets: readonly Preset[] = [
 		settings: { appRuns: 'bff', clientType: 'confidential', pkce: true }
 	},
 	{
+		id: 'on-their-computer',
+		title: 'A program on the user’s computer',
+		settings: { appRuns: 'program', clientType: 'public', pkce: true }
+	},
+	{
+		id: 'on-their-computer-oidc',
+		title: 'A program on the user’s computer, with OpenID Connect',
+		settings: { appRuns: 'program', clientType: 'public', pkce: true, oidc: true }
+	},
+	{
 		id: 'in-the-page',
 		title: 'An app in the page',
 		settings: { appRuns: 'page', clientType: 'public', pkce: true }

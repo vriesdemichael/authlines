@@ -327,7 +327,8 @@ describe.each(asCases)('the recording of %s', (preset, recording) => {
 		const text = readFileSync(`${FOLDER}/${preset}.json`, 'utf8');
 		expect(text).not.toMatch(/-----BEGIN|ghp_|gho_|github_pat_|AKIA[0-9A-Z]{12}|sk-ant-/);
 		const hosts = [...text.matchAll(/https?:\/\/([^/"'\s:?]+)/g)].map((match) => match[1]);
-		const allowed = new Set(['localhost', 'host.docker.internal']);
+		// 127.0.0.1 is the computer itself, where a program hears the answer (#178).
+		const allowed = new Set(['localhost', 'host.docker.internal', '127.0.0.1']);
 		expect(hosts.filter((host) => !allowed.has(host))).toEqual([]);
 		const emails = [...text.matchAll(/[\w.+-]+@[\w-]+\.[\w.]+/g)].map((match) => match[0]);
 		// At a domain reserved for testing (RFC 2606), so no address in a recording is anyone's.

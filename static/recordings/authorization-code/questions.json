@@ -32,7 +32,9 @@
 		"linkedTokens": "2026-11-05",
 		"offlineTokens": "2026-11-05",
 		"console.session-lifetimes": "2026-11-05",
-		"console.offline-session-lifetimes": "2026-11-05"
+		"console.offline-session-lifetimes": "2026-11-05",
+		"loopbackRedirects": "2026-11-05",
+		"console.loopback-redirects": "2026-11-05"
 	},
 	"answers": {
 		"validRedirectUris": {
@@ -893,6 +895,13 @@
 					"Offline Session Max Limited"
 				],
 				"missing": []
+			},
+			"loopback-redirects": {
+				"found": [
+					"Access settings",
+					"Valid redirect URIs"
+				],
+				"missing": []
 			}
 		},
 		"directoryLogin": {
@@ -1304,6 +1313,46 @@
 							"says": "Token is not active"
 						}
 					}
+				}
+			}
+		},
+		"loopbackRedirects": {
+			"before": {
+				"registered": "http://127.0.0.1/callback",
+				"anyPort": {
+					"status": 200,
+					"refused": false
+				},
+				"anotherPath": {
+					"status": 400,
+					"refused": true
+				},
+				"localhostInstead": {
+					"status": 400,
+					"refused": true
+				}
+			},
+			"after": {
+				"registered": "http://127.0.0.1:*",
+				"anyPort": {
+					"status": 200,
+					"refused": false
+				},
+				"anotherPath": {
+					"status": 200,
+					"refused": false
+				}
+			},
+			"localhost": {
+				"anyPort": {
+					"status": 200,
+					"refused": false
+				}
+			},
+			"ipv6": {
+				"anyPort": {
+					"status": 200,
+					"refused": false
 				}
 			}
 		}

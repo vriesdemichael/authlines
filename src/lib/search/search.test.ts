@@ -207,16 +207,20 @@ describe('what people bring', () => {
 		expect(search(query).results.map((result) => result.title)).toContain(title);
 	});
 
-	it.each([
-		'PKCE downgrade',
-		'native apps',
-		'a custom URL scheme',
-		'a malicious app on my phone',
-		'RFC 8252'
-	])('%s is said not to be here yet, and is not guessed around', (query) => {
+	it.each(['PKCE downgrade', 'a mobile app', 'a custom URL scheme', 'a malicious app on my phone'])(
+		'%s is said not to be here yet, and is not guessed around',
+		(query) => {
+			const found = search(query);
+			expect(found.notHereYet).not.toBeNull();
+			expect(found.results).toEqual([]);
+		}
+	);
+
+	// Drawn since #178, so a search finds the program, and no longer says it is not here.
+	it.each(['native app', 'RFC 8252', 'command line tool'])('%s finds the program', (query) => {
 		const found = search(query);
-		expect(found.notHereYet).not.toBeNull();
-		expect(found.results).toEqual([]);
+		expect(found.notHereYet).toBeNull();
+		expect(found.results.map((result) => result.title).join(' | ')).toMatch(/program/i);
 	});
 
 	it('says nothing about something nobody could mean', () => {

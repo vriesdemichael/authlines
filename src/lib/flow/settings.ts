@@ -29,7 +29,7 @@ export interface Settings {
 	deviceEnds: 'agrees' | 'says-no' | 'runs-out';
 	deviceAttack: 'nobody' | 'sends-code' | 'reads-code';
 	address: 'registered' | 'other';
-	appRuns: 'server' | 'page' | 'bff';
+	appRuns: 'server' | 'page' | 'bff' | 'program';
 	oldWay: boolean;
 	registration: 'manual' | 'dcr' | 'cimd';
 	federation: boolean;
@@ -121,6 +121,8 @@ export interface OptionDef<V extends string = string> {
 	label: string;
 	requires?: Requirement;
 	flag?: KeycloakFlag;
+	/** On offer only in advanced mode, unless it is the one chosen, because a new answer goes there first. */
+	advanced?: true;
 }
 
 export interface ChoiceDef<V extends string = string> extends SettingBase {
@@ -1060,7 +1062,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				is('refresh', false),
 				is('ssoAsks', 'remembered')
 			),
-			because: 'It is part of OpenID Connect.',
+			because: 'Part of OpenID Connect.',
 			sayWhenBlocked: true
 		}
 	},
@@ -1100,7 +1102,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				'In the page, the tokens end up in the browser, and a script running there can get some for itself. With a server behind it, the page never has one.'
 		},
 		summary:
-			'On a server of its own, or in the page in the user’s browser, alone or with a server behind it. In the page alone there is nowhere to keep a secret, and the tokens end up in the browser.',
+			'On a server of its own, in the page in the user’s browser, alone or with a server behind it, or in a program on the user’s computer. In the page alone there is nowhere to keep a secret, and in a program a secret shipped in every copy is no secret.',
 		why: 'The rest of this flow is careful to keep the tokens away from the browser. An app that runs only in the page is in the browser, so that care stops at its door, and a script running there can get tokens just as the app does.',
 		sources: [
 			{
@@ -1154,6 +1156,36 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 						is('registration', 'manual')
 					),
 					because: 'Not drawn with these settings yet.'
+				}
+			},
+			{
+				value: 'program',
+				label: 'On their computer',
+				advanced: true,
+				why: 'A command-line tool or a desktop app runs on the user’s own computer, and a secret shipped in every copy of it would be no secret. It opens the user’s browser to log in, and hears the answer on a port of its own, on 127.0.0.1.',
+				sets: { clientType: 'public', pkce: true },
+				requires: {
+					when: all(
+						is('clientType', 'public'),
+						is('pkce', true),
+						is('binding', 'bearer'),
+						is('broker', false),
+						is('federation', false),
+						is('companies', false),
+						is('attacker', false),
+						is('consent', false),
+						is('sso', false),
+						is('refresh', false),
+						is('logout', false),
+						is('apiToken', 'good'),
+						is('address', 'registered'),
+						is('registration', 'manual'),
+						is('par', false),
+						is('exchange', false),
+						is('linkAccount', false),
+						is('oldWay', false)
+					),
+					because: 'Drawn so far only in the plain case, with PKCE.'
 				}
 			}
 		]
@@ -1217,8 +1249,8 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			}
 		],
 		options: [
-			{ value: 'registered', label: 'One that was registered' },
-			{ value: 'other', label: 'One that was not' }
+			{ value: 'registered', label: 'A registered one' },
+			{ value: 'other', label: 'One not registered' }
 		],
 		requires: {
 			when: all(

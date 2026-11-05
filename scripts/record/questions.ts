@@ -2447,3 +2447,71 @@ export async function questionsWhenOffline(admin: Admin) {
 		if (made) await admin.call('DELETE', `${realmPath}/clients/${made.id}`);
 	}
 }
+
+/**
+ * Where a program on the user's computer can be sent the answer (#178): registered with no port, a
+ * request with any port, another path, localhost in its place, IPv6, and a * after the port, as some
+ * setups register it. Asked of the login address alone, which says no before any form if it is wrong.
+ */
+export async function questionsWithAProgram(admin: Admin) {
+	const realmPath = `/realms/${LOCAL_REALM}`;
+	const program = 'note-loopback';
+	const remove = async () => {
+		const [old] = await admin.call<Client[]>('GET', `${realmPath}/clients?clientId=${program}`);
+		if (old) await admin.call('DELETE', `${realmPath}/clients/${old.id}`);
+	};
+	await remove();
+	const made = await freshClient(admin, program, {
+		publicClient: true,
+		clientAuthenticatorType: undefined,
+		secret: undefined,
+		redirectUris: ['http://127.0.0.1/callback']
+	});
+	const register = (redirectUris: string[]) =>
+		admin.call('PUT', `${realmPath}/clients/${made.id}`, { ...made, redirectUris });
+	const verifier = random() + random();
+	const asks = async (redirectUri: string) => {
+		const query = new URLSearchParams({
+			response_type: 'code',
+			client_id: program,
+			redirect_uri: redirectUri,
+			state: random(),
+			code_challenge: sha256(verifier),
+			code_challenge_method: 'S256'
+		});
+		const answer = await fetch(`${KEYCLOAK}${realmPath}/protocol/openid-connect/auth?${query}`, {
+			redirect: 'manual'
+		});
+		const text = await answer.text();
+		return {
+			status: answer.status,
+			refused: text.includes('Invalid parameter: redirect_uri')
+		};
+	};
+	try {
+		const withNoPort = {
+			anyPort: await asks('http://127.0.0.1:51234/callback'),
+			anotherPath: await asks('http://127.0.0.1:51234/somewhere-else'),
+			localhostInstead: await asks('http://localhost:51234/callback')
+		};
+		await register(['http://localhost/callback']);
+		const localhost = { anyPort: await asks('http://localhost:51234/callback') };
+		await register(['http://[::1]/callback']);
+		const ipv6 = { anyPort: await asks('http://[::1]:51234/callback') };
+		await register(['http://127.0.0.1:*']);
+		const withAStar = {
+			anyPort: await asks('http://127.0.0.1:51234/callback'),
+			anotherPath: await asks('http://127.0.0.1:51234/somewhere-else')
+		};
+		return {
+			loopbackRedirects: {
+				before: { registered: 'http://127.0.0.1/callback', ...withNoPort },
+				after: { registered: 'http://127.0.0.1:*', ...withAStar },
+				localhost,
+				ipv6
+			}
+		};
+	} finally {
+		await remove();
+	}
+}
