@@ -104,7 +104,8 @@
 				source: see
 				<a href="https://github.com/vriesdemichael/authlines" rel="external"
 					>the code, the recordings and how they are checked</a
-				>.
+				>. Your AI agent can link here too, with your names on the parties:
+				<a href={resolve('/for-agents')} data-testid="agents-link">set it up</a>.
 			</p>
 		</div>
 		{#if Living}

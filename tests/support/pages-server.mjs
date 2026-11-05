@@ -17,7 +17,9 @@ const types = {
 	'.json': 'application/json',
 	'.png': 'image/png',
 	'.svg': 'image/svg+xml',
-	'.txt': 'text/plain'
+	'.txt': 'text/plain',
+	'.md': 'text/markdown',
+	'.zip': 'application/zip'
 };
 
 const server = createServer((request, response) => {

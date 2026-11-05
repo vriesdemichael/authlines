@@ -1366,5 +1366,19 @@ export const breakages = [
 		file: MODEL,
 		from: 'causes: causes(field.when, settings),',
 		to: 'causes: [],'
+	},
+
+	// What an agent is told, and the skill someone installs.
+	{
+		name: 'agents: a value that is turned off on its own is said to need nothing',
+		file: 'src/lib/agents.ts',
+		from: '(value.least[0]?.params.length ?? 0) > 1)',
+		to: '(value.least[0]?.params.length ?? 0) > 99)'
+	},
+	{
+		name: 'agents: the zip says a file is shorter than it is',
+		file: 'src/lib/zip.ts',
+		from: 'l.setUint32(22, data.length, true);',
+		to: 'l.setUint32(22, data.length - 1, true);'
 	}
 ];
