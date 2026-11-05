@@ -60,3 +60,34 @@ test.describe('using it with an agent', () => {
 		}
 	});
 });
+
+// A link that asks for what does not go together loses some of it, and says so, in either mode (#177).
+test.describe('a link that asks for what does not go together', () => {
+	test('says what it could not have and why, until a setting changes', async ({ page }) => {
+		await page.goto('authorization-code/?oidc=1&client=public&pkce=1&broker=1&upstream=v2');
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		const note = page.getByTestId('dropped-note');
+		await expect(note).toContainText('Stored upstream tokens: API V2');
+		await expect(note).toContainText('confidential client');
+
+		// Stepping moves along what is drawn, so the note stays.
+		await page.getByTestId('next').click();
+		await expect(page).toHaveURL(/step=/);
+		await expect(note).toBeVisible();
+
+		// Changing what is drawn is the answer to it.
+		const button = page.getByTestId('settings-toggle');
+		if ((await button.isVisible()) && (await button.getAttribute('aria-expanded')) !== 'true') {
+			await button.click();
+		}
+		await page.locator('[data-setting="pkce"] input[type="checkbox"]').uncheck();
+		await expect(note).toHaveCount(0);
+	});
+
+	test('says nothing when all of it fits', async ({ page }) => {
+		await page.goto('authorization-code/?oidc=1&pkce=1&exchange=1');
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		await expect(page.locator('[data-lifeline="second-api"]')).toBeVisible();
+		await expect(page.getByTestId('dropped-note')).toHaveCount(0);
+	});
+});

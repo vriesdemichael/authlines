@@ -47,37 +47,37 @@ An app gets access on behalf of a user, without ever seeing their password.
 
 ### Settings
 
-Where a setting has a note on when it is offered, the settings the note names can be on or off, and anything else turns it off. Where a value needs others, it says so.
+Each value says what it needs with it, and what it can share a link with, worked out from the rules the screen uses, two settings at a time. A link that names two that do not go together loses one of them.
 
-- `oidc=1`: OpenID Connect, off by default.
-- `consent=1`: Ask for consent, off by default.
-- `client=confidential | public`: Client type, confidential by default.
-- `register=manual | dcr | cimd`: How the provider learns about the app, manual by default. `register=cimd` needs `consent=1&client=public&pkce=1` with it.
-- `pkce=1`: PKCE, off by default.
-- `par=1`: PAR, off by default. Only drawn so far with OpenID Connect, consent, PKCE and either kind of client, on a server.
-- `attacker=1`: Show an attacker, off by default. The attacker only shows the plain case, with a Bearer token and no other provider.
-- `thief=1`: Show someone using a stolen token, off by default. Only with a DPoP token, in the plain case so far. `thief=1` needs `binding=dpop` with it.
-- `checks=proof | bearer`: What the API checks, proof by default. Only someone using a stolen token asks this. `checks=bearer` needs `thief=1&binding=dpop` with it.
-- `uses=themselves | real-app`: What they do with it, themselves by default. Only an app with a secret needs this, and only for a copied code. With no secret, they can just trade it. `uses=real-app` needs `attacker=1` with it.
-- `gets=copy | link`: How they get the code, copy by default. Only in the plain case so far, with the app on a server. `gets=link` needs `attacker=1` with it.
-- `registered=exact | any`: What the app registered, exact by default. Only a link of theirs asks this. `registered=any` needs `attacker=1&gets=link` with it.
-- `binding=bearer | dpop`: Token type, bearer by default.
-- `nonce=1`: Server requires a nonce, off by default. A DPoP nonce only applies to DPoP tokens. `nonce=1` needs `binding=dpop` with it.
-- `broker=1`: External IdP, off by default.
-- `directory=1`: Users in a directory, off by default. Only drawn in the plain case so far.
-- `companies=1`: Each customer has a provider, off by default. Only with another provider, in the plain case so far. `companies=1` needs `broker=1` with it.
-- `speaks=oidc | saml`: What their provider speaks, oidc by default. Only a customer's own provider is asked this. `speaks=saml` needs `broker=1&companies=1` with it.
-- `leaves=1`: Someone leaves the company, off by default. Only someone at a customer with a provider of their own leaves it. `leaves=1` needs `broker=1&companies=1` with it.
-- `upstream=off | v1 | v2`: Stored upstream tokens, off by default. Upstream tokens only exist when another IdP handles the login. `upstream=v1` needs `broker=1` with it. `upstream=v2` needs `broker=1` with it.
-- `send=good | none | expired | changed | elsewhere | noscope`: What the API is sent, good by default. This shows the plain case, so other settings do not get in the way of the answer.
-- `exchange=1`: Token exchange, off by default. Only drawn so far with OpenID Connect, consent, PKCE and either kind of client, on a server.
-- `refresh=1`: When the token runs out, off by default. This shows the plain case, so other settings do not get in the way of the answer.
-- `reuse=keeps | ends`: Using a refresh token twice, keeps by default. There is no second use until the token runs out and the first has happened. `reuse=ends` needs `refresh=1` with it.
-- `sso=1`: A second app, off by default. This shows the plain case, so other settings do not get in the way of the answer.
-- `second=remembered | insists | fresh`: What happens at the second app, remembered by default. There is no second app until it has been brought on. `second=insists` needs `oidc=1&sso=1` with it. `second=fresh` needs `oidc=1&sso=1` with it.
-- `logout=1`: Log out, off by default. It is part of OpenID Connect. `logout=1` needs `oidc=1` with it.
-- `runs=server | page | bff`: Where the app runs, server by default. `runs=page` needs `client=public` with it. `runs=bff` needs `pkce=1` with it.
-- `address=registered | other`: The address the app asks for, registered by default. It stops before any of those would matter.
+- `oidc=1`: OpenID Connect, off by default. `oidc=1` does not go with `register=dcr`, `register=cimd`, `thief=1`, `checks=bearer`, `directory=1`, `companies=1`, `speaks=saml`, `leaves=1`, `send=none`, `send=expired`, `send=changed`, `send=elsewhere`, `send=noscope`, or `runs=bff`.
+- `consent=1`: Ask for consent, off by default. `consent=1` goes only with `oidc=1`, `client=public`, `register=cimd`, `pkce=1`, `par=1`, `attacker=1`, `uses=real-app`, `binding=dpop`, `nonce=1`, `broker=1`, `upstream=v1`, `upstream=v2`, `exchange=1`, `refresh=1`, and `reuse=ends` among the other settings, so leave the rest out.
+- `client=confidential | public`: Client type, confidential by default. `client=public` does not go with `register=dcr`, `thief=1`, `checks=bearer`, `uses=real-app`, `directory=1`, `companies=1`, `speaks=saml`, `leaves=1`, `upstream=v2`, or `runs=bff`.
+- `register=manual | dcr | cimd`: How the provider learns about the app, manual by default. `register=cimd` needs `consent=1&client=public&pkce=1` with it. `register=dcr` goes with none of the other settings yet, so leave them out. `register=cimd` goes only with `consent=1`, `client=public`, and `pkce=1` among the other settings, so leave the rest out.
+- `pkce=1`: PKCE, off by default. `pkce=1` does not go with `register=dcr`, `thief=1`, `checks=bearer`, `directory=1`, `companies=1`, `speaks=saml`, or `leaves=1`.
+- `par=1`: PAR, off by default. Drawn so far with nothing else on but OpenID Connect, consent and PKCE, with either kind of client and the app on a server. `par=1` goes only with `oidc=1`, `consent=1`, `client=public`, and `pkce=1` among the other settings, so leave the rest out.
+- `attacker=1`: Show an attacker, off by default. The attacker only shows the plain case, with a Bearer token and no other provider. `attacker=1` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, `uses=real-app`, `gets=link`, and `registered=any` among the other settings, so leave the rest out.
+- `thief=1`: Show someone using a stolen token, off by default. Only with a DPoP token, in the plain case so far. `thief=1` needs `binding=dpop` with it. `thief=1` goes only with `checks=bearer` and `binding=dpop` among the other settings, so leave the rest out.
+- `checks=proof | bearer`: What the API checks, proof by default. Only someone using a stolen token asks this. `checks=bearer` needs `thief=1&binding=dpop` with it. `checks=bearer` goes only with `thief=1` and `binding=dpop` among the other settings, so leave the rest out.
+- `uses=themselves | real-app`: What they do with it, themselves by default. Only an app with a secret needs this, and only for a copied code. With no secret, they can just trade it. `uses=real-app` needs `attacker=1` with it. `uses=real-app` goes only with `oidc=1`, `consent=1`, `pkce=1`, and `attacker=1` among the other settings, so leave the rest out.
+- `gets=copy | link`: How they get the code, copy by default. Only in the plain case so far, with the app on a server. `gets=link` needs `attacker=1` with it. `gets=link` goes only with `oidc=1`, `client=public`, `pkce=1`, `attacker=1`, and `registered=any` among the other settings, so leave the rest out.
+- `registered=exact | any`: What the app registered, exact by default. Only a link of theirs asks this. `registered=any` needs `attacker=1&gets=link` with it. `registered=any` goes only with `oidc=1`, `client=public`, `pkce=1`, `attacker=1`, and `gets=link` among the other settings, so leave the rest out.
+- `binding=bearer | dpop`: Token type, bearer by default. `binding=dpop` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, `thief=1`, `checks=bearer`, `nonce=1`, `broker=1`, and `upstream=v1` among the other settings, so leave the rest out.
+- `nonce=1`: Server requires a nonce, off by default. A DPoP nonce only applies to DPoP tokens. `nonce=1` needs `binding=dpop` with it. `nonce=1` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, `binding=dpop`, `broker=1`, and `upstream=v1` among the other settings, so leave the rest out.
+- `broker=1`: External IdP, off by default. `broker=1` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, `binding=dpop`, `nonce=1`, `companies=1`, `speaks=saml`, `leaves=1`, `upstream=v1`, and `upstream=v2` among the other settings, so leave the rest out.
+- `directory=1`: Users in a directory, off by default. Only drawn in the plain case so far. `directory=1` goes with none of the other settings yet, so leave them out.
+- `companies=1`: Each customer has a provider, off by default. Only with another provider, in the plain case so far. `companies=1` needs `broker=1` with it. `companies=1` goes only with `broker=1`, `speaks=saml`, and `leaves=1` among the other settings, so leave the rest out.
+- `speaks=oidc | saml`: What their provider speaks, oidc by default. Only a customer's own provider is asked this. `speaks=saml` needs `broker=1&companies=1` with it. `speaks=saml` goes only with `broker=1`, `companies=1`, and `leaves=1` among the other settings, so leave the rest out.
+- `leaves=1`: Someone leaves the company, off by default. Only someone at a customer with a provider of their own leaves it. `leaves=1` needs `broker=1&companies=1` with it. `leaves=1` goes only with `broker=1`, `companies=1`, and `speaks=saml` among the other settings, so leave the rest out.
+- `upstream=off | v1 | v2`: Stored upstream tokens, off by default. Upstream tokens only exist when another IdP handles the login. `upstream=v1` needs `broker=1` with it. `upstream=v2` needs `broker=1` with it. `upstream=v1` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, `binding=dpop`, `nonce=1`, and `broker=1` among the other settings, so leave the rest out. `upstream=v2` goes only with `oidc=1`, `consent=1`, `pkce=1`, and `broker=1` among the other settings, so leave the rest out.
+- `send=good | none | expired | changed | elsewhere | noscope`: What the API is sent, good by default. This shows the plain case, so other settings do not get in the way of the answer. `send=none` goes only with `client=public` and `pkce=1` among the other settings, so leave the rest out. `send=expired` goes only with `client=public` and `pkce=1` among the other settings, so leave the rest out. `send=changed` goes only with `client=public` and `pkce=1` among the other settings, so leave the rest out. `send=elsewhere` goes only with `client=public` and `pkce=1` among the other settings, so leave the rest out. `send=noscope` goes only with `client=public` and `pkce=1` among the other settings, so leave the rest out.
+- `exchange=1`: Token exchange, off by default. Drawn so far with nothing else on but OpenID Connect, consent and PKCE, with either kind of client and the app on a server. `exchange=1` goes only with `oidc=1`, `consent=1`, `client=public`, and `pkce=1` among the other settings, so leave the rest out.
+- `refresh=1`: When the token runs out, off by default. This shows the plain case, so other settings do not get in the way of the answer. `refresh=1` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, and `reuse=ends` among the other settings, so leave the rest out.
+- `reuse=keeps | ends`: Using a refresh token twice, keeps by default. There is no second use until the token runs out and the first has happened. `reuse=ends` needs `refresh=1` with it. `reuse=ends` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, and `refresh=1` among the other settings, so leave the rest out.
+- `sso=1`: A second app, off by default. This shows the plain case, so other settings do not get in the way of the answer. `sso=1` goes only with `oidc=1`, `client=public`, `pkce=1`, `second=insists`, `second=fresh`, and `logout=1` among the other settings, so leave the rest out.
+- `second=remembered | insists | fresh`: What happens at the second app, remembered by default. There is no second app until it has been brought on. `second=insists` needs `oidc=1&sso=1` with it. `second=fresh` needs `oidc=1&sso=1` with it. `second=insists` goes only with `oidc=1`, `client=public`, `pkce=1`, and `sso=1` among the other settings, so leave the rest out. `second=fresh` goes only with `oidc=1`, `client=public`, `pkce=1`, and `sso=1` among the other settings, so leave the rest out.
+- `logout=1`: Log out, off by default. It is part of OpenID Connect. `logout=1` needs `oidc=1` with it. `logout=1` goes only with `oidc=1`, `client=public`, `pkce=1`, and `sso=1` among the other settings, so leave the rest out.
+- `runs=server | page | bff`: Where the app runs, server by default. `runs=page` needs `client=public` with it. `runs=bff` needs `pkce=1` with it. `runs=page` goes only with `oidc=1`, `client=public`, and `pkce=1` among the other settings, so leave the rest out. `runs=bff` goes only with `pkce=1` among the other settings, so leave the rest out.
+- `address=registered | other`: The address the app asks for, registered by default. It stops before any of those would matter. `address=other` goes only with `oidc=1`, `client=public`, and `pkce=1` among the other settings, so leave the rest out.
 
 ### Authorization code flow: `https://vriesdemichael.github.io/authlines/authorization-code/`
 
@@ -264,7 +264,7 @@ An app gets access for itself, with no user and no browser.
 
 ### Settings
 
-Where a setting has a note on when it is offered, the settings the note names can be on or off, and anything else turns it off. Where a value needs others, it says so.
+Each value says what it needs with it, and what it can share a link with, worked out from the rules the screen uses, two settings at a time. A link that names two that do not go together loses one of them.
 
 - `binding=bearer | dpop`: Token type, bearer by default.
 
@@ -313,11 +313,11 @@ An app with no good way to log anyone in, and a user who does that on another de
 
 ### Settings
 
-Where a setting has a note on when it is offered, the settings the note names can be on or off, and anything else turns it off. Where a value needs others, it says so.
+Each value says what it needs with it, and what it can share a link with, worked out from the rules the screen uses, two settings at a time. A link that names two that do not go together loses one of them.
 
 - `oidc=1`: OpenID Connect, off by default.
-- `ends=agrees | says-no | runs-out`: How it ends, agrees by default.
-- `misuse=nobody | sends-code | reads-code`: Someone misusing it, nobody by default.
+- `ends=agrees | says-no | runs-out`: How it ends, agrees by default. `ends=says-no` does not go with `misuse=reads-code`. `ends=runs-out` does not go with `misuse=reads-code`.
+- `misuse=nobody | sends-code | reads-code`: Someone misusing it, nobody by default. `misuse=reads-code` goes only with `oidc=1` among the other settings, so leave the rest out.
 
 ### Device flow: `https://vriesdemichael.github.io/authlines/device/`
 

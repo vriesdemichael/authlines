@@ -140,8 +140,8 @@
 					<li>
 						<code>{setting.param}={setting.values.join(' | ')}</code>: {setting.label}, {setting.byDefault}
 						by default.{setting.only ? ` ${setting.only}` : ''}
-						{#each setting.needs as need (need)}
-							{@render withCode(need)}
+						{#each [...setting.needs, ...setting.rulesOut] as said (said)}
+							{@render withCode(said)}
 						{/each}
 					</li>
 				{/each}

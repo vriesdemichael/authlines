@@ -342,7 +342,7 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plain: 'Register with the other provider',
 			label: 'Register as a client',
 			concept:
-				'The identity provider is itself a client of the other provider, so it has to be registered there the same way.',
+				'The identity provider is itself a client of the other provider, so it has to be registered there the same way. That is done once, for the identity provider, and not again for each app behind it.',
 			inPractice:
 				'Whoever runs the other provider has to do their half, so this is a conversation with them. If each customer has a provider of their own, it is one conversation for each.',
 			when: all(broker, not(companies)),

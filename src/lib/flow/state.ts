@@ -166,6 +166,34 @@ function parseWording(params: URLSearchParams): Wording | null {
 	return asked === 'keycloak' && params.get(SERVER_NOTES_PARAM) === 'off' ? null : asked;
 }
 
+/** A setting a link asked for that does not fit with the rest of it, so it was turned off (#177). */
+export interface DroppedFromLink {
+	setting: SettingId;
+	/** What the link asked for, as a link writes it. */
+	asked: string;
+	because: string;
+}
+
+/**
+ * What a link asked for and does not get, with why, read the way parseState reads it. Only what the
+ * link itself named, because a setting it never mentioned was never asked for.
+ */
+export function droppedFromLink(base: BaseFlow, search: string): DroppedFromLink[] {
+	const params = new URLSearchParams(search);
+	const requested = Object.fromEntries(
+		base.settings.map((id) => [id, parseValue(settingDefs[id], params.get(settingDefs[id].param))])
+	) as Partial<Settings>;
+	const { settings, resets } = normalize({ ...defaultSettings, ...requested });
+	const said = new Set<SettingId>();
+	return resets.flatMap(({ setting, because }) => {
+		const param = settingDefs[setting].param;
+		if (said.has(setting) || !params.has(param) || settings[setting] === requested[setting])
+			return [];
+		said.add(setting);
+		return [{ setting, asked: `${param}=${params.get(param)}`, because }];
+	});
+}
+
 export function parseState(base: BaseFlow, onPath: DiagramId, search: string): AppState {
 	const params = new URLSearchParams(search);
 	// A link can only ask for what this flow has, so the rest stay on their defaults.

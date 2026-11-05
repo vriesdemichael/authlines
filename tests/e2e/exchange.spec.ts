@@ -50,7 +50,9 @@ test.describe('an API that trades the token (#13)', () => {
 	test('is not on offer with another provider, and says why', async ({ page }) => {
 		await open(page, '&broker=1');
 		await expect(page.locator('[data-setting="exchange"] input')).toBeDisabled();
-		await expect(page.locator('[data-setting="exchange"]')).toContainText('Only drawn so far');
+		await expect(page.locator('[data-setting="exchange"]')).toContainText(
+			'Drawn so far with nothing else on but'
+		);
 	});
 
 	test('has a question of its own, which opens where the answer is', async ({ page }) => {
