@@ -126,13 +126,22 @@ function resultAt(kind: ResultKind, title: string, says: string, state: AppState
 	};
 }
 
-/** The settings that show a step, going by the named states, so that a recording usually has it. */
+/** How many settings differ from the defaults, so that a result opens on as little as shows it. */
+const changed = (settings: Settings) =>
+	settingIds.filter((id) => settings[id] !== defaultSettings[id]).length;
+
+/**
+ * The settings that show a step, going by the named states, so that a recording usually has it.
+ * The one that changes fewest wins, and the order of the presets only breaks a tie, because a
+ * preset early in the list can bring settings that have nothing to do with the step.
+ */
 function settingsShowing(diagram: DiagramId, step: string): Settings | null {
-	const candidates = [defaultSettings, ...base.presets.map(settingsOf)];
-	return (
-		candidates.find((settings) =>
-			evaluate(base.diagrams[diagram], settings).steps.some((s) => s.id === step)
-		) ?? null
+	const candidates = [defaultSettings, ...base.presets.map(settingsOf)].filter((settings) =>
+		evaluate(base.diagrams[diagram], settings).steps.some((s) => s.id === step)
+	);
+	return candidates.reduce<Settings | null>(
+		(best, settings) => (best && changed(best) <= changed(settings) ? best : settings),
+		null
 	);
 }
 
