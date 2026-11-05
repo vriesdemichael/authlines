@@ -423,3 +423,18 @@ Recorded on Keycloak 26.8.1 on 2026-11-05, for [#186](https://github.com/vriesde
 - A run that points at a document leaves its client policy in the realm. While recording, the run after it in the same realm stopped waiting for the login form, so each of these was recorded in a run of its own.
 
 Not tried: a second app that insists on a login, or asks in a new browser, with another provider; a refresh token used twice with the session ending, and a refresh token from a trade, with another provider; and any of these with stored tokens from the other provider.
+
+## Offline tokens, and what ends when
+
+Recorded on Keycloak 26.8.1 on 2026-11-05 (`logout-offline`, and `offlineTokens` in `questions.json`), for [#184](https://github.com/vriesdemichael/authlines/issues/184). [OpenID Connect Core section 11](https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess) defines `offline_access` as asking for a refresh token that works when the user is not logged in, and says the provider must always get the user's consent to one.
+
+- On a default client, with `openid offline_access` asked for and no `prompt`, the token came with no question to the user. Its refresh token's `typ` was `Offline`, with `refresh_expires_in` 2592000, thirty days. An ordinary one came with 1800.
+- After the user logged out through the app, an API that asks the server was told the old access token was still good, where without `offline_access` the same logout made it not. The offline token got new tokens, and the API took the new access token.
+- A new realm has SSO Session Idle 1800, SSO Session Max 36000, Offline Session Idle 2592000, and Offline Session Max Limited off, with Offline Session Max 5184000.
+- Signing the user out as an admin ended the ordinary refresh token, with Session not active, and left the offline token working.
+- SSO Session Max made five seconds: seven seconds later the ordinary refresh token was refused, with Token is not active, and the offline token still worked.
+- Offline Session Max Limited on, and Offline Session Max five seconds: the offline token came with five seconds, and was refused seven seconds later.
+- Both idle times made five seconds: both tokens came with five seconds, and both were refused seven seconds later. There was no leeway to wait out.
+- Asking the server about a token from the question's own client said not active even before the sign-out, so that try was dropped, and the screen says only what the recorded flow showed.
+
+Not tried: consent turned on for the client, revoking an offline token, the client's own lifetimes in its advanced settings, and an offline token through another provider.

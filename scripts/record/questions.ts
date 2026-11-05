@@ -2334,3 +2334,116 @@ export async function questionsWhenLinked(browser: Browser, demo: Demo, admin: A
 		}
 	};
 }
+
+/**
+ * What ends when (#184): the session has an idle time and a maximum, and a refresh token ends with
+ * it. An offline token has an idle time of its own and, only when turned on, a maximum. Each is made
+ * short here and tried, and put back.
+ */
+export async function questionsWhenOffline(admin: Admin) {
+	const realmPath = `/realms/${LOCAL_REALM}`;
+	const lifetimes = [
+		'ssoSessionIdleTimeout',
+		'ssoSessionMaxLifespan',
+		'offlineSessionIdleTimeout',
+		'offlineSessionMaxLifespanEnabled',
+		'offlineSessionMaxLifespan'
+	] as const;
+	const realm = await admin.call<Record<string, unknown>>('GET', realmPath);
+	const defaults = Object.fromEntries(lifetimes.map((name) => [name, realm[name]]));
+	const reader = 'note-offline';
+	const [old] = await admin.call<Client[]>('GET', `${realmPath}/clients?clientId=${reader}`);
+	if (old) await admin.call('DELETE', `${realmPath}/clients/${old.id}`);
+	await freshClient(admin, reader, { directAccessGrantsEnabled: true, standardFlowEnabled: false });
+	const wait = (seconds: number) => new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+	const set = (changes: Record<string, unknown>) => admin.call('PUT', realmPath, changes);
+	const typeOf = (jwt: string) =>
+		(JSON.parse(Buffer.from(jwt.split('.')[1], 'base64url').toString()) as { typ: string }).typ;
+	const grant = async (offline: boolean) => {
+		const got = await token(LOCAL_REALM, {
+			grant_type: 'password',
+			client_id: reader,
+			client_secret: CLIENT_SECRET,
+			username: USERNAME,
+			password: PASSWORD,
+			scope: offline ? 'openid offline_access' : 'openid'
+		});
+		return {
+			accessToken: got.json.access_token,
+			refreshToken: got.json.refresh_token,
+			refreshExpiresIn: Number(got.json.refresh_expires_in),
+			type: typeOf(got.json.refresh_token)
+		};
+	};
+	const refresh = async (refreshToken: string) => {
+		const got = await token(LOCAL_REALM, {
+			grant_type: 'refresh_token',
+			client_id: reader,
+			client_secret: CLIENT_SECRET,
+			refresh_token: refreshToken
+		});
+		return { status: got.status, says: got.json.error_description ?? null };
+	};
+	const both = async () => ({ online: await grant(false), offline: await grant(true) });
+	const tryBoth = async (pair: Awaited<ReturnType<typeof both>>) => ({
+		online: await refresh(pair.online.refreshToken),
+		offline: await refresh(pair.offline.refreshToken)
+	});
+	const strip = (pair: Awaited<ReturnType<typeof both>>) => ({
+		online: { refreshExpiresIn: pair.online.refreshExpiresIn, type: pair.online.type },
+		offline: { refreshExpiresIn: pair.offline.refreshExpiresIn, type: pair.offline.type }
+	});
+	try {
+		const onDefaults = await both();
+
+		// Signed out by an admin, from the user's page in the console.
+		const [user] = await admin.call<{ id: string }[]>(
+			'GET',
+			`${realmPath}/users?username=${USERNAME}`
+		);
+		const beforeSignOut = await both();
+		await admin.call('POST', `${realmPath}/users/${user.id}/logout`);
+		const signedOutByAnAdmin = await tryBoth(beforeSignOut);
+
+		// The session's maximum, made five seconds.
+		await set({ ssoSessionMaxLifespan: 5 });
+		const short = await both();
+		await wait(7);
+		const afterTheMaximum = { asGranted: strip(short), tried: await tryBoth(short) };
+		await set({ ssoSessionMaxLifespan: defaults.ssoSessionMaxLifespan });
+
+		// The offline token's own maximum, turned on and made five seconds.
+		await set({ offlineSessionMaxLifespanEnabled: true, offlineSessionMaxLifespan: 5 });
+		const capped = await grant(true);
+		await wait(7);
+		const afterTheOfflineMaximum = {
+			refreshExpiresIn: capped.refreshExpiresIn,
+			tried: await refresh(capped.refreshToken)
+		};
+		await set({
+			offlineSessionMaxLifespanEnabled: defaults.offlineSessionMaxLifespanEnabled,
+			offlineSessionMaxLifespan: defaults.offlineSessionMaxLifespan
+		});
+
+		// Both idle times made five seconds, and tried after seven.
+		await set({ ssoSessionIdleTimeout: 5, offlineSessionIdleTimeout: 5 });
+		const soon = await both();
+		await wait(7);
+		const idle = { asGranted: strip(soon), afterSevenSeconds: await tryBoth(soon) };
+
+		return {
+			offlineTokens: {
+				before: { defaults, onDefaults: strip(onDefaults), signedOutByAnAdmin },
+				after: {
+					sessionMaximum: afterTheMaximum,
+					offlineMaximum: afterTheOfflineMaximum,
+					idle
+				}
+			}
+		};
+	} finally {
+		await set(defaults);
+		const [made] = await admin.call<Client[]>('GET', `${realmPath}/clients?clientId=${reader}`);
+		if (made) await admin.call('DELETE', `${realmPath}/clients/${made.id}`);
+	}
+}

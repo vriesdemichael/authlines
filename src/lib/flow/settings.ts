@@ -20,6 +20,7 @@ export interface Settings {
 	exchangeGives: 'token' | 'refresh';
 	linkAccount: boolean;
 	linkEnds: 'linked' | 'cancelled';
+	logoutKeeps: 'refresh' | 'offline';
 	refresh: boolean;
 	reuse: 'keeps' | 'ends';
 	sso: boolean;
@@ -1062,6 +1063,30 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			because: 'It is part of OpenID Connect.',
 			sayWhenBlocked: true
 		}
+	},
+	logoutKeeps: {
+		kind: 'choice',
+		label: 'What the app keeps',
+		param: 'keeps',
+		default: 'refresh',
+		onlyOn: 'authorization-code',
+		summary:
+			'A refresh token, or an offline token, which a service can use when the user is not there.',
+		why: 'Some services act for a user later, such as a nightly import, when the user is not there. They ask for offline access, and the token they keep is meant to outlive the session.',
+		sources: [
+			{
+				source: 'oidc-core',
+				why: 'Section 11 is offline access: the offline_access scope asks for a refresh token that works when the user is not logged in, and the provider must always get the user’s consent to one. The server recorded gave one without asking.'
+			}
+		],
+		requires: {
+			when: is('logout', true),
+			because: 'There is no session to outlive until the user logs out.'
+		},
+		options: [
+			{ value: 'refresh', label: 'A refresh token' },
+			{ value: 'offline', label: 'An offline token' }
+		]
 	},
 	appRuns: {
 		kind: 'choice',

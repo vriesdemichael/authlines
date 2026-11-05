@@ -67,6 +67,7 @@ const exchange = is('exchange', true);
 // The trade gives a refresh token too, so the API can keep going without the user (#185).
 const tradeRefresh = all(exchange, is('exchangeGives', 'refresh'));
 const logsOut = is('logout', true);
+const keepsOffline = all(logsOut, is('logoutKeeps', 'offline'));
 const secondApp = is('sso', true);
 const secondInsists = all(secondApp, is('ssoAsks', 'insists'));
 const secondIsFresh = all(secondApp, is('ssoAsks', 'fresh'));
@@ -861,6 +862,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{ name: 'state', place: 'query', note: 'Their own', when: byLink },
 				{ name: 'scope=openid', place: 'query', when: all(oidc, not(par)) },
 				{ name: 'nonce', place: 'query', when: all(oidc, not(par)) },
+				{
+					name: 'scope=offline_access',
+					place: 'query',
+					note: 'Asks for a refresh token meant to outlive the session',
+					when: keepsOffline
+				},
 				{
 					name: 'scope=organization',
 					place: 'query',
@@ -2344,7 +2351,14 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					place: 'body',
 					artifact: 'refresh-token',
 					note: 'Gets a new access token later, without the user',
-					when: not(fromADocument)
+					when: all(not(fromADocument), not(keepsOffline))
+				},
+				{
+					name: 'refresh_token',
+					place: 'body',
+					artifact: 'refresh-token',
+					note: 'An offline token: here its type says Offline, and nobody was asked about it',
+					when: keepsOffline
 				},
 				{ name: 'scope', place: 'body' }
 			]
@@ -4267,10 +4281,20 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			from: 'idp',
 			to: 'api',
 			kind: 'response',
-			plain: 'It is no longer good',
-			label: 'active: false',
-			concept:
-				'This identity provider knows the session has ended, and says so, which the token could not. What it answers is up to the server.',
+			plain: [
+				{ when: keepsOffline, text: 'It is still good, here' },
+				{ text: 'It is no longer good' }
+			],
+			label: [{ when: keepsOffline, text: 'active: true' }, { text: 'active: false' }],
+			concept: [
+				{
+					when: keepsOffline,
+					text: 'The session has ended, and this identity provider still says the token is good. It came with offline access, and without that, the same logout here made it no longer good. What it answers is up to the server.'
+				},
+				{
+					text: 'This identity provider knows the session has ended, and says so, which the token could not. What it answers is up to the server.'
+				}
+			],
 			fields: [{ name: 'active', place: 'body', note: 'Whether the token is still good' }]
 		},
 		{
@@ -4279,11 +4303,25 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			from: 'api',
 			to: 'app',
 			kind: 'response',
-			plain: 'The API refuses',
-			label: '401 invalid_token',
-			concept:
-				'The same token, and another answer. So whether a token still works after a logout depends on who checks it, and what they are told.',
-			fields: [{ name: 'WWW-Authenticate', place: 'header', note: 'What was wrong with this one' }]
+			plain: [{ when: keepsOffline, text: 'It still works' }, { text: 'The API refuses' }],
+			label: [{ when: keepsOffline, text: '200 with the resource' }, { text: '401 invalid_token' }],
+			concept: [
+				{
+					when: keepsOffline,
+					text: 'The same answer as the API that only looks at it. Here, asking the identity provider did not stop a token that came with offline access, which still runs out when it expires.'
+				},
+				{
+					text: 'The same token, and another answer. So whether a token still works after a logout depends on who checks it, and what they are told.'
+				}
+			],
+			fields: [
+				{
+					name: 'WWW-Authenticate',
+					place: 'header',
+					note: 'What was wrong with this one',
+					when: not(keepsOffline)
+				}
+			]
 		},
 		{
 			id: 'refresh-after-logout',
@@ -4291,9 +4329,18 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			from: 'app',
 			to: 'idp',
 			kind: 'request',
-			plain: 'The refresh token is tried',
+			plain: [
+				{ when: keepsOffline, text: 'The offline token is used, with the user gone' },
+				{ text: 'The refresh token is tried' }
+			],
 			label: 'POST /token',
-			concept: 'The one that could have got new access tokens for a long time.',
+			concept: [
+				{
+					when: keepsOffline,
+					text: 'What a service does later, such as a nightly import, when the user is not there. It is the same request as any refresh.'
+				},
+				{ text: 'The one that could have got new access tokens for a long time.' }
+			],
 			fields: [
 				...refreshFields,
 				{ name: 'refresh_token', place: 'body', artifact: 'refresh-token' }
@@ -4305,14 +4352,58 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			from: 'idp',
 			to: 'app',
 			kind: 'response',
-			plain: 'Refused: the session is over',
-			label: '400 invalid_grant',
-			concept:
-				'A refresh token belongs to the session here, so it went with it, which is what the back-channel logout specification recommends. One issued for offline access is meant to outlive the session. Otherwise a stolen access token runs out soon, and nobody gets a new one with this.',
+			plain: [
+				{ when: keepsOffline, text: 'New tokens, with the user gone' },
+				{ text: 'Refused: the session is over' }
+			],
+			label: [{ when: keepsOffline, text: '200 with new tokens' }, { text: '400 invalid_grant' }],
+			concept: [
+				{
+					when: keepsOffline,
+					text: 'New tokens, though the user has logged out: an offline token does not end with the session. On the server recorded, an ordinary refresh token ends with the session, after thirty minutes unused or ten hours at most by default. An offline token ends after thirty days unused, the time it came with, and has no maximum unless one is turned on. An admin signing the user out left it working too.'
+				},
+				{
+					text: 'A refresh token belongs to the session here, so it went with it, which is what the back-channel logout specification recommends. One issued for offline access is meant to outlive the session. Otherwise a stolen access token runs out soon, and nobody gets a new one with this.'
+				}
+			],
 			fields: [
-				{ name: 'error=invalid_grant', place: 'body', note: 'The session it belonged to is over' },
-				{ name: 'error_description', place: 'body' }
+				{
+					name: 'error=invalid_grant',
+					place: 'body',
+					note: 'The session it belonged to is over',
+					when: not(keepsOffline)
+				},
+				{ name: 'error_description', place: 'body', when: not(keepsOffline) },
+				{ name: 'access_token', place: 'body', artifact: 'access-token', when: keepsOffline },
+				{ name: 'token_type=Bearer', place: 'body', when: keepsOffline },
+				{ name: 'id_token', place: 'body', artifact: 'id-token', when: keepsOffline },
+				{ name: 'expires_in', place: 'body', when: keepsOffline },
+				{ name: 'refresh_token', place: 'body', artifact: 'refresh-token', when: keepsOffline },
+				{ name: 'scope', place: 'body', when: keepsOffline }
 			]
+		},
+		{
+			id: 'api-after-logout',
+			when: keepsOffline,
+			from: 'app',
+			to: 'api',
+			kind: 'request',
+			plain: 'The service calls the API for the user',
+			label: 'GET /resource',
+			concept: 'With the new access token, as the user, who logged out a while ago.',
+			fields: [{ name: 'Authorization: Bearer', place: 'header', artifact: 'access-token' }]
+		},
+		{
+			id: 'api-after-logout-response',
+			when: keepsOffline,
+			from: 'api',
+			to: 'app',
+			kind: 'response',
+			plain: 'The API answers',
+			label: '200 with the resource',
+			concept:
+				'It works, and nothing in it says the user is gone. That is what offline access is for, and why it is worth asking who has one.',
+			fields: []
 		},
 		{
 			id: 'retrieve-upstream-token',

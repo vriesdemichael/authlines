@@ -107,6 +107,11 @@ const presets: readonly Preset[] = [
 		title: 'Logging out, with a second app',
 		settings: { oidc: true, sso: true, logout: true }
 	},
+	{
+		id: 'logout-offline',
+		title: 'Logging out, with an offline token kept',
+		settings: { oidc: true, logout: true, logoutKeeps: 'offline' }
+	},
 	{ id: 'oidc', title: 'OpenID Connect', settings: { oidc: true } },
 	{
 		id: 'consent',

@@ -80,7 +80,8 @@ describe('constraints', () => {
 		// With another provider it goes by the session, with OpenID Connect or not (#186).
 		const withASecondApp = 2 * 2 * (1 + 3) + 2 * 2 * 2;
 		// With OpenID Connect, on the plain flow, and with or without a second app to tell.
-		const withLogout = 2 * 2 * 2;
+		// Each keeping a refresh token or an offline token (#184).
+		const withLogout = 2 * 2 * 2 * 2;
 		// On its own, because nothing else here means anything without an identity provider.
 		const theOldWay = 1;
 		// Each brings a different client. A document can have OpenID Connect and another provider (#186).

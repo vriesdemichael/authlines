@@ -633,8 +633,20 @@ export const breakages = [
 	{
 		name: 'logout: the API that asks is said to take it',
 		file: AC,
-		from: "plain: 'The API refuses',\n\t\t\tlabel: '401 invalid_token',",
-		to: "plain: 'The API refuses',\n\t\t\tlabel: '200 with the resource',"
+		from: "label: [{ when: keepsOffline, text: '200 with the resource' }, { text: '401 invalid_token' }],",
+		to: "label: [{ when: keepsOffline, text: '200 with the resource' }, { text: '200 with the resource' }],"
+	},
+	{
+		name: 'offline: the refresh after the logout is drawn as refused',
+		file: AC,
+		from: "label: [{ when: keepsOffline, text: '200 with new tokens' }, { text: '400 invalid_grant' }],",
+		to: "label: [{ when: keepsOffline, text: '400 invalid_grant' }, { text: '400 invalid_grant' }],"
+	},
+	{
+		name: 'offline: the app is drawn not asking for it',
+		file: AC,
+		from: "name: 'scope=offline_access',",
+		to: "name: 'scope=offline',"
 	},
 	{
 		name: 'logout: the note says the other app stays logged in',

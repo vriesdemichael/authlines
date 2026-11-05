@@ -172,5 +172,7 @@
 	"link-store",
 	"link-done",
 	"link-callback",
-	"add-provider-for-linking"
+	"add-provider-for-linking",
+	"api-after-logout",
+	"api-after-logout-response"
 ]

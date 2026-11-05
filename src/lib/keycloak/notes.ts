@@ -663,6 +663,61 @@ export const noteDefs: readonly NoteDef[] = [
 		}
 	},
 	{
+		id: 'session-lifetimes',
+		steps: ['refresh-after-logout-response'],
+		title: 'SSO Session Idle and SSO Session Max',
+		text: 'Thirty minutes idle and ten hours at most, by default, and a refresh token ends with the session: it came with thirty minutes left. Made five seconds, either one had a refresh token refused seven seconds later, with Token is not active. Signing the user out from their page in the console ended it too. None of these ended an offline token.',
+		when: is('logout', true),
+		place: {
+			path: ['Realm settings', 'Sessions', 'SSO Session Idle'],
+			page: 'realm-sessions',
+			shows: ['SSO Session Idle', 'SSO Session Max']
+		},
+		backedBy: {
+			question: 'offlineTokens',
+			shows: {
+				before: {
+					defaults: { ssoSessionIdleTimeout: 1800, ssoSessionMaxLifespan: 36000 },
+					onDefaults: { online: { refreshExpiresIn: 1800, type: 'Refresh' } },
+					signedOutByAnAdmin: { online: { status: 400 }, offline: { status: 200 } }
+				},
+				after: {
+					sessionMaximum: { tried: { online: { status: 400 }, offline: { status: 200 } } },
+					idle: { afterSevenSeconds: { online: { status: 400 } } }
+				}
+			}
+		}
+	},
+	{
+		id: 'offline-session-lifetimes',
+		steps: ['token-response', 'refresh-after-logout-response'],
+		title: 'Offline Session Idle and Offline Session Max',
+		text: 'Thirty days idle by default, which is the time an offline token came with, and no maximum, because Offline Session Max Limited is off. Turned on, Offline Session Max is sixty days. Made five seconds, either one had an offline token refused seven seconds later, with Token is not active.',
+		when: all(is('logout', true), is('logoutKeeps', 'offline')),
+		place: {
+			path: ['Realm settings', 'Sessions', 'Offline Session Idle'],
+			page: 'realm-sessions',
+			shows: ['Offline Session Idle', 'Offline Session Max Limited']
+		},
+		backedBy: {
+			question: 'offlineTokens',
+			shows: {
+				before: {
+					defaults: {
+						offlineSessionIdleTimeout: 2592000,
+						offlineSessionMaxLifespanEnabled: false,
+						offlineSessionMaxLifespan: 5184000
+					},
+					onDefaults: { offline: { refreshExpiresIn: 2592000, type: 'Offline' } }
+				},
+				after: {
+					offlineMaximum: { refreshExpiresIn: 5, tried: { status: 400 } },
+					idle: { afterSevenSeconds: { offline: { status: 400 } } }
+				}
+			}
+		}
+	},
+	{
 		id: 'session-cookie',
 		steps: ['redirect-with-code', 'second-authorize'],
 		title: 'Where it keeps the session',

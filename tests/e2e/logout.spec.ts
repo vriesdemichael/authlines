@@ -38,6 +38,24 @@ test.describe('logging out', () => {
 		check();
 	});
 
+	test('with an offline token, gets new tokens after it and calls the API', async ({ page }) => {
+		const check = watchForErrors(page);
+		const at = 'oidc=1&logout=1&keeps=offline&step=refresh-after-logout';
+		await open(page, at);
+		await expectMatchesModel(page, at);
+		for (const step of [
+			'refresh-after-logout-response',
+			'api-after-logout',
+			'api-after-logout-response'
+		]) {
+			await page.getByTestId('next').click();
+			await expect(current(page)).toHaveAttribute('data-step', step);
+		}
+		await expect(page.getByTestId('next')).toBeDisabled();
+		await expect(row(page, 'refresh-after-logout-response')).toContainText('200 with new tokens');
+		check();
+	});
+
 	test('takes the session away, and leaves the tokens', async ({ page }) => {
 		await open(page, 'oidc=1&logout=1&step=end-session');
 		await expect(held(page, 'browser', 'session')).toBeVisible();

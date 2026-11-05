@@ -98,6 +98,9 @@ const OPEN_ENDED = new Set([
 	'second-redirect-to-idp',
 	'logout-redirect',
 	'token-after-logout-response',
+	// With offline access, still active, and all the token says (#184).
+	'introspect-response',
+	'api-after-logout-response',
 	'asks-after-logout-response',
 	'api-response-new',
 	'attacker-api-response',
@@ -225,13 +228,15 @@ describe.each(asCases)('the recording of %s', (preset, recording) => {
 				valueIn('refresh-response', 'access_token'),
 				valueIn('refresh-again-response', 'access_token'),
 				valueIn('second-token-response', 'access_token'),
-				valueIn('left-refresh-response', 'access_token')
+				valueIn('left-refresh-response', 'access_token'),
+				valueIn('refresh-after-logout-response', 'access_token')
 			],
 			'id-token': [
 				valueIn('token-response', 'id_token') ?? valueIn('attacker-token-response', 'id_token'),
 				valueIn('refresh-response', 'id_token'),
 				valueIn('refresh-again-response', 'id_token'),
-				valueIn('second-token-response', 'id_token')
+				valueIn('second-token-response', 'id_token'),
+				valueIn('refresh-after-logout-response', 'id_token')
 			],
 			'refresh-token': [
 				valueIn('token-response', 'refresh_token') ??
@@ -239,7 +244,8 @@ describe.each(asCases)('the recording of %s', (preset, recording) => {
 				valueIn('refresh-response', 'refresh_token'),
 				valueIn('refresh-again-response', 'refresh_token'),
 				valueIn('second-token-response', 'refresh_token'),
-				valueIn('left-refresh-response', 'refresh_token')
+				valueIn('left-refresh-response', 'refresh_token'),
+				valueIn('refresh-after-logout-response', 'refresh_token')
 			],
 			'upstream-token': [valueIn('upstream-token-response', 'access_token')]
 		};
