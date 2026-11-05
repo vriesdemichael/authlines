@@ -1109,6 +1109,24 @@ export const offTheMap: readonly MapNode[] = [
 		preset: 'dpop-nonce',
 		step: 'nonce-challenge'
 	}),
+	node({
+		id: 'acts-for-the-user-later',
+		alsoAskedAs: [
+			'offline_access',
+			'offline token',
+			'offline session',
+			'background service',
+			'session idle',
+			'session max'
+		],
+		answer:
+			'With an offline token: the app asks for offline_access, and keeps a refresh token meant to outlive the session. On the server recorded it still got new tokens after the user logged out, and nobody was asked about it, though OpenID Connect says the user has to agree.',
+		title: 'How can a service act for a user who has logged out?',
+		summary: 'With an offline token, meant to outlive the session.',
+		mode: 'advanced',
+		preset: 'logout-offline',
+		step: 'refresh-after-logout-response'
+	}),
 	// What a real setup has together, each from a run of its own (#186).
 	node({
 		id: 'document-with-openid',

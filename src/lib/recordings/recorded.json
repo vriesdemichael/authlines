@@ -71,7 +71,8 @@
 		"points-at-a-document-oidc": "2026-11-05",
 		"points-at-a-document-broker": "2026-11-05",
 		"sso-broker-pkce": "2026-11-05",
-		"exchange-broker": "2026-11-05"
+		"exchange-broker": "2026-11-05",
+		"logout-offline": "2026-11-05"
 	},
 	"flows": {
 		"authorization-code": {
@@ -101,6 +102,7 @@
 				"sso-broker-pkce",
 				"logout",
 				"logout-two-apps",
+				"logout-offline",
 				"oidc",
 				"consent",
 				"pkce",
@@ -147,6 +149,8 @@
 			],
 			"steps": [
 				"address-refused",
+				"api-after-logout",
+				"api-after-logout-response",
 				"api-call-upstream",
 				"api-refused",
 				"api-request",

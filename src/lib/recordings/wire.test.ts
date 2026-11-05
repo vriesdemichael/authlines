@@ -53,8 +53,14 @@ describe.each(asCases)('the raw view of %s', (_, recording) => {
 		for (const message of recording.messages) {
 			for (const line of rawLines(message)) {
 				if (!line.decoded) continue;
-				// An address in a query is in the file as it went, and on screen as it reads.
-				const said = [JSON.stringify(line.decoded).slice(1, -1), encodeURIComponent(line.decoded)];
+				// An address in a query is in the file as it went, and on screen as it reads. A space in it
+				// went as a +, as a form sends one, or as %20.
+				const encoded = encodeURIComponent(line.decoded);
+				const said = [
+					JSON.stringify(line.decoded).slice(1, -1),
+					encoded,
+					encoded.replaceAll('%20', '+')
+				];
 				expect(
 					said.some((form) => file.includes(form)),
 					line.decoded

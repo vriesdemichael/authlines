@@ -762,7 +762,11 @@ export class Demo {
 			`${API}/asks/resource`,
 			bearer
 		);
-		if (asked.status !== 401) throw new Error(`The API that asks took it: ${asked.text}`);
+		// With offline access, the server still said the token was active (#184).
+		const offline = run.settings.logoutKeeps === 'offline';
+		if (asked.status !== (offline ? 200 : 401)) {
+			throw new Error(`The API that asks answered ${asked.status}: ${asked.text}`);
+		}
 		const refresh = await call(
 			run,
 			['refresh-after-logout', 'refresh-after-logout-response'],
@@ -775,7 +779,20 @@ export class Demo {
 				...(run.clientSecret ? {} : { client_id: run.clientId })
 			}
 		);
-		if (refresh.status !== 400) throw new Error(`The refresh still works: ${refresh.text}`);
+		if (refresh.status !== (offline ? 200 : 400)) {
+			throw new Error(`The refresh after the logout got ${refresh.status}: ${refresh.text}`);
+		}
+		if (!offline) return;
+		// What a service does later, for the user who is not there.
+		const { access_token } = jsonOf<{ access_token?: string }>(refresh.text);
+		const later = await call(
+			run,
+			['api-after-logout', 'api-after-logout-response'],
+			'GET',
+			`${API}/resource`,
+			{ authorization: `Bearer ${access_token}` }
+		);
+		if (later.status !== 200) throw new Error(`The API refused it: ${later.text}`);
 	}
 
 	/** The same call once the token has run out, what a refresh token gets, and using one twice. */
@@ -1120,6 +1137,10 @@ export class Demo {
 				if (this.#nonce) {
 					query.set('scope', 'openid');
 					query.set('nonce', this.#nonce);
+				}
+				// A refresh token meant to outlive the session (#184).
+				if (settings.logoutKeeps === 'offline') {
+					query.set('scope', [query.get('scope'), 'offline_access'].filter(Boolean).join(' '));
 				}
 				// So the token says which customer, which an app selling to companies keeps them apart by.
 				if (settings.companies) {

@@ -77,9 +77,10 @@ Each value says what it needs with it, and what it can share a link with, worked
 - `linkends=linked | cancelled`: How the link ends, linked by default. There is no link to end until account linking is on. `linkends=cancelled` needs `link=1` with it. `linkends=cancelled` goes only with `link=1` among the other settings, so leave the rest out.
 - `refresh=1`: When the token runs out, off by default. This shows the plain case, so other settings do not get in the way of the answer. `refresh=1` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, `broker=1`, and `reuse=ends` among the other settings, so leave the rest out.
 - `reuse=keeps | ends`: Using a refresh token twice, keeps by default. There is no second use until the token runs out and the first has happened. `reuse=ends` needs `refresh=1` with it. `reuse=ends` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, and `refresh=1` among the other settings, so leave the rest out.
-- `sso=1`: A second app, off by default. This shows the plain case, so other settings do not get in the way of the answer. `sso=1` goes only with `oidc=1`, `client=public`, `pkce=1`, `broker=1`, `second=insists`, `second=fresh`, and `logout=1` among the other settings, so leave the rest out.
+- `sso=1`: A second app, off by default. This shows the plain case, so other settings do not get in the way of the answer. `sso=1` goes only with `oidc=1`, `client=public`, `pkce=1`, `broker=1`, `second=insists`, `second=fresh`, `logout=1`, and `keeps=offline` among the other settings, so leave the rest out.
 - `second=remembered | insists | fresh`: What happens at the second app, remembered by default. There is no second app until it has been brought on. `second=insists` needs `oidc=1&sso=1` with it. `second=fresh` needs `oidc=1&sso=1` with it. `second=insists` goes only with `oidc=1`, `client=public`, `pkce=1`, and `sso=1` among the other settings, so leave the rest out. `second=fresh` goes only with `oidc=1`, `client=public`, `pkce=1`, and `sso=1` among the other settings, so leave the rest out.
-- `logout=1`: Log out, off by default. It is part of OpenID Connect. `logout=1` needs `oidc=1` with it. `logout=1` goes only with `oidc=1`, `client=public`, `pkce=1`, and `sso=1` among the other settings, so leave the rest out.
+- `logout=1`: Log out, off by default. It is part of OpenID Connect. `logout=1` needs `oidc=1` with it. `logout=1` goes only with `oidc=1`, `client=public`, `pkce=1`, `sso=1`, and `keeps=offline` among the other settings, so leave the rest out.
+- `keeps=refresh | offline`: What the app keeps, refresh by default. There is no session to outlive until the user logs out. `keeps=offline` needs `oidc=1&logout=1` with it. `keeps=offline` goes only with `oidc=1`, `client=public`, `pkce=1`, `sso=1`, and `logout=1` among the other settings, so leave the rest out.
 - `runs=server | page | bff`: Where the app runs, server by default. `runs=page` needs `client=public` with it. `runs=bff` needs `pkce=1` with it. `runs=page` goes only with `oidc=1`, `client=public`, and `pkce=1` among the other settings, so leave the rest out. `runs=bff` goes only with `pkce=1` among the other settings, so leave the rest out.
 - `address=registered | other`: The address the app asks for, registered by default. It stops before any of those would matter. `address=other` goes only with `oidc=1`, `client=public`, and `pkce=1` among the other settings, so leave the rest out.
 
@@ -229,6 +230,8 @@ Steps, for step=:
 - `second-submit-credentials`: The user enters their password again. Only with `oidc=1&sso=1&second=insists`.
 - `backchannel-logout`: It tells the second app. Only with `oidc=1&sso=1&logout=1`.
 - `backchannel-response`: It says it has logged them out. Only with `oidc=1&sso=1&logout=1`.
+- `api-after-logout`: The service calls the API for the user. Only with `oidc=1&logout=1&keeps=offline`.
+- `api-after-logout-response`: The API answers. Only with `oidc=1&logout=1&keeps=offline`.
 - `code-to-attacker`: The code reaches them. Only with `attacker=1&gets=link&registered=any`.
 - `company-turns-off`: Their company turns their account off. Only with `broker=1&companies=1&leaves=1`.
 - `left-api-request`: The app calls the API, with the same token. Only with `broker=1&companies=1&leaves=1`.

@@ -949,6 +949,67 @@ describe('logging out', () => {
 		const { settings } = normalize({ ...defaultSettings, logout: true });
 		expect(settings.logout).toBe(false);
 	});
+
+	// A service acting for the user later (#184).
+	describe('with an offline token kept', () => {
+		const offline = { ...on, logoutKeeps: 'offline' } as const;
+		const stepOf = (settings: Partial<Settings>, id: string) =>
+			view(settings).steps.find((step) => step.id === id)!;
+
+		it('asks for it, and gets new tokens with it after the logout, which the API takes', () => {
+			const authorize = stepOf(offline, 'authorize');
+			expect(authorize.fields.map(({ name }) => name)).toContain('scope=offline_access');
+			expect(stepOf(on, 'authorize').fields.map(({ name }) => name)).not.toContain(
+				'scope=offline_access'
+			);
+			expect(stepOf(offline, 'refresh-after-logout-response').label).toBe('200 with new tokens');
+			expect(stepOf(on, 'refresh-after-logout-response').label).toBe('400 invalid_grant');
+			const ids = view(offline).steps.map(({ id }) => id);
+			expect(ids.slice(-2)).toEqual(['api-after-logout', 'api-after-logout-response']);
+			expect(view(on).steps.map(({ id }) => id)).not.toContain('api-after-logout');
+		});
+
+		it('says the API that asks still took it, as the server recorded did', () => {
+			expect(stepOf(offline, 'introspect-response').label).toBe('active: true');
+			expect(stepOf(offline, 'asks-after-logout-response').label).toBe('200 with the resource');
+			expect(stepOf(on, 'asks-after-logout-response').label).toBe('401 invalid_token');
+		});
+
+		// The words say what a real server answered, in its own numbers (questions.json).
+		it('says how long each lasts, as a real server answered', () => {
+			const { before, after } = answers.offlineTokens;
+			expect(before.defaults).toEqual({
+				ssoSessionIdleTimeout: 30 * 60,
+				ssoSessionMaxLifespan: 10 * 60 * 60,
+				offlineSessionIdleTimeout: 30 * 24 * 60 * 60,
+				offlineSessionMaxLifespanEnabled: false,
+				offlineSessionMaxLifespan: 60 * 24 * 60 * 60
+			});
+			expect(before.onDefaults.offline).toEqual({
+				refreshExpiresIn: 30 * 24 * 60 * 60,
+				type: 'Offline'
+			});
+			expect(before.signedOutByAnAdmin).toMatchObject({
+				online: { status: 400 },
+				offline: { status: 200 }
+			});
+			expect(after.sessionMaximum.tried).toMatchObject({
+				online: { status: 400 },
+				offline: { status: 200 }
+			});
+			expect(after.offlineMaximum.tried.status).toBe(400);
+			expect(after.idle.afterSevenSeconds.offline.status).toBe(400);
+			const said = JSON.stringify(stepOf(offline, 'refresh-after-logout-response'));
+			for (const words of [
+				'thirty minutes unused or ten hours at most',
+				'thirty days unused',
+				'no maximum unless one is turned on',
+				'An admin signing the user out left it working too'
+			]) {
+				expect(said).toContain(words);
+			}
+		});
+	});
 });
 
 describe('a second app', () => {
