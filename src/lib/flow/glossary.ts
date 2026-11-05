@@ -448,6 +448,14 @@ const list: readonly Term[] = [
 		at: flowAt('trade-refresh-request', { exchange: true, exchangeGives: 'refresh' })
 	},
 	{
+		id: 'kc-action',
+		name: 'kc_action',
+		words: ['kc_action'],
+		explains:
+			'A parameter of the identity provider here, and not of OAuth. On an authorization request it asks for an action of the identity provider’s own, such as linking an account at another provider.',
+		at: flowAt('link-authorize', { linkAccount: true })
+	},
+	{
 		id: 'invalid-client',
 		name: 'invalid_client',
 		words: ['invalid_client'],

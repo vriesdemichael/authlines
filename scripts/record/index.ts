@@ -89,7 +89,8 @@ import {
 	questionsWithNoUser,
 	questionsWhenPushed,
 	questionsWhenExchanged,
-	questionsWhenTheApiReads
+	questionsWhenTheApiReads,
+	questionsWhenLinked
 } from './questions.ts';
 import { deviceNoteDefs, noteDefs, noUserNoteDefs } from '#lib/keycloak/notes.ts';
 
@@ -140,8 +141,12 @@ function classifyRequest(url: URL, method = 'GET'): string | null {
 	if (forSecond && path.startsWith(`/realms/${LOCAL_REALM}/login-actions/authenticate`)) {
 		return 'second-submit-credentials';
 	}
+	if (path.startsWith(`/realms/${LOCAL_REALM}/login-actions/required-action`)) {
+		return method === 'POST' ? 'link-confirm' : null;
+	}
 	if (url.origin === APP) {
 		const steps: Record<string, string> = {
+			'/link': 'link-start',
 			'/': 'open-app',
 			'/callback': 'callback',
 			'/logout': 'logout-start',
@@ -203,7 +208,11 @@ function classifyResponse(
 	if (url.origin === APP) {
 		// An app in the page answers with itself, and the redirect is done from there.
 		if (status !== 302) return null;
-		const steps: Record<string, string> = { '/': 'redirect-to-idp', '/logout': 'logout-redirect' };
+		const steps: Record<string, string> = {
+			'/': 'redirect-to-idp',
+			'/logout': 'logout-redirect',
+			'/link': 'link-ask'
+		};
 		return steps[url.pathname] ?? null;
 	}
 	if (url.pathname.endsWith('/protocol/openid-connect/logout')) return 'logout-redirect-back';
@@ -245,7 +254,20 @@ const AGAIN: Readonly<Record<string, string>> = {
 	authorize: 'login-again',
 	'redirect-with-code': 'code-again'
 };
-const coming = (run: Run, step: string | null) => (run.again ? (AGAIN[step ?? ''] ?? null) : step);
+/** A link after the login goes the way a login does, and its hops are steps of their own (#179). */
+const LINKING: Readonly<Record<string, string>> = {
+	'redirect-to-upstream': 'link-to-upstream',
+	'upstream-authorize': 'link-upstream-authorize',
+	'upstream-sign-in': 'link-upstream-sign-in',
+	'upstream-redirect-back': 'link-upstream-back',
+	'upstream-callback': 'link-upstream-callback',
+	'redirect-with-code': 'link-done',
+	callback: 'link-callback',
+	authorize: 'link-authorize',
+	'consent-page': 'link-confirm-page'
+};
+const coming = (run: Run, step: string | null) =>
+	run.again ? (AGAIN[step ?? ''] ?? null) : run.linking ? (LINKING[step ?? ''] ?? step) : step;
 
 /** A page with a server behind it: the app's addresses mean something else, and the rest is as ever. */
 const behindThePage = {
@@ -508,6 +530,37 @@ async function login(browser: Browser, run: Run, demo?: Demo) {
 	const outcome = await page.locator('body').innerText();
 	if (outcome.includes('Failed')) throw new Error(`Login failed: ${outcome}`);
 	if (run.settings.sso) await logInToSecondApp(browser, context, run, cookies);
+	if (run.settings.linkAccount) {
+		await Promise.all(cookies);
+		run.linking = true;
+		await page.goto(`${APP}/link`);
+		const name = run.settings.linkEnds === 'cancelled' ? 'Cancel' : 'Continue';
+		await page
+			.getByRole('button', { name })
+			.or(page.locator(`input[type="submit"][value="${name}"]`))
+			.first()
+			.click();
+		if (run.settings.linkEnds !== 'cancelled') {
+			await page.locator('#username').waitFor();
+			await page.fill('#username', USERNAME);
+			await page.fill('#password', PASSWORD);
+			await page.click('#kc-login');
+		}
+		await page
+			.getByRole('heading', { name: /Linked|Not linked/ })
+			.waitFor({ timeout: 30_000 })
+			.catch(async (error) => {
+				const shown = (await page.locator('body').innerText()).slice(0, 400);
+				throw new Error(`Linking stuck at ${page.url()}, showing: ${shown}`, { cause: error });
+			});
+		const said = await page.locator('body').innerText();
+		const expected = run.settings.linkEnds !== 'cancelled' ? 'Linked' : 'Not linked';
+		if (!said.includes(expected) || (expected === 'Linked' && said.includes('Not linked'))) {
+			throw new Error(`The link: ${said}`);
+		}
+		await Promise.all(cookies);
+		run.linking = false;
+	}
 	if (run.settings.leaves) {
 		await Promise.all(cookies);
 		run.again = true;
@@ -1034,10 +1087,14 @@ async function recordOnlyPresets(ids: readonly string[]) {
 			const looked = await lookInConsole(browser, admin, [], exchangeNotes);
 			addToQuestions(recordedAt, await questionsWhenExchanged(admin), looked);
 		}
-		if (wanted.some(({ settings }) => settings.upstreamReader !== 'app')) {
+		// A preset names only what it changes, so one that does not name a reader is the app reading.
+		if (wanted.some(({ settings }) => (settings.upstreamReader ?? 'app') !== 'app')) {
 			const readerNotes = noteDefs.filter(({ id }) => id === 'api-reads-external-tokens');
 			const looked = await lookInConsole(browser, admin, features, readerNotes);
 			addToQuestions(recordedAt, await questionsWhenTheApiReads(browser, demo, admin), looked);
+		}
+		if (wanted.some(({ settings }) => settings.linkAccount)) {
+			addToQuestions(recordedAt, await questionsWhenLinked(browser, demo, admin));
 		}
 		if (wanted.some(({ settings }) => settings.appRuns === 'bff')) {
 			addToQuestions(recordedAt, await whatAScriptCan(browser, demo, admin));
@@ -1170,6 +1227,7 @@ async function main() {
 			if (!features.length) {
 				Object.assign(answers, await questionsWithADirectory(admin));
 				Object.assign(answers, await questionsWhenExchanged(admin));
+				Object.assign(answers, await questionsWhenLinked(browser, demo, admin));
 				Object.assign(answers, await whatAScriptCan(browser, demo, admin));
 				Object.assign(answers, await questionsWithCompanies(admin));
 				Object.assign(answers, await questionsWhenSomeoneLeaves(browser, admin));

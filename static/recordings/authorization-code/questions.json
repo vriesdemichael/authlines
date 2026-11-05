@@ -28,7 +28,8 @@
 		"exchangeRefresh": "2026-11-05",
 		"console.exchange-refresh": "2026-11-05",
 		"apiReadsStored": "2026-11-05",
-		"console.api-reads-external-tokens": "2026-11-05"
+		"console.api-reads-external-tokens": "2026-11-05",
+		"linkedTokens": "2026-11-05"
 	},
 	"answers": {
 		"validRedirectUris": {
@@ -1184,6 +1185,25 @@
 				"status": 401,
 				"gotUpstreamToken": false,
 				"body": "{\"error\":\"unauthorized_client\",\"error_description\":\"Invalid client or Invalid client credentials\"}"
+			}
+		},
+		"linkedTokens": {
+			"linkedTo": [
+				"upstream"
+			],
+			"withoutTheRole": {
+				"status": 403,
+				"gotUpstreamToken": false,
+				"body": "{\"errorMessage\":\"Client [note-link-reader] not authorized to retrieve tokens from identity provider [upstream].\"}"
+			},
+			"withTheRole": {
+				"status": 200,
+				"gotUpstreamToken": true,
+				"body": "a successful answer"
+			},
+			"loginPageOffersIt": {
+				"hidden": false,
+				"shown": true
 			}
 		}
 	}

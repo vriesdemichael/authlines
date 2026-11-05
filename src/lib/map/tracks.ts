@@ -831,6 +831,28 @@ export const offTheMap: readonly MapNode[] = [
 		step: 'exchange-response'
 	}),
 	node({
+		id: 'link-account',
+		alsoAskedAs: ['link account', 'connect account', 'account linking', 'kc_action', 'idp_link'],
+		answer:
+			'The app sends the user, still logged in, back to the identity provider with a request to link an account at the other provider. The server recorded asked them to confirm, sent them to log in there, kept that provider’s tokens, and sent them back to the app with how it went.',
+		title: 'How does a user link an account at another provider, once logged in?',
+		summary: 'They log in there, and the identity provider can keep its tokens.',
+		mode: 'advanced',
+		preset: 'link-account',
+		step: 'link-ask'
+	}),
+	node({
+		id: 'link-cancelled',
+		alsoAskedAs: ['kc_action_status', 'cancelled'],
+		answer:
+			'On the server recorded, the browser went back to the app with kc_action_status=cancelled, and nothing was linked. The app can say so, and ask again later.',
+		title: 'What does the app hear when the user does not link it?',
+		summary: 'A status that says cancelled, and no link.',
+		mode: 'advanced',
+		preset: 'link-cancelled',
+		step: 'link-done'
+	}),
+	node({
 		id: 'api-reads-stored',
 		alsoAskedAs: ['external token', 'allowed identity providers', 'broker token'],
 		answer:

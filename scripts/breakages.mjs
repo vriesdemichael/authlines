@@ -790,6 +790,18 @@ export const breakages = [
 		from: "{ when: apiReadRefused, text: '502 with an error' },",
 		to: "{ when: apiReadRefused, text: '200 with the resource' },"
 	},
+	{
+		name: 'link: the step to the other provider says a status the server did not send',
+		file: AC,
+		from: "label: '303 to the other provider',",
+		to: "label: '302 to the other provider',"
+	},
+	{
+		name: 'link: the user linking it is drawn as the user cancelling',
+		file: AC,
+		from: "const linked = all(links, not(is('linkEnds', 'cancelled')));",
+		to: "const linked = all(links, is('linkEnds', 'cancelled'));"
+	},
 
 	// A refresh token.
 	{

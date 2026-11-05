@@ -397,3 +397,16 @@ Tried on Keycloak 26.8.1 with `identity-brokering-api:v2` on 2026-11-05 in a thr
 - The public app itself got 403 `invalid_client` and public clients not allowed, and the API with a wrong secret got 401 `unauthorized_client` and Invalid client or Invalid client credentials.
 
 Not tried: an API reading a stored token for a user whose session has ended, a provider that stores tokens in the session only, and API V1 read by the API.
+
+## Linking another account after the login
+
+Tried on Keycloak 26.8.1 on 2026-11-05 in a throwaway trial, then recorded the same day (`link-account` and `link-cancelled`), for [#179](https://github.com/vriesdemichael/authlines/issues/179). The user logs in with a password, and the other provider is added to the same realm, storing tokens and hidden from the login page. Keycloak's [Client initiated account linking](https://www.keycloak.org/docs/26.8.1/server_development/#_client-initiated-account-linking) describes adding `kc_action=idp_link:<alias>` to an authentication request, and says the older protocol is off by default and may be removed.
+
+- With `kc_action=idp_link:upstream`, Keycloak showed its own page first: Do you want to link your account with upstream?, with Continue and Cancel.
+- Continue went to the other provider's login and back to the broker endpoint, and then to the app with `kc_action=idp_link`, `kc_action_status=success` and a code. The user then had a federated identity at that provider.
+- Cancel went back to the app with `kc_action_status=cancelled`, and a code.
+- Asking again when already linked showed the same page, and Continue came back with `success`, with no login at the other provider asked for.
+- Reading the stored token with API V1, with the user given no role to read it, got 403 and Client [demo-app] not authorized to retrieve tokens from identity provider [upstream].
+- In the trial, the other provider's token, user info and keys addresses had to be ones the container can reach, here through the recorder's proxy, or the link failed with Unexpected error when authenticating with identity provider.
+
+Not tried: an account at the other provider already linked to someone else, and the older link endpoint.

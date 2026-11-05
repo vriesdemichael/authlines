@@ -49,13 +49,13 @@ An app gets access on behalf of a user, without ever seeing their password.
 
 Each value says what it needs with it, and what it can share a link with, worked out from the rules the screen uses, two settings at a time. A link that names two that do not go together loses one of them.
 
-- `oidc=1`: OpenID Connect, off by default. `oidc=1` does not go with `register=dcr`, `register=cimd`, `thief=1`, `checks=bearer`, `directory=1`, `companies=1`, `speaks=saml`, `leaves=1`, `send=none`, `send=expired`, `send=changed`, `send=elsewhere`, `send=noscope`, or `runs=bff`.
+- `oidc=1`: OpenID Connect, off by default. `oidc=1` does not go with `register=dcr`, `register=cimd`, `thief=1`, `checks=bearer`, `directory=1`, `companies=1`, `speaks=saml`, `leaves=1`, `send=none`, `send=expired`, `send=changed`, `send=elsewhere`, `send=noscope`, `link=1`, `linkends=cancelled`, or `runs=bff`.
 - `consent=1`: Ask for consent, off by default. `consent=1` goes only with `oidc=1`, `client=public`, `register=cimd`, `pkce=1`, `par=1`, `attacker=1`, `uses=real-app`, `binding=dpop`, `nonce=1`, `broker=1`, `upstream=v1`, `upstream=v2`, `reads=api`, `reads=refused`, `exchange=1`, `trade=refresh`, `refresh=1`, and `reuse=ends` among the other settings, so leave the rest out.
-- `client=confidential | public`: Client type, confidential by default. `client=public` does not go with `register=dcr`, `thief=1`, `checks=bearer`, `uses=real-app`, `directory=1`, `companies=1`, `speaks=saml`, `leaves=1`, `upstream=v2`, or `runs=bff`.
+- `client=confidential | public`: Client type, confidential by default. `client=public` does not go with `register=dcr`, `thief=1`, `checks=bearer`, `uses=real-app`, `directory=1`, `companies=1`, `speaks=saml`, `leaves=1`, `upstream=v2`, `link=1`, `linkends=cancelled`, or `runs=bff`.
 - `register=manual | dcr | cimd`: How the provider learns about the app, manual by default. `register=cimd` needs `consent=1&client=public&pkce=1` with it. `register=dcr` goes with none of the other settings yet, so leave them out. `register=cimd` goes only with `consent=1`, `client=public`, and `pkce=1` among the other settings, so leave the rest out.
-- `pkce=1`: PKCE, off by default. `pkce=1` does not go with `register=dcr`, `thief=1`, `checks=bearer`, `directory=1`, `companies=1`, `speaks=saml`, or `leaves=1`.
+- `pkce=1`: PKCE, off by default. `pkce=1` does not go with `register=dcr`, `thief=1`, `checks=bearer`, `directory=1`, `companies=1`, `speaks=saml`, `leaves=1`, `link=1`, or `linkends=cancelled`.
 - `par=1`: PAR, off by default. Drawn so far with nothing else on but OpenID Connect, consent and PKCE, with either kind of client and the app on a server. `par=1` goes only with `oidc=1`, `consent=1`, `client=public`, and `pkce=1` among the other settings, so leave the rest out.
-- `attacker=1`: Show an attacker, off by default. The attacker only shows the plain case, with a Bearer token and no other provider. `attacker=1` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, `uses=real-app`, `gets=link`, and `registered=any` among the other settings, so leave the rest out.
+- `attacker=1`: An attacker, off by default. The attacker only shows the plain case, with a Bearer token and no other provider. `attacker=1` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, `uses=real-app`, `gets=link`, and `registered=any` among the other settings, so leave the rest out.
 - `thief=1`: Show someone using a stolen token, off by default. Only with a DPoP token, in the plain case so far. `thief=1` needs `binding=dpop` with it. `thief=1` goes only with `checks=bearer` and `binding=dpop` among the other settings, so leave the rest out.
 - `checks=proof | bearer`: What the API checks, proof by default. Only someone using a stolen token asks this. `checks=bearer` needs `thief=1&binding=dpop` with it. `checks=bearer` goes only with `thief=1` and `binding=dpop` among the other settings, so leave the rest out.
 - `uses=themselves | real-app`: What they do with it, themselves by default. Only an app with a secret needs this, and only for a copied code. With no secret, they can just trade it. `uses=real-app` needs `attacker=1` with it. `uses=real-app` goes only with `oidc=1`, `consent=1`, `pkce=1`, and `attacker=1` among the other settings, so leave the rest out.
@@ -73,6 +73,8 @@ Each value says what it needs with it, and what it can share a link with, worked
 - `send=good | none | expired | changed | elsewhere | noscope`: What the API is sent, good by default. This shows the plain case, so other settings do not get in the way of the answer. `send=none` goes only with `client=public` and `pkce=1` among the other settings, so leave the rest out. `send=expired` goes only with `client=public` and `pkce=1` among the other settings, so leave the rest out. `send=changed` goes only with `client=public` and `pkce=1` among the other settings, so leave the rest out. `send=elsewhere` goes only with `client=public` and `pkce=1` among the other settings, so leave the rest out. `send=noscope` goes only with `client=public` and `pkce=1` among the other settings, so leave the rest out.
 - `exchange=1`: Token exchange, off by default. Drawn so far with nothing else on but OpenID Connect, consent and PKCE, with either kind of client and the app on a server. `exchange=1` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, and `trade=refresh` among the other settings, so leave the rest out.
 - `trade=token | refresh`: What the trade gives back, token by default. There is nothing to trade until token exchange is on. `trade=refresh` needs `exchange=1` with it. `trade=refresh` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, and `exchange=1` among the other settings, so leave the rest out.
+- `link=1`: Account linking, off by default. Drawn so far only on the plain flow, for an app with a secret and nothing else on. `link=1` goes only with `linkends=cancelled` among the other settings, so leave the rest out.
+- `linkends=linked | cancelled`: How the link ends, linked by default. There is no link to end until account linking is on. `linkends=cancelled` needs `link=1` with it. `linkends=cancelled` goes only with `link=1` among the other settings, so leave the rest out.
 - `refresh=1`: When the token runs out, off by default. This shows the plain case, so other settings do not get in the way of the answer. `refresh=1` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, and `reuse=ends` among the other settings, so leave the rest out.
 - `reuse=keeps | ends`: Using a refresh token twice, keeps by default. There is no second use until the token runs out and the first has happened. `reuse=ends` needs `refresh=1` with it. `reuse=ends` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, and `refresh=1` among the other settings, so leave the rest out.
 - `sso=1`: A second app, off by default. This shows the plain case, so other settings do not get in the way of the answer. `sso=1` goes only with `oidc=1`, `client=public`, `pkce=1`, `second=insists`, `second=fresh`, and `logout=1` among the other settings, so leave the rest out.
@@ -91,7 +93,7 @@ Parties, for the names after #:
 - `idp`: Identity provider, logs users in.
 - `attacker`: Someone else, has no business here. Only with `attacker=1`.
 - `directory`: User directory, has the users. Only with `directory=1`.
-- `upstream`: Other provider, does the login. Only with `broker=1`. With `companies=1` or `speaks=saml` or `leaves=1` it is drawn as Their company.
+- `upstream`: Other provider, the other account. Only with `broker=1` or `link=1`. With `companies=1` or `speaks=saml` or `leaves=1` it is drawn as Their company.
 - `api`: API, has the data.
 - `second-api`: Second API, the api calls it. Only with `exchange=1`.
 
@@ -138,6 +140,21 @@ Steps, for step=:
 - `exchange-response`: A token for the second API comes back. Only with `exchange=1`.
 - `second-api-request`: The API calls the second API with it. Only with `exchange=1`.
 - `second-api-response`: The second API answers. Only with `exchange=1`.
+- `link-start`: The user asks to link another account. Only with `link=1`.
+- `link-ask`: The app sends them to the identity provider to link it. Only with `link=1`.
+- `link-authorize`: The browser asks the identity provider for the link. Only with `link=1`.
+- `link-confirm-page`: The identity provider asks whether to link it. Only with `link=1`.
+- `link-confirm`: The user goes on. Only with `link=1`.
+- `link-to-upstream`: Sent on to the other provider. Only with `link=1`.
+- `link-upstream-authorize`: The browser asks to log in there. Only with `link=1`.
+- `link-upstream-sign-in`: The user enters their password there. Only with `link=1`.
+- `link-upstream-back`: Sent back with a code. Only with `link=1`.
+- `link-upstream-callback`: The code reaches the identity provider. Only with `link=1`.
+- `link-upstream-token-request`: It trades the code for tokens. Only with `link=1`.
+- `link-upstream-token-response`: Tokens for the identity provider. Only with `link=1`.
+- `link-store`: It keeps the link, and those tokens. Only with `link=1`.
+- `link-done`: Back to the app, linked. Only with `link=1`.
+- `link-callback`: The app is told how it went. Only with `link=1`.
 - `token-runs-out`: Later, the access token runs out. Only with `refresh=1`.
 - `api-request-again`: The app calls the API with the same token. Only with `refresh=1`.
 - `api-refused`: The API refuses: the token has expired. Only with `refresh=1`.
@@ -235,7 +252,7 @@ Parties, for the names after #:
 - `app`: App, the one being set up.
 - `idp`: Identity provider, will log users in.
 - `idp-admin`: Admin, runs the provider.
-- `upstream`: Other provider, will do the login. Only with `broker=1`. With `companies=1` or `speaks=saml` or `leaves=1` it is drawn as Their company.
+- `upstream`: Other provider, the other account. Only with `broker=1` or `link=1`. With `companies=1` or `speaks=saml` or `leaves=1` it is drawn as Their company.
 - `customer-admins`: Their admins, at the customer. Only with `broker=1&companies=1`.
 - `api`: API, will check tokens.
 - `second-api`: Second API, checks tokens too. Only with `exchange=1`.
@@ -255,10 +272,11 @@ Steps, for step=:
 - `dcr-hand-token`: Hand over the token. Only with `register=dcr`.
 - `dcr-request`: The app asks to be registered. Only with `register=dcr`.
 - `dcr-response`: Its client ID and secret. Only with `register=dcr`.
-- `register-with-upstream`: Register with the other provider. Only with `broker=1`.
+- `register-with-upstream`: Register with the other provider. Only with `broker=1` or `link=1`.
 - `connect-directory`: Connect the directory. Only with `directory=1`.
 - `allow-exchange`: Let the API trade tokens. Only with `exchange=1`.
 - `configure-second-api`: You tell the second API who to trust. Only with `exchange=1`.
+- `add-provider-for-linking`: Add the other provider, to link accounts with. Only with `link=1`.
 - `send-our-details`: Send them our provider's details. Only with `broker=1&companies=1`.
 - `customer-registers-us`: They register our provider. Only with `broker=1&companies=1`.
 - `send-their-details`: They send their provider's details. Only with `broker=1&companies=1`.

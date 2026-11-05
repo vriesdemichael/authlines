@@ -214,6 +214,8 @@ export interface Run {
 	messages: RecordedMessage[];
 	/** The same browser coming back after they left, which is drawn as a login of its own. */
 	again?: boolean;
+	/** Linking an account at another provider, after the login, with steps of its own (#179). */
+	linking?: boolean;
 }
 
 /** The app's DPoP key, made once per run, which is the "Generate a key pair" step. */
@@ -1083,6 +1085,22 @@ export class Demo {
 					return;
 				}
 			}
+			// The user asks to link an account at another provider, as an ordinary authorization request
+			// with the identity provider's own parameter for it, here kc_action (#179).
+			if (url.pathname === '/link') {
+				const run = this.#run;
+				this.#state = random();
+				const query = new URLSearchParams({
+					response_type: 'code',
+					client_id: run.clientId,
+					redirect_uri: REDIRECT_URI,
+					state: this.#state,
+					kc_action: `idp_link:${UPSTREAM_REALM}`
+				});
+				response.writeHead(302, { location: `${this.#server.authorization_endpoint}?${query}` });
+				response.end();
+				return;
+			}
 			if (url.pathname === '/' || url.pathname === '/login') {
 				const run = this.#run;
 				const { settings } = run;
@@ -1156,6 +1174,14 @@ export class Demo {
 					this.lastCode = url.searchParams.get('code') ?? '';
 					response.writeHead(200, { 'content-type': 'text/html' });
 					response.end('<h1>Done</h1>');
+					return;
+				}
+				// Back from a link: the status is what this shows, so the code is not traded (#179).
+				if (this.current.linking) {
+					const status = url.searchParams.get('kc_action_status');
+					const fine = url.searchParams.get('state') === this.#state;
+					response.writeHead(200, { 'content-type': 'text/html' });
+					response.end(fine && status === 'success' ? '<h1>Linked</h1>' : '<h1>Not linked</h1>');
 					return;
 				}
 				// Back after they left: the code is what this shows, so it is not traded again.
@@ -1370,7 +1396,13 @@ export class Demo {
 			if (isToken && this.current) {
 				await settle();
 				this.current.messages.push(
-					requestMessage('upstream-token-request', request.method ?? 'POST', target, headers, body)
+					requestMessage(
+						this.current.linking ? 'link-upstream-token-request' : 'upstream-token-request',
+						request.method ?? 'POST',
+						target,
+						headers,
+						body
+					)
 				);
 			}
 			const answer = await fetch(target, {
@@ -1381,7 +1413,12 @@ export class Demo {
 			const text = await answer.text();
 			if (isToken && this.current) {
 				this.current.messages.push(
-					responseMessage('upstream-token-response', answer.status, answer.headers, text)
+					responseMessage(
+						this.current.linking ? 'link-upstream-token-response' : 'upstream-token-response',
+						answer.status,
+						answer.headers,
+						text
+					)
 				);
 			}
 			response.writeHead(answer.status, {

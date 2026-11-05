@@ -844,3 +844,21 @@ describe('the shape of a recording', () => {
 		expect(differences.join('\n')).toContain('something_new');
 	});
 });
+
+// A setting added after a recording was made is missing from it. A condition written as "not one
+// value" counts the missing one as true, which drew the API reading a stored token on a recording made
+// before that choice existed (#180). Every recording has to draw the same with its gaps filled in.
+describe('every recording, made before a later setting existed', () => {
+	it.each(asCases)(
+		'%s draws the same with the settings it lacks at their defaults',
+		(_, recording) => {
+			// The user flow, which is what a recording records.
+			const flow = base.diagrams.flow;
+			const asRecorded = evaluate(flow, recording.settings as Settings).steps.map((s) => s.id);
+			const filled = evaluate(flow, { ...defaultSettings, ...recording.settings }).steps.map(
+				(s) => s.id
+			);
+			expect(asRecorded).toEqual(filled);
+		}
+	);
+});

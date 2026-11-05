@@ -249,6 +249,16 @@ const presets: readonly Preset[] = [
 		settings: { broker: true, upstreamTokens: 'v2' }
 	},
 	{
+		id: 'link-account',
+		title: 'Linking another account after the login',
+		settings: { linkAccount: true }
+	},
+	{
+		id: 'link-cancelled',
+		title: 'Linking another account, and the user cancels',
+		settings: { linkAccount: true, linkEnds: 'cancelled' }
+	},
+	{
 		id: 'upstream-v2-api',
 		title: 'Stored upstream tokens read by the API, for an app with no secret',
 		settings: {
