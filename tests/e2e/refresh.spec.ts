@@ -72,7 +72,10 @@ test.describe('when the token runs out', () => {
 	});
 
 	test('cannot be turned on with what would get in the way', async ({ page }) => {
+		// Another provider is fine, and the tokens it stores are not drawn with this yet (#186).
 		await open(page, 'broker=1');
+		await expect(page.locator('[data-setting="refresh"] input')).toBeEnabled();
+		await open(page, 'broker=1&upstream=v1');
 		await expect(page.locator('[data-setting="refresh"] input')).toBeDisabled();
 		await open(page, 'send=expired');
 		await expect(page.locator('[data-setting="refresh"] input')).toBeDisabled();
