@@ -2603,12 +2603,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'The API asks for the user’s token at the other provider',
 			label: 'POST /broker/{alias}/token',
 			concept:
-				'The API needs the other provider’s API to answer. It asks the identity provider for the token stored at the login, with a client ID and secret of its own, and the access token the app sent. The app never has the other provider’s token.',
+				'The API needs the other provider’s API to answer. It asks the identity provider for the token stored at the login, with a client ID and secret of its own, and the access token the app sent. The app is never sent the other provider’s token.',
 			inPractice:
 				'Your code makes this call in the API, with the API’s own client ID and secret, and the access token the app sent it.',
 			pitfall: {
 				title: 'What if this API is not allowed it?',
-				text: 'The identity provider refuses. On the server recorded, a client not allowed this provider got a 403 with invalid_client and: Client not allowed to retrieve token for the provider. A token that did not name the API got a 403 with unauthorized_client and: Client is not within the token audience. And a client with no secret got a 403 and: public clients not allowed, which is why the app with no secret cannot ask itself.'
+				text: 'The identity provider refuses. On the server recorded, a client not allowed this provider got a 403 with invalid_client and: Client not allowed to retrieve token for the provider. A token that did not name the API got a 403 with unauthorized_client and: Client is not within the token audience. And the app with no secret, asking itself, got a 403 and: public clients not allowed.'
 			},
 			fields: [
 				{ name: 'client_id', place: 'body', note: 'The API’s own' },
@@ -2646,9 +2646,13 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'The identity provider refuses: this API is not allowed it',
 			label: '403 invalid_client',
 			concept:
-				'The API is a client the identity provider knows, and it may read stored tokens, only not this provider’s. Which providers each client may read is set at the identity provider.',
+				'The API is a client the identity provider knows, and it may read stored tokens, only not this provider’s. Which providers each client may read is set at the identity provider here.',
 			fields: [
-				{ name: 'error=invalid_client', place: 'body', note: 'Not allowed what it asked for' },
+				{
+					name: 'error=invalid_client',
+					place: 'body',
+					note: 'Here: not allowed this provider’s tokens'
+				},
 				{
 					name: 'error_description',
 					place: 'body',
@@ -2848,7 +2852,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept: [
 				{
 					when: apiReadRefused,
-					text: 'It needed the other provider’s API to answer, and could not get the token for it, so the app gets an error it cannot fix. Which API may read which provider’s tokens is set at the identity provider, so the fix is there.'
+					text: 'It needed the other provider’s API to answer, and could not get the token for it, so the app gets an error it cannot fix. The demo API recorded here sends a 502, and what an API sends then is up to whoever built it. Which API may read which provider’s tokens is set at the identity provider here, so the fix is there.'
 				},
 				{
 					when: sends('none'),

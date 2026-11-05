@@ -908,7 +908,7 @@ export const noteDefs: readonly NoteDef[] = [
 		id: 'api-reads-external-tokens',
 		steps: ['api-retrieve-upstream-token', 'enable-token-storage'],
 		title: 'Allow retrieve external tokens, for the API',
-		text: 'On the API’s own client here, with this provider named in Allowed Identity Providers for External Tokens. A client allowed only another provider, or none, got a 403 with invalid_client and: Client not allowed to retrieve token for the provider. The console only shows it on a server with API V2 on.',
+		text: 'On the API’s own client here, with this provider named in Allowed Identity Providers for External Tokens. A client allowed only another provider, or with the setting off, got a 403 with invalid_client and: Client not allowed to retrieve token for the provider. The console only shows it on a server with API V2 on.',
 		when: apiReads,
 		place: {
 			path: [

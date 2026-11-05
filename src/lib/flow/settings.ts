@@ -723,11 +723,11 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		onlyOn: 'authorization-code',
 		summary:
 			'The app that logged in, or an API it calls, with a client of its own that the identity provider allows this provider.',
-		why: 'Whoever reads the stored token holds a token for the user at the other provider. An API that needs it can read it itself, so the app never has it and can be one with no secret, and each API can be allowed only the providers it needs.',
+		why: 'Whoever reads the stored token holds a token for the user at the other provider. An API that needs it can read it itself, so the app does not have to and can be one with no secret, and each API can be allowed only the provider it needs.',
 		sources: [
 			{
 				source: 'keycloak-stored-tokens',
-				why: 'This page is where API V2 lets a client read stored tokens, from the providers it is allowed.'
+				why: 'This page describes both ways to get the stored tokens, and API V2 is the one drawn here.'
 			}
 		],
 		requires: {

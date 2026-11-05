@@ -481,11 +481,11 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			concept: [
 				{
 					when: apiReadRefused,
-					text: 'An admin turns on token storage for the other provider, and registers the API as a client of its own, with a secret. It allows that client to retrieve stored tokens, only not this provider’s. The app’s tokens get the API’s name, because the identity provider here only hands a stored token to a client the token names.'
+					text: 'An admin turns on token storage for the other provider, and registers the API as a client of its own, with a secret. It allows that client to retrieve stored tokens, only not this provider’s. The app’s tokens get the API’s name, because the identity provider here only hands a stored token to a client the token was issued to or names in its audience.'
 				},
 				{
 					when: apiReads,
-					text: 'An admin turns on token storage for the other provider, and registers the API as a client of its own, with a secret, allowed to retrieve this provider’s tokens. The app’s tokens get the API’s name, because the identity provider here only hands a stored token to a client the token names.'
+					text: 'An admin turns on token storage for the other provider, and registers the API as a client of its own, with a secret, allowed to retrieve this provider’s tokens. The app’s tokens get the API’s name, because the identity provider here only hands a stored token to a client the token was issued to or names in its audience.'
 				},
 				{
 					when: apiV2,

@@ -390,6 +390,7 @@ Not tried: how long it lasts when the session idles or reaches its maximum, the 
 
 Tried on Keycloak 26.8.1 with `identity-brokering-api:v2` on 2026-11-05 in a throwaway trial, then recorded the same day (`upstream-v2-api` and `upstream-v2-refused`), for [#180](https://github.com/vriesdemichael/authlines/issues/180). A public app logs in through the other provider, and clients ask for the stored token with `POST /realms/{realm}/broker/{alias}/token`, their own client ID and secret, and the user's access token.
 
+- In the console, Allowed Identity Providers for External Tokens appears under Allow retrieve external tokens once that is on, on a server with API V2.
 - The API's own client, with Allow retrieve external tokens on and this provider in Allowed Identity Providers for External Tokens, got 200 and the upstream access token, with a token that named the API.
 - The same client with a token that named only `account` got 403 `unauthorized_client` and Client is not within the token audience. An Audience mapper on the app's client, naming the API, fixed it.
 - A client allowed only another provider, and a client with Allow retrieve external tokens off, each got 403 `invalid_client` and Client not allowed to retrieve token for the provider.

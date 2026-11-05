@@ -464,7 +464,7 @@ const list: readonly Term[] = [
 		name: 'unauthorized_client',
 		words: ['unauthorized_client'],
 		explains:
-			'RFC 6749 section 5.2 has it for a client that is not allowed this way of asking. The server recorded also sent it for a token that did not name the client asking.',
+			'RFC 6749 section 5.2 has it for a client that is not allowed this way of asking. The server recorded also sent it for a token that did not name the client asking, and for a wrong secret, which RFC 6749 calls invalid_client.',
 		at: flowAt('api-retrieve-upstream-token', {
 			broker: true,
 			upstreamTokens: 'v2',
