@@ -16,10 +16,13 @@ export interface Picture {
 	lines: readonly PictureLine[];
 }
 
-export type PictureId = 'refresh';
+export type PictureId = 'refresh' | 'who-knows-whom';
 
-/** Where something starts or ends, a step, or a question with more than one way on. */
-export type PartShape = 'ends' | 'step' | 'ask';
+/**
+ * Where something starts or ends, a step, or a question with more than one way on: those make a
+ * flowchart. A party, with what it holds, makes a relation diagram.
+ */
+export type PartShape = 'ends' | 'step' | 'ask' | 'party';
 
 export interface PicturePart {
 	id: string;
@@ -29,11 +32,24 @@ export interface PicturePart {
 	y: number;
 	w: number;
 	h: number;
+	/** A party's name, in the words chosen, over everything else it says. */
+	title?: readonly string[];
+	/** Under the title, in the font of a value on the wire, such as an address. */
+	sub?: string;
 	says: readonly string[];
 	/** Under what it says, smaller. */
 	more?: readonly string[];
+	/** What a party holds, each of which opens the steps that put it there. */
+	rows?: readonly PictureRow[];
 	/** How a call travels, when it is one, in the colours the arrows use (ADR-014). */
 	travels?: 'direct' | 'browser';
+	opens: Opens;
+}
+
+export interface PictureRow {
+	id: string;
+	says: string;
+	more: string;
 	opens: Opens;
 }
 
@@ -50,8 +66,10 @@ export interface Opens {
 export interface PictureLine {
 	/** An SVG path, in the picture's own units. */
 	d: string;
-	/** A line that joins another ends without a head. */
-	joins?: boolean;
+	/** Without a head: a line that joins another, or a relation, which goes both ways. */
+	bare?: boolean;
+	/** Dashed: who trusts tokens from whom, as the legend of a relation diagram says. */
+	dashed?: boolean;
 	label?: Label;
 }
 
@@ -62,5 +80,36 @@ export interface Label {
 	anchor: 'start' | 'middle' | 'end';
 }
 
+/** The sizes a picture is drawn in, which its layout and its tests both go by. */
+export const SIZE = {
+	title: 14,
+	says: 13,
+	more: 11.5,
+	label: 12,
+	row: 12.5,
+	rowMore: 11
+} as const;
+
 /** The height of a part that says these lines, at the sizes the picture is drawn in. */
 export const heightFor = (says: number, more = 0) => 26 + says * 17 + more * 15;
+
+/**
+ * How wide a line of text is at most, at a size. IBM Plex Sans is narrower than this on average, so
+ * what fits by this fits on screen, and a bold title gets a little more.
+ */
+export const widthOf = (text: string, size: number, bold = false) =>
+	text.length * size * (bold ? 0.6 : 0.54);
+
+/** Text in lines that each fit a width, broken between words. */
+export function wrap(text: string, width: number, size: number, bold = false): string[] {
+	const lines: string[] = [];
+	for (const word of text.split(' ')) {
+		const last = lines.at(-1);
+		if (last !== undefined && widthOf(`${last} ${word}`, size, bold) <= width) {
+			lines[lines.length - 1] = `${last} ${word}`;
+		} else {
+			lines.push(word);
+		}
+	}
+	return lines;
+}

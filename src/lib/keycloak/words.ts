@@ -49,3 +49,15 @@ export const KEYCLOAK_PHRASES: Readonly<Record<string, string>> = {
 	'the IdP': 'Keycloak',
 	'the other provider': 'the external identity provider'
 };
+
+/**
+ * What its admin console calls what a realm holds, read on Keycloak 26.8.1: the menu names, and
+ * Keys under Realm settings. Used only where someone asked for Keycloak's words (ADR-015).
+ */
+export const realmHolds = {
+	apps: 'Clients',
+	accounts: 'Users',
+	providers: 'Identity providers',
+	directories: 'User federation',
+	keys: 'Keys'
+} as const;

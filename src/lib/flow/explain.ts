@@ -60,7 +60,7 @@ export function explanationOf(
 	holdings: Readonly<Record<string, readonly ArtifactId[]>>
 ): Explaining | null {
 	const said = inWords(state, view, holdings);
-	const picture = said && pictureFor(state, sayer(wordingOf(state)));
+	const picture = said && pictureFor(state, wordingOf(state));
 	return said && picture ? { ...said, picture } : said;
 }
 

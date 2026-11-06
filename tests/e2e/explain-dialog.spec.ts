@@ -178,6 +178,22 @@ test.describe('a picture in an explanation', () => {
 		await expect.poll(() => currentSearch(page)).toContain('step=redirect-to-idp');
 	});
 
+	// The relation diagram the maintainer asked for, with the app and the API joined (#167).
+	test('shows who knows whom on the identity provider, and its rows open their steps', async ({
+		page
+	}) => {
+		await page.goto('authorization-code/what-is-an-identity-provider/');
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		const picture = page.getByTestId('picture');
+		await expect(picture).toHaveAttribute('data-picture', 'who-knows-whom');
+		await expect(picture).toContainText('calls, with an access token');
+		await picture.locator('[data-part="idp.apps"]').click();
+		await expect.poll(() => currentSearch(page)).toContain('step=create-client');
+		await expect(page).toHaveURL(/setup/);
+		await page.goBack();
+		await expect(page.getByTestId('picture')).toHaveAttribute('data-picture', 'who-knows-whom');
+	});
+
 	test('is not in an explanation it does not belong to', async ({ page }) => {
 		await open(page, 'mode=simple&step=token-response&explain=artifact.access-token');
 		await expect(explanation(page)).toBeVisible();
