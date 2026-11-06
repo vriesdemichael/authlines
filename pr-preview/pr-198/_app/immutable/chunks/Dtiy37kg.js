@@ -1,0 +1,1 @@
+import{Et as e}from"./BMprwg4n.js";e();
