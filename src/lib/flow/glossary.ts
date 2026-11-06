@@ -596,7 +596,7 @@ const list: readonly Term[] = [
 		name: 'State',
 		words: ['state'],
 		explains:
-			"A random value, tied to this browser, that the app sends with the login and checks when the user comes back, so nobody can slip an answer into this user's login. It does not stop someone starting a login in their own browser and handing the app a stolen code, which takes PKCE or a nonce. Those can also do what state does, once the app has made sure the server supports PKCE.",
+			"A random value, tied to this browser, that the app sends with the login and checks when the user comes back, so someone who does not know the value cannot slip an answer of theirs into this user's login. Someone who can read the answer as it comes back learns the value, and PKCE stops them too. It does not stop someone starting a login in their own browser and handing the app a stolen code, which takes PKCE or a nonce. Those can also do what state does, once the app has made sure the server supports PKCE.",
 		alsoCalled: ['CSRF protection'],
 		at: flowAt('authorize')
 	},
@@ -778,7 +778,7 @@ const list: readonly Term[] = [
 		name: 'Nonce',
 		words: ['nonce'],
 		explains:
-			'A value that is only used once, so that something made with it cannot be used again.',
+			'A random value that ties something to one login, or to a stretch of time. With OpenID Connect the app makes one for each login, and checks that it comes back in the ID token. With DPoP the server hands one out, and each proof carries it until the server hands out another.',
 		at: flowAt('authorize', { oidc: true })
 	},
 	{

@@ -225,7 +225,7 @@ export const deviceSetup: DiagramDef = {
 			plain: 'The API gets the keys',
 			label: 'GET jwks_uri',
 			concept:
-				'The API looks up the keys that check signatures, at the address discovery gives. After that it does not need to call the identity provider for each token, only when the keys change.',
+				'The API looks up the keys that check signatures, at the address discovery gives. After that it does not need to call the identity provider for each token. A library usually fetches the keys again from time to time, and when a token names one it does not have.',
 			fields: [{ name: '/certs', place: 'path', note: 'The jwks_uri from the discovery document' }]
 		},
 		{

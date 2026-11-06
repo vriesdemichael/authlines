@@ -676,7 +676,7 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plain: 'The app asks to be registered',
 			label: 'POST registration_endpoint',
 			concept:
-				'The app sends what someone would otherwise have told an admin: where users may be sent back to. Nobody has to copy anything.',
+				'The app sends what someone would otherwise have told an admin: where users may be sent back to. Nobody has to type these into a console, and the one thing handed over was the admin’s token.',
 			cites: [
 				{
 					source: 'rfc7591',
@@ -838,7 +838,7 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plain: 'The API gets the keys',
 			label: 'GET jwks_uri',
 			concept:
-				'The API looks up the keys that check signatures, at the address discovery gives. After that it does not need to call the identity provider for each token, only when it meets a key it does not know.',
+				'The API looks up the keys that check signatures, at the address discovery gives. After that it does not need to call the identity provider for each token. A library usually fetches the keys again from time to time, and when a token names one it does not have.',
 			fields: [{ name: '/certs', place: 'path', note: 'The jwks_uri from the discovery document' }]
 		},
 		{

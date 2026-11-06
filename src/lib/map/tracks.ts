@@ -217,7 +217,7 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'refresh-token-reuse',
 					answer:
-						'A refresh token that had already been used was sent again, by someone with a copy or by the app itself, and this server lets each one work only once. It also stopped the newest one, so the app has to start a new login.',
+						'A refresh token that had already been used was sent again, by someone with a copy or by the app itself, and the server here was set so that each one works only once. It also stopped the newest one, so the app has to start a new login.',
 					title: 'Why do I get Maximum allowed refresh token reuse exceeded?',
 					summary: 'A refresh token was used twice, and that ended things for this app.',
 					preset: 'refresh-ends',
@@ -276,7 +276,7 @@ export const mapTracks: readonly MapTrack[] = [
 				node({
 					id: 'pkce',
 					answer:
-						'The app makes up a random value for each login, and only its fingerprint goes through the browser. The value itself goes with the code on a direct call, so someone who only saw the code does not have it.',
+						'The app makes up a random value for each login, and only its fingerprint goes in the redirect. The value itself goes with the code when the app trades it, never in a redirect, so someone who only saw the code does not have it.',
 					title: 'How does PKCE work?',
 					summary:
 						'The app proves it started this login, with a value that was never in a redirect.',

@@ -278,7 +278,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		simple: {
 			label: 'Protect against a stolen code',
 			summary:
-				'The app proves it started this login, so a code someone intercepts is no use to them. Current advice is to always have this on.'
+				'The app proves it started this login, so a code someone intercepts is no use to them. Current advice is to have this on, and an app with no secret must.'
 		},
 		sources: [
 			{
