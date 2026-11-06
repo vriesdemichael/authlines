@@ -60,6 +60,30 @@ test.describe('an explanation', () => {
 		await expect(explanation(page)).toHaveCount(0);
 	});
 
+	// The maintainer, 2026-11-06: on a question that opens with an explanation, Close and a click beside
+	// it seemed to do nothing, because the question's own address opened it again.
+	for (const [how, close] of [
+		['Close', (page: Page) => page.getByTestId('explain-dialog').getByText('Close').click()],
+		['a click beside it', (page: Page) => page.mouse.click(4, 400)]
+	] as const) {
+		test(`opened by a question, closes with ${how} and stays closed`, async ({ page }) => {
+			await page.goto('authorization-code/what-is-an-identity-provider/');
+			await page.locator('.workspace[data-ready="true"]').waitFor();
+			await expect(explanation(page)).toContainText('Identity provider');
+			await close(page);
+			await expect(explanation(page)).toHaveCount(0);
+			await page.getByTestId('next').click();
+			await expect.poll(() => currentSearch(page)).toContain('step=redirect-to-idp');
+			await expect(explanation(page)).toHaveCount(0);
+			await expect(page.getByTestId('title')).toHaveText(
+				'What is an identity provider, and an issuer?'
+			);
+			await page.reload();
+			await page.locator('.workspace[data-ready="true"]').waitFor();
+			await expect(explanation(page)).toHaveCount(0);
+		});
+	}
+
 	test('opens from a link, and a reload keeps it', async ({ page }) => {
 		await open(page, 'explain=term.issuer&step=token-response');
 		await expect(explanation(page)).toContainText('Issuer');

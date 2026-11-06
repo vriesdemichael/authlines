@@ -621,7 +621,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: 'The app makes up a random value for this login, the verifier, and keeps it to itself. From it, it works out a fingerprint, the challenge, that cannot be turned back. The fingerprint goes in the request the app pushes, so here not even that goes through the browser.'
 				},
 				{
-					text: 'The app makes up a random value for this login, the verifier, and keeps it to itself. From it, it works out a fingerprint, the challenge, that cannot be turned back. Only the fingerprint goes through the browser.'
+					text: 'The app makes up a random value for this login, the verifier, and keeps it to itself. From it, it works out a fingerprint, the challenge, that cannot be turned back. Only the fingerprint goes in the redirect.'
 				}
 			],
 			inPractice: 'A library does this for you, often once you turn it on.',
@@ -1309,7 +1309,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			pitfall: {
 				// #181: drawn as one hop, and the step says why.
 				title: 'What if the other provider hands the login on again?',
-				text: 'Then the login passes through two providers after the identity provider: the other provider is a client in turn, of a provider behind it, the way the identity provider is here. The identity provider is a client only of the other provider, so it has nothing to do with the one behind, and a token it keeps from this login is the other provider’s. Nothing recorded here has a provider behind the other one, so this is drawn as one hop, and each further hop would be this same exchange again.',
+				text: 'Then the login passes through two providers after the identity provider: the other provider is a client in turn, of a provider behind it, the way the identity provider is here. The identity provider is a client only of the other provider. It never talks to the one behind and is not registered there, so all it knows is what the other provider tells it, and a token it keeps from this login is the other provider’s. Nothing recorded here has a provider behind the other one, so this is drawn as one hop, and each further hop would be this same exchange again.',
 				when: not(companies)
 			},
 			when: broker,
@@ -3060,7 +3060,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			inPractice: [
 				{
 					when: apiRefuses,
-					text: 'Read the WWW-Authenticate header on the answer first: it says what kind of token the API wants, and what was wrong with this one, if there was one. A new token of the same kind only helps if this one ran out.'
+					text: 'Read the WWW-Authenticate header on the answer first: it says what kind of token the API wants, and what was wrong with this one, if there was one. A new token helps if there was none, or if this one ran out or was changed on the way. It does not help if this one is for another API, or does not allow this.'
 				},
 				{ text: 'What it answers is up to whoever built that API, which may be you.' }
 			],

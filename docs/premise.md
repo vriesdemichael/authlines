@@ -177,7 +177,7 @@ Three things follow:
 - A recording is one real run, so values carry across steps without simulation. Earlier steps always count as executed, so a link only needs the step.
 - It is on steps that send something, where what comes back is used by a later step: the sign-in, the token request and the retrieval of a stored token. Running one moves the diagram to the step with the answer, so the diagram follows execution, which is what AuthPlayground's does not do.
 - Next gets to the same place. Execute says what is about to happen, marks the answer as the answer, and puts the reader on it.
-- Each value in the raw view says where it came from, and every signed token can be opened.
+- Each value in the raw view says where it came from, and every signed token can be opened. **Asked for on 2026-11-06, and built:** it can be read as sent or decoded, with an address. Decoded, each value reads as it is and each token is opened where it was sent. The switch is only offered where decoding changes something.
 
 ### 5.7 Keycloak as the reference
 

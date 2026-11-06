@@ -64,6 +64,7 @@
 		withExplained,
 		withEyes,
 		withList,
+		withDecoded,
 		withRaw,
 		withWhole,
 		withFullSize,
@@ -427,6 +428,7 @@
 		explain({ kind: 'lifeline', id });
 	}
 
+	const decode = (decoded: boolean) => onnavigate(withDecoded(appState, decoded), 'push');
 	const explain = (explained: Explained | null) =>
 		onnavigate(withExplained(appState, explained), 'push');
 	const explanation = $derived(explanationOf(appState, view, holdings));
@@ -677,8 +679,6 @@
 		{origin.onlyItsHttp ? 'Its HTTP was recorded from' : 'Recorded from'}
 		{#if !appState.serverNotes}
 			a real server
-		{:else if simple}
-			a real server, Keycloak {origin.keycloak},
 		{:else}
 			Keycloak {origin.keycloak}
 		{/if}
@@ -846,22 +846,26 @@
 	<aside class="settings" aria-label="Settings">
 		{#if phone}
 			<!-- Not needed while stepping, so on a phone it waits here and leaves the room to the step. -->
-			<section class="shown" data-testid="how-it-is-shown">
-				{#if !simple || appState.wording}
-					<WordsSwitch
-						current={wording}
-						serverNotes={appState.serverNotes}
-						onchange={(chosen) => onnavigate(withWording(appState, chosen), 'push')}
-					/>
-				{/if}
-				{#if !simple || appState.eyes}
-					<EyesSwitch {parties} current={appState.eyes} onchange={seeAs} />
-				{/if}
-				{#if !simple || appState.whole}
-					{@render wholeFlow()}
-				{/if}
-				{@render recordedLine()}
-			</section>
+			{#if !simple || appState.wording || appState.eyes || appState.whole}
+				<section class="shown" data-testid="how-it-is-shown">
+					{#if !simple || appState.wording}
+						<WordsSwitch
+							current={wording}
+							serverNotes={appState.serverNotes}
+							onchange={(chosen) => onnavigate(withWording(appState, chosen), 'push')}
+						/>
+					{/if}
+					{#if !simple || appState.eyes}
+						<EyesSwitch {parties} current={appState.eyes} onchange={seeAs} />
+					{/if}
+					{#if !simple || appState.whole}
+						{@render wholeFlow()}
+					{/if}
+					{#if !simple}
+						{@render recordedLine()}
+					{/if}
+				</section>
+			{/if}
 		{/if}
 		{#if !simple && flowChoices.length > 1}
 			<FlowSwitch flows={flowChoices} current={base.id} onchange={(id) => onflow?.(id)} />
@@ -938,10 +942,10 @@
 		</div>
 		<div class="legend">
 			<ChannelLegend present={channelsHere} />
+			<!-- Where it was recorded is said only where what was recorded can be seen, in advanced mode,
+			     because in simple mode it pointed at nothing (the maintainer, 2026-11-06). -->
 			{#if phone}
 				{@render howToRead()}
-			{:else if simple}
-				{@render recordedLine()}
 			{/if}
 		</div>
 	</main>
@@ -1082,6 +1086,8 @@
 						{seesStep}
 						{runHref}
 						onlarge={() => onnavigate(withRaw(appState, true), 'push')}
+						decoded={appState.decoded}
+						ondecode={decode}
 					/>
 				{/if}
 			{/snippet}
@@ -1129,6 +1135,8 @@
 					{notes}
 					{seesStep}
 					large
+					decoded={appState.decoded}
+					ondecode={decode}
 				/>
 			{:else}
 				<p>Nothing goes over the wire at this step.</p>

@@ -41,6 +41,9 @@
 		large?: boolean;
 		/** Names a link gave, and which recorded value is which of them (#168). */
 		seam?: string | null;
+		/** Each value decoded and each token opened where it is, instead of as it was sent. */
+		decoded?: boolean;
+		ondecode?: ((decoded: boolean) => void) | null;
 	}
 
 	let {
@@ -58,7 +61,9 @@
 		onlarge = null,
 		large = false,
 		seam = null,
-		folded = false
+		folded = false,
+		decoded = false,
+		ondecode = null
 	}: Props = $props();
 
 	const message = $derived(recording?.messages.find((candidate) => candidate.step === step.id));
@@ -155,6 +160,8 @@
 			{serverNamed}
 			redacted={!seesStep(step.id)}
 			whole={large}
+			decoded={decoded && !message.log}
+			ondecode={message.log ? null : ondecode}
 		/>
 		<RunValues values={soFar} {numberOf} {onstep} />
 		<p class="origin" data-testid="payload-origin">

@@ -218,6 +218,18 @@ export const breakages = [
 		to: 'a challenge here is the identity provider’s own setting, and the server recorded sent one.'
 	},
 	{
+		name: 'question: a closed explanation opens again on the question’s own address',
+		file: STATE,
+		from: "if (nodeExplains && !state.explained) params.set('explain', NOTHING_EXPLAINED);",
+		to: ''
+	},
+	{
+		name: 'wire: a link to the traffic decoded opens it as sent',
+		file: STATE,
+		from: "decoded: params.get(DECODED_PARAM) === '1'",
+		to: "decoded: params.get(DECODED_PARAM) === 'yes'"
+	},
+	{
 		name: 'program: a program is drawn answered at the app’s own address',
 		file: AC,
 		from: "note: '127.0.0.1 at the port it is listening on, which need not be registered',\n\t\t\t\t\twhen: inAProgram",

@@ -897,7 +897,7 @@ export const device: DiagramDef = {
 			concept:
 				'The user logged in at the right address, on the real identity provider, and agreed, and the tokens came here. No password was given away, and nothing looked wrong to the user.',
 			inPractice:
-				'Your app cannot stop this, because your app is not part of it. Only the user can, at the page that asks. What helps is telling users only to enter a code they started themselves, keeping the codes short-lived, and a page that asks whether the device is in front of them, which is for whoever runs the provider.',
+				'Your app cannot stop this, because your app is not part of it. Only the user can stop it here, at the page that asks, unless the user code runs out first. What helps is telling users only to enter a code they started themselves, keeping the codes short-lived, and a page that asks whether the device is in front of them, which is for whoever runs the provider.',
 			fields: [
 				{ name: 'access_token', place: 'body', artifact: 'access-token' },
 				{ name: 'token_type=Bearer', place: 'body' },
@@ -921,7 +921,7 @@ export const device: DiagramDef = {
 			plain: 'The user said no',
 			label: '400 access_denied',
 			concept:
-				'The user noticed, at the page that asks, and they get nothing. That page is the only thing here that stops them, and it takes the user reading it.',
+				'The user noticed, at the page that asks, and they get nothing. Here that page is what stops them, and it takes the user reading it. A user code that runs out first stops them too.',
 			fields: [
 				{ name: 'error=access_denied', place: 'body' },
 				{ name: 'error_description', place: 'body' }

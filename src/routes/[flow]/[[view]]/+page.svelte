@@ -107,7 +107,7 @@
 		// keeps it.
 		if (question && stillAnswers(question, state)) {
 			const node = resolve('/[flow]/[[view]]', { flow: base.id, view: question.id });
-			return `${node}?${serializeOnNode(base, state)}`;
+			return `${node}?${serializeOnNode(base, state, Boolean(question.explains))}`;
 		}
 		const search = serializeState(base, state);
 		const view = state.diagram === 'setup' ? 'setup' : undefined;

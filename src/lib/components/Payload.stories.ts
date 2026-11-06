@@ -60,3 +60,25 @@ export const OpeningASamlAssertion: Story = {
 		numberOf: (id: string) => samlView.steps.findIndex((step) => step.id === id) + 1 || null
 	}
 };
+
+const ondecode = () => {};
+
+/** Decoded, the address reads as it is and the session cookie's token is opened where it was set. */
+export const ARedirectDecoded: Story = {
+	args: { ...argsFor('redirect-with-code'), decoded: true, ondecode }
+};
+
+/** A form decoded, with each token in the answer opened where it is and what put what in it. */
+export const AnAnswerDecoded: Story = {
+	args: {
+		...argsFor('token-response'),
+		decoded: true,
+		ondecode,
+		notes: notesFor('authorization-code', 'token-response', defaultSettings)
+	}
+};
+
+/** The switch is offered, as sent. */
+export const ARedirectWithTheSwitch: Story = {
+	args: { ...argsFor('redirect-with-code'), ondecode }
+};

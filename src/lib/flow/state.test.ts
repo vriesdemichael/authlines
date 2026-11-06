@@ -76,7 +76,8 @@ describe('the URL', () => {
 						list: false,
 						whole: false,
 						raw: false,
-						fullSize: false
+						fullSize: false,
+						decoded: false
 					};
 					expect(parseState(base, diagram, serializeState(base, state))).toEqual(state);
 				}
@@ -117,7 +118,8 @@ describe('the URL', () => {
 							list: onOff,
 							whole: onOff,
 							raw: onOff,
-							fullSize: onOff
+							fullSize: onOff,
+							decoded: onOff
 						};
 						expect(parseState(base, 'flow', serializeState(base, state))).toEqual(state);
 					}
