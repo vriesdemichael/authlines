@@ -4,6 +4,7 @@
 	import Diagram from '#lib/components/Diagram.svelte';
 	import DiagramSwitch from '#lib/components/DiagramSwitch.svelte';
 	import ExplainDialog from '#lib/components/ExplainDialog.svelte';
+	import type { Opens } from '#lib/pictures/index.ts';
 	import Explanation from '#lib/components/Explanation.svelte';
 	import EyesSwitch from '#lib/components/EyesSwitch.svelte';
 	import FlowSwitch from '#lib/components/FlowSwitch.svelte';
@@ -49,6 +50,7 @@
 	} from '#lib/flow/names.ts';
 	import {
 		defaultSettings,
+		normalize,
 		settingDefs,
 		settingIds,
 		simpleSettingIds,
@@ -429,6 +431,29 @@
 	}
 
 	const decode = (decoded: boolean) => onnavigate(withDecoded(appState, decoded), 'push');
+	// A part of a picture goes to the steps it stands for, with the settings on screen where they can
+	// draw them, and otherwise with a recorded preset's. Back comes back to the picture.
+	function openPart(opens: Opens) {
+		const wanted = normalize({ ...appState.settings, ...opens.settings }).settings;
+		const draws = (settings: Settings) =>
+			evaluate(base.diagrams[opens.diagram], settings).steps.some((step) => step.id === opens.step);
+		const preset = base.presets.find((candidate) => candidate.id === opens.preset);
+		const settings = draws(wanted)
+			? wanted
+			: normalize({ ...defaultSettings, ...preset?.settings }).settings;
+		onnavigate(
+			{
+				...appState,
+				diagram: opens.diagram,
+				settings,
+				step: opens.step,
+				explained: null,
+				eyes: null,
+				follow: null
+			},
+			'push'
+		);
+	}
 	const explain = (explained: Explained | null) =>
 		onnavigate(withExplained(appState, explained), 'push');
 	const explanation = $derived(explanationOf(appState, view, holdings));
@@ -1161,7 +1186,12 @@
 		</div>
 	{/if}
 	{#if explanation}
-		<ExplainDialog label={explanation.title} side={sideFor} onclose={() => explain(null)}>
+		<ExplainDialog
+			label={explanation.title}
+			side={sideFor}
+			picture={Boolean(explanation.picture)}
+			onclose={() => explain(null)}
+		>
 			<Explanation
 				{...explanation}
 				onpart={explainTerm}
@@ -1193,6 +1223,7 @@
 					: null}
 				following={appState.follow === explanation.follows}
 				onclose={() => explain(null)}
+				onopenpart={openPart}
 				onexplainartifact={(id) => explain({ kind: 'artifact', id })}
 				onopensource={(ref) => onnavigate(withSourceOpen(appState, explainedSetting, ref), 'push')}
 			/>

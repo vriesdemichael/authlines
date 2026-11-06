@@ -8,11 +8,13 @@
 		wide?: boolean;
 		/** The side to keep to, so that what it is about stays in view. Otherwise it is in the middle. */
 		side?: 'left' | 'right' | null;
+		/** It has a picture, which needs the room and is read as a whole, so it is in the middle. */
+		picture?: boolean;
 		onclose: () => void;
 		children: Snippet;
 	}
 
-	let { label, wide = false, side = null, onclose, children }: Props = $props();
+	let { label, wide = false, side = null, picture = false, onclose, children }: Props = $props();
 
 	let dialog = $state<HTMLDialogElement>();
 
@@ -34,8 +36,9 @@
 <dialog
 	bind:this={dialog}
 	class:wide
-	class:left={side === 'left'}
-	class:right={side === 'right'}
+	class:left={side === 'left' && !picture}
+	class:right={side === 'right' && !picture}
+	class:picture
 	aria-label={label}
 	data-testid="explain-dialog"
 	oncancel={(event) => {
@@ -79,6 +82,10 @@
 	dialog.wide {
 		width: min(780px, calc(100vw - 32px));
 		height: calc(100dvh - 32px);
+	}
+
+	dialog.picture {
+		width: min(780px, calc(100vw - 32px));
 	}
 
 	@media (min-width: 768px) {

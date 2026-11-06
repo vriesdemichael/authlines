@@ -8,6 +8,7 @@ import { wordingOf, type AppState } from '#lib/flow/state.ts';
 import { artifacts } from '#lib/flow/vocabulary.ts';
 import { nameIn, sayer, type Wording } from '#lib/flow/wording.ts';
 import { keycloakKnownAs } from '#lib/keycloak/words.ts';
+import { pictureFor, type Picture } from '#lib/pictures/index.ts';
 import { isVendorSource, type SourceRef } from '#lib/sources/sources.ts';
 
 /** What the panel says about something someone clicked, in the words of the mode they are in. */
@@ -27,6 +28,8 @@ export interface Explaining {
 	party?: string;
 	/** What this is about, when there is a path to follow. */
 	follows?: ArtifactId;
+	/** A picture, where one says it better than words (#167). */
+	picture?: Picture;
 }
 
 type Line = DiagramView['lifelines'][number];
@@ -52,6 +55,16 @@ const followable = (view: DiagramView, artifact: ArtifactId) =>
 	pathOf(view, artifact).length ? artifact : undefined;
 
 export function explanationOf(
+	state: AppState,
+	view: DiagramView,
+	holdings: Readonly<Record<string, readonly ArtifactId[]>>
+): Explaining | null {
+	const said = inWords(state, view, holdings);
+	const picture = said && pictureFor(state, sayer(wordingOf(state)));
+	return said && picture ? { ...said, picture } : said;
+}
+
+function inWords(
 	state: AppState,
 	view: DiagramView,
 	holdings: Readonly<Record<string, readonly ArtifactId[]>>

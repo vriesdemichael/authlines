@@ -230,6 +230,18 @@ export const breakages = [
 		to: "decoded: params.get(DECODED_PARAM) === 'yes'"
 	},
 	{
+		name: 'picture: a part of the refresh picture opens a step nothing draws',
+		file: 'src/lib/pictures/refresh.ts',
+		from: "opens: opens('refresh-request')",
+		to: "opens: opens('refresh-requested')"
+	},
+	{
+		name: 'picture: the setting for running out has no picture',
+		file: 'src/lib/pictures/index.ts',
+		from: "(explained.kind === 'setting' && explained.id === 'refresh')",
+		to: "(explained.kind === 'setting' && explained.id === 'refresh-token')"
+	},
+	{
 		name: 'program: a program is drawn answered at the app’s own address',
 		file: AC,
 		from: "note: '127.0.0.1 at the port it is listening on, which need not be registered',\n\t\t\t\t\twhen: inAProgram",
