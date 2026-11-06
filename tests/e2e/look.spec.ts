@@ -229,6 +229,14 @@ test.describe('nothing an automated check can find', () => {
 		],
 		['a request carrying values', 'authorization-code/?mode=advanced&step=callback'],
 		['an explanation', 'authorization-code/?step=authorize&explain=lifeline.idp'],
+		[
+			'a picture in an explanation',
+			'authorization-code/?step=token-response&explain=artifact.refresh-token'
+		],
+		[
+			'who knows whom, with another provider',
+			'authorization-code/?oidc=1&broker=1&say=keycloak&explain=lifeline.idp'
+		],
 		['setup', 'authorization-code/setup/?broker=1'],
 		['an open source', 'authorization-code/?source=rfc6749&for=client&section=2.1'],
 		['running it yourself', 'run-it-yourself/'],

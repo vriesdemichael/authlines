@@ -37,6 +37,8 @@
 		event.preventDefault();
 		onopen?.(opens);
 	}
+	// A part's lines are separate elements, so each ends in a space, which SVG does not draw. Otherwise
+	// what is seen runs together, and does not match what is read out (WCAG 2.5.3, label in name).
 	const rowSaid = (row: PictureRow) => `${row.says}: ${row.more}`;
 </script>
 
@@ -105,14 +107,14 @@
 						/>
 						{#each part.title ?? [] as text, i (i)}
 							<text class="title" x={leftOf(part) + PAD} y={topOf(part) + PAD + 13 + i * 18}
-								>{text}</text
+								>{`${text} `}</text
 							>
 						{/each}
 						{#if part.sub}
-							<text class="sub" x={leftOf(part) + PAD} y={subY(part)}>{part.sub}</text>
+							<text class="sub" x={leftOf(part) + PAD} y={subY(part)}>{`${part.sub} `}</text>
 						{/if}
 						{#each part.says as text, i (i)}
-							<text class="more" x={leftOf(part) + PAD} y={saysY(part) + i * 15}>{text}</text>
+							<text class="more" x={leftOf(part) + PAD} y={saysY(part) + i * 15}>{`${text} `}</text>
 						{/each}
 					{:else if part.shape === 'ask'}
 						<path class="shape" d={diamond(part)} />
@@ -128,7 +130,7 @@
 					{/if}
 					{#each part.shape === 'party' ? [] : part.says as text, i (i)}
 						<text class="says" x={part.x} y={firstLine(part) + i * SAYS} text-anchor="middle"
-							>{text}</text
+							>{`${text} `}</text
 						>
 					{/each}
 					{#each part.more ?? [] as text, i (i)}
@@ -136,7 +138,7 @@
 							class="more"
 							x={part.x}
 							y={firstLine(part) + part.says.length * SAYS + i * MORE}
-							text-anchor="middle">{text}</text
+							text-anchor="middle">{`${text} `}</text
 						>
 					{/each}
 				</g>
@@ -160,10 +162,10 @@
 							rx="5"
 						/>
 						<text class="row-says" x={leftOf(part) + 22} y={rowsY(part) + i * ROW + 17}
-							>{row.says}</text
+							>{`${row.says} `}</text
 						>
 						<text class="row-more" x={leftOf(part) + 22} y={rowsY(part) + i * ROW + 33}
-							>{row.more}</text
+							>{`${row.more} `}</text
 						>
 					</g>
 				{/each}
