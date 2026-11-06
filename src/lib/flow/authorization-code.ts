@@ -1299,13 +1299,17 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: 'The browser posts the request to their company. It names the identity provider by the ID their company was given at setup.'
 				},
 				{
-					text: 'The same request the app made, but now the identity provider is the client asking for a login.'
+					when: pkce,
+					text: 'A request like the one the app made, but now the identity provider is the client asking for a login, with a scope of its own. The app’s PKCE is only between the app and the identity provider: a challenge here would be the identity provider’s own setting, and the server recorded sent none.'
+				},
+				{
+					text: 'A request like the one the app made, but now the identity provider is the client asking for a login, with a scope of its own.'
 				}
 			],
 			pitfall: {
 				// #181: drawn as one hop, and the step says why.
-				title: 'What if the login passes through two providers?',
-				text: 'Then the other provider is a client in turn, and hands the login on to a provider behind it, the way the identity provider does here. Each talks only to the one next to it, so the identity provider never talks to the provider behind, and a token it keeps from this login is the other provider’s. It is drawn once, because each further hop is this same exchange again.',
+				title: 'What if the other provider hands the login on again?',
+				text: 'Then the login passes through two providers after the identity provider: the other provider is a client in turn, of a provider behind it, the way the identity provider is here. The identity provider is a client only of the other provider, so it has nothing to do with the one behind, and a token it keeps from this login is the other provider’s. Nothing recorded here has a provider behind the other one, so this is drawn as one hop, and each further hop would be this same exchange again.',
 				when: not(companies)
 			},
 			when: broker,
@@ -1326,7 +1330,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					when: not(saml)
 				},
 				{ name: 'state', place: 'query', when: not(saml) },
-				{ name: 'scope=openid', place: 'query', when: not(saml) },
+				{
+					name: 'scope=openid',
+					place: 'query',
+					note: 'What the identity provider is set up to ask this provider for. Here the app’s own scope did not go on',
+					when: not(saml)
+				},
 				{ name: 'nonce', place: 'query', when: not(saml) }
 			]
 		},
@@ -1487,7 +1496,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'It links this person to a user',
 			label: 'Match or create the user',
 			concept:
-				'The identity provider links the external identity to a local user, creating one if needed.',
+				'The identity provider links the external identity to a local user, and where there is none yet, makes one from what the other provider sent. On the server recorded, whether a later login copies those details again, and whether the email counts as verified, are settings for this provider.',
 			when: broker
 		},
 		{

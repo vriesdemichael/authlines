@@ -25,6 +25,8 @@ const apiV2 = is('upstreamTokens', 'v2');
 const apiReads = all(apiV2, any(is('upstreamReader', 'api'), is('upstreamReader', 'refused')));
 
 const FLAG_V2 = 'identity-brokering-api:v2';
+/** The provider the recorder sets up, and not one of a customer's, which is set up apart. */
+const plainBroker = all(is('broker', true), is('companies', false));
 
 /** A page of the admin console, which the recorder knows how to open. */
 export type ConsolePage =
@@ -105,6 +107,13 @@ const providerSettings = (label: string): ConsolePlace => ({
 });
 
 const requirePkcePlace = clientSettings('Capability config', 'Require PKCE');
+/** In the part of Advanced settings that opens with Advanced, which is closed when the page loads. */
+const providerAdvanced = (label: string): ConsolePlace => ({
+	path: ['Identity providers', 'the provider', 'Settings', 'Advanced settings', 'Advanced', label],
+	page: 'provider-settings',
+	opens: 'Advanced',
+	shows: ['Advanced settings', label]
+});
 
 export const noteDefs: readonly NoteDef[] = [
 	{
@@ -936,6 +945,101 @@ export const noteDefs: readonly NoteDef[] = [
 				before: { redirects: true },
 				after: { redirects: false },
 				withHint: { redirects: true }
+			}
+		}
+	},
+	// What goes on to the other provider, and what comes back from it into a user here (#182).
+	{
+		id: 'upstream-scopes',
+		steps: ['upstream-authorize'],
+		title: 'Scopes',
+		text: 'What Keycloak asks this provider for. The app’s own scope did not go on: set to openid, with the app asking for openid email, the request here had openid, and set to openid profile, it had openid profile.',
+		when: plainBroker,
+		place: providerAdvanced('Scopes'),
+		backedBy: {
+			question: 'upstreamScope',
+			shows: {
+				appSent: 'openid email',
+				before: { setTo: 'openid', sent: 'openid' },
+				after: { setTo: 'openid profile', sent: 'openid profile' }
+			}
+		}
+	},
+	{
+		id: 'upstream-prompt',
+		steps: ['upstream-authorize'],
+		title: 'Prompt',
+		text: 'Not set on a new provider. Not set, the app’s select_account went on to the request here. Set to consent, the request had consent in its place. Asked straight with a prompt it does not know, the other provider, also Keycloak, showed its login page, so a provider that refuses one was not tried.',
+		when: plainBroker,
+		place: providerAdvanced('Prompt'),
+		backedBy: {
+			question: 'upstreamPrompt',
+			shows: {
+				byDefault: { prompt: null },
+				appSent: 'select_account',
+				before: { prompt: 'select_account' },
+				after: { prompt: 'consent' },
+				unknownPrompt: { status: 200, loginPage: true }
+			}
+		}
+	},
+	{
+		id: 'upstream-pkce',
+		steps: ['upstream-authorize', 'upstream-token-request'],
+		title: 'Use PKCE',
+		text: 'Off on a new provider, and here: the request here had no code_challenge, and none in any recording here where the app sent one. Turned on with S256, it had one, and the app still got its tokens after a login through it.',
+		when: plainBroker,
+		place: {
+			path: [
+				'Identity providers',
+				'the provider',
+				'Settings',
+				'OpenID Connect settings',
+				'Use PKCE'
+			],
+			page: 'provider-settings',
+			shows: ['OpenID Connect settings', 'Use PKCE']
+		},
+		backedBy: {
+			question: 'upstreamPkce',
+			shows: {
+				byDefault: { pkceEnabled: null },
+				before: { codeChallenge: false },
+				after: { codeChallenge: true, method: 'S256' },
+				loginWithPkce: { tokenStatus: 200 }
+			}
+		}
+	},
+	{
+		id: 'upstream-sync',
+		steps: ['match-user'],
+		title: 'Sync mode',
+		text: 'Set to Import here. The first login made the user from what the other provider sent, and a later login, after their last name changed there, kept the old one. Set to Force, a later login copied the new one.',
+		when: plainBroker,
+		place: providerSettings('Sync mode'),
+		backedBy: {
+			question: 'upstreamSync',
+			shows: {
+				setUpWith: 'IMPORT',
+				firstLogin: { lastName: 'Example' },
+				before: { lastName: 'Example' },
+				after: { lastName: 'Renamed' }
+			}
+		}
+	},
+	{
+		id: 'upstream-trust-email',
+		steps: ['match-user'],
+		title: 'Trust Email',
+		text: 'Off on a new provider, and on here, so the user made at the first login had a verified email. Turned off, a user made at a new first login had an email that was not verified, though the other provider had it verified. A user who was there already was not tried.',
+		when: plainBroker,
+		place: providerSettings('Trust Email'),
+		backedBy: {
+			question: 'upstreamTrustEmail',
+			shows: {
+				byDefault: { trustEmail: false },
+				before: { emailVerified: true },
+				after: { emailVerified: false }
 			}
 		}
 	},

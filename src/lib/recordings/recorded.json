@@ -74,7 +74,8 @@
 		"exchange-broker": "2026-11-05",
 		"logout-offline": "2026-11-05",
 		"on-their-computer": "2026-11-05",
-		"on-their-computer-oidc": "2026-11-05"
+		"on-their-computer-oidc": "2026-11-05",
+		"broker": "2026-11-05"
 	},
 	"flows": {
 		"authorization-code": {

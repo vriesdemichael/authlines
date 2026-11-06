@@ -31,7 +31,7 @@ Leave out a setting to keep its default. The flow, its settings and the step are
 
 Do not link to something near it. Say that Authlines does not draw apps on a phone, a PKCE downgrade, passkeys and WebAuthn, Kerberos, NTLM, or client certificates.
 
-A login that passes through two providers is drawn with one, and `broker=1&step=upstream-authorize` says why.
+A login the other provider hands on again, to a provider behind it, is drawn as one hop, and `broker=1&step=upstream-authorize` says why.
 
 ## Names for the parties
 
@@ -47,7 +47,7 @@ A login that passes through two providers is drawn with one, and `broker=1&step=
 - `mode=advanced`: Raw requests and answers, which spec says so, and server notes.
 - `step=<id>`: The step to open on, by the ids listed for each diagram.
 - `say=specs`: The specs’ names for the parties. say=keycloak for Keycloak’s.
-- `keycloak=off`: No notes about Keycloak. Use this when the person’s identity provider is something else, and give it its name with idp=. The traffic shown is still the site’s own Keycloak’s, and the raw view says so.
+- `keycloak=off`: No notes about Keycloak. Use this when the person’s identity provider is something else, and give it its name with idp=. When only the provider it hands logins to is something else, keep the notes and name that one with upstream=. The traffic shown is still the site’s own Keycloak’s, and the raw view says so.
 - `eyes=<party>`: The whole flow as one party saw it, such as eyes=browser, for a question about what one party can see. It works with step=.
 - `whole=1`: Every step at once, for a room.
 

@@ -38,6 +38,8 @@ export interface GuideDiagram {
 export interface GuideSetting {
 	param: string;
 	label: string;
+	/** What it is, in a line, as the settings panel says it. */
+	summary: string;
 	values: readonly string[];
 	byDefault: string;
 	/** When it is on offer, if not always. */
@@ -46,6 +48,8 @@ export interface GuideSetting {
 	needs: readonly string[];
 	/** Values that others turn off, when a link names both. */
 	rulesOut: readonly string[];
+	/** Two that go together only with a third, which a check of two at a time would call ruled out. */
+	withThird: readonly string[];
 }
 
 export interface GuideFlow {
@@ -271,12 +275,12 @@ function settingsOf(base: BaseFlow, combinations: readonly Combination[]): Guide
 				return `${inCode(value.param)} needs ${orList(others)} with it.`;
 			});
 		// And what it does not go with, which a link that names both loses without a word (#177).
+		const said = (some: readonly Value[]) => some.map((other) => inCode(other.param));
 		const rulesOut = values
 			.filter((value) => value.id === id)
 			.flatMap((value) => {
 				const { goes, not } = pairsOf(value, values);
-				if (!not.length) return [];
-				const said = (some: readonly Value[]) => some.map((other) => inCode(other.param));
+				const never = not.filter((other) => !withMore(value, other, combinations).length);
 				// Whichever list is shorter, because a value drawn only in the plain case goes with few.
 				if (goes.length < not.length) {
 					return [
@@ -285,20 +289,50 @@ function settingsOf(base: BaseFlow, combinations: readonly Combination[]): Guide
 							: `${inCode(value.param)} goes with none of the other settings yet, so leave them out.`
 					];
 				}
-				return [`${inCode(value.param)} does not go with ${andOr(said(not))}.`];
+				return never.length
+					? [`${inCode(value.param)} does not go with ${andOr(said(never))}.`]
+					: [];
 			});
+		// Two that a link loses one of, unless a third is there too, which two at a time cannot see.
+		const withThird = values
+			.filter((value) => value.id === id)
+			.flatMap((value) =>
+				pairsOf(value, values).not.flatMap((other) => {
+					const third = withMore(value, other, combinations);
+					return third.length
+						? [
+								`${inCode(value.param)} goes with ${inCode(other.param)} only with ${orList(third)} as well.`
+							]
+						: [];
+				})
+			);
 		return [
 			{
 				param: def.param,
 				label: def.label,
+				summary: def.summary,
 				values: all,
 				byDefault,
 				only: def.requires?.because,
 				needs,
-				rulesOut
+				rulesOut,
+				withThird
 			}
 		];
 	});
+}
+
+/**
+ * What else has to be in a link for two values that do not go together alone, from the smallest drawn
+ * combinations that have both, as each would be written. Nothing when no combination has both.
+ */
+function withMore(value: Value, other: Value, combinations: readonly Combination[]): string[] {
+	const both = smallest(
+		combinations,
+		(found) => found.settings[value.id] === value.value && found.settings[other.id] === other.value
+	);
+	const own = new Set([...(value.least[0]?.params ?? []), ...(other.least[0]?.params ?? [])]);
+	return both.map((found) => inCode(found.params.filter((param) => !own.has(param)).join('&')));
 }
 
 export const guide: readonly GuideFlow[] = Object.values(flows).map((base) => {
@@ -324,7 +358,7 @@ export const viewSwitches: readonly { param: string; says: string }[] = [
 	{ param: 'say=specs', says: 'The specs’ names for the parties. say=keycloak for Keycloak’s.' },
 	{
 		param: 'keycloak=off',
-		says: 'No notes about Keycloak. Use this when the person’s identity provider is something else, and give it its name with idp=. The traffic shown is still the site’s own Keycloak’s, and the raw view says so.'
+		says: 'No notes about Keycloak. Use this when the person’s identity provider is something else, and give it its name with idp=. When only the provider it hands logins to is something else, keep the notes and name that one with upstream=. The traffic shown is still the site’s own Keycloak’s, and the raw view says so.'
 	},
 	{
 		param: 'eyes=<party>',
@@ -409,7 +443,7 @@ export const notDrawn: readonly { says: string; term: string }[] = [
 
 /** Drawn shorter than it can be, so that an agent links to it and says what is left out (#181). */
 export const drawnShorter =
-	'A login that passes through two providers is drawn with one, and `broker=1&step=upstream-authorize` says why.';
+	'A login the other provider hands on again, to a provider behind it, is drawn as one hop, and `broker=1&step=upstream-authorize` says why.';
 
 /** The list, as a sentence says it. */
 export const notDrawnSaid = new Intl.ListFormat('en', { type: 'disjunction' }).format(
@@ -458,10 +492,11 @@ export function referenceMarkdown(): string {
 			list(
 				flow.settings.map((setting) =>
 					[
-						`${code(`${setting.param}=${setting.values.join(' | ')}`)}: ${setting.label}, ${setting.byDefault} by default.`,
+						`${code(`${setting.param}=${setting.values.join(' | ')}`)}: ${setting.label}, ${setting.byDefault} by default. ${setting.summary}`,
 						setting.only,
 						...setting.needs,
-						...setting.rulesOut
+						...setting.rulesOut,
+						...setting.withThird
 					]
 						.filter(Boolean)
 						.join(' ')

@@ -200,6 +200,24 @@ export const breakages = [
 		to: "label: 'In the page',"
 	},
 	{
+		name: 'search: a result opens on the first preset that shows its step, whatever else it brings',
+		file: 'src/lib/search/search.ts',
+		from: '(best, settings) => (best && changed(best) <= changed(settings) ? best : settings),',
+		to: '(best, settings) => best ?? settings,'
+	},
+	{
+		name: 'agents: two values a third makes go together are said to be ruled out',
+		file: 'src/lib/agents.ts',
+		from: 'const never = not.filter((other) => !withMore(value, other, combinations).length);',
+		to: 'const never = not;'
+	},
+	{
+		name: 'upstream: says the server recorded sent a challenge to the other provider',
+		file: AC,
+		from: 'a challenge here would be the identity provider’s own setting, and the server recorded sent none.',
+		to: 'a challenge here is the identity provider’s own setting, and the server recorded sent one.'
+	},
+	{
 		name: 'program: a program is drawn answered at the app’s own address',
 		file: AC,
 		from: "note: '127.0.0.1 at the port it is listening on, which need not be registered',\n\t\t\t\t\twhen: inAProgram",
