@@ -34,7 +34,17 @@
 		"console.session-lifetimes": "2026-11-05",
 		"console.offline-session-lifetimes": "2026-11-05",
 		"loopbackRedirects": "2026-11-05",
-		"console.loopback-redirects": "2026-11-05"
+		"console.loopback-redirects": "2026-11-05",
+		"upstreamPrompt": "2026-11-05",
+		"upstreamScope": "2026-11-05",
+		"upstreamPkce": "2026-11-05",
+		"upstreamSync": "2026-11-05",
+		"upstreamTrustEmail": "2026-11-05",
+		"console.upstream-scopes": "2026-11-05",
+		"console.upstream-prompt": "2026-11-05",
+		"console.upstream-pkce": "2026-11-05",
+		"console.upstream-sync": "2026-11-05",
+		"console.upstream-trust-email": "2026-11-05"
 	},
 	"answers": {
 		"validRedirectUris": {
@@ -902,6 +912,41 @@
 					"Valid redirect URIs"
 				],
 				"missing": []
+			},
+			"upstream-scopes": {
+				"found": [
+					"Advanced settings",
+					"Scopes"
+				],
+				"missing": []
+			},
+			"upstream-prompt": {
+				"found": [
+					"Advanced settings",
+					"Prompt"
+				],
+				"missing": []
+			},
+			"upstream-pkce": {
+				"found": [
+					"OpenID Connect settings",
+					"Use PKCE"
+				],
+				"missing": []
+			},
+			"upstream-sync": {
+				"found": [
+					"Advanced settings",
+					"Sync mode"
+				],
+				"missing": []
+			},
+			"upstream-trust-email": {
+				"found": [
+					"Advanced settings",
+					"Trust Email"
+				],
+				"missing": []
 			}
 		},
 		"directoryLogin": {
@@ -1354,6 +1399,83 @@
 					"status": 200,
 					"refused": false
 				}
+			}
+		},
+		"upstreamPrompt": {
+			"byDefault": {
+				"prompt": null
+			},
+			"appSent": "select_account",
+			"before": {
+				"prompt": "select_account"
+			},
+			"after": {
+				"prompt": "consent"
+			},
+			"unknownPrompt": {
+				"status": 200,
+				"error": null,
+				"loginPage": true
+			}
+		},
+		"upstreamScope": {
+			"byDefault": {
+				"defaultScope": null
+			},
+			"appSent": "openid email",
+			"before": {
+				"setTo": "openid",
+				"sent": "openid"
+			},
+			"after": {
+				"setTo": "openid profile",
+				"sent": "openid profile"
+			}
+		},
+		"upstreamPkce": {
+			"byDefault": {
+				"pkceEnabled": null
+			},
+			"before": {
+				"codeChallenge": false
+			},
+			"after": {
+				"codeChallenge": true,
+				"method": "S256"
+			},
+			"loginWithPkce": {
+				"tokenStatus": 200
+			}
+		},
+		"upstreamSync": {
+			"byDefault": {
+				"syncMode": null
+			},
+			"setUpWith": "IMPORT",
+			"firstLogin": {
+				"lastName": "Example",
+				"emailVerified": true
+			},
+			"before": {
+				"lastName": "Example",
+				"emailVerified": true
+			},
+			"after": {
+				"lastName": "Renamed",
+				"emailVerified": true
+			}
+		},
+		"upstreamTrustEmail": {
+			"byDefault": {
+				"trustEmail": false
+			},
+			"before": {
+				"lastName": "Example",
+				"emailVerified": true
+			},
+			"after": {
+				"lastName": "Example",
+				"emailVerified": false
 			}
 		}
 	}
