@@ -4,11 +4,14 @@
 	import type { RecordedMessage } from '#lib/recordings/format.ts';
 	import {
 		artifactOf,
+		jwtOf,
 		jwtsIn,
 		originOf,
 		rawLines,
 		redactedLines,
 		samlIn,
+		samlOf,
+		type DecodedJwt,
 		type Line,
 		type RunValue
 	} from '#lib/recordings/wire.ts';
@@ -26,6 +29,10 @@
 		redacted?: boolean;
 		/** Every value in full, for reading in front of a room. */
 		whole?: boolean;
+		/** Each value decoded and each token opened where it is, instead of as it was sent. */
+		decoded?: boolean;
+		/** Offered only where decoding changes something, so the switch never seems to do nothing. */
+		ondecode?: ((decoded: boolean) => void) | null;
 	}
 
 	let {
@@ -37,7 +44,9 @@
 		notes = [],
 		serverNamed = true,
 		redacted = false,
-		whole = false
+		whole = false,
+		decoded = false,
+		ondecode = null
 	}: Props = $props();
 
 	const LONG = 40;
@@ -49,11 +58,22 @@
 	);
 	const jwts = $derived(jwtsIn(lines));
 	const samls = $derived(samlIn(lines));
+	// Whether decoding would change anything someone can see here.
+	const decodable = $derived(
+		lines.some(
+			(line) =>
+				(line.decoded !== undefined && line.decoded !== line.value) ||
+				jwtOf(line) !== null ||
+				samlOf(line) !== null
+		)
+	);
+	const shownAs = (line: Line) =>
+		decoded && line.decoded !== undefined ? line.decoded : line.value;
 	const origin = (line: Line) => originOf(line, step.id, trace);
 	let opened = $state<Record<string, boolean>>({});
 
 	/** Which setting put what in this token: the part of it that surprises people. */
-	function settingsBehind(jwt: { name: string; claims: unknown }) {
+	function settingsBehind(jwt: DecodedJwt) {
 		if (jwt.name !== 'access_token') return [];
 		const inToken = Object.keys(jwt.claims as object);
 		return notes.flatMap((note) => {
@@ -71,9 +91,50 @@
 	}
 </script>
 
-<div class="raw" data-testid="payload" tabindex="-1">
+{#snippet behind(jwt: DecodedJwt)}
+	{#if settingsBehind(jwt).length}
+		<ul class="behind" data-testid="token-settings">
+			{#each settingsBehind(jwt) as { note, claims } (note.id)}
+				<li>
+					<code>{claims.join(', ')}</code>
+					{note.claimsVerb ?? 'comes from'}
+					<button
+						type="button"
+						class="from"
+						data-open-note={note.id}
+						onclick={() => openNote(note.id)}
+					>
+						{note.title}
+					</button>
+				</li>
+			{/each}
+		</ul>
+	{/if}
+{/snippet}
+
+{#if decodable && ondecode && !redacted}
+	<div class="as" role="group" aria-label="How the traffic is shown">
+		<button
+			type="button"
+			aria-pressed={!decoded}
+			data-testid="wire-as-sent"
+			onclick={() => ondecode(false)}>As sent</button
+		>
+		<button
+			type="button"
+			aria-pressed={decoded}
+			data-testid="wire-decoded"
+			onclick={() => ondecode(true)}>Decoded</button
+		>
+	</div>
+{/if}
+
+<div class="raw" data-testid="payload" data-decoded={decoded} tabindex="-1">
 	{#each lines as line, i (i)}
 		{@const from = origin(line)}
+		{@const token = decoded ? jwtOf(line) : null}
+		{@const saml = decoded && !token ? samlOf(line) : null}
+		{@const shown = shownAs(line)}
 		<div class="line">
 			<span data-line
 				>{line.before}{#if line.hidden !== undefined}<span
@@ -83,16 +144,15 @@
 						aria-label="Hidden"
 						style:width={`${Math.min(line.hidden, MOST_BLACKED_OUT)}ch`}
 
-					></span>{:else if line.value !== undefined}{#if line.value.length > LONG && !line.whole}<button
+					></span>{:else if token || saml}{:else if shown !== undefined}{#if shown.length > LONG && !line.whole}<button
 							type="button"
 							class="value long"
 							class:open={whole || opened[i]}
 							data-artifact={artifactOf(step, line.name)}
 							aria-expanded={whole || Boolean(opened[i])}
-							onclick={() => (opened[i] = !opened[i])}>{line.value}</button
-						>{:else}<span class="value" data-artifact={artifactOf(step, line.name)}
-							>{line.value}</span
-						>{/if}{/if}{line.after ?? ''}</span
+							onclick={() => (opened[i] = !opened[i])}>{shown}</button
+						>{:else}<span class="value" data-artifact={artifactOf(step, line.name)}>{shown}</span
+						>{/if}{/if}{#if !token && !saml}{line.after ?? ''}{/if}</span
 			>
 			{#if from && 'new' in from}
 				<span class="origin new" data-new={line.name}>new</span>
@@ -107,10 +167,49 @@
 				</button>
 			{/if}
 		</div>
+		{#if token}
+			<!-- Opened where it was sent, which is what the maintainer asked for on 2026-11-06. -->
+			<div class="opened" data-testid="opened-token" data-token={token.name}>
+				<span class="part">header</span>
+				<!-- Long enough to scroll, which a keyboard can only do to something it can focus. -->
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+				<pre tabindex="0" aria-label={`Header of ${token.name}`}>{JSON.stringify(
+						token.header,
+						null,
+						2
+					)}</pre>
+				<span class="part">claims</span>
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+				<pre tabindex="0" aria-label={`Claims of ${token.name}`}>{JSON.stringify(
+						token.claims,
+						null,
+						2
+					)}</pre>
+				<span class="part">signature, as sent</span>
+				<div class="line">
+					<button
+						type="button"
+						class="value long"
+						class:open={whole || opened[-1 - i]}
+						aria-expanded={whole || Boolean(opened[-1 - i])}
+						onclick={() => (opened[-1 - i] = !opened[-1 - i])}>{token.signature}</button
+					>
+				</div>
+				{@render behind(token)}
+			</div>
+		{:else if saml}
+			<div class="opened" data-testid="opened-saml" data-token={saml.name}>
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+				<pre tabindex="0" aria-label={`What ${saml.name} says`}>{saml.xml}</pre>
+			</div>
+		{/if}
+		{#if (token || saml) && line.after}
+			<div class="line"><span data-line>{line.after}</span></div>
+		{/if}
 	{/each}
 </div>
 
-{#each samls as saml (saml.name)}
+{#each decoded ? [] : samls as saml (saml.name)}
 	<details class="jwt" data-testid="saml">
 		<summary>Inside <code>{saml.name}</code></summary>
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -118,7 +217,7 @@
 	</details>
 {/each}
 
-{#each jwts as jwt (jwt.name)}
+{#each decoded ? [] : jwts as jwt (jwt.name)}
 	<details class="jwt" data-testid="jwt">
 		<summary>Inside <code>{jwt.name}</code></summary>
 		<!-- Long enough to scroll, which a keyboard can only do to something it can focus. -->
@@ -134,24 +233,7 @@
 				null,
 				2
 			)}</pre>
-		{#if settingsBehind(jwt).length}
-			<ul class="behind" data-testid="token-settings">
-				{#each settingsBehind(jwt) as { note, claims } (note.id)}
-					<li>
-						<code>{claims.join(', ')}</code>
-						{note.claimsVerb ?? 'comes from'}
-						<button
-							type="button"
-							class="from"
-							data-open-note={note.id}
-							onclick={() => openNote(note.id)}
-						>
-							{note.title}
-						</button>
-					</li>
-				{/each}
-			</ul>
-		{/if}
+		{@render behind(jwt)}
 	</details>
 {/each}
 
@@ -259,6 +341,51 @@
 		background: none;
 		font: inherit;
 		text-align: left;
+	}
+
+	.as {
+		display: inline-flex;
+		margin: 0 0 6px;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		overflow: hidden;
+	}
+
+	.as button {
+		padding: 2px 8px;
+		border: 0;
+		background: none;
+		color: var(--muted);
+		font: inherit;
+		font-size: 12px;
+		cursor: pointer;
+	}
+
+	.as button[aria-pressed='true'] {
+		background: var(--panel);
+		color: var(--fg);
+		font-weight: 600;
+	}
+
+	.opened {
+		margin: 2px 0 4px 2ch;
+		padding-left: 8px;
+		border-left: 2px solid var(--line);
+	}
+
+	.part {
+		display: block;
+		color: var(--muted);
+		font-family: var(--sans);
+		font-size: 11px;
+	}
+
+	.opened pre {
+		margin: 0 0 4px;
+		overflow-x: auto;
+		font: inherit;
+		white-space: pre-wrap;
+		word-break: break-word;
 	}
 
 	.jwt pre {

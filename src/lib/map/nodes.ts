@@ -33,7 +33,8 @@ export function nodeState(of: MapNode): AppState {
 		list: false,
 		whole: false,
 		raw: false,
-		fullSize: false
+		fullSize: false,
+		decoded: false
 	};
 }
 

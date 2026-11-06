@@ -71,6 +71,11 @@ export interface AppState {
 	raw: boolean;
 	/** On a phone, the diagram at its own size and moved sideways, instead of the strip (#15). */
 	fullSize: boolean;
+	/**
+	 * The raw traffic with each value decoded and each token opened where it is, instead of as it went
+	 * over the wire. The maintainer asked for it on 2026-11-06.
+	 */
+	decoded: boolean;
 }
 
 const diagramIds: readonly DiagramId[] = ['flow', 'setup'];
@@ -84,6 +89,7 @@ const LIST_PARAM = 'list';
 const WHOLE_PARAM = 'whole';
 const RAW_PARAM = 'raw';
 const SIZE_PARAM = 'size';
+const DECODED_PARAM = 'decoded';
 
 /** One step can cite two sections of the same spec, which each say something different. */
 export const refFor = (
@@ -221,7 +227,8 @@ export function parseState(base: BaseFlow, onPath: DiagramId, search: string): A
 		list: params.get(LIST_PARAM) === '1',
 		whole: params.get(WHOLE_PARAM) === '1',
 		raw: params.get(RAW_PARAM) === '1',
-		fullSize: params.get(SIZE_PARAM) === 'full'
+		fullSize: params.get(SIZE_PARAM) === 'full',
+		decoded: params.get(DECODED_PARAM) === '1'
 	};
 }
 
@@ -251,14 +258,23 @@ export function serializeState(base: BaseFlow, state: AppState): string {
 	if (state.whole) params.set(WHOLE_PARAM, '1');
 	if (state.raw) params.set(RAW_PARAM, '1');
 	if (state.fullSize) params.set(SIZE_PARAM, 'full');
+	if (state.decoded) params.set(DECODED_PARAM, '1');
 	return params.toString();
 }
 
-/** The same, on the address of a node, where what the node starts from would apply otherwise. */
-export function serializeOnNode(base: BaseFlow, state: AppState): string {
+/** Written on the address of a question that opens with something explained, once it is closed. */
+export const NOTHING_EXPLAINED = 'none';
+
+/**
+ * The same, on the address of a node, where what the node starts from would apply otherwise. A node
+ * that opens with something explained would open it again on every step once it was closed, which
+ * the maintainer met on 2026-11-06: Close and a click beside it both seemed to do nothing.
+ */
+export function serializeOnNode(base: BaseFlow, state: AppState, nodeExplains = false): string {
 	const params = new URLSearchParams(serializeState(base, state));
 	params.set('mode', state.mode);
 	params.set('step', state.step);
+	if (nodeExplains && !state.explained) params.set('explain', NOTHING_EXPLAINED);
 	return params.toString();
 }
 
@@ -281,7 +297,8 @@ export function presetSearch(base: BaseFlow, settings: Partial<Settings>): strin
 		list: false,
 		whole: false,
 		raw: false,
-		fullSize: false
+		fullSize: false,
+		decoded: false
 	});
 }
 
@@ -396,6 +413,10 @@ export function withWhole(state: AppState, whole: boolean): AppState {
 /** Every row fitted and the diagram at its own size are two ways out of the strip, so only one. */
 export function withFullSize(state: AppState, fullSize: boolean): AppState {
 	return { ...state, fullSize, whole: fullSize ? false : state.whole };
+}
+
+export function withDecoded(state: AppState, decoded: boolean): AppState {
+	return { ...state, decoded };
 }
 
 export function withRaw(state: AppState, raw: boolean): AppState {

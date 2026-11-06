@@ -142,8 +142,8 @@ test.describe('what is on every step', () => {
 
 	test('does not name specs to someone new', async ({ page }) => {
 		await open(page, 'mode=simple');
-		await expect(page.getByTestId('provenance')).not.toContainText('RFC');
-		await expect(page.getByTestId('provenance')).toContainText('a real server, Keycloak');
+		await expect(page.getByTestId('provenance')).toHaveCount(0);
+		await expect(page.locator('main')).not.toContainText('RFC');
 	});
 });
 

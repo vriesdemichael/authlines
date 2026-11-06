@@ -28,11 +28,13 @@ test.describe('simple mode', () => {
 		await expect(present(page, 'to-list')).toBeVisible();
 	});
 
-	test('says where this came from, once, out of the way', async ({ page }) => {
+	// The maintainer, 2026-11-06: simple mode said it was recorded, and showed nothing recorded.
+	test('says where it was recorded only where what was recorded can be seen', async ({ page }) => {
 		await open(page, 'mode=simple');
-		await expect(present(page, 'provenance')).toHaveCount(1);
-		await expect(present(page, 'provenance')).toContainText('real server');
-		await expect(page.locator('header')).not.toContainText('Recorded');
+		await expect(present(page, 'provenance')).toHaveCount(0);
+		await expect(page.locator('main')).not.toContainText('Recorded');
+		await open(page, 'mode=advanced');
+		await expect(present(page, 'provenance')).toContainText('Recorded from');
 	});
 
 	test('still has the way back from what an address turned on', async ({ page }) => {

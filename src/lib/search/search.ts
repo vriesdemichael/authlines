@@ -85,7 +85,8 @@ function stateAt(
 		list: false,
 		whole: false,
 		raw: false,
-		fullSize: false
+		fullSize: false,
+		decoded: false
 	};
 }
 
@@ -112,7 +113,8 @@ const stateIn = (
 	list: false,
 	whole: false,
 	raw: false,
-	fullSize: false
+	fullSize: false,
+	decoded: false
 });
 
 function resultAt(kind: ResultKind, title: string, says: string, state: AppState): Result {

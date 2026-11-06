@@ -95,8 +95,8 @@ test.describe('in front of a room', () => {
 });
 
 test.describe('someone on another provider', () => {
-	test('can leave the product out from where it is named, in either mode', async ({ page }) => {
-		await open(page, 'mode=simple');
+	test('can leave the product out from where it is named', async ({ page }) => {
+		await open(page, 'mode=advanced');
 		await expect(page.getByTestId('provenance')).toContainText('Keycloak');
 		await page.getByTestId('server-notes-quick').click();
 		await expect(page.getByTestId('explanation')).toContainText('A free identity provider');

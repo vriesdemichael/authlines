@@ -239,6 +239,8 @@ export interface DecodedJwt {
 	name: string;
 	header: unknown;
 	claims: unknown;
+	/** As it was sent, because a signature is checked and has nothing in it to read. */
+	signature: string;
 }
 
 function decodePart(part: string): unknown {
@@ -257,19 +259,21 @@ export interface DecodedSaml {
 
 const SAML_FIELDS = new Set(['SAMLRequest', 'SAMLResponse']);
 
-/** What a SAML message says, so an assertion can be opened as a token can. */
-export function samlIn(lines: readonly Line[]): DecodedSaml[] {
-	return lines.flatMap((line) => {
-		if (!line.name || !SAML_FIELDS.has(line.name) || !line.decoded) return [];
-		try {
-			const bytes = Uint8Array.from(atob(line.decoded), (char) => char.charCodeAt(0));
-			const xml = new TextDecoder().decode(bytes);
-			return xml.trimStart().startsWith('<') ? [{ name: line.name, xml: indented(xml) }] : [];
-		} catch {
-			return [];
-		}
-	});
+/** What the SAML message on one line says, if it carries one. */
+export function samlOf(line: Line): DecodedSaml | null {
+	if (!line.name || !SAML_FIELDS.has(line.name) || !line.decoded) return null;
+	try {
+		const bytes = Uint8Array.from(atob(line.decoded), (char) => char.charCodeAt(0));
+		const xml = new TextDecoder().decode(bytes);
+		return xml.trimStart().startsWith('<') ? { name: line.name, xml: indented(xml) } : null;
+	} catch {
+		return null;
+	}
 }
+
+/** What a SAML message says, so an assertion can be opened as a token can. */
+export const samlIn = (lines: readonly Line[]): DecodedSaml[] =>
+	lines.flatMap((line) => samlOf(line) ?? []);
 
 /** One element to a line, because a server sends the whole document on one. */
 function indented(xml: string): string {
@@ -290,14 +294,21 @@ function indented(xml: string): string {
 		.join('\n');
 }
 
-export function jwtsIn(lines: readonly Line[]): DecodedJwt[] {
-	return lines.flatMap((line) => {
-		const parts = line.decoded?.split('.');
-		if (!line.name || parts?.length !== 3 || !parts[0].startsWith('eyJ')) return [];
-		try {
-			return [{ name: line.name, header: decodePart(parts[0]), claims: decodePart(parts[1]) }];
-		} catch {
-			return [];
-		}
-	});
+/** What the signed token on one line says, if it carries one. */
+export function jwtOf(line: Line): DecodedJwt | null {
+	const parts = line.decoded?.split('.');
+	if (!line.name || parts?.length !== 3 || !parts[0].startsWith('eyJ')) return null;
+	try {
+		return {
+			name: line.name,
+			header: decodePart(parts[0]),
+			claims: decodePart(parts[1]),
+			signature: parts[2]
+		};
+	} catch {
+		return null;
+	}
 }
+
+export const jwtsIn = (lines: readonly Line[]): DecodedJwt[] =>
+	lines.flatMap((line) => jwtOf(line) ?? []);

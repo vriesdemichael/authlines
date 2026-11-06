@@ -7,7 +7,7 @@ import { presetSearch } from '../../src/lib/flow/state.ts';
 import type { Recording } from '../../src/lib/recordings/format.ts';
 import { settingsOf } from '../../src/lib/recordings/known.ts';
 import { lineText, rawLines } from '../../src/lib/recordings/wire.ts';
-import { expectMatchesModel, FLOW_PATH, open, watchForErrors } from './helpers.ts';
+import { currentSearch, expectMatchesModel, FLOW_PATH, open, watchForErrors } from './helpers.ts';
 
 const read = (preset: string): Recording =>
 	JSON.parse(readFileSync(`static/recordings/authorization-code/${preset}.json`, 'utf8'));
@@ -157,6 +157,38 @@ test.describe('values carried through a run', () => {
 		const inside = page.getByTestId('jwt').filter({ hasText: 'id_token' });
 		await inside.locator('summary').click();
 		await expect(inside).toContainText('"preferred_username": "alice"');
+	});
+
+	// The maintainer, 2026-11-06: switch between the encoded address and the fields set in it, and
+	// decode the token.
+	test('can be read decoded, with each token opened where it was sent', async ({ page }) => {
+		await open(page, 'step=redirect-with-code');
+		const payload = page.getByTestId('payload');
+		await expect(payload).toContainText('iss=http%3A%2F%2Flocalhost');
+		await expect(page.getByTestId('opened-token')).toHaveCount(0);
+
+		await page.getByTestId('wire-decoded').click();
+		await expect.poll(() => currentSearch(page)).toContain('decoded=1');
+		await expect(payload).toContainText('iss=http://localhost:18080/realms/demo');
+		const token = page.getByTestId('opened-token');
+		await expect(token).toHaveCount(1);
+		await expect(token).toContainText('"typ": "JWT"');
+		await expect(token).toContainText('"sid"');
+		// Opened in place, so it is not offered a second time below.
+		await expect(page.getByTestId('jwt')).toHaveCount(0);
+
+		await page.reload();
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		await expect(page.getByTestId('wire-decoded')).toHaveAttribute('aria-pressed', 'true');
+		await page.getByTestId('wire-as-sent').click();
+		await expect(payload).toContainText('iss=http%3A%2F%2Flocalhost');
+		await expect(page.getByTestId('jwt')).toHaveCount(1);
+	});
+
+	test('is not offered a switch that would change nothing', async ({ page }) => {
+		await open(page, 'step=open-app');
+		await expect(page.getByTestId('payload')).toBeVisible();
+		await expect(page.getByTestId('wire-decoded')).toHaveCount(0);
 	});
 
 	test('a long value is short until someone wants all of it', async ({ page }) => {
