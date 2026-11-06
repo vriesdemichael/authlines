@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import Picture from '#lib/components/Picture.svelte';
+	import type { Opens, Picture as PictureData } from '#lib/pictures/index.ts';
 	import type { Term } from '#lib/flow/glossary.ts';
 	import { LONGEST_NAME } from '#lib/flow/names.ts';
 	import { artifacts, type ArtifactId } from '#lib/flow/vocabulary.ts';
@@ -32,6 +34,9 @@
 		onclose: () => void;
 		/** It is about a party, which someone can give a name of their own (#168). */
 		rename?: Rename | null;
+		/** A picture, where one says it better than words (#167), and where a part of it goes. */
+		picture?: PictureData | null;
+		onopenpart?: (opens: Opens) => void;
 	}
 
 	interface Rename {
@@ -62,7 +67,9 @@
 		onexplainartifact,
 		onopensource,
 		onclose,
-		rename = null
+		rename = null,
+		picture = null,
+		onopenpart
 	}: Props = $props();
 
 	let typed = $state('');
@@ -96,6 +103,10 @@
 		<button type="button" data-testid="explanation-close" onclick={onclose}>Close</button>
 	</header>
 	<p>{text}</p>
+	{#if picture}
+		<Picture {picture} onopen={onopenpart} />
+		<p class="seen" data-testid="picture-hint">Each part opens the steps it stands for.</p>
+	{/if}
 	{#if alsoCalled.length}
 		<p class="seen" data-testid="explanation-also-called">Also called: {alsoCalled.join('; ')}.</p>
 	{/if}

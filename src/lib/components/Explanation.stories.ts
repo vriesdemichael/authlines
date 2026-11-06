@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/sveltekit';
 import Explanation from '#lib/components/Explanation.svelte';
-import { settingDefs } from '#lib/flow/settings.ts';
+import { defaultSettings, normalize, settingDefs } from '#lib/flow/settings.ts';
+import { sayer } from '#lib/flow/wording.ts';
+import { refreshPicture } from '#lib/pictures/refresh.ts';
 import { artifacts } from '#lib/flow/vocabulary.ts';
 import { NAMED_BY_OAUTH, NAMED_BY_OIDC } from '#lib/sources/sources.ts';
 
@@ -66,5 +68,19 @@ export const ASetting: Story = {
 		title: settingDefs.oidc.label,
 		text: settingDefs.oidc.why,
 		sources: settingDefs.oidc.sources
+	}
+};
+
+/** A concept a picture says better than words, with each part opening its steps (#167). */
+export const WithAPicture: Story = {
+	args: {
+		title: artifacts['refresh-token'].label,
+		text: artifacts['refresh-token'].explains,
+		seenBy: ['App', 'Identity provider'],
+		picture: refreshPicture(
+			normalize({ ...defaultSettings, refresh: true }).settings,
+			sayer('plain')
+		),
+		onopenpart: () => {}
 	}
 };

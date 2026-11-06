@@ -150,6 +150,42 @@ test.describe('an explanation', () => {
 	});
 });
 
+// The maintainer, 2026-11-06: some explanations done in text "could be so much better" as a picture
+// in the dialog (#167). The first is what an app does when its token runs out.
+test.describe('a picture in an explanation', () => {
+	test('has the room, and each part goes to its steps and Back comes back', async ({ page }) => {
+		await open(page, 'mode=simple&step=token-response&explain=artifact.refresh-token');
+		const picture = page.getByTestId('picture');
+		await expect(picture).toBeVisible();
+		await expect(picture).toHaveAttribute('data-picture', 'refresh');
+		expect((await dialog(page).boundingBox())!.width).toBeGreaterThan(600);
+
+		await picture.locator('[data-part="refreshes"]').click();
+		await expect.poll(() => currentSearch(page)).toContain('refresh=1');
+		await expect.poll(() => currentSearch(page)).toContain('step=refresh-request');
+		await expect(picture).toHaveCount(0);
+
+		await page.goBack();
+		await expect(page.getByTestId('picture')).toBeVisible();
+		await expect.poll(() => currentSearch(page)).toContain('explain=artifact.refresh-token');
+	});
+
+	test('can be gone through by keyboard', async ({ page }) => {
+		await open(page, 'mode=simple&step=token-response&explain=setting.refresh');
+		const part = page.getByTestId('picture').locator('[data-part="logs-in"]');
+		await part.focus();
+		await page.keyboard.press('Enter');
+		await expect.poll(() => currentSearch(page)).toContain('step=redirect-to-idp');
+	});
+
+	test('is not in an explanation it does not belong to', async ({ page }) => {
+		await open(page, 'mode=simple&step=token-response&explain=artifact.access-token');
+		await expect(explanation(page)).toBeVisible();
+		await expect(page.getByTestId('picture')).toHaveCount(0);
+		expect((await dialog(page).boundingBox())!.width).toBeLessThan(600);
+	});
+});
+
 test.describe('a source', () => {
 	test('can be read and moved through in the dialog', async ({ page, browserName }) => {
 		await open(page, 'source=rfc6749&for=client&section=2.1');
