@@ -2,7 +2,7 @@ import { statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { authorizationCodeBase as base, flows } from '#lib/flow/index.ts';
 import { allValidSettings, defaultSettings } from '#lib/flow/settings.ts';
-import { parseState } from '#lib/flow/state.ts';
+import { parseState, serializeOnNode } from '#lib/flow/state.ts';
 import { socialKey } from '#lib/map/social.ts';
 import social from '#lib/map/social.json';
 import { recordingFor } from '#lib/recordings/known.ts';
@@ -208,5 +208,23 @@ describe('whether what is on screen still answers a question', () => {
 
 	it('stops on the other diagram', () => {
 		expect(stillAnswers(question, { ...nodeState(question), diagram: 'setup' })).toBe(false);
+	});
+});
+
+// The maintainer, 2026-11-06: on a question that opens with an explanation, Close seemed to do
+// nothing, because the question's own address opened it again.
+describe('a question that opens with something explained', () => {
+	const explaining = allNodes.filter((node) => node.explains);
+
+	it('stays closed once it is closed, on its own address', () => {
+		expect(explaining.length).toBeGreaterThan(0);
+		for (const node of explaining) {
+			const flow = flows[node.flow];
+			const closed = { ...nodeState(node), explained: null };
+			const address = nodeSearch(node, serializeOnNode(flow, closed, true));
+			expect(parseState(flow, node.diagram, address).explained, node.id).toBeNull();
+			const open = nodeSearch(node, serializeOnNode(flow, nodeState(node), true));
+			expect(parseState(flow, node.diagram, open).explained, node.id).toEqual(node.explains);
+		}
 	});
 });
