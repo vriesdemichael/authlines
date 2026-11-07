@@ -13,7 +13,7 @@ import {
 } from '#lib/flow/settings.ts';
 import { mapNodes } from '#lib/map/nodes.ts';
 import { parseState } from '#lib/flow/state.ts';
-import { pictureFor } from '#lib/pictures/index.ts';
+import { PICTURE_OF, pictureFor } from '#lib/pictures/index.ts';
 
 const diagrams = [base.diagrams.flow, base.diagrams.setup];
 
@@ -36,7 +36,9 @@ function simpleModeText(): string[] {
 			}
 		}
 		// A picture in an explanation is read by someone new as well (#167).
-		for (const explain of ['artifact.refresh-token', 'lifeline.idp']) {
+		for (const explain of new Map(
+			Object.entries(PICTURE_OF).map(([key, id]) => [id, key])
+		).values()) {
 			const state = { ...parseState(base, 'flow', `explain=${explain}`), settings };
 			const picture = pictureFor(state, 'plain');
 			for (const part of picture?.parts ?? []) {

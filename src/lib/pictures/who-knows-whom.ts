@@ -50,7 +50,13 @@ export function whoKnowsWhom(
 		preset
 	});
 	const plainPreset = broker ? 'broker' : directory ? 'in-a-directory' : 'oauth';
-	const realm = broker ? 'demo-brokered' : directory ? 'in-a-directory' : 'demo';
+	const realm = settings.companies
+		? 'demo-companies'
+		: broker
+			? 'demo-brokered'
+			: directory
+				? 'in-a-directory'
+				: 'demo';
 
 	const W = 800;
 	const TOP = 44;

@@ -194,8 +194,36 @@ test.describe('a picture in an explanation', () => {
 		await expect(page.getByTestId('picture')).toHaveAttribute('data-picture', 'who-knows-whom');
 	});
 
+	// The concept pictures of 2026-11-07, each in what explains its concept (#167).
+	for (const [search, id, part, lands] of [
+		['explain=setting.broker', 'trust-across-providers', 'directory', 'step=directory-bind'],
+		['explain=term.issuer', 'how-an-api-trusts-a-token', 'token.exp', 'send=expired'],
+		['explain=term.token', 'which-token-is-for-whom', 'session.browser', 'step=redirect-with-code'],
+		['explain=term.session', 'how-long-each-lasts', 'logout-offline-token', 'keeps=offline'],
+		['explain=setting.pkce', 'what-stops-what', 'pkce.handed', 'attacker=1'],
+		['explain=setting.appRuns', 'where-the-tokens-are', 'head-bff', 'runs=bff'],
+		['explain=term.oauth', 'what-each-spec-adds', 'dpop', 'binding=dpop'],
+		[
+			'mode=advanced&explain=term.realm',
+			'what-is-in-a-token-here',
+			'token.roles',
+			'step=api-check-token'
+		]
+	] as const) {
+		test(`${id} opens in its explanation, and a part goes to its steps`, async ({ page }) => {
+			await open(page, search.includes('mode=') ? search : `mode=simple&${search}`);
+			const picture = page.getByTestId('picture');
+			await expect(picture).toHaveAttribute('data-picture', id);
+			await picture.locator(`[data-part="${part}"]`).click();
+			await expect.poll(() => currentSearch(page)).toContain(lands);
+			await expect(page.getByTestId('picture')).toHaveCount(0);
+			await page.goBack();
+			await expect(page.getByTestId('picture')).toHaveAttribute('data-picture', id);
+		});
+	}
+
 	test('is not in an explanation it does not belong to', async ({ page }) => {
-		await open(page, 'mode=simple&step=token-response&explain=artifact.access-token');
+		await open(page, 'mode=simple&step=token-response&explain=artifact.code');
 		await expect(explanation(page)).toBeVisible();
 		await expect(page.getByTestId('picture')).toHaveCount(0);
 		expect((await dialog(page).boundingBox())!.width).toBeLessThan(600);

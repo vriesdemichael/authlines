@@ -3,6 +3,14 @@ import Picture from '#lib/components/Picture.svelte';
 import { defaultSettings, normalize, type Settings } from '#lib/flow/settings.ts';
 import { sayer, type Wording } from '#lib/flow/wording.ts';
 import { refreshPicture } from '#lib/pictures/refresh.ts';
+import { whatIsInATokenHere } from '#lib/keycloak/token-contents.ts';
+import { howAnApiTrustsAToken } from '#lib/pictures/how-an-api-trusts-a-token.ts';
+import { howLongEachLasts } from '#lib/pictures/how-long-each-lasts.ts';
+import { trustAcrossProviders } from '#lib/pictures/trust-across-providers.ts';
+import { whatEachSpecAdds } from '#lib/pictures/what-each-spec-adds.ts';
+import { whatStopsWhat } from '#lib/pictures/what-stops-what.ts';
+import { whereTheTokensAre } from '#lib/pictures/where-the-tokens-are.ts';
+import { whichTokenIsForWhom } from '#lib/pictures/which-token-is-for-whom.ts';
 import { whoKnowsWhom } from '#lib/pictures/who-knows-whom.ts';
 
 const refresh = (settings: Partial<Settings>, wording: Wording = 'plain') =>
@@ -69,3 +77,49 @@ export const WhoKnowsWhomWithADirectory: Story = {
 export const WhoKnowsWhomInKeycloaksWords: Story = {
 	args: { picture: relations({ broker: true }, 'keycloak') }
 };
+
+const plain = sayer('plain');
+const settings = normalize({ ...defaultSettings }).settings;
+
+/** Who the identity provider trusts, and how: a relation diagram for the whole and not one flow. */
+export const WhoTheIdentityProviderTrusts: Story = {
+	args: { picture: trustAcrossProviders(plain, 'plain', names) }
+};
+
+/** How an API trusts a token from someone it never called: a chain of what vouches for what. */
+export const HowAnApiTrustsAToken: Story = {
+	args: { picture: howAnApiTrustsAToken(plain, 'demo') }
+};
+
+/** Which token is for whom: a matrix worked out from the steps. */
+export const WhichTokenIsForWhom: Story = {
+	args: { picture: whichTokenIsForWhom(settings, plain, 'plain') }
+};
+
+/** The same, for an app in the page, where the browser has the tokens. */
+export const WhichTokenIsForWhomInThePage: Story = {
+	args: {
+		picture: whichTokenIsForWhom(
+			normalize({ ...defaultSettings, appRuns: 'page', clientType: 'public', pkce: true }).settings,
+			plain,
+			'plain'
+		)
+	}
+};
+
+/** How long each lasts, and whether a logout ends it: a timeline. */
+export const HowLongEachLasts: Story = { args: { picture: howLongEachLasts(plain) } };
+
+/** Which protection stops which attack: a matrix of recorded attacks. */
+export const WhatStopsWhat: Story = { args: { picture: whatStopsWhat(plain) } };
+
+/** Where the tokens are, by where the app runs, with the current one marked. */
+export const WhereTheTokensAre: Story = {
+	args: { picture: whereTheTokensAre(settings, plain, 'plain') }
+};
+
+/** What each spec adds to OAuth: layers. */
+export const WhatEachSpecAdds: Story = { args: { picture: whatEachSpecAdds(plain) } };
+
+/** On Keycloak, what decides what is in a token: containment. */
+export const WhatIsInATokenHere: Story = { args: { picture: whatIsInATokenHere() } };
