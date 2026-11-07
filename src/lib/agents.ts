@@ -435,7 +435,8 @@ export const notDrawn: readonly { says: string; term: string }[] = [
 		term: 'mobile app'
 	},
 	{ says: 'a PKCE downgrade', term: 'pkce downgrade' },
-	{ says: 'passkeys and WebAuthn', term: 'passkey' },
+	// What a passkey proves is explained, beside the other factors, and a login with one is not drawn.
+	{ says: 'a login with a passkey', term: 'passkey login' },
 	{ says: 'Kerberos', term: 'kerberos' },
 	{ says: 'NTLM', term: 'ntlm' },
 	{ says: 'client certificates', term: 'client certificate' }

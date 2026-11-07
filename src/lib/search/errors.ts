@@ -326,7 +326,10 @@ export const notHereYet: readonly string[] = [
 	'claimed https',
 	'malicious app',
 	// What #147 lists, which has no flow yet. Nothing here may have a result, or it would hide it.
-	// A passkey and a one-time password are explained, with what each proves, and not drawn.
+	// A passkey and a one-time password are explained, with what each proves, and a login with one
+	// is not drawn.
+	'passkey login',
+	'log in with a passkey',
 	'kerberos',
 	'spnego',
 	'ntlm',
