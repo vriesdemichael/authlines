@@ -1,1 +1,0 @@
-import{yt as e}from"./C_ShTaMp.js";var t=e({open:!1});export{t};

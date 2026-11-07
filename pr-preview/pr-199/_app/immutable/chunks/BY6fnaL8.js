@@ -1,1 +1,0 @@
-import{Et as e}from"./C_ShTaMp.js";e();
