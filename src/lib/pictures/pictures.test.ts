@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { explanationOf } from '#lib/flow/explain.ts';
 import { terms } from '#lib/flow/glossary.ts';
@@ -13,7 +14,10 @@ import {
 import { parseState, type AppState } from '#lib/flow/state.ts';
 import { artifacts } from '#lib/flow/vocabulary.ts';
 import { sayer, wordings } from '#lib/flow/wording.ts';
-import { PICTURE_OF, pictureFor } from '#lib/pictures/index.ts';
+import { landingSettings } from '#lib/pictures/build.ts';
+import { LIFETIMES } from '#lib/pictures/how-long-each-lasts.ts';
+import { PICTURE_OF, pictureFor, type Opens } from '#lib/pictures/index.ts';
+import { noteDefs } from '#lib/keycloak/notes.ts';
 import { SIZE, widthOf, type Picture, type PicturePart } from '#lib/pictures/model.ts';
 import { refreshPicture } from '#lib/pictures/refresh.ts';
 import oidc from '../../../static/recordings/authorization-code/oidc.json';
@@ -219,6 +223,55 @@ describe('a picture', () => {
 		expect(checked).toBeGreaterThan(100);
 	});
 
+	// A review found cells opening on the opposite of what they said, because the settings on screen
+	// changed the outcome. From every screen, a link lands where its step is drawn as recorded.
+	it('lands, from every screen, on its step as the recording draws it', () => {
+		const flow = (opens: { diagram: 'flow' | 'setup' }) => base.diagrams[opens.diagram];
+		const drawn = (opens: Opens, settings: Settings) =>
+			evaluate(flow(opens), settings).steps.find((step) => step.id === opens.step);
+		const screens = allValidSettings();
+		const links = new Map<string, Opens>();
+		for (const picture of pictures) {
+			for (const part of picture.parts) {
+				if (part.opens) links.set(JSON.stringify(part.opens), part.opens);
+				for (const row of part.rows ?? []) links.set(JSON.stringify(row.opens), row.opens);
+			}
+		}
+		let checked = 0;
+		for (const opens of links.values()) {
+			const preset = base.presets.find((candidate) => candidate.id === opens.preset)!;
+			const recorded = drawn(
+				opens,
+				normalize({ ...defaultSettings, ...preset.settings }).settings
+			)!;
+			for (const screen of screens) {
+				const landed = drawn(opens, landingSettings(opens, screen));
+				expect(landed, `${opens.step} from ${JSON.stringify(screen)}`).toBeDefined();
+				// Where the words are about how it ended, it lands on the same answer.
+				if (opens.exact) expect(landed!.label).toEqual(recorded.label);
+				checked++;
+			}
+		}
+		expect(checked).toBeGreaterThan(10000);
+	});
+
+	it('opens the answer a cell says, in what stops what', () => {
+		const matrix = picture('explain=setting.pkce');
+		let checked = 0;
+		for (const cell of matrix.parts.filter((part) => part.shape === 'mark' && part.opens)) {
+			const opens = cell.opens!;
+			expect(opens.exact, cell.id).toBe(true);
+			const recording = JSON.parse(
+				readFileSync(`static/recordings/authorization-code/${opens.preset}.json`, 'utf8')
+			) as { messages: { step: string; status?: number }[] };
+			const status = recording.messages.find((message) => message.step === opens.step)?.status;
+			if (cell.mark === 'full') expect(status, cell.id).toBeGreaterThanOrEqual(400);
+			if (cell.mark === 'empty') expect(status, cell.id).toBeLessThan(400);
+			if (cell.mark === 'full' || cell.mark === 'empty') checked++;
+		}
+		expect(checked).toBeGreaterThan(6);
+	});
+
 	it('is not in an explanation it does not belong to, nor on another flow', () => {
 		expect(pictureFor(stateFor('explain=term.code'), 'plain')).toBeNull();
 		expect(pictureFor(stateFor(''), 'plain')).toBeNull();
@@ -289,6 +342,18 @@ const words = (found: Picture) =>
 	]);
 
 describe('who knows whom', () => {
+	it('is in what explains the identity provider, on either diagram', () => {
+		expect(picture('explain=lifeline.idp').id).toBe('who-knows-whom');
+		expect(picture('explain=term.identity-provider').id).toBe('who-knows-whom');
+		const setup = parseState(base, 'setup', 'explain=lifeline.idp');
+		expect(pictureFor(setup, 'plain')?.id).toBe('who-knows-whom');
+	});
+
+	it('trusts ID tokens only with OpenID Connect', () => {
+		expect(words(picture('explain=lifeline.idp'))).not.toContain('trusts ID tokens');
+		expect(words(picture('explain=lifeline.idp&oidc=1'))).toContain('trusts ID tokens');
+	});
+
 	const parts = (search: string) => picture(search).parts.map((part) => part.id);
 
 	// The maintainer, 2026-11-06: the first version left the app and the API disconnected.
@@ -310,13 +375,16 @@ describe('who knows whom', () => {
 		expect(words(picture('explain=lifeline.idp&broker=1&say=keycloak'))).toContain(
 			'Identity providers'
 		);
+		expect(words(picture('explain=lifeline.idp&say=keycloak'))).toContain('Clients');
 	});
 });
 
 describe('the concept pictures (#167)', () => {
 	it('say how trust reaches each kind of provider, and that the app knows only one', () => {
 		const trust = words(picture('explain=setting.broker'));
-		for (const said of ['takes its word', 'checks its', 'checks passwords', 'trusts only'])
+		// The recorder has the identity provider check another OpenID provider's ID token with its keys.
+		expect(trust).not.toContain('takes its word');
+		for (const said of ['ID token', 'signature', 'checks passwords', 'trusts only'])
 			expect(trust).toContain(said);
 	});
 
@@ -340,8 +408,13 @@ describe('the concept pictures (#167)', () => {
 		const response = (
 			oidc as { messages: { step: string; body?: Record<string, unknown> }[] }
 		).messages.find((message) => message.step === 'token-response')!.body!;
-		expect(response.expires_in).toBe(300);
-		expect(response.refresh_expires_in).toBe(1800);
+		expect(LIFETIMES.access).toBe(response.expires_in);
+		expect(LIFETIMES.idle).toBe(response.refresh_expires_in);
+		const note = (id: string) => JSON.stringify(noteDefs.find((def) => def.id === id)!.text);
+		expect(LIFETIMES.most).toBe(10 * 3600);
+		expect(note('sso-session-max')).toContain('ten hours at most');
+		expect(LIFETIMES.offline).toBe(30 * 86400);
+		expect(note('offline-session-lifetimes')).toContain('Thirty days idle');
 		const said = (id: string) =>
 			picture('explain=term.session')
 				.parts.find((part) => part.id === id)!

@@ -62,7 +62,7 @@ export interface PicturePart {
 	align?: 'start' | 'middle' | 'end';
 	/** A cell of a matrix, whose words are only read out. */
 	mark?: MarkKind;
-	/** A bar: known, a lighter stretch it can last to, or up to whoever builds the app. */
+	/** A bar: how long it lasts unused, a lighter stretch it can last to at most, or no fixed end. */
 	tone?: 'solid' | 'light' | 'open';
 	/** The part is the current case, of several side by side. */
 	current?: boolean;
@@ -85,6 +85,11 @@ export interface Opens {
 	settings: Partial<Settings>;
 	/** A recorded preset that draws the step, for when the settings on screen cannot have it. */
 	preset: string;
+	/**
+	 * Opens the preset just as it was recorded, whatever is on screen. For a part whose words say how
+	 * something ended, because other settings on screen can change that, as a review found.
+	 */
+	exact?: boolean;
 }
 
 export interface PictureLine {

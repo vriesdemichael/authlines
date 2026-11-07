@@ -23,10 +23,12 @@ const TOKENS = Object.keys(MADE_FOR) as ArtifactId[];
  */
 export function whichTokenIsForWhom(settings: Settings, say: Say, wording: Wording): Picture {
 	// With OpenID Connect, because the ID token is half of the question.
-	const shown = normalize({ ...settings, oidc: true }).settings;
+	// With OpenID Connect, which adds the ID token, unless that would turn something on screen off.
+	const withIdToken = normalize({ ...settings, oidc: true });
+	const adds = !settings.oidc && withIdToken.resets.length === 0;
+	const shown = adds ? withIdToken.settings : settings;
 	const view = evaluate(flows['authorization-code'].diagrams.flow, shown);
-	const parties = view.lifelines.filter((line) => line.id !== 'attacker');
-	const extra: Partial<Settings> = { oidc: true };
+	const extra: Partial<Settings> = shown.oidc ? { oidc: true } : {};
 	// Each cell opens the recording closest to the screen that draws its step.
 	// Without OpenID Connect where nothing recorded has it with these settings.
 	const at = (step: string) => {
@@ -48,6 +50,10 @@ export function whichTokenIsForWhom(settings: Settings, say: Say, wording: Wordi
 		}
 	}
 	const rows = TOKENS.filter((token) => made.has(token));
+	// A party that sees none of these has nothing to say here, such as an API behind the first.
+	const parties = view.lifelines.filter(
+		(line) => line.id !== 'attacker' && rows.some((token) => first.has(`${line.id}:${token}`))
+	);
 
 	const W = 800;
 	const NAME = { left: 10, w: 130 };
@@ -134,9 +140,11 @@ export function whichTokenIsForWhom(settings: Settings, say: Say, wording: Wordi
 		bottom + 32,
 		780,
 		say(
-			settings.oidc
-				? 'Worked out from the steps for these settings.'
-				: 'Worked out from the steps for these settings, with OpenID Connect on, which adds the ID token.'
+			adds
+				? 'Worked out from the steps for these settings, with OpenID Connect on, which adds the ID token.'
+				: shown.oidc
+					? 'Worked out from the steps for these settings.'
+					: 'Worked out from the steps for these settings, where OpenID Connect would turn something off, so there is no ID token.'
 		),
 		{ size: 'more' }
 	);

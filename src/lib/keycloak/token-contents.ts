@@ -81,8 +81,8 @@ export function whatIsInATokenHere(): Picture {
 		opens: opensAt('flow', 'token-response', 'oidc', { oidc: true })
 	});
 	const lines: PictureLine[] = scopes.map((_, i) => ({
-		d: `M${30 + 400 - 12} ${scopesTop + i * ROW + 21} H${560 + 12}`,
-		dashed: i === scopes.length - 1,
+		// From the client's edge to the token's, so neither box covers the head.
+		d: `M${30 + 400} ${scopesTop + i * ROW + 21} H${560}`,
 		label:
 			i === 0
 				? { lines: ['puts in'], x: 495, y: scopesTop + 13, anchor: 'middle' as const }

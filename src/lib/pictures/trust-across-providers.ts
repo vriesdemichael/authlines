@@ -25,7 +25,7 @@ export function trustAcrossProviders(say: Say, wording: Wording, names: PartyNam
 			text: say(
 				"Where users already have an account, such as a customer's. The identity provider is one client there, with a client ID and secret."
 			),
-			trust: ['takes its word', 'for who logged in'],
+			trust: ['checks its', 'ID token'],
 			opens: opensAt('flow', 'upstream-authorize', 'broker', { broker: true })
 		},
 		{

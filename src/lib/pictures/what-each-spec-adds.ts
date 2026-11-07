@@ -33,7 +33,7 @@ export function whatEachSpecAdds(say: Say): Picture {
 			id: 'pkce',
 			name: 'PKCE',
 			spec: 'RFC 7636',
-			text: 'Ties the code to the app that asked for it.',
+			text: 'Ties the code to the login it came from.',
 			opens: opensAt('flow', 'make-verifier', 'pkce', { pkce: true })
 		},
 		{

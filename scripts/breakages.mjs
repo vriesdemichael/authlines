@@ -260,10 +260,10 @@ export const breakages = [
 		to: "after: say('15 min'),"
 	},
 	{
-		name: 'picture: the identity provider checks a signature from another OpenID provider',
+		name: 'picture: the identity provider takes another OpenID provider at its word',
 		file: 'src/lib/pictures/trust-across-providers.ts',
-		from: "trust: ['takes its word', 'for who logged in'],",
-		to: "trust: ['checks its', 'signature'],"
+		from: "trust: ['checks its', 'ID token'],",
+		to: "trust: ['takes its word', 'for who logged in'],"
 	},
 	{
 		name: 'program: a program is drawn answered at the app’s own address',

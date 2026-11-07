@@ -21,7 +21,7 @@ const CASES = [
 	{
 		runs: 'server',
 		preset: 'oidc',
-		why: 'Of these, the browser only sees the code, and its own session at the identity provider.'
+		why: 'Of these, the browser only sees the code, and its session at the identity provider. The app’s own session with it is yours, and not drawn.'
 	},
 	{ runs: 'page', preset: 'browser-app', why: 'A script in the page can reach what the page has.' },
 	{
@@ -173,7 +173,7 @@ export function whereTheTokensAre(settings: Settings, say: Say, wording: Wording
 		height + 14,
 		780,
 		say(
-			'The identity provider and the API have the same in all four. Each column is worked out from its own steps, with OpenID Connect where it was recorded.'
+			'The API has the same in all four. Each column is worked out from its own steps, with OpenID Connect where it was recorded.'
 		),
 		{ size: 'more' }
 	);

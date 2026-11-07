@@ -79,6 +79,17 @@
 			>
 		{/each}
 	{:else if part.shape === 'text'}
+		{#if part.opens}
+			<!-- Where the focus shows, since words alone have no edge to light up. -->
+			<rect
+				class="hit"
+				x={leftOf(part) - 4}
+				y={topOf(part) - 2}
+				width={part.w + 8}
+				height={part.h + 4}
+				rx="4"
+			/>
+		{/if}
 		{#each part.says as text, i (i)}
 			<text
 				class={part.size ?? 'says'}
@@ -377,6 +388,13 @@
 	.link:focus-visible .hit {
 		stroke: var(--accent);
 		stroke-width: 2;
+	}
+
+	/* A text that goes somewhere looks it, when the mouse or the focus is on it. */
+	.text.link:hover text,
+	.text.link:focus-visible text {
+		fill: var(--accent);
+		text-decoration: underline;
 	}
 
 	.hit {

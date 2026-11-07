@@ -5,6 +5,7 @@
 	import DiagramSwitch from '#lib/components/DiagramSwitch.svelte';
 	import ExplainDialog from '#lib/components/ExplainDialog.svelte';
 	import type { Opens } from '#lib/pictures/index.ts';
+	import { landingSettings } from '#lib/pictures/build.ts';
 	import Explanation from '#lib/components/Explanation.svelte';
 	import EyesSwitch from '#lib/components/EyesSwitch.svelte';
 	import FlowSwitch from '#lib/components/FlowSwitch.svelte';
@@ -50,7 +51,6 @@
 	} from '#lib/flow/names.ts';
 	import {
 		defaultSettings,
-		normalize,
 		settingDefs,
 		settingIds,
 		simpleSettingIds,
@@ -434,13 +434,7 @@
 	// A part of a picture goes to the steps it stands for, with the settings on screen where they can
 	// draw them, and otherwise with a recorded preset's. Back comes back to the picture.
 	function openPart(opens: Opens) {
-		const wanted = normalize({ ...appState.settings, ...opens.settings }).settings;
-		const draws = (settings: Settings) =>
-			evaluate(base.diagrams[opens.diagram], settings).steps.some((step) => step.id === opens.step);
-		const preset = base.presets.find((candidate) => candidate.id === opens.preset);
-		const settings = draws(wanted)
-			? wanted
-			: normalize({ ...defaultSettings, ...preset?.settings }).settings;
+		const settings = landingSettings(opens, appState.settings);
 		onnavigate(
 			{
 				...appState,

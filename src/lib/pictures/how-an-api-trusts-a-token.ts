@@ -1,5 +1,5 @@
 import type { Say } from '#lib/flow/wording.ts';
-import { bottomOf, opensAt, partyBox, textAt, topOf } from './build.ts';
+import { bottomOf, opensAsRecorded, opensAt, partyBox, textAt, topOf } from './build.ts';
 import type { Picture, PictureLine, PictureRow } from './model.ts';
 
 const ROW = 50;
@@ -69,13 +69,13 @@ export function howAnApiTrustsAToken(say: Say, realm: string): Picture {
 			id: 'aud',
 			says: 'aud',
 			more: say('The name the API was told'),
-			opens: opensAt('flow', 'api-check-token', 'api-elsewhere', { apiToken: 'elsewhere' })
+			opens: opensAsRecorded('flow', 'api-check-token', 'api-elsewhere', { apiToken: 'elsewhere' })
 		},
 		{
 			id: 'exp',
 			says: 'exp',
 			more: say('A time that has not passed'),
-			opens: opensAt('flow', 'api-check-token', 'api-expired', { apiToken: 'expired' })
+			opens: opensAsRecorded('flow', 'api-check-token', 'api-expired', { apiToken: 'expired' })
 		}
 	];
 	const token = partyBox(

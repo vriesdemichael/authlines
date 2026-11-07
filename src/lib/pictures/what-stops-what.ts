@@ -1,6 +1,6 @@
 import type { Settings } from '#lib/flow/settings.ts';
 import type { Say } from '#lib/flow/wording.ts';
-import { markAt, opensAt, textAt } from './build.ts';
+import { markAt, opensAsRecorded, textAt } from './build.ts';
 import type { MarkKind, Opens, Picture, PictureLine, PicturePart } from './model.ts';
 
 type Attack = 'trade' | 'handed' | 'link' | 'token' | 'csrf';
@@ -11,7 +11,7 @@ interface Cell {
 }
 
 const at = (step: string, preset: string, settings: Partial<Settings>) =>
-	opensAt('flow', step, preset, settings);
+	opensAsRecorded('flow', step, preset, settings);
 
 /**
  * Which protection stops which attack, as the recordings have it. A filled cell opens the recording
@@ -59,8 +59,7 @@ export function whatStopsWhat(say: Say): Picture {
 	];
 	const bearer: Cell = {
 		mark: 'empty',
-		says: 'Does not stop it: whoever holds a bearer token can use it',
-		opens: opensAt('flow', 'api-request', 'oauth')
+		says: 'Does not stop it: whoever holds a bearer token can use it, as RFC 6750 says'
 	};
 	const none: Cell = { mark: 'none', says: 'Not shown here' };
 	const protections: readonly { id: string; name: string; cells: Record<Attack, Cell> }[] = [
@@ -139,7 +138,7 @@ export function whatStopsWhat(say: Say): Picture {
 				handed: {
 					mark: 'empty',
 					says: 'Does not stop it: they start the login in their own browser',
-					opens: at('attacker-hands-code', 'attack-at-the-app', {
+					opens: at('attacker-handed-answer', 'attack-at-the-app', {
 						attacker: true,
 						attackerUses: 'real-app'
 					})
@@ -155,9 +154,9 @@ export function whatStopsWhat(say: Say): Picture {
 			cells: {
 				trade: none,
 				handed: {
-					mark: 'half',
-					says: 'Partly: the app finds out, after the tokens were handed over',
-					opens: at('handed-nonce-check', 'attack-at-the-app-oidc', {
+					mark: 'full',
+					says: 'Stops it at the app, which checks it once the tokens were handed over',
+					opens: at('attacker-handed-answer', 'attack-at-the-app-oidc', {
 						attacker: true,
 						attackerUses: 'real-app',
 						oidc: true
@@ -238,7 +237,7 @@ export function whatStopsWhat(say: Say): Picture {
 					x,
 					y,
 					cell.mark,
-					`${say(protection.name)}, against ${say(attack.name).toLowerCase()}: ${say(cell.says)}`,
+					`${say(protection.name)}, against ${say(attack.name)}: ${say(cell.says)}`,
 					cell.opens
 				)
 			);

@@ -94,11 +94,13 @@ export const PICTURE_OF: Readonly<Record<string, PictureId>> = {
 
 /** Each picture, drawn for the state on screen in the words chosen. */
 export function draw(id: PictureId, state: AppState, wording: Wording, say: Say): Picture {
-	const realm = state.settings.broker
-		? 'demo-brokered'
-		: state.settings.federation
-			? 'in-a-directory'
-			: 'demo';
+	const realm = state.settings.companies
+		? 'demo-companies'
+		: state.settings.broker
+			? 'demo-brokered'
+			: state.settings.federation
+				? 'in-a-directory'
+				: 'demo';
 	switch (id) {
 		case 'refresh':
 			return refreshPicture(state.settings, say);

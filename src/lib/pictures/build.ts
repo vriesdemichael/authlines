@@ -16,8 +16,33 @@ export const opensAt = (
 	diagram: DiagramId,
 	step: string,
 	preset: string,
+	settings: Partial<Settings> = {},
+	exact = false
+): Opens => ({ diagram, step, settings, preset, ...(exact ? { exact } : {}) });
+
+/** The same, opening the recording just as it was made, for a part that says how something ended. */
+export const opensAsRecorded = (
+	diagram: DiagramId,
+	step: string,
+	preset: string,
 	settings: Partial<Settings> = {}
-): Opens => ({ diagram, step, settings, preset });
+): Opens => opensAt(diagram, step, preset, settings, true);
+
+/**
+ * The settings a part opens with: the ones on screen with what it adds, where those draw its step,
+ * and otherwise, or where it says how something ended, its recorded preset's.
+ */
+export function landingSettings(opens: Opens, screen: Settings): Settings {
+	const base = flows['authorization-code'];
+	const preset = base.presets.find((candidate) => candidate.id === opens.preset);
+	const recorded = normalize({ ...defaultSettings, ...preset?.settings }).settings;
+	if (opens.exact) return recorded;
+	const wanted = normalize({ ...screen, ...opens.settings }).settings;
+	const draws = evaluate(base.diagrams[opens.diagram], wanted).steps.some(
+		(step) => step.id === opens.step
+	);
+	return draws ? wanted : recorded;
+}
 
 const PAD = 14;
 const ROW = 50;
