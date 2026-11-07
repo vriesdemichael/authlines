@@ -1,0 +1,1 @@
+import{Et as e}from"./BFNPEcaG.js";e();
