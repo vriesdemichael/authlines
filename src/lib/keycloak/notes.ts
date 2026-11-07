@@ -703,7 +703,7 @@ export const noteDefs: readonly NoteDef[] = [
 		id: 'session-lifetimes',
 		steps: ['refresh-after-logout-response'],
 		title: 'SSO Session Idle and SSO Session Max',
-		text: 'Thirty minutes idle and ten hours at most, by default, and a refresh token ends with the session: it came with thirty minutes left. Made five seconds, either one had a refresh token refused seven seconds later, with Token is not active. Signing the user out from their page in the console ended it too. None of these ended an offline token.',
+		text: 'Thirty minutes idle and ten hours at most, by default, and a refresh token ends with the session: it came with thirty minutes left. Made five seconds, either one had a refresh token refused seven seconds later, with Token is not active, and idle at five seconds, one used every three kept working for nine: using it keeps it going. Signing the user out from their page in the console ended it too. None of these ended an offline token.',
 		when: is('logout', true),
 		place: {
 			path: ['Realm settings', 'Sessions', 'SSO Session Idle'],
@@ -720,7 +720,8 @@ export const noteDefs: readonly NoteDef[] = [
 				},
 				after: {
 					sessionMaximum: { tried: { online: { status: 400 }, offline: { status: 200 } } },
-					idle: { afterSevenSeconds: { online: { status: 400 } } }
+					idle: { afterSevenSeconds: { online: { status: 400 } } },
+					keptInUse: { online: [200, 200, 200] }
 				}
 			}
 		}
@@ -729,7 +730,7 @@ export const noteDefs: readonly NoteDef[] = [
 		id: 'offline-session-lifetimes',
 		steps: ['token-response', 'refresh-after-logout-response'],
 		title: 'Offline Session Idle and Offline Session Max',
-		text: 'Thirty days idle by default, which is the time an offline token came with, and no maximum, because Offline Session Max Limited is off. Turned on, Offline Session Max is sixty days. Made five seconds, either one had an offline token refused seven seconds later, with Token is not active.',
+		text: 'Thirty days idle by default, which is the time an offline token came with, and no maximum, because Offline Session Max Limited is off. Turned on, Offline Session Max is sixty days. Made five seconds, either one had an offline token refused seven seconds later, with Token is not active, and idle at five seconds, one used every three kept working for nine.',
 		when: all(is('logout', true), is('logoutKeeps', 'offline')),
 		place: {
 			path: ['Realm settings', 'Sessions', 'Offline Session Idle'],
@@ -749,7 +750,8 @@ export const noteDefs: readonly NoteDef[] = [
 				},
 				after: {
 					offlineMaximum: { refreshExpiresIn: 5, tried: { status: 400 } },
-					idle: { afterSevenSeconds: { offline: { status: 400 } } }
+					idle: { afterSevenSeconds: { offline: { status: 400 } } },
+					keptInUse: { offline: [200, 200, 200] }
 				}
 			}
 		}
