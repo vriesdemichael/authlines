@@ -8,6 +8,8 @@ import { howLongEachLasts } from './how-long-each-lasts.ts';
 import type { Picture, PictureId } from './model.ts';
 import { refreshPicture } from './refresh.ts';
 import { trustAcrossProviders } from './trust-across-providers.ts';
+import { whatAThiefCanDo } from './what-a-thief-can-do.ts';
+import { whatEachFactorProves } from './what-each-factor-proves.ts';
 import { whatEachSpecAdds } from './what-each-spec-adds.ts';
 import { whatStopsWhat } from './what-stops-what.ts';
 import { whereTheTokensAre } from './where-the-tokens-are.ts';
@@ -89,7 +91,11 @@ export const PICTURE_OF: Readonly<Record<string, PictureId>> = {
 	'term.openid-connect': 'what-each-spec-adds',
 	'term.authn-authz': 'what-each-spec-adds',
 	'setting.oidc': 'what-each-spec-adds',
-	'term.realm': 'what-is-in-a-token-here'
+	'term.realm': 'what-is-in-a-token-here',
+	'term.mfa': 'what-each-factor-proves',
+	'term.passkey': 'what-each-factor-proves',
+	'term.one-time-password': 'what-each-factor-proves',
+	'artifact.password': 'what-a-thief-can-do'
 };
 
 /** Each picture, drawn for the state on screen in the words chosen. */
@@ -122,6 +128,10 @@ export function draw(id: PictureId, state: AppState, wording: Wording, say: Say)
 			return whatEachSpecAdds(say);
 		case 'what-is-in-a-token-here':
 			return whatIsInATokenHere();
+		case 'what-each-factor-proves':
+			return whatEachFactorProves(say);
+		case 'what-a-thief-can-do':
+			return whatAThiefCanDo(say);
 	}
 }
 

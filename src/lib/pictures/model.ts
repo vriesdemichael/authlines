@@ -26,7 +26,9 @@ export type PictureId =
 	| 'what-stops-what'
 	| 'where-the-tokens-are'
 	| 'what-each-spec-adds'
-	| 'what-is-in-a-token-here';
+	| 'what-is-in-a-token-here'
+	| 'what-each-factor-proves'
+	| 'what-a-thief-can-do';
 
 /**
  * Where something starts or ends, a step, or a question with more than one way on: those make a

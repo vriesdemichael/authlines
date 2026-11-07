@@ -199,7 +199,7 @@ test.describe('a picture in an explanation', () => {
 		['explain=setting.broker', 'trust-across-providers', 'directory', 'step=directory-bind'],
 		['explain=term.issuer', 'how-an-api-trusts-a-token', 'token.exp', 'send=expired'],
 		['explain=term.token', 'which-token-is-for-whom', 'session.browser', 'step=redirect-with-code'],
-		['explain=term.session', 'how-long-each-lasts', 'logout-offline-token', 'keeps=offline'],
+		['explain=term.session', 'how-long-each-lasts', 'right-offline-token', 'keeps=offline'],
 		['explain=setting.pkce', 'what-stops-what', 'pkce.handed', 'attacker=1'],
 		['explain=setting.appRuns', 'where-the-tokens-are', 'head-bff', 'runs=bff'],
 		['explain=term.oauth', 'what-each-spec-adds', 'dpop', 'binding=dpop'],

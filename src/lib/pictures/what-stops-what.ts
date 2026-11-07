@@ -1,14 +1,11 @@
 import type { Settings } from '#lib/flow/settings.ts';
 import type { Say } from '#lib/flow/wording.ts';
-import { bottomOf, keyAt, markAt, opensAsRecorded, textAt } from './build.ts';
-import type { MarkKind, Opens, Picture, PictureLine, PicturePart } from './model.ts';
+import { opensAsRecorded } from './build.ts';
+import { matrix, type MatrixCell } from './matrix.ts';
+import type { Opens, Picture } from './model.ts';
 
 type Attack = 'trade' | 'handed' | 'link' | 'token' | 'csrf';
-interface Cell {
-	mark: MarkKind;
-	says: string;
-	opens?: Opens;
-}
+type Cell = MatrixCell;
 
 const at = (step: string, preset: string, settings: Partial<Settings>) =>
 	opensAsRecorded('flow', step, preset, settings);
@@ -211,77 +208,34 @@ export function whatStopsWhat(say: Say): Picture {
 		}
 	];
 
-	const W = 800;
-	const NAME = { left: 10, w: 230 };
-	const COLUMNS = { left: 250, right: 790 };
-	const column = (COLUMNS.right - COLUMNS.left) / attacks.length;
-	// The key first, drawn with the circles below, so nothing has to be matched up from words.
-	const key = keyAt('key', 10, 8, 780, [
-		{ mark: 'full', says: say('Stops it, as recorded') },
-		{ mark: 'half', says: say('Only partly') },
-		{ mark: 'empty', says: say('Does not stop it') },
-		{ mark: 'dot', says: say('The specs say it does, and nothing here draws it') },
-		{ mark: 'none', says: say('Not shown here') }
-	]);
-	const parts: PicturePart[] = [...key.parts];
-	const lines: PictureLine[] = [];
-	const headTop = 8 + key.h + 12;
-	const heads = attacks.map((attack, i) =>
-		textAt(
-			`head-${attack.id}`,
-			COLUMNS.left + i * column + 4,
-			headTop,
-			column - 8,
-			say(attack.name),
-			{
-				size: 'more',
-				align: 'middle',
-				opens: attack.opens
-			}
-		)
-	);
-	parts.push(...heads);
-	let top = Math.max(...heads.map(bottomOf)) + 10;
-	lines.push({ d: `M10 ${top} H${W - 10}`, bare: true, faint: true });
-	for (const protection of protections) {
-		const name = textAt(`name-${protection.id}`, NAME.left, top + 8, NAME.w, say(protection.name));
-		const is = textAt(
-			`is-${protection.id}`,
-			NAME.left,
-			bottomOf(name) + 2,
-			NAME.w,
-			say(protection.is),
-			{
-				size: 'more'
-			}
-		);
-		const height = bottomOf(is) - top + 10;
-		const y = top + height / 2;
-		parts.push(name, is);
-		attacks.forEach((attack, i) => {
-			const cell = protection.cells[attack.id];
-			const x = COLUMNS.left + i * column + column / 2;
-			parts.push(
-				markAt(
-					`${protection.id}.${attack.id}`,
-					x,
-					y,
-					cell.mark,
-					`${say(protection.name)}, against ${say(attack.name)}: ${say(cell.says)}`,
-					cell.opens
-				)
-			);
-		});
-		top += height;
-		lines.push({ d: `M10 ${top} H${W - 10}`, bare: true, faint: true });
-	}
-	const bottom = top;
+	const drawn = matrix({
+		// The key first, drawn with the circles below, so nothing has to be matched up from words.
+		key: [
+			{ mark: 'full', says: say('Stops it, as recorded') },
+			{ mark: 'half', says: say('Only partly') },
+			{ mark: 'empty', says: say('Does not stop it') },
+			{ mark: 'dot', says: say('The specs say it does, and nothing here draws it') },
+			{ mark: 'none', says: say('Not shown here') }
+		],
+		columns: attacks.map((attack) => ({ ...attack, name: say(attack.name) })),
+		rows: protections.map((protection) => ({
+			id: protection.id,
+			name: say(protection.name),
+			is: say(protection.is),
+			cells: Object.fromEntries(
+				Object.entries(protection.cells).map(([attack, cell]) => [
+					attack,
+					{ ...cell, says: say(cell.says) }
+				])
+			)
+		}))
+	});
 	return {
 		id: 'what-stops-what',
 		title: say('Which protection stops which attack'),
-		width: W,
-		height: bottom + 12,
-		parts,
-		lines
+		width: 800,
+		height: drawn.height,
+		parts: drawn.parts,
+		lines: drawn.lines
 	};
 }
