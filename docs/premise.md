@@ -24,6 +24,15 @@ Presentations are why the idea came up, not what is being built. The maintainer 
 
 **Decided.** An interactive web application for exploring OAuth and OIDC visually, and later wider authn/authz. It starts from the most basic concepts, such as what an identity provider and an issuer are, and one basic flow. Everything more advanced is added by switching it on in the same diagram, not by opening a separate page. It starts small and grows with more functionality over time.
 
+**Decided, on 2026-11-07: an educational site for authn and authz, which explains everything around the flows as well as the flows.** In the maintainer's words: "It's a small step in making this an educational site for authn and authz… this means a shift from only showing the flows to explanations of everything surrounding it."
+
+What this covers:
+- The concepts no single flow shows, such as trust between providers, how long things last, and which protection stops what.
+- The choices people bring.
+- Authorization as well as authentication.
+
+The gaps this opens are in [#200](https://github.com/vriesdemichael/authlines/issues/200). It is what the original brief asked for, "explaining everything on the different levels". The explanations are pictures in the application, in what explains each concept (section 5.5, [ADR-016](adr/016-a-word-on-screen-explains-itself.md)), and not articles. Section 6 still bounds the scope: something gets in only if it teaches a concept or answers a question people bring.
+
 In the maintainer's framing, it combines three things that no one site has together:
 
 | Quality | Reference |
@@ -340,7 +349,7 @@ An order for later releases. **Proposed**, and expected to change.
 | Client credentials, built | Base flow | No browser and no user. The token request is all there is, and there is no refresh token |
 | Logging out | Modifier, then a choice | Ends the session and leaves the tokens, then shows the same token getting two answers, from an API that only looks at it and one that asks the server. With a second app, that app is told. Interactive coverage looks thin elsewhere. The choice is what the app kept ([#184](https://github.com/vriesdemichael/authlines/issues/184)): a refresh token, which ends with the session, or an offline token, which a service can use for the user later. With one, the server recorded still called the token good, gave new tokens after the logout, and asked nobody, though OpenID Connect says the user has to agree. What ends each, and when, is in the step and the server notes |
 | FAPI 2.0, OAuth 2.1 | Later | A composition or a diff over existing toggles |
-| Authz (RBAC, ABAC, ReBAC, UMA) | Later | Multiplies the content |
+| Authz (RBAC, ABAC, ReBAC, UMA) | **In scope since 2026-11-07** (section 2) | First around the flows: whether a question is about who someone is or what they may do, where each decision is made, and roles in the token, which a recorded token already carries. The models come after, each explained on one example |
 | Names from an agent's link, built ([#168](https://github.com/vriesdemichael/authlines/issues/168)) | Not a setting: after the `#` of any link | The heads take someone's own names, with what each party is beside them, and the raw view says which recorded value is which. A flow the agent draws itself is not built |
 
 What an AI agent given a security engineer's job looked for, decided one by one ([#101](https://github.com/vriesdemichael/authlines/issues/101)). **Proposed.**
@@ -422,7 +431,6 @@ A content-site setup, with prose pages and the diagram as one embedded island, i
 - A debugger for your own server. oauth.tools, OAuth Debugger and others already do this.
 - Comparing vendors or IdPs.
 - A tour of Keycloak features.
-- Authz, beyond keeping the structure open to it.
 - Redrawing saturated topics for their own sake, such as JWT decoding and WebAuthn demos.
 
 ## 11. Open questions, and the next session's job
