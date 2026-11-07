@@ -1,6 +1,6 @@
 import type { Settings } from '#lib/flow/settings.ts';
 import type { Say } from '#lib/flow/wording.ts';
-import { markAt, opensAsRecorded, textAt } from './build.ts';
+import { bottomOf, keyAt, markAt, opensAsRecorded, textAt } from './build.ts';
 import type { MarkKind, Opens, Picture, PictureLine, PicturePart } from './model.ts';
 
 type Attack = 'trade' | 'handed' | 'link' | 'token' | 'csrf';
@@ -62,10 +62,17 @@ export function whatStopsWhat(say: Say): Picture {
 		says: 'Does not stop it: whoever holds a bearer token can use it, as RFC 6750 says'
 	};
 	const none: Cell = { mark: 'none', says: 'Not shown here' };
-	const protections: readonly { id: string; name: string; cells: Record<Attack, Cell> }[] = [
+	const protections: readonly {
+		id: string;
+		name: string;
+		/** What it is, for someone who has not met it before. */
+		is: string;
+		cells: Record<Attack, Cell>;
+	}[] = [
 		{
 			id: 'secret',
 			name: 'A client secret',
+			is: 'Like a password for the app, sent when it trades the code.',
 			cells: {
 				trade: {
 					mark: 'full',
@@ -96,6 +103,7 @@ export function whatStopsWhat(say: Say): Picture {
 		{
 			id: 'pkce',
 			name: 'PKCE',
+			is: 'A value only the app that started the login has, sent when it trades the code.',
 			cells: {
 				trade: {
 					mark: 'full',
@@ -133,6 +141,7 @@ export function whatStopsWhat(say: Say): Picture {
 		{
 			id: 'state',
 			name: 'State',
+			is: 'A value that ties the answer to the login this browser started.',
 			cells: {
 				trade: none,
 				handed: {
@@ -151,6 +160,7 @@ export function whatStopsWhat(say: Say): Picture {
 		{
 			id: 'nonce',
 			name: 'A nonce',
+			is: 'A value that ties the ID token to this one login.',
 			cells: {
 				trade: none,
 				handed: {
@@ -170,6 +180,7 @@ export function whatStopsWhat(say: Say): Picture {
 		{
 			id: 'exact-address',
 			name: 'An exact redirect address',
+			is: 'The code is only sent to an address registered for the app.',
 			cells: {
 				trade: none,
 				handed: none,
@@ -185,6 +196,7 @@ export function whatStopsWhat(say: Say): Picture {
 		{
 			id: 'dpop',
 			name: 'DPoP',
+			is: 'Ties a token to a key that only the app holds.',
 			cells: {
 				trade: none,
 				handed: none,
@@ -200,34 +212,52 @@ export function whatStopsWhat(say: Say): Picture {
 	];
 
 	const W = 800;
-	const NAME = { left: 10, w: 200 };
-	const COLUMNS = { left: 220, right: 790 };
+	const NAME = { left: 10, w: 230 };
+	const COLUMNS = { left: 250, right: 790 };
 	const column = (COLUMNS.right - COLUMNS.left) / attacks.length;
-	const HEAD = 64;
-	const ROW = 40;
-	const TOP = 10;
-	const parts: PicturePart[] = [];
+	// The key first, drawn with the circles below, so nothing has to be matched up from words.
+	const key = keyAt('key', 10, 8, 780, [
+		{ mark: 'full', says: say('Stops it, as recorded') },
+		{ mark: 'half', says: say('Only partly') },
+		{ mark: 'empty', says: say('Does not stop it') },
+		{ mark: 'dot', says: say('The specs say it does, and nothing here draws it') },
+		{ mark: 'none', says: say('Not shown here') }
+	]);
+	const parts: PicturePart[] = [...key.parts];
 	const lines: PictureLine[] = [];
-	attacks.forEach((attack, i) => {
-		parts.push(
-			textAt(
-				`head-${attack.id}`,
-				COLUMNS.left + i * column + 4,
-				TOP,
-				column - 8,
-				say(attack.name),
-				{
-					size: 'more',
-					align: 'middle',
-					opens: attack.opens
-				}
-			)
+	const headTop = 8 + key.h + 12;
+	const heads = attacks.map((attack, i) =>
+		textAt(
+			`head-${attack.id}`,
+			COLUMNS.left + i * column + 4,
+			headTop,
+			column - 8,
+			say(attack.name),
+			{
+				size: 'more',
+				align: 'middle',
+				opens: attack.opens
+			}
+		)
+	);
+	parts.push(...heads);
+	let top = Math.max(...heads.map(bottomOf)) + 10;
+	lines.push({ d: `M10 ${top} H${W - 10}`, bare: true, faint: true });
+	for (const protection of protections) {
+		const name = textAt(`name-${protection.id}`, NAME.left, top + 8, NAME.w, say(protection.name));
+		const is = textAt(
+			`is-${protection.id}`,
+			NAME.left,
+			bottomOf(name) + 2,
+			NAME.w,
+			say(protection.is),
+			{
+				size: 'more'
+			}
 		);
-	});
-	protections.forEach((protection, r) => {
-		const y = TOP + HEAD + r * ROW + ROW / 2;
-		lines.push({ d: `M10 ${y - ROW / 2} H${W - 10}`, bare: true, faint: true });
-		parts.push(textAt(`name-${protection.id}`, NAME.left, y - 9, NAME.w, say(protection.name)));
+		const height = bottomOf(is) - top + 10;
+		const y = top + height / 2;
+		parts.push(name, is);
 		attacks.forEach((attack, i) => {
 			const cell = protection.cells[attack.id];
 			const x = COLUMNS.left + i * column + column / 2;
@@ -242,25 +272,15 @@ export function whatStopsWhat(say: Say): Picture {
 				)
 			);
 		});
-	});
-	const bottom = TOP + HEAD + protections.length * ROW;
-	lines.push({ d: `M10 ${bottom} H${W - 10}`, bare: true, faint: true });
-	const legend = textAt(
-		'legend',
-		10,
-		bottom + 14,
-		780,
-		say(
-			'Filled: stops it, as recorded. Half: only partly. Open: does not stop it. A dot: the specs say it does, and nothing here draws it. A dash: not shown here.'
-		),
-		{ size: 'more' }
-	);
-	parts.push(legend);
+		top += height;
+		lines.push({ d: `M10 ${top} H${W - 10}`, bare: true, faint: true });
+	}
+	const bottom = top;
 	return {
 		id: 'what-stops-what',
 		title: say('Which protection stops which attack'),
 		width: W,
-		height: bottom + 14 + legend.h + 14,
+		height: bottom + 12,
 		parts,
 		lines
 	};

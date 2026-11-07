@@ -3,7 +3,7 @@ import { evaluate } from '#lib/flow/model.ts';
 import { normalize, type Settings } from '#lib/flow/settings.ts';
 import { artifacts, type ArtifactId } from '#lib/flow/vocabulary.ts';
 import { nameIn, type Say, type Wording } from '#lib/flow/wording.ts';
-import { markAt, opensAt, presetDrawing, textAt } from './build.ts';
+import { bottomOf, keyAt, markAt, opensAt, presetDrawing, textAt } from './build.ts';
 import type { Picture, PictureLine, PicturePart } from './model.ts';
 
 /** What each is made for, in the words its own explanation uses. */
@@ -16,13 +16,21 @@ const MADE_FOR: Partial<Record<ArtifactId, string>> = {
 };
 const TOKENS = Object.keys(MADE_FOR) as ArtifactId[];
 
+/** What each is, for someone who has not met it before, in the words its explanation uses. */
+const IS: Partial<Record<ArtifactId, string>> = {
+	code: 'Brought back by the browser after the login, and traded once for tokens.',
+	'access-token': 'What the app shows the API to be let in.',
+	'id-token': 'Tells the app who logged in.',
+	'refresh-token': 'Gets the app a new access token, without the user.',
+	session: 'A cookie by which the identity provider remembers this browser.'
+};
+
 /**
  * Who makes each token, who it goes through, and who never sees it, worked out from the steps the
  * way "seen so far" is, so it cannot say anything the arrows do not. Beside it, who each is made for.
  * Token types are among the confusions people report most, and each one is explained apart.
  */
 export function whichTokenIsForWhom(settings: Settings, say: Say, wording: Wording): Picture {
-	// With OpenID Connect, because the ID token is half of the question.
 	// With OpenID Connect, which adds the ID token, unless that would turn something on screen off.
 	const withIdToken = normalize({ ...settings, oidc: true });
 	const adds = !settings.oidc && withIdToken.resets.length === 0;
@@ -56,50 +64,62 @@ export function whichTokenIsForWhom(settings: Settings, say: Say, wording: Wordi
 	);
 
 	const W = 800;
-	const NAME = { left: 10, w: 130 };
-	const FOR = { left: 150, w: 210 };
+	const NAME = { left: 10, w: 200 };
+	const FOR = { left: 220, w: 150 };
 	const COLUMNS = { left: 380, right: 790 };
 	const column = (COLUMNS.right - COLUMNS.left) / parties.length;
-	const HEAD = 52;
-	const ROW = 44;
-	const top = 14;
 
-	// Every heading sits on the line under the headings, however many lines it takes.
-	const onTheLine = (part: PicturePart): PicturePart => ({
-		...part,
-		y: top + HEAD - 8 - part.h / 2
-	});
-	const parts: PicturePart[] = [
-		onTheLine(textAt('made-for-head', FOR.left, top, FOR.w, say('Made for'), { size: 'more' }))
-	];
-	parties.forEach((line, i) => {
-		parts.push(
-			onTheLine(
-				textAt(
-					`head-${line.id}`,
-					COLUMNS.left + i * column + 4,
-					top,
-					column - 8,
-					nameIn(line, wording),
-					{
-						size: 'more',
-						align: 'middle'
-					}
-				)
+	// The key first, drawn with the circles below, so nothing has to be matched up from words.
+	const key = keyAt('key', 10, 8, 780, [
+		{ mark: 'full', says: say('Makes it') },
+		{ mark: 'empty', says: say('Is sent it, or sends it on') },
+		{ mark: 'none', says: say('Never sees it') }
+	]);
+	const parts: PicturePart[] = [...key.parts];
+	const headTop = 8 + key.h + 12;
+	const heads = [
+		textAt('made-for-head', FOR.left, headTop, FOR.w, say('Made for'), { size: 'more' }),
+		...parties.map((line, i) =>
+			textAt(
+				`head-${line.id}`,
+				COLUMNS.left + i * column + 4,
+				headTop,
+				column - 8,
+				nameIn(line, wording),
+				{
+					size: 'more',
+					align: 'middle'
+				}
 			)
-		);
-	});
+		)
+	];
+	// Every heading sits on the line under the headings, however many lines it takes.
+	const headBottom = Math.max(...heads.map(bottomOf));
+	parts.push(...heads.map((head) => ({ ...head, y: headBottom - head.h / 2 })));
 	const lines: PictureLine[] = [];
-	rows.forEach((token, r) => {
-		const y = top + HEAD + r * ROW + ROW / 2;
-		lines.push({ d: `M10 ${y - ROW / 2} H${W - 10}`, bare: true, faint: true });
+	let top = headBottom + 8;
+	lines.push({ d: `M10 ${top} H${W - 10}`, bare: true, faint: true });
+	for (const token of rows) {
 		const label = artifacts[token].label;
-		parts.push(
-			textAt(`name-${token}`, NAME.left, y - 9, NAME.w, label[0].toUpperCase() + label.slice(1), {
+		const name = textAt(
+			`name-${token}`,
+			NAME.left,
+			top + 8,
+			NAME.w,
+			label[0].toUpperCase() + label.slice(1),
+			{
 				opens: at(first.get(`${made.get(token)}:${token}`)!)
-			}),
-			textAt(`for-${token}`, FOR.left, y - 8, FOR.w, say(MADE_FOR[token]!), { size: 'more' })
+			}
 		);
+		const is = textAt(`is-${token}`, NAME.left, bottomOf(name) + 2, NAME.w, say(IS[token]!), {
+			size: 'more'
+		});
+		const height = bottomOf(is) - top + 10;
+		const y = top + height / 2;
+		const madeFor = textAt(`for-${token}`, FOR.left, top + 8, FOR.w, say(MADE_FOR[token]!), {
+			size: 'more'
+		});
+		parts.push(name, is, { ...madeFor, y: y });
 		parties.forEach((line, i) => {
 			const x = COLUMNS.left + i * column + column / 2;
 			const step = first.get(`${line.id}:${token}`);
@@ -123,21 +143,14 @@ export function whichTokenIsForWhom(settings: Settings, say: Say, wording: Wordi
 				parts.push(markAt(`${token}.${line.id}`, x, y, 'none', `${who} never sees the ${label}`));
 			}
 		});
-	});
-	const bottom = top + HEAD + rows.length * ROW;
-	lines.push({ d: `M10 ${bottom} H${W - 10}`, bare: true, faint: true });
-	const legend = textAt(
-		'legend',
-		10,
-		bottom + 14,
-		780,
-		say('Filled: makes it. Open: is sent it, or sends it on. A dash: never sees it.'),
-		{ size: 'more' }
-	);
+		top += height;
+		lines.push({ d: `M10 ${top} H${W - 10}`, bare: true, faint: true });
+	}
+	const bottom = top;
 	const note = textAt(
 		'note',
 		10,
-		bottom + 32,
+		bottom + 12,
 		780,
 		say(
 			adds
@@ -148,12 +161,12 @@ export function whichTokenIsForWhom(settings: Settings, say: Say, wording: Wordi
 		),
 		{ size: 'more' }
 	);
-	parts.push(legend, note);
+	parts.push(note);
 	return {
 		id: 'which-token-is-for-whom',
 		title: say('Which token is for whom'),
 		width: W,
-		height: bottom + 60,
+		height: bottomOf(note) + 12,
 		parts,
 		lines
 	};

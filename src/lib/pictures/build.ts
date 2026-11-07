@@ -4,6 +4,7 @@ import { evaluate } from '#lib/flow/model.ts';
 import { defaultSettings, normalize, settingIds, type Settings } from '#lib/flow/settings.ts';
 import {
 	SIZE,
+	widthOf,
 	wrap,
 	type MarkKind,
 	type Opens,
@@ -201,4 +202,44 @@ export function presetDrawing(
 	};
 	if (!fits.length) return null;
 	return fits.reduce((best, preset) => (differs(preset) < differs(best) ? preset : best)).id;
+}
+
+/** One entry of a key: a mark or a bar, as the picture draws it, and what it means. */
+export interface KeyEntry {
+	mark?: MarkKind;
+	tone?: 'solid' | 'light' | 'open';
+	says: string;
+}
+
+/**
+ * A key drawn with the picture's own marks and bars, so what a circle means is next to a circle, and
+ * not in words below that a reader has to match up. It wraps to the width it is given.
+ */
+export function keyAt(
+	id: string,
+	left: number,
+	top: number,
+	width: number,
+	entries: readonly KeyEntry[]
+): { parts: PicturePart[]; h: number } {
+	const LINE = 24;
+	const parts: PicturePart[] = [];
+	let x = left;
+	let y = top + LINE / 2;
+	entries.forEach((entry, i) => {
+		const glyph = entry.mark ? 20 : 28;
+		const words = Math.ceil(widthOf(entry.says, SIZE.more)) + 2;
+		if (x > left && x + glyph + 6 + words > left + width) {
+			x = left;
+			y += LINE;
+		}
+		parts.push(
+			entry.mark
+				? markAt(`${id}.${i}`, x + glyph / 2, y, entry.mark, entry.says)
+				: { ...barAt(`${id}.${i}`, x, y, glyph, entry.tone ?? 'solid', entry.says), h: 10 },
+			textAt(`${id}.${i}.says`, x + glyph + 6, y - 8, words, entry.says, { size: 'more' })
+		);
+		x += glyph + 6 + words + 18;
+	});
+	return { parts, h: y + LINE / 2 - top };
 }

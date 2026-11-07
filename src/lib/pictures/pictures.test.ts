@@ -426,10 +426,14 @@ describe('the concept pictures (#167)', () => {
 	});
 
 	it('show where a protection stops an attack only where a recording does', () => {
-		const stops = picture('explain=term.pkce').parts.filter((part) => part.mark === 'full');
+		const stops = picture('explain=term.pkce').parts.filter(
+			(part) => part.mark === 'full' && !part.id.startsWith('key.')
+		);
 		expect(stops.length).toBeGreaterThan(2);
 		for (const part of stops) expect(part.opens, part.id).toBeDefined();
-		const dots = picture('explain=term.pkce').parts.filter((part) => part.mark === 'dot');
+		const dots = picture('explain=term.pkce').parts.filter(
+			(part) => part.mark === 'dot' && !part.id.startsWith('key.')
+		);
 		for (const part of dots) expect(part.opens, part.id).toBeUndefined();
 	});
 
@@ -449,5 +453,37 @@ describe('the concept pictures (#167)', () => {
 		expect(picture('explain=term.realm&mode=advanced').id).toBe('what-is-in-a-token-here');
 		expect(pictureFor(stateFor('explain=term.realm'), 'plain')).toBeNull();
 		expect(pictureFor(stateFor('explain=term.realm&keycloak=off'), 'plain')).toBeNull();
+	});
+});
+
+// The maintainer, 2026-11-07: the circles were not explained, and the rows took knowing already.
+describe('what the circles and the rows mean', () => {
+	it('is in a key drawn with the same marks, wherever there are marks', () => {
+		for (const found of pictures) {
+			const cells = found.parts.filter(
+				(part) => part.shape === 'mark' && !part.id.startsWith('key.')
+			);
+			const keyed = new Set(
+				found.parts
+					.filter((part) => part.id.startsWith('key.') && part.mark)
+					.map((part) => part.mark)
+			);
+			for (const cell of cells) expect(keyed, `${found.id}: ${cell.id}`).toContain(cell.mark);
+		}
+	});
+
+	it('says what each row of the timeline and of the protections is', () => {
+		for (const search of ['explain=term.session', 'explain=setting.pkce', 'explain=term.token']) {
+			const found = picture(search);
+			const names = found.parts.filter((part) => part.id.startsWith('name-'));
+			for (const name of names) {
+				const is = found.parts.find((part) => part.id === name.id.replace('name-', 'is-'));
+				expect(is?.says.join(' ').length, `${found.id}: ${name.id}`).toBeGreaterThan(20);
+			}
+		}
+		const offline = picture('explain=term.session').parts.find(
+			(part) => part.id === 'is-offline-token'
+		)!;
+		expect(offline.says.join(' ')).toContain('for when the user is gone');
 	});
 });
