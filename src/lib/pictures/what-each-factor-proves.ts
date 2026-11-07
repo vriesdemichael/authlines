@@ -10,19 +10,23 @@ type Attack = 'guessed' | 'fake-site' | 'taken-over' | 'after-login';
  * what people miss. Nothing here is recorded, so every cell rests on NIST SP 800-63B revision 4 (July
  * 2025), WebAuthn Level 3 (W3C Recommendation, August 2026) or RFC 6238, checked on 2026-11-07: email
  * is in its own row because revision 4 says it shall not be used to authenticate, and an
- * authenticator app proves a secret, which revision 4 lets be copied, and not a device. The last column is why a second factor is not
- * the end of it: it is asked for at the login, and what the login hands out works without it.
+ * authenticator app proves a secret, which revision 4 lets be copied, and not a device. The last
+ * column is why a second factor is not the end of it: it is asked for at the login, and what the login
+ * hands out works without it. A fresh reader's review on the same day made the kinds visible, put
+ * the reason for resisting a guess on the limit to wrong tries (section 3.2.2), let a password fall
+ * to a mailbox taken over through its reset, and made a key or secret synced through an account only
+ * as safe as that account (Appendix B).
  */
 export function whatEachFactorProves(say: Say): Picture {
 	const attacks: readonly { id: Attack; name: string }[] = [
 		{ id: 'guessed', name: 'Guessed, or reused from a leak elsewhere' },
-		{ id: 'fake-site', name: 'Typed into a fake site' },
-		{ id: 'taken-over', name: 'Their phone number or mailbox taken over' },
-		{ id: 'after-login', name: 'A session or token stolen after the login' }
+		{ id: 'fake-site', name: 'Asked for by a fake site' },
+		{ id: 'taken-over', name: 'The user’s phone number or mailbox taken over' },
+		{ id: 'after-login', name: 'The cookie or token from the login stolen' }
 	];
 	const afterLogin: MatrixCell = {
 		mark: 'empty',
-		says: 'Falls to it: after the login a cookie or token stands in for the user, and works for whoever holds it'
+		says: 'Falls to it: it was asked for at the login, and the cookie or token after it works for whoever holds it'
 	};
 	const relayed: MatrixCell = {
 		mark: 'empty',
@@ -30,7 +34,7 @@ export function whatEachFactorProves(say: Say): Picture {
 	};
 	const once: MatrixCell = {
 		mark: 'full',
-		says: 'Resists it: each code works once, and only for a short time'
+		says: 'Resists it: a code works only briefly, and the site has to limit wrong tries'
 	};
 	const factors: readonly {
 		id: string;
@@ -41,7 +45,7 @@ export function whatEachFactorProves(say: Say): Picture {
 		{
 			id: 'password',
 			name: 'A password',
-			proves: 'Proves only that whoever typed it knows it.',
+			proves: 'Something you know. Proves only that whoever typed it knows it.',
 			cells: {
 				guessed: {
 					mark: 'empty',
@@ -51,14 +55,18 @@ export function whatEachFactorProves(say: Say): Picture {
 					mark: 'empty',
 					says: 'Falls to it: the fake site keeps it, or passes it on'
 				},
-				'taken-over': { mark: 'none', says: 'Does not apply' },
+				'taken-over': {
+					mark: 'empty',
+					says: 'Falls to it where a forgotten password is reset through them, as it usually is'
+				},
 				'after-login': afterLogin
 			}
 		},
 		{
 			id: 'text-message',
 			name: 'A code by text message',
-			proves: 'Proves you could get a message sent to this number, on whatever phone has it now.',
+			proves:
+				'Something you have. Proves you could get a message sent to this number, on whatever phone has it now.',
 			cells: {
 				guessed: once,
 				'fake-site': relayed,
@@ -71,13 +79,13 @@ export function whatEachFactorProves(say: Say): Picture {
 		},
 		{
 			id: 'email',
-			name: 'A code or link by email',
+			name: 'A code by email',
 			proves:
-				'Proves only that someone can read this mailbox, which may have just a password. NIST does not count it as a second factor.',
+				'Not counted as a second factor by NIST. Proves only that someone can read this mailbox, which may have just a password.',
 			cells: {
 				guessed: {
 					mark: 'half',
-					says: 'Only partly: the code cannot be guessed in time, and the mailbox’s own password can'
+					says: 'Only partly: the code works only briefly, and the mailbox’s own password can be guessed'
 				},
 				'fake-site': relayed,
 				'taken-over': {
@@ -91,13 +99,13 @@ export function whatEachFactorProves(say: Say): Picture {
 			id: 'authenticator-app',
 			name: 'A code from an authenticator app',
 			proves:
-				'Proves you hold the secret shared when it was set up, usually in an app on a phone. It can be copied, and the site keeps it too.',
+				'Something you have. Proves you hold the secret shared when it was set up, usually in an app on a phone. It can be copied, and the site keeps it too.',
 			cells: {
 				guessed: once,
 				'fake-site': relayed,
 				'taken-over': {
-					mark: 'full',
-					says: 'Resists it: the code is made from the secret and the time, and nothing is sent'
+					mark: 'half',
+					says: 'Only partly: nothing is sent, and a secret backed up to an account is as safe as that account'
 				},
 				'after-login': afterLogin
 			}
@@ -106,7 +114,7 @@ export function whatEachFactorProves(say: Say): Picture {
 			id: 'passkey',
 			name: 'A passkey or security key',
 			proves:
-				'Proves you hold a key made for this site’s domain, kept on a device or a security key, or synced between yours.',
+				'Something you have, and with the PIN or fingerprint it usually asks for, both factors in one. Proves you hold a key made for this site’s domain.',
 			cells: {
 				guessed: {
 					mark: 'full',
@@ -117,8 +125,8 @@ export function whatEachFactorProves(say: Say): Picture {
 					says: 'Resists it: the browser only lets it answer the domain it was made for, and the site checks which page asked'
 				},
 				'taken-over': {
-					mark: 'full',
-					says: 'Resists it: no number or mailbox is involved'
+					mark: 'half',
+					says: 'Only partly: a key on one device or a security key resists it, and one synced between devices is as safe as the account it is synced through'
 				},
 				'after-login': afterLogin
 			}
@@ -128,8 +136,7 @@ export function whatEachFactorProves(say: Say): Picture {
 		key: [
 			{ mark: 'full', says: say('Resists it') },
 			{ mark: 'half', says: say('Only partly') },
-			{ mark: 'empty', says: say('Falls to it') },
-			{ mark: 'none', says: say('Does not apply') }
+			{ mark: 'empty', says: say('Falls to it') }
 		],
 		columns: attacks.map((attack) => ({ id: attack.id, name: say(attack.name) })),
 		rows: factors.map((factor) => ({
@@ -144,7 +151,7 @@ export function whatEachFactorProves(say: Say): Picture {
 			)
 		})),
 		note: say(
-			'A second factor is a second of these, of a different kind, asked for at the login. The last column is why it is not the end of it. From NIST’s guidance 800-63B, revision 4, the WebAuthn spec and RFC 6238: nothing on this one is recorded.'
+			'A second factor is one of a different kind from the first, asked for at the login: a password and something you have. The last column is why it is not the end of it. This is from the standards, and not from a real server: NIST’s guidance 800-63B, revision 4, the WebAuthn spec and RFC 6238.'
 		)
 	});
 	return {

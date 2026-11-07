@@ -29,10 +29,14 @@ const MARKS: readonly string[] = ['full', 'half', 'empty', 'dot', 'none'];
  * on the right that each picture uses for its own question.
  */
 export function timeline(options: {
+	/** What the picture is about, above the key, where the explanation it is in says something else. */
+	lead?: string;
 	key: readonly KeyEntry[];
 	rightHead: string;
 	rows: readonly TimelineRow[];
 	note: string;
+	/** Under the names, beside the ticks: that the scale stretches minutes and squeezes days. */
+	scale: string;
 	/** Wider for words than for a mark. */
 	rightWidth?: number;
 }): { parts: PicturePart[]; lines: PictureLine[]; height: number } {
@@ -46,9 +50,11 @@ export function timeline(options: {
 	const at = (seconds: number) =>
 		PLOT.left + ((Math.log10(seconds) - FROM) / (TO - FROM)) * (PLOT.right - PLOT.left);
 
-	const key = keyAt('key', 10, 8, 780, options.key);
-	const parts: PicturePart[] = [...key.parts];
-	const head = textAt('right-head', RIGHT.left, 8 + key.h + 10, RIGHT.w, options.rightHead, {
+	const lead = options.lead ? textAt('lead', 10, 8, 780, options.lead) : null;
+	const keyTop = lead ? bottomOf(lead) + 10 : 8;
+	const key = keyAt('key', 10, keyTop, 780, options.key);
+	const parts: PicturePart[] = lead ? [lead, ...key.parts] : [...key.parts];
+	const head = textAt('right-head', RIGHT.left, keyTop + key.h + 10, RIGHT.w, options.rightHead, {
 		size: 'more',
 		align: 'middle'
 	});
@@ -113,7 +119,11 @@ export function timeline(options: {
 			textAt(`tick-${label}`, x - 26, axisY + 8, 52, label, { size: 'more', align: 'middle' })
 		);
 	}
-	const note = textAt('note', 10, axisY + 32, 780, options.note, { size: 'more' });
+	const scale = textAt('scale', NAME.left, axisY + 8, NAME.w, options.scale, { size: 'more' });
+	parts.push(scale);
+	const note = textAt('note', 10, Math.max(axisY + 32, bottomOf(scale) + 10), 780, options.note, {
+		size: 'more'
+	});
 	parts.push(note);
 	return { parts, lines, height: bottomOf(note) + 12 };
 }

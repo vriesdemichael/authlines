@@ -474,4 +474,12 @@ Checked against the documents themselves on 2026-11-07, for the two pictures on 
 - **After the login** a session secret stands in for the user (800-63B-4 section 5.1), and an access or refresh token can outlive the session (5.1.2). NIST names device-bound sessions, reauthentication and monitoring against theft, and not a second factor.
 - **An admin's account.** 800-63B-4 says nothing about privileged accounts. SP 800-53 Rev 5 control IA-2(1) requires multi-factor authentication for them, and IA-2(2) for everyone else. No primary source found calls standing privilege itself risky, so the picture shows a password alone with no end and leaves the rest to the reader.
 
-Not tried: a one-time password or a passkey on the server, which would need a recording with a virtual authenticator, as [#200](https://github.com/vriesdemichael/authlines/issues/200) says.
+A fresh reader's review of the first version found more, each checked against the same text:
+
+- **Guessing a code** is stopped by the limit on wrong tries, which a site shall keep to 100 or fewer per authenticator (800-63B-4 section 3.2.2), and not by a code working once.
+- **A passkey with its PIN or fingerprint** is a multi-factor cryptographic authenticator, something you have with an activation factor, and counts as single-factor only when the flag says the activation factor was not used (3.1.7).
+- **A synced key or an exported secret** is as safe as the account it is synced through: access to keys in a sync fabric shall be protected by MFA equivalent to AAL2 (Appendix B). So against a phone number or mailbox taken over, a passkey and an authenticator app only partly resist it.
+- **A password** falls to a mailbox taken over wherever a forgotten password is reset through it.
+- **How long a thief has.** On the server recorded, using a session or a refresh token counts as using it (the Keycloak timeouts docs), so one kept in use lasts up to SSO Session Max, ten hours, and an offline token kept in use has no end by default (Offline Session Max Limited off, above). The first version drew the idle time, which is how long it lasts unused.
+
+Not tried: a one-time password or a passkey on the server, which would need a recording with a virtual authenticator, as [#200](https://github.com/vriesdemichael/authlines/issues/200) says. Nor was a refresh token kept going past the idle time on the server: that is from the docs.

@@ -8,18 +8,17 @@ import { DAY, timeline, type TimelineRow } from './timeline.ts';
  * What someone can do with each thing they steal, and for how long: the maintainer's point of
  * 2026-11-07 that "a standing privilege without a mfa is a problem". A second factor is asked for at
  * the login, so a password alone is a way in with no end, and what the login hands out works without
- * the second factor for as long as it lasts (NIST SP 800-63B revision 4, section 5.1). That an admin's
- * account wants a second factor is SP 800-53's IA-2(1). No primary source found calls standing
- * privilege itself risky, so the picture shows it rather than says it. The lifetimes are the recorded ones, and what a refresh
- * token also needs is what the recording of a used refresh token showed.
+ * the second factor for as long as it lasts (NIST SP 800-63B revision 4, section 5.1). That an
+ * account wants a second factor is SP 800-53's IA-2(1) for admins and IA-2(2) for everyone else. No
+ * primary source found calls standing privilege itself risky, so the picture shows it, as an admin's
+ * password beside anyone's, rather than says it.
+ *
+ * Each bar is how long a thief who keeps using it has, which a fresh reader's review found the first
+ * version understated: using a session or a refresh token counts as using it, so it lasts up to its
+ * maximum, and an offline token has none by default (the server notes, and research/followup-checks).
  */
 export function whatAThiefCanDo(say: Say): Picture {
-	const logout = (step: string, keeps?: 'offline') =>
-		opensAsRecorded('flow', step, keeps ? 'logout-offline' : 'logout', {
-			oidc: true,
-			logout: true,
-			...(keeps ? { logoutKeeps: keeps } : {})
-		});
+	const neverEnds = (says: string) => [{ to: 60 * DAY, tone: 'open' as const, says }];
 	const rows: TimelineRow[] = [
 		{
 			id: 'password-alone',
@@ -28,7 +27,18 @@ export function whatAThiefCanDo(say: Say): Picture {
 				'What the user types to log in. With nothing else asked for, it is all anyone needs.'
 			),
 			opens: opensAt('flow', 'submit-credentials', 'oauth'),
-			bars: [{ to: 60 * DAY, tone: 'open', says: say('Until it is changed') }],
+			bars: neverEnds(say('Until it is changed')),
+			after: say('Until it is changed'),
+			right: say('Nothing else'),
+			rightSays: say('Nothing else')
+		},
+		{
+			id: 'admin-password',
+			name: say('An admin’s password, and no second factor'),
+			is: say(
+				'The same, with every right the admin has, at any hour, because those rights are always there.'
+			),
+			bars: neverEnds(say('Until it is changed')),
 			after: say('Until it is changed'),
 			right: say('Nothing else'),
 			rightSays: say('Nothing else')
@@ -49,10 +59,9 @@ export function whatAThiefCanDo(say: Say): Picture {
 			is: say('Its cookie in the browser. The second factor was asked for when it began.'),
 			opens: opensAsRecorded('flow', 'redirect-with-code', 'oauth'),
 			bars: [
-				{ to: LIFETIMES.most, tone: 'light', says: say('Ten hours at most') },
-				{ to: LIFETIMES.idle, tone: 'solid', says: say('Thirty minutes unused') }
+				{ to: LIFETIMES.most, tone: 'solid', says: say('Ten hours, if used every thirty minutes') }
 			],
-			after: say('30 min unused, 10 h at most'),
+			after: say('Up to 10 h, if used every 30 min'),
 			right: say('Nothing else'),
 			rightSays: say('Nothing else')
 		},
@@ -69,13 +78,10 @@ export function whatAThiefCanDo(say: Say): Picture {
 		{
 			id: 'refresh-token',
 			name: say('A refresh token'),
-			is: say('Gets new access tokens without the user.'),
+			is: say('Gets new access tokens without the user, for as long as the session lasts.'),
 			opens: opensAsRecorded('flow', 'refresh-again-response', 'refresh', { refresh: true }),
-			bars: [
-				{ to: LIFETIMES.most, tone: 'light', says: say('With the session, ten hours at most') },
-				{ to: LIFETIMES.idle, tone: 'solid', says: say('With the session, thirty minutes unused') }
-			],
-			after: say('With the session'),
+			bars: [{ to: LIFETIMES.most, tone: 'solid', says: say('Ten hours, with the session') }],
+			after: say('Up to 10 h, with the session'),
 			right: say("The app's secret, if it has one"),
 			rightSays: say("The app's secret, if it has one"),
 			rightOpens: opensAsRecorded('flow', 'refresh-again', 'refresh', { refresh: true })
@@ -84,27 +90,29 @@ export function whatAThiefCanDo(say: Say): Picture {
 			id: 'offline-token',
 			name: say('An offline token'),
 			is: say('A refresh token for when the user is gone, such as a nightly import.'),
-			opens: logout('refresh-after-logout-response', 'offline'),
-			bars: [
-				{ to: 60 * DAY, tone: 'open', says: say('No maximum, unless one is turned on') },
-				{ to: LIFETIMES.offline, tone: 'solid', says: say('Thirty days unused') }
-			],
-			after: say('30 days unused'),
+			opens: opensAsRecorded('flow', 'refresh-after-logout-response', 'logout-offline', {
+				oidc: true,
+				logout: true,
+				logoutKeeps: 'offline'
+			}),
+			bars: neverEnds(say('No end by default, if used every thirty days')),
+			after: say('No end, if used every 30 days'),
 			right: say("The app's secret, if it has one"),
 			rightSays: say("The app's secret, if it has one")
 		}
 	];
 	const drawn = timeline({
+		lead: say('If someone steals one of these: how long they can use it, and what else they need.'),
 		key: [
-			{ tone: 'solid', says: say('How long a stolen one works') },
-			{ tone: 'light', says: say('How long it can work at most') },
-			{ tone: 'open', says: say('No fixed end') }
+			{ tone: 'solid', says: say('How long a thief who keeps using it has') },
+			{ tone: 'open', says: say('No end') }
 		],
 		rightHead: say('What else a thief needs'),
 		rightWidth: 170,
 		rows,
+		scale: say('Minutes are stretched and days squeezed, so both fit.'),
 		note: say(
-			'A second factor is asked for at the login. After it, a cookie or token stands in for the user, and works for whoever holds it until it ends. An admin’s account with only a password is the first row, with an admin’s rights, which is why NIST’s security controls want a second factor on such accounts. Lifetimes are from the server recorded, by default.'
+			'A second factor is asked for at the login. After it, a cookie or token stands in for the user, and works for whoever holds it until it ends. NIST’s security controls want a second factor on every account, and name admins’ accounts on their own. Lifetimes are from the server recorded, by default, where using a session or a refresh token keeps it going, up to its maximum.'
 		)
 	});
 	return {

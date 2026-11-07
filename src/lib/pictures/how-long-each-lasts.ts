@@ -121,6 +121,7 @@ export function howLongEachLasts(say: Say): Picture {
 			{ mark: 'empty', says: say('A logout does not end it') }
 		],
 		rightHead: say('Ends at a logout?'),
+		scale: say('Minutes are stretched and days squeezed, so both fit.'),
 		rows,
 		note: say(
 			'On the server recorded, by default. Unused means nothing used it in that time, and a logout of the user ends their session there.'
