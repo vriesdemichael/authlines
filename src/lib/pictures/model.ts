@@ -16,13 +16,27 @@ export interface Picture {
 	lines: readonly PictureLine[];
 }
 
-export type PictureId = 'refresh' | 'who-knows-whom';
+export type PictureId =
+	| 'refresh'
+	| 'who-knows-whom'
+	| 'trust-across-providers'
+	| 'how-an-api-trusts-a-token'
+	| 'which-token-is-for-whom'
+	| 'how-long-each-lasts'
+	| 'what-stops-what'
+	| 'where-the-tokens-are'
+	| 'what-each-spec-adds'
+	| 'what-is-in-a-token-here';
 
 /**
  * Where something starts or ends, a step, or a question with more than one way on: those make a
- * flowchart. A party, with what it holds, makes a relation diagram.
+ * flowchart. A party, with what it holds, makes a relation diagram, and a zone holds parties. A text
+ * is a heading or a label, a mark is a cell of a matrix, and a bar is a length of time.
  */
-export type PartShape = 'ends' | 'step' | 'ask' | 'party';
+export type PartShape = 'ends' | 'step' | 'ask' | 'party' | 'zone' | 'text' | 'mark' | 'bar';
+
+/** A cell of a matrix: all, some, none, what the specs say and nothing here shows, or nothing. */
+export type MarkKind = 'full' | 'half' | 'empty' | 'dot' | 'none';
 
 export interface PicturePart {
 	id: string;
@@ -43,7 +57,17 @@ export interface PicturePart {
 	rows?: readonly PictureRow[];
 	/** How a call travels, when it is one, in the colours the arrows use (ADR-014). */
 	travels?: 'direct' | 'browser';
-	opens: Opens;
+	/** A text's words, at which size, and from which side. */
+	size?: 'title' | 'says' | 'more';
+	align?: 'start' | 'middle' | 'end';
+	/** A cell of a matrix, whose words are only read out. */
+	mark?: MarkKind;
+	/** A bar: known, a lighter stretch it can last to, or up to whoever builds the app. */
+	tone?: 'solid' | 'light' | 'open';
+	/** The part is the current case, of several side by side. */
+	current?: boolean;
+	/** Where it goes. A heading, a zone or a bar may go nowhere. */
+	opens?: Opens;
 }
 
 export interface PictureRow {
@@ -70,6 +94,8 @@ export interface PictureLine {
 	bare?: boolean;
 	/** Dashed: who trusts tokens from whom, as the legend of a relation diagram says. */
 	dashed?: boolean;
+	/** Faint: a rule between rows, or the axis of a chart, which only helps the eye. */
+	faint?: boolean;
 	label?: Label;
 }
 

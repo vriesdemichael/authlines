@@ -59,5 +59,6 @@ export const realmHolds = {
 	accounts: 'Users',
 	providers: 'Identity providers',
 	directories: 'User federation',
+	customers: 'Organizations',
 	keys: 'Keys'
 } as const;

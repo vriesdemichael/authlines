@@ -238,14 +238,32 @@ export const breakages = [
 	{
 		name: 'picture: the setting for running out has no picture',
 		file: 'src/lib/pictures/index.ts',
-		from: "(explained.kind === 'setting' && explained.id === 'refresh')",
-		to: "(explained.kind === 'setting' && explained.id === 'refresh-token')"
+		from: "'setting.refresh': 'refresh',",
+		to: "'setting.reuse': 'refresh',"
 	},
 	{
 		name: 'picture: who knows whom leaves the app and the API apart',
 		file: 'src/lib/pictures/who-knows-whom.ts',
 		from: "label(['calls, with an access token']",
 		to: "label(['is near']"
+	},
+	{
+		name: 'picture: the token matrix says whoever receives a token made it',
+		file: 'src/lib/pictures/which-token-is-for-whom.ts',
+		from: 'if (!made.has(artifact)) made.set(artifact, step.from);',
+		to: 'if (!made.has(artifact)) made.set(artifact, step.to);'
+	},
+	{
+		name: 'picture: an access token is drawn lasting longer than recorded',
+		file: 'src/lib/pictures/how-long-each-lasts.ts',
+		from: "after: say('5 min'),",
+		to: "after: say('15 min'),"
+	},
+	{
+		name: 'picture: the identity provider checks a signature from another OpenID provider',
+		file: 'src/lib/pictures/trust-across-providers.ts',
+		from: "trust: ['takes its word', 'for who logged in'],",
+		to: "trust: ['checks its', 'signature'],"
 	},
 	{
 		name: 'program: a program is drawn answered at the app’s own address',
