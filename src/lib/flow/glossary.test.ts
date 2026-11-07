@@ -12,7 +12,8 @@ import {
 	type Settings
 } from '#lib/flow/settings.ts';
 import { mapNodes } from '#lib/map/nodes.ts';
-import { refreshPicture } from '#lib/pictures/refresh.ts';
+import { parseState } from '#lib/flow/state.ts';
+import { pictureFor } from '#lib/pictures/index.ts';
 
 const diagrams = [base.diagrams.flow, base.diagrams.setup];
 
@@ -35,10 +36,17 @@ function simpleModeText(): string[] {
 			}
 		}
 		// A picture in an explanation is read by someone new as well (#167).
-		const picture = refreshPicture(settings, (words) => words);
-		for (const part of picture.parts)
-			for (const line of [...part.says, ...(part.more ?? [])]) said.add(line);
-		for (const line of picture.lines) for (const label of line.label?.lines ?? []) said.add(label);
+		for (const explain of ['artifact.refresh-token', 'lifeline.idp']) {
+			const state = { ...parseState(base, 'flow', `explain=${explain}`), settings };
+			const picture = pictureFor(state, 'plain');
+			for (const part of picture?.parts ?? []) {
+				const rows = (part.rows ?? []).flatMap((row) => [row.says, row.more]);
+				for (const line of [...(part.title ?? []), ...part.says, ...(part.more ?? []), ...rows])
+					said.add(line);
+			}
+			for (const line of picture?.lines ?? [])
+				for (const label of line.label?.lines ?? []) said.add(label);
+		}
 	}
 	for (const diagram of diagrams) for (const intro of introsOf(diagram)) said.add(intro);
 	for (const id of simpleSettingIds) {

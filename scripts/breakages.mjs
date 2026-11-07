@@ -242,6 +242,12 @@ export const breakages = [
 		to: "(explained.kind === 'setting' && explained.id === 'refresh-token')"
 	},
 	{
+		name: 'picture: who knows whom leaves the app and the API apart',
+		file: 'src/lib/pictures/who-knows-whom.ts',
+		from: "label(['calls, with an access token']",
+		to: "label(['is near']"
+	},
+	{
 		name: 'program: a program is drawn answered at the app’s own address',
 		file: AC,
 		from: "note: '127.0.0.1 at the port it is listening on, which need not be registered',\n\t\t\t\t\twhen: inAProgram",

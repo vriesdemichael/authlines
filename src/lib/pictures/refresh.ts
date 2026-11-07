@@ -202,9 +202,9 @@ export function refreshPicture(settings: Settings, say: Say): Picture {
 		{
 			d: `M${left} 245 H${L + STEP_W / 2}`,
 			label: {
-				lines: ['Then call the API'],
+				lines: ['Then call', 'the API'],
 				x: (left + L + STEP_W / 2) / 2,
-				y: 237,
+				y: 223,
 				anchor: 'middle'
 			}
 		},
@@ -237,7 +237,7 @@ export function refreshPicture(settings: Settings, say: Say): Picture {
 		},
 		{
 			d: `M${L + ASK_W / 2} 700 H${AROUND} V470`,
-			joins: true,
+			bare: true,
 			label: { lines: failed, x: L + ASK_W / 2 + 12, y: 678, anchor: 'start' }
 		}
 	];

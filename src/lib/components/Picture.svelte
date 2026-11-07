@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Opens, Picture, PicturePart } from '#lib/pictures/index.ts';
+	import type { Opens, Picture, PicturePart, PictureRow } from '#lib/pictures/index.ts';
 
 	interface Props {
 		picture: Picture;
@@ -16,13 +16,30 @@
 		part.y - (part.says.length * SAYS + (part.more?.length ?? 0) * MORE) / 2 + 12;
 	const diamond = (part: PicturePart) =>
 		`M${part.x} ${part.y - part.h / 2} L${part.x + part.w / 2} ${part.y} L${part.x} ${part.y + part.h / 2} L${part.x - part.w / 2} ${part.y} Z`;
-	const said = (part: PicturePart) => [...part.says, ...(part.more ?? [])].join(' ');
+	const said = (part: PicturePart) =>
+		[...(part.title ?? []), part.sub ?? '', ...part.says, ...(part.more ?? [])]
+			.filter(Boolean)
+			.join(' ');
 
-	function press(event: KeyboardEvent, part: PicturePart) {
+	// A party is laid out from its top, as the picture worked out its height.
+	const PAD = 14;
+	const ROW = 50;
+	const topOf = (part: PicturePart) => part.y - part.h / 2;
+	const leftOf = (part: PicturePart) => part.x - part.w / 2;
+	const titled = (part: PicturePart) => (part.title?.length ?? 0) * 18;
+	const subY = (part: PicturePart) => topOf(part) + PAD + titled(part) + 11;
+	const saysY = (part: PicturePart) => topOf(part) + PAD + titled(part) + (part.sub ? 16 : 0) + 11;
+	const rowsY = (part: PicturePart) =>
+		topOf(part) + PAD + titled(part) + (part.sub ? 16 : 0) + part.says.length * 15 + 2;
+
+	function press(event: KeyboardEvent, opens: Opens) {
 		if (event.key !== 'Enter' && event.key !== ' ') return;
 		event.preventDefault();
-		onopen?.(part.opens);
+		onopen?.(opens);
 	}
+	// A part's lines are separate elements, so each ends in a space, which SVG does not draw. Otherwise
+	// what is seen runs together, and does not match what is read out (WCAG 2.5.3, label in name).
+	const rowSaid = (row: PictureRow) => `${row.says}: ${row.more}`;
 </script>
 
 <figure class="picture" data-testid="picture" data-picture={picture.id}>
@@ -51,7 +68,8 @@
 				<path
 					class="line"
 					d={line.d}
-					marker-end={line.joins ? undefined : `url(#head-${picture.id})`}
+					class:dashed={line.dashed}
+					marker-end={line.bare ? undefined : `url(#head-${picture.id})`}
 				/>
 			{/each}
 			{#each picture.lines as line, i (i)}
@@ -76,9 +94,29 @@
 					tabindex="0"
 					aria-label={said(part)}
 					onclick={() => onopen?.(part.opens)}
-					onkeydown={(event) => press(event, part)}
+					onkeydown={(event) => press(event, part.opens)}
 				>
-					{#if part.shape === 'ask'}
+					{#if part.shape === 'party'}
+						<rect
+							class="shape"
+							x={leftOf(part)}
+							y={topOf(part)}
+							width={part.w}
+							height={part.h}
+							rx="8"
+						/>
+						{#each part.title ?? [] as text, i (i)}
+							<text class="title" x={leftOf(part) + PAD} y={topOf(part) + PAD + 13 + i * 18}
+								>{`${text} `}</text
+							>
+						{/each}
+						{#if part.sub}
+							<text class="sub" x={leftOf(part) + PAD} y={subY(part)}>{`${part.sub} `}</text>
+						{/if}
+						{#each part.says as text, i (i)}
+							<text class="more" x={leftOf(part) + PAD} y={saysY(part) + i * 15}>{`${text} `}</text>
+						{/each}
+					{:else if part.shape === 'ask'}
 						<path class="shape" d={diamond(part)} />
 					{:else}
 						<rect
@@ -90,9 +128,9 @@
 							rx={part.shape === 'ends' ? part.h / 2 : 8}
 						/>
 					{/if}
-					{#each part.says as text, i (i)}
+					{#each part.shape === 'party' ? [] : part.says as text, i (i)}
 						<text class="says" x={part.x} y={firstLine(part) + i * SAYS} text-anchor="middle"
-							>{text}</text
+							>{`${text} `}</text
 						>
 					{/each}
 					{#each part.more ?? [] as text, i (i)}
@@ -100,10 +138,37 @@
 							class="more"
 							x={part.x}
 							y={firstLine(part) + part.says.length * SAYS + i * MORE}
-							text-anchor="middle">{text}</text
+							text-anchor="middle">{`${text} `}</text
 						>
 					{/each}
 				</g>
+				<!-- What a party holds, each beside the party's own link and not in it. -->
+				{#each part.rows ?? [] as row, i (row.id)}
+					<g
+						class="part row"
+						data-part={`${part.id}.${row.id}`}
+						role="link"
+						tabindex="0"
+						aria-label={rowSaid(row)}
+						onclick={() => onopen?.(row.opens)}
+						onkeydown={(event) => press(event, row.opens)}
+					>
+						<rect
+							class="shape"
+							x={leftOf(part) + 12}
+							y={rowsY(part) + i * ROW}
+							width={part.w - 24}
+							height={ROW - 8}
+							rx="5"
+						/>
+						<text class="row-says" x={leftOf(part) + 22} y={rowsY(part) + i * ROW + 17}
+							>{`${row.says} `}</text
+						>
+						<text class="row-more" x={leftOf(part) + 22} y={rowsY(part) + i * ROW + 33}
+							>{`${row.more} `}</text
+						>
+					</g>
+				{/each}
 			{/each}
 		</svg>
 	</div>
@@ -132,6 +197,10 @@
 		stroke-width: 1.4;
 	}
 
+	.line.dashed {
+		stroke-dasharray: 5 4;
+	}
+
 	.head {
 		fill: var(--strong-line);
 	}
@@ -156,8 +225,36 @@
 		stroke-width: 1.2;
 	}
 
-	.ends .shape {
+	.ends .shape,
+	.party .shape {
 		fill: var(--panel);
+	}
+
+	.row .shape {
+		fill: var(--raised);
+		stroke: var(--line);
+	}
+
+	.title {
+		fill: var(--fg);
+		font-size: 14px;
+		font-weight: 600;
+	}
+
+	.sub {
+		fill: var(--muted);
+		font-family: var(--mono);
+		font-size: 11px;
+	}
+
+	.row-says {
+		fill: var(--fg);
+		font-size: 12.5px;
+	}
+
+	.row-more {
+		fill: var(--muted);
+		font-size: 11px;
 	}
 
 	/* A part that is a call says how it travels, as an arrow does on the diagram (ADR-014). */

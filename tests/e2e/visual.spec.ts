@@ -24,6 +24,7 @@ const states: readonly [string, string, 'flow' | 'setup'][] = [
 	['simple-token-response', 'mode=simple&oidc=1&step=token-response', 'flow'],
 	['simple-explanation', 'mode=simple&step=callback&explain=artifact.code', 'flow'],
 	['refresh-picture', 'mode=simple&step=token-response&explain=artifact.refresh-token', 'flow'],
+	['who-knows-whom', 'mode=simple&broker=1&oidc=1&explain=lifeline.idp', 'flow'],
 	['address-refused', 'mode=simple&address=other&step=address-refused', 'flow'],
 	['app-in-the-page', 'mode=simple&runs=page&client=public&pkce=1&step=token-response', 'flow'],
 	['server-behind-the-page', 'mode=simple&runs=bff&pkce=1&step=set-session', 'flow'],
