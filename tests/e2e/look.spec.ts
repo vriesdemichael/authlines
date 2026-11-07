@@ -233,6 +233,20 @@ test.describe('nothing an automated check can find', () => {
 			'a picture in an explanation',
 			'authorization-code/?step=token-response&explain=artifact.refresh-token'
 		],
+		['trust across providers', 'authorization-code/?mode=simple&explain=setting.broker'],
+		[
+			'how an api trusts a token',
+			'authorization-code/?mode=simple&step=api-check-token&explain=term.issuer'
+		],
+		[
+			'which token is for whom',
+			'authorization-code/?mode=simple&step=token-response&explain=term.token'
+		],
+		['how long each lasts', 'authorization-code/?mode=simple&explain=term.session'],
+		['what stops what', 'authorization-code/?mode=simple&explain=setting.pkce'],
+		['where the tokens are', 'authorization-code/?mode=simple&explain=setting.appRuns'],
+		['what each spec adds', 'authorization-code/?mode=simple&explain=term.oauth'],
+		['what is in a token here', 'authorization-code/?mode=advanced&explain=term.realm'],
 		[
 			'who knows whom, with another provider',
 			'authorization-code/?oidc=1&broker=1&say=keycloak&explain=lifeline.idp'
