@@ -22,13 +22,12 @@ export const opensAt = (
 ): Opens => ({ diagram, step, settings, preset, ...(exact ? { exact } : {}) });
 
 /** A step of another base flow, with one of its presets, which a picture about choosing one opens. */
-export const opensIn = (flow: string, step: string, preset: string): Opens => ({
-	flow,
-	diagram: 'flow',
-	step,
-	settings: {},
-	preset
-});
+export const opensIn = (
+	flow: string,
+	step: string,
+	preset: string,
+	settings: Partial<Settings> = {}
+): Opens => ({ flow, diagram: 'flow', step, settings, preset });
 
 /** The same, opening the recording just as it was made, for a part that says how something ended. */
 export const opensAsRecorded = (

@@ -22,7 +22,11 @@ import { SIZE, widthOf, type Picture, type PicturePart } from '#lib/pictures/mod
 import { refreshPicture } from '#lib/pictures/refresh.ts';
 import { inSimpleMode } from '#lib/pictures/simple.ts';
 import { CLAIM_ROWS, RECORDED } from '#lib/pictures/what-a-token-says.ts';
+import { ASKING } from '#lib/pictures/the-app-keeps-asking.ts';
 import oidc from '../../../static/recordings/authorization-code/oidc.json';
+import onADevice from '../../../static/recordings/device/on-a-device.json';
+import asItself from '../../../static/recordings/client-credentials/as-itself.json';
+import deviceQuestions from '../../../static/recordings/device/questions.json';
 
 const base = flows['authorization-code'];
 const stateFor = (search: string): AppState => parseState(base, 'flow', search);
@@ -43,6 +47,21 @@ function everyPicture(): Picture[] {
 					const state = { ...stateFor(`explain=${explain}&say=${wording}&mode=${mode}`), settings };
 					const picture = pictureFor(state, wording);
 					if (picture) seen.set(JSON.stringify(picture), picture);
+				}
+			}
+		}
+	}
+	// The other flows, whose pictures are about their own steps, or which flow fits.
+	for (const other of [flows.device, flows['client-credentials']]) {
+		for (const settings of allValidSettings(other.settings)) {
+			for (const wording of wordings) {
+				for (const explain of ONE_OF_EACH) {
+					for (const mode of ['advanced', 'simple']) {
+						const search = `explain=${explain}&say=${wording}&mode=${mode}`;
+						const state = { ...parseState(other, 'flow', search), settings };
+						const picture = pictureFor(state, wording);
+						if (picture) seen.set(JSON.stringify(picture), picture);
+					}
 				}
 			}
 		}
@@ -500,6 +519,20 @@ describe('what a token says (#200)', () => {
 			expect(RECORDED.access[name], name).toEqual(claimsIn('access_token')[name]);
 		}
 		expect(RECORDED.id.aud).toEqual(claimsIn('id_token').aud);
+		// And the token an app got for itself, from its own recording.
+		const service = (
+			asItself as { messages: { step: string; body?: Record<string, unknown> }[] }
+		).messages.find((message) => message.step === 'service-token-response')!.body!;
+		const itself = JSON.parse(
+			Buffer.from(String(service.access_token).split('.')[1], 'base64url').toString()
+		) as Record<string, unknown>;
+		expect(shape(RECORDED.service)).toEqual(shape(itself));
+		for (const name of ['azp', 'client_id', 'preferred_username', 'scope'] as const) {
+			expect(RECORDED.service[name], name).toEqual(itself[name]);
+		}
+		// No refresh token comes with it, and nothing about a login.
+		expect(service.refresh_token).toBeUndefined();
+		expect(itself.sid).toBeUndefined();
 		expect(RECORDED.access.exp - RECORDED.access.iat).toBe(
 			(claimsIn('access_token').exp as number) - (claimsIn('access_token').iat as number)
 		);
@@ -507,7 +540,11 @@ describe('what a token says (#200)', () => {
 
 	it('has a row for every claim in either token, and none for a claim in neither', () => {
 		const named = CLAIM_ROWS.flatMap((row) => row.names);
-		const inEither = new Set([...Object.keys(RECORDED.access), ...Object.keys(RECORDED.id)]);
+		const inEither = new Set([
+			...Object.keys(RECORDED.access),
+			...Object.keys(RECORDED.id),
+			...Object.keys(RECORDED.service)
+		]);
 		expect(new Set(named)).toEqual(inEither);
 		expect(named.length).toBe(inEither.size);
 	});
@@ -526,6 +563,53 @@ describe('what a token says (#200)', () => {
 		expect(cell(advanced, 'scope.id')?.mark).toBe('none');
 		expect(cell(simple, 'aud.id')?.mark).toBe('full');
 		expect(cell(advanced, 'aud.access')?.says).toEqual(['account']);
+	});
+});
+
+describe('the pictures of the other flows (#200)', () => {
+	it('put the token an app gets for itself beside one for a user, on client credentials', () => {
+		const state = parseState(flows['client-credentials'], 'flow', 'explain=term.jwt&mode=advanced');
+		const found = pictureFor(state, 'plain')!;
+		expect(found.id).toBe('what-a-token-says');
+		const said = found.parts.map((part) => part.says.join(' ')).join(' ');
+		expect(said).toContain('An access token for the app itself');
+		expect(said).toContain('stands for the app itself');
+		expect(found.parts.find((part) => part.id === 'sid.service')?.mark).toBe('none');
+		expect(found.parts.some((part) => part.id.startsWith('nonce.'))).toBe(false);
+		// Simple mode keeps where the two differ, or every circle would be the same.
+		const simple = pictureFor(
+			parseState(flows['client-credentials'], 'flow', 'explain=term.jwt&mode=simple'),
+			'plain'
+		)!;
+		const mark = (id: string) => simple.parts.find((part) => part.id === id)?.mark;
+		expect(mark('sid.access')).toBe('full');
+		expect(mark('sid.service')).toBe('none');
+		expect(mark('user.service')).toBe('half');
+		expect(simple.parts.some((part) => part.id === 'jti.access')).toBe(false);
+	});
+
+	it('take how often the app asks, and for how long, from a recording', () => {
+		const answer = (
+			onADevice as { messages: { step: string; body?: Record<string, unknown> }[] }
+		).messages.find((message) => message.step === 'device-response')!.body!;
+		expect(ASKING.interval).toBe(answer.interval);
+		expect(ASKING.expiresIn).toBe(answer.expires_in);
+		const polling = (deviceQuestions as { answers: { devicePolling: Record<string, string> } })
+			.answers.devicePolling;
+		expect(polling.tooSoon).toBe('slow_down');
+		expect(polling.afterWaiting).toBe('authorization_pending');
+	});
+
+	it('keep how the asking ends to advanced mode, where the choice is', () => {
+		const ids = (mode: string) =>
+			pictureFor(
+				parseState(flows.device, 'flow', `explain=term.polling&mode=${mode}`),
+				'plain'
+			)!.parts.map((part) => part.id);
+		expect(ids('simple')).toContain('tokens');
+		expect(ids('simple')).not.toContain('access-denied');
+		expect(ids('advanced')).toContain('expired-token');
+		expect(pictureFor(stateFor('explain=term.polling'), 'plain')).toBeNull();
 	});
 });
 
