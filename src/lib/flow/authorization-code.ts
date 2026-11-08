@@ -2839,7 +2839,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			],
 			pitfall: {
 				title: 'What if one of these checks fails?',
-				text: 'The API answers 401 when it does not accept the token: none at all, expired, changed, from another issuer, or for someone else. It answers 403 when it accepts the token and still refuses, often because the token does not allow this. So a new token can help with a 401, and usually will not help with a 403.'
+				text: 'The API answers 401 when it does not accept the token: none at all, expired, changed, from another issuer, or for someone else. It answers 403 when it accepts the token and still refuses, often because the token does not allow this. So a new token can help with a 401. With a 403, one of the same kind will not: it takes a token that allows this, which the answer can name.'
 			},
 			links: [
 				{ diagram: 'setup', step: 'configure-api', text: 'See how the API was told who to trust' }
