@@ -499,6 +499,7 @@
 				"msg-type": "KRB-ERROR (30)",
 				"stime": "2026-11-08T19:14:53Z",
 				"error-code": "KDC_ERR_PREAUTH_REQUIRED (25)",
+				"crealm": "EXAMPLE.TEST",
 				"cname": "alice",
 				"realm": "EXAMPLE.TEST",
 				"sname": "krbtgt/EXAMPLE.TEST",

@@ -95,6 +95,7 @@ Each value says what it needs with it, and what it can share a link with, worked
 Parties, for the names after #:
 
 - `kdc`: Ticket server, kerberos. Only with `directory=1&kerberos=1`.
+- `computer`: User’s computer, holds their tickets. Only with `directory=1&kerberos=1`.
 - `browser`: User's browser, where the user is. With `runs=page` it is drawn as Browser and app. With `runs=bff` it is drawn as Browser and page.
 - `app`: App, what the user uses. Not with `runs=page`. With `runs=bff` it is drawn as App’s server. With `runs=program` it is drawn as Program.
 - `second-app`: Second app, same provider. Only with `sso=1`.
@@ -227,10 +228,10 @@ Steps, for step=:
 - `retrieve-upstream-token`: The app asks for the other provider's token. Only with `broker=1&upstream=v1` or `broker=1&upstream=v2`.
 - `upstream-token`: The identity provider hands it over. Only with `broker=1&upstream=v1` or `broker=1&upstream=v2`.
 - `call-upstream`: The app calls the other provider. Only with `broker=1&upstream=v1` or `broker=1&upstream=v2`.
-- `computer-asks`: Their computer asks for a ticket for tickets. Only with `directory=1&kerberos=1`.
+- `computer-asks`: Their computer asks for a ticket-granting ticket. Only with `directory=1&kerberos=1`.
 - `kdc-wants-proof`: Prove you know the password first. Only with `directory=1&kerberos=1`.
 - `computer-proves`: The time, sealed with the password. Only with `directory=1&kerberos=1`.
-- `kdc-gives-tgt`: A ticket for getting tickets. Only with `directory=1&kerberos=1`.
+- `kdc-gives-tgt`: A ticket-granting ticket. Only with `directory=1&kerberos=1`.
 - `idp-negotiate`: Show a ticket, or log in here. Only with `directory=1&kerberos=1`.
 - `ask-for-service-ticket`: A ticket for the identity provider, please. Only with `directory=1&kerberos=1`.
 - `kdc-gives-service-ticket`: A ticket only the identity provider can open. Only with `directory=1&kerberos=1`.
