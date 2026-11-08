@@ -7,6 +7,7 @@ import { cookiesJwtsOauth } from './cookies-jwts-oauth.ts';
 import { howAnApiTrustsAToken } from './how-an-api-trusts-a-token.ts';
 import { howLongEachLasts } from './how-long-each-lasts.ts';
 import type { Opens, Picture, PictureId } from './model.ts';
+import { passwordsKeysTokens } from './passwords-keys-tokens.ts';
 import { refreshPicture } from './refresh.ts';
 import { inSimpleMode } from './simple.ts';
 import { trustAcrossProviders } from './trust-across-providers.ts';
@@ -58,7 +59,8 @@ const key = (explained: Explained) => `${explained.kind}.${explained.id}`;
 const SHOWN_ON: Partial<Record<PictureId, readonly string[]>> = {
 	'which-flow-fits': Object.keys(flows),
 	'the-app-keeps-asking': ['device'],
-	'what-a-token-says': ['authorization-code', 'client-credentials']
+	'what-a-token-says': ['authorization-code', 'client-credentials'],
+	'passwords-keys-tokens': ['authorization-code', 'client-credentials']
 };
 
 /**
@@ -126,7 +128,10 @@ export const PICTURE_OF: Readonly<Record<string, PictureId>> = {
 	'term.expired-token': 'the-app-keeps-asking',
 	'artifact.device-code': 'the-app-keeps-asking',
 	'term.scope': 'what-each-scope-asks-for',
-	'term.cookie': 'cookies-jwts-oauth'
+	'term.cookie': 'cookies-jwts-oauth',
+	'term.api-key': 'passwords-keys-tokens',
+	'artifact.secret': 'passwords-keys-tokens',
+	'setting.oldWay': 'passwords-keys-tokens'
 };
 
 /** Each picture, drawn for the state on screen in the words chosen. */
@@ -174,6 +179,8 @@ export function draw(id: PictureId, state: AppState, wording: Wording, say: Say)
 			return whatEachScopeAsksFor(say, keep);
 		case 'cookies-jwts-oauth':
 			return cookiesJwtsOauth(say, keep);
+		case 'passwords-keys-tokens':
+			return passwordsKeysTokens(say, keep);
 		case 'the-app-keeps-asking':
 			return theAppKeepsAsking(say, keep);
 		case 'what-a-token-says':

@@ -661,6 +661,22 @@ describe('cookies, JWTs and OAuth (#200)', () => {
 	});
 });
 
+describe('passwords and API keys, against tokens (#200)', () => {
+	it('says what goes to the API, and only the token runs out and says who it is for', () => {
+		const found = picture('explain=term.api-key&mode=advanced');
+		expect(found.id).toBe('passwords-keys-tokens');
+		const mark = (id: string) => found.parts.find((part) => part.id === id)?.mark;
+		expect(mark('password.to-the-api')).toBe('full');
+		expect(mark('secret.to-the-api')).toBe('empty');
+		expect(mark('token.runs-out')).toBe('full');
+		expect(mark('password.runs-out')).toBe('empty');
+		expect(mark('token.who-for')).toBe('full');
+		// On client credentials too, where the app's own secret is drawn.
+		const there = parseState(flows['client-credentials'], 'flow', 'explain=artifact.secret');
+		expect(pictureFor(there, 'plain')?.id).toBe('passwords-keys-tokens');
+	});
+});
+
 describe('what the circles and the rows mean', () => {
 	it('is in a key drawn with the same marks, wherever there are marks', () => {
 		for (const found of pictures) {

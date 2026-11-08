@@ -34,7 +34,8 @@ export type PictureId =
 	| 'which-flow-fits'
 	| 'the-app-keeps-asking'
 	| 'what-each-scope-asks-for'
-	| 'cookies-jwts-oauth';
+	| 'cookies-jwts-oauth'
+	| 'passwords-keys-tokens';
 
 /**
  * Where something starts or ends, a step, or a question with more than one way on: those make a
