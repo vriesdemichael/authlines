@@ -1,1 +1,0 @@
-import{Et as e}from"./DMv1Tlox.js";e();
