@@ -705,6 +705,52 @@ const list: readonly Term[] = [
 			'An app taking the user’s password itself and sending it for a token. Current advice says it must not be used, because it hands the app the one thing all of this keeps from it.'
 	},
 	{
+		id: 'mfa',
+		name: 'Multi-factor authentication',
+		words: [
+			'MFA',
+			'multi-factor authentication',
+			'second factor',
+			'second factors',
+			'two-factor authentication'
+		],
+		alsoCalled: ['2FA', 'two-factor authentication', 'two-step verification'],
+		explains:
+			'Asking at the login for proof of two different kinds, such as a password and a code from a phone, so that one stolen is not enough. Each kind proves something different, and falls to different things. After the login a cookie or token stands in for the user, and it works without the second factor.',
+		at: flowAt('submit-credentials')
+	},
+	{
+		id: 'passkey',
+		name: 'Passkey',
+		words: ['passkey', 'passkeys', 'security key', 'security keys', 'WebAuthn'],
+		alsoCalled: ['WebAuthn credential', 'FIDO2 credential'],
+		explains:
+			'A key made for one site’s domain, kept on a device or a security key, or synced between someone’s devices. The site keeps only the public half, and the browser only lets the key answer that domain, so a fake site gets nothing it can use. It usually asks for a PIN, a fingerprint or a face as well, which is checked on the device and never sent.',
+		at: flowAt('submit-credentials')
+	},
+	{
+		id: 'one-time-password',
+		name: 'One-time password',
+		words: [
+			'one-time password',
+			'one-time passwords',
+			'OTP',
+			'TOTP',
+			'authenticator app',
+			'authenticator apps'
+		],
+		explains:
+			'A code that works once, or for a short time: sent by text message or email, or made by an authenticator app from a secret it shares with the site and the time. Nobody can guess one in time, and a fake site can still ask for it and pass it on while it works.',
+		at: flowAt('submit-credentials')
+	},
+	{
+		id: 'nist',
+		name: 'NIST',
+		words: ['NIST'],
+		explains:
+			'The US standards institute. Its guidance on logging in, 800-63B, says what passwords and second factors have to be, and many outside the US government follow it.'
+	},
+	{
 		id: 'authorization-pending',
 		name: 'authorization_pending',
 		words: ['authorization_pending'],

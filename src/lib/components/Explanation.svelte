@@ -105,7 +105,10 @@
 	<p>{text}</p>
 	{#if picture}
 		<Picture {picture} onopen={onopenpart} />
-		<p class="seen" data-testid="picture-hint">Each part opens the steps it stands for.</p>
+		<!-- A picture from the standards alone, with nothing recorded to open, does not say it. -->
+		{#if picture.parts.some((part) => part.opens)}
+			<p class="seen" data-testid="picture-hint">Each part opens the steps it stands for.</p>
+		{/if}
 	{/if}
 	{#if alsoCalled.length}
 		<p class="seen" data-testid="explanation-also-called">Also called: {alsoCalled.join('; ')}.</p>

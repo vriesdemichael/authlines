@@ -1124,6 +1124,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'The user enters their password',
 			label: 'Submit credentials',
 			concept: 'The user signs in at the identity provider. The app sees none of this.',
+			pitfall: {
+				title: 'What if someone else has this password?',
+				text: 'Then they can log in as the user, from anywhere, until it is changed, unless the identity provider also asks for a second factor. On the server recorded it asks for nothing else, by default. Even with one, a session or token taken after the login works without it, for as long as it lasts.'
+			},
 			when: not(broker),
 			execute: { answer: 'redirect-with-code', when: not(consent) },
 			fields: [{ name: 'username and password', place: 'body', artifact: 'password' }]

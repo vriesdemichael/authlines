@@ -30,9 +30,9 @@
 		"apiReadsStored": "2026-11-05",
 		"console.api-reads-external-tokens": "2026-11-05",
 		"linkedTokens": "2026-11-05",
-		"offlineTokens": "2026-11-05",
-		"console.session-lifetimes": "2026-11-05",
-		"console.offline-session-lifetimes": "2026-11-05",
+		"offlineTokens": "2026-11-07",
+		"console.session-lifetimes": "2026-11-07",
+		"console.offline-session-lifetimes": "2026-11-07",
 		"loopbackRedirects": "2026-11-05",
 		"console.loopback-redirects": "2026-11-05",
 		"upstreamPrompt": "2026-11-05",
@@ -1358,6 +1358,18 @@
 							"says": "Token is not active"
 						}
 					}
+				},
+				"keptInUse": {
+					"online": [
+						200,
+						200,
+						200
+					],
+					"offline": [
+						200,
+						200,
+						200
+					]
 				}
 			}
 		},

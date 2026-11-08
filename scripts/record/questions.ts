@@ -2609,13 +2609,33 @@ export async function questionsWhenOffline(admin: Admin) {
 		await wait(7);
 		const idle = { asGranted: strip(soon), afterSevenSeconds: await tryBoth(soon) };
 
+		// Still five seconds, with each used every three, with the newest refresh token each time: whether
+		// using one keeps it going past its idle time, which is how long a thief who uses it has (#202).
+		const used = await both();
+		const latest = { online: used.online.refreshToken, offline: used.offline.refreshToken };
+		const keptInUse: { online: number[]; offline: number[] } = { online: [], offline: [] };
+		for (let round = 0; round < 3; round++) {
+			await wait(3);
+			for (const kind of ['online', 'offline'] as const) {
+				const got = await token(LOCAL_REALM, {
+					grant_type: 'refresh_token',
+					client_id: reader,
+					client_secret: CLIENT_SECRET,
+					refresh_token: latest[kind]
+				});
+				keptInUse[kind].push(got.status);
+				if (got.json.refresh_token) latest[kind] = got.json.refresh_token;
+			}
+		}
+
 		return {
 			offlineTokens: {
 				before: { defaults, onDefaults: strip(onDefaults), signedOutByAnAdmin },
 				after: {
 					sessionMaximum: afterTheMaximum,
 					offlineMaximum: afterTheOfflineMaximum,
-					idle
+					idle,
+					keptInUse
 				}
 			}
 		};

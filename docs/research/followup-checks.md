@@ -461,3 +461,25 @@ Asked of Keycloak 26.8.1 on 2026-11-05, for [#182](https://github.com/vriesdemic
 - **Trust Email.** Off on a new provider and on in the recorder's setup. With it on, the user made at the first login had a verified email. With it off, a user made at a new first login had an email that was not verified, though the other provider had it verified (the recorder's user is verified there). A user who was there already was not tried.
 
 Not tried: an upstream that is not Keycloak, a prompt the upstream refuses, and what a token request upstream carries with PKCE on, which a login that got tokens only implies.
+
+## What each way of logging in proves
+
+Checked against the documents themselves on 2026-11-07, for the two pictures on a second factor. Nothing about one is recorded, because the server recorded asks for none by default, so these are the sources the pictures rest on: [NIST SP 800-63B-4](https://pages.nist.gov/800-63-4/sp800-63b.html) (final, July 2025), [WebAuthn Level 3](https://www.w3.org/TR/webauthn-3/) (W3C Recommendation, August 2026) and [RFC 6238](https://www.rfc-editor.org/rfc/rfc6238.html).
+
+- **A password** is not phishing-resistant, can be guessed, and is reused from leaks elsewhere (800-63B-4 sections 3.1.1, 6.1 and 8.1.2.1).
+- **A code by text message** proves control of whatever device the number reaches, and changing the number counts as binding a new one (3.1.3, 3.1.3.3). A fake site can pass it on while it works (3.2.5), and a number moved to another phone gets it (6.1). It is the one restricted authenticator, allowed only beside a safer option (3.2.9).
+- **Email** shall not be used for out-of-band authentication, partly because a mailbox may be reached with a password alone (3.1.3.1). Emailed codes are only for confirming an address or recovering an account.
+- **An authenticator app** proves a shared secret and the time (RFC 6238 section 4.2), which the site holds too (800-63B-4 3.1.4.2), and which may be exported to a sync fabric (3.1.4.1). So it proves the secret, not a device. It is not phishing-resistant (3.1.4).
+- **A passkey or security key** can only be used with the RP ID it was registered for (WebAuthn section 4), which the browser enforces (5.1.4.1), and the page's origin is in what the key signs, which the site checks (7.2). That is verifier name binding, which NIST calls phishing-resistant (800-63B-4 3.2.5.2). The RP ID is a domain, so other pages under it can use the key (WebAuthn 13.4.8). A PIN or a fingerprint is usual and checked on the device, and a site that does not require it may get a touch alone (5.8.6, 6.2).
+- **After the login** a session secret stands in for the user (800-63B-4 section 5.1), and an access or refresh token can outlive the session (5.1.2). NIST names device-bound sessions, reauthentication and monitoring against theft, and not a second factor.
+- **An admin's account.** 800-63B-4 says nothing about privileged accounts. SP 800-53 Rev 5 control IA-2(1) requires multi-factor authentication for them, and IA-2(2) for everyone else. No primary source found calls standing privilege itself risky, so the picture shows a password alone with no end and leaves the rest to the reader.
+
+A fresh reader's review of the first version found more, each checked against the same text:
+
+- **Guessing a code** is stopped by the limit on wrong tries, which a site shall keep to 100 or fewer per authenticator (800-63B-4 section 3.2.2), and not by a code working once.
+- **A passkey with its PIN or fingerprint** is a multi-factor cryptographic authenticator, something you have with an activation factor, and counts as single-factor only when the flag says the activation factor was not used (3.1.7).
+- **A synced key or an exported secret** is as safe as the account it is synced through: access to keys in a sync fabric shall be protected by MFA equivalent to AAL2 (Appendix B). So against a phone number or mailbox taken over, a passkey and an authenticator app only partly resist it.
+- **A password** falls to a mailbox taken over wherever a forgotten password is reset through it.
+- **How long a thief has.** Using a session or a refresh token counts as using it (the Keycloak timeouts docs), so one kept in use lasts up to SSO Session Max, ten hours, and an offline token kept in use has no end by default (Offline Session Max Limited off, above). Asked of Keycloak 26.8.1 on 2026-11-07 (`keptInUse` under `offlineTokens` in `questions.json`): with both idle times at five seconds, a refresh token and an offline token each used every three seconds, with the newest one each time, were taken all three times, nine seconds in. The first version drew the idle time, which is how long it lasts unused.
+
+Not tried: a one-time password or a passkey on the server, which would need a recording with a virtual authenticator, as [#200](https://github.com/vriesdemichael/authlines/issues/200) says.

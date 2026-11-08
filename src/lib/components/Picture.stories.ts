@@ -7,6 +7,8 @@ import { whatIsInATokenHere } from '#lib/keycloak/token-contents.ts';
 import { howAnApiTrustsAToken } from '#lib/pictures/how-an-api-trusts-a-token.ts';
 import { howLongEachLasts } from '#lib/pictures/how-long-each-lasts.ts';
 import { trustAcrossProviders } from '#lib/pictures/trust-across-providers.ts';
+import { whatAThiefCanDo } from '#lib/pictures/what-a-thief-can-do.ts';
+import { whatEachFactorProves } from '#lib/pictures/what-each-factor-proves.ts';
 import { whatEachSpecAdds } from '#lib/pictures/what-each-spec-adds.ts';
 import { whatStopsWhat } from '#lib/pictures/what-stops-what.ts';
 import { whereTheTokensAre } from '#lib/pictures/where-the-tokens-are.ts';
@@ -120,6 +122,12 @@ export const WhereTheTokensAre: Story = {
 
 /** What each spec adds to OAuth: layers. */
 export const WhatEachSpecAdds: Story = { args: { picture: whatEachSpecAdds(plain) } };
+
+/** What each way of logging in proves, and what it falls to: a matrix from the standards. */
+export const WhatEachFactorProves: Story = { args: { picture: whatEachFactorProves(plain) } };
+
+/** What a thief can do with each, and for how long: a timeline. */
+export const WhatAThiefCanDo: Story = { args: { picture: whatAThiefCanDo(plain) } };
 
 /** On Keycloak, what decides what is in a token: containment. */
 export const WhatIsInATokenHere: Story = { args: { picture: whatIsInATokenHere() } };
