@@ -80,7 +80,8 @@
 		"broker-groups": "2026-11-08",
 		"broker-groups-given": "2026-11-08",
 		"one-time-code": "2026-11-08",
-		"passkey": "2026-11-08"
+		"passkey": "2026-11-08",
+		"new-key": "2026-11-08"
 	},
 	"flows": {
 		"authorization-code": {
@@ -153,6 +154,7 @@
 				"upstream-v1",
 				"upstream-v2",
 				"one-time-code",
+				"new-key",
 				"passkey",
 				"broker-groups",
 				"broker-groups-given",
@@ -167,6 +169,8 @@
 				"api-after-logout",
 				"api-after-logout-response",
 				"api-call-upstream",
+				"api-fetch-keys",
+				"api-keys",
 				"api-refused",
 				"api-request",
 				"api-request-again",

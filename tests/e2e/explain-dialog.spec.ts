@@ -406,3 +406,15 @@ test.describe('a second factor', () => {
 		await expect(payload).not.toContainText('password=');
 	});
 });
+
+// Asked for on 2026-11-08, with the second factors.
+test.describe('a new signing key', () => {
+	test('has the API fetch the keys again, from what explains a kid', async ({ page }) => {
+		await open(page, 'mode=advanced&explain=term.kid');
+		await page.getByRole('link', { name: /See it on the diagram/ }).click();
+		await expect.poll(() => currentSearch(page)).toContain('newkey=1');
+		await expect.poll(() => currentSearch(page)).toContain('step=api-fetch-keys');
+		await expect(page.getByTestId('step-detail')).toContainText('fetches the keys again');
+		await expect(page.getByTestId('payload')).toContainText('/certs');
+	});
+});

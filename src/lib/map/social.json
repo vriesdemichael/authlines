@@ -65,6 +65,7 @@
 	"trade-outlasts": "Does a refresh token from a trade outlast the user’s session?|Not here: it ends with the session it came from.|22|5",
 	"link-account": "How does a user link an account at another provider, once logged in?|They log in there, and the identity provider can keep its tokens.|27|5",
 	"second-factor": "What does a second factor change in the login?|One more page and one more form, and the same token after.|14|4",
+	"new-signing-key": "What happens when the identity provider changes its key?|The API fetches the keys again, for a key it does not know.|15|4",
 	"passkey-login": "What does logging in with a passkey look like?|A signed challenge in place of a password, for this site only.|12|4",
 	"roles-from-groups": "How does a group at another provider become a role in the token?|Their ID token says the group, and the identity provider gives a role of its own.|18|5",
 	"only-roles-given": "Why does my token have roles the app does not need?|Some providers put every role in every token, unless the app is given only its own.|18|5",

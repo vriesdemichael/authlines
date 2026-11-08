@@ -392,6 +392,8 @@ export class Demo {
 	#key: ProofKey | null = null;
 	#verifier: string | null = null;
 	#seenProofs = new Set<string>();
+	/** The keys the API fetched in setup, which it keeps until a token names one it does not have. */
+	#apiKeys: Jwk[] = [];
 	/** The refresh token the first API got from a trade, for later, when the trade gave one (#185). */
 	#tradedRefresh: string | null = null;
 	/** Someone is handing the real app a stolen code, from a login of their own. */
@@ -417,7 +419,9 @@ export class Demo {
 		this.#discovered = jsonOf<Discovered>(answer.text);
 		if (initialToken) await this.registerItself(run, initialToken);
 		// What the API does when it starts, the same way, and nothing tells it to.
-		await call(run, ['fetch-keys', 'keys'], 'GET', this.#discovered.jwks_uri);
+		const keys = await call(run, ['fetch-keys', 'keys'], 'GET', this.#discovered.jwks_uri);
+		// What the API keeps, as one does, for a run where it has to fetch them again (2026-11-08).
+		this.#apiKeys = jsonOf<{ keys: Jwk[] }>(keys.text).keys;
 	}
 
 	/** Bearer or DPoP, whichever the setting says. A proof is tied to the token it is sent with. */
@@ -1354,6 +1358,26 @@ export class Demo {
 			const readsStored =
 				this.current?.settings.upstreamTokens === 'v2' &&
 				this.current.settings.upstreamReader !== 'app';
+			// An API that keeps the keys it fetched, and fetches them again for a key it has not seen
+			// (OpenID Connect Core section 10.1.1), which the run where the key changes shows.
+			const keepsItsKeys = Boolean(this.current?.settings.keysChange);
+			if (keepsItsKeys) {
+				const [, token = ''] = (request.headers.authorization ?? '').split(' ');
+				const named = (
+					JSON.parse(Buffer.from(token.split('.')[0] ?? '', 'base64url').toString() || '{}') as {
+						kid?: string;
+					}
+				).kid;
+				if (!this.#apiKeys.some((key) => key.kid === named)) {
+					const again = await call(
+						this.#run,
+						['api-fetch-keys', 'api-keys'],
+						'GET',
+						this.#server.jwks_uri
+					);
+					this.#apiKeys = jsonOf<{ keys: Jwk[] }>(again.text).keys;
+				}
+			}
 			const problem = await accessTokenProblem(
 				{
 					authorization: request.headers.authorization,
@@ -1372,7 +1396,8 @@ export class Demo {
 							: request.url?.startsWith('/my-api/')
 								? 'my-api'
 								: API_AUDIENCE,
-					keysOf: (issuer) => keysAt(`${issuer}/protocol/openid-connect/certs`),
+					keysOf: async (issuer) =>
+						keepsItsKeys ? this.#apiKeys : keysAt(`${issuer}/protocol/openid-connect/certs`),
 					seenProofs: this.#seenProofs,
 					// Another API, written before DPoP, beside the one that knows it.
 					knowsOnlyBearer: request.url?.startsWith('/bearer-only/')

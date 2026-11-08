@@ -110,6 +110,8 @@ describe('constraints', () => {
 		const rolesFromGroups = 2;
 		// A code from an authenticator app after the password, or a passkey, on the plain flow (2026-11-08).
 		const aSecondFactor = 2;
+		// The identity provider signs with a key the API has not fetched, on the plain flow (2026-11-08).
+		const aNewKey = 1;
 		expect(allValidSettings()).toBe(allValidSettings());
 		expect(Object.isFrozen(allValidSettings())).toBe(true);
 		expect(allValidSettings().every((settings) => Object.isFrozen(settings))).toBe(true);
@@ -134,7 +136,8 @@ describe('constraints', () => {
 				inAProgram +
 				theImplicitFlow +
 				rolesFromGroups +
-				aSecondFactor
+				aSecondFactor +
+				aNewKey
 		);
 	});
 

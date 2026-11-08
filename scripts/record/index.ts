@@ -62,6 +62,7 @@ import {
 	connectDirectory,
 	DIRECTORY_REALM,
 	makeInitialAccessToken,
+	newSigningKey,
 	setUpFor,
 	setUpRealms,
 	startKeycloak,
@@ -757,6 +758,8 @@ async function record(
 		settings.registration === 'dcr' ? await makeInitialAccessToken(admin, run.realm) : undefined
 	);
 
+	// After the API fetched the keys in setup, the realm gets a newer one to sign with.
+	if (settings.keysChange) await newSigningKey(admin, run.realm, true);
 	await admin.forgetBrokeredUsers();
 	await forgetCustomersPeople(admin);
 	demo.current = run;
@@ -782,6 +785,7 @@ async function record(
 				await forgetTheAuthenticatorApp(admin);
 				authenticatorSecret = null;
 			}
+			if (settings.keysChange) await newSigningKey(admin, run.realm, false);
 			if (settings.secondFactor === 'passkey') {
 				await forgetThePasskey(admin);
 				await passkeysOn(admin, false);

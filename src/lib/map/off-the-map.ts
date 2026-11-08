@@ -151,6 +151,17 @@ export const offTheMap: readonly MapNode[] = [
 		step: 'otp-page'
 	}),
 	node({
+		id: 'new-signing-key',
+		alsoAskedAs: ['key rotation', 'rotate keys', 'kid', 'jwks', 'unknown kid'],
+		answer:
+			'A token names its key, as kid. When the identity provider signs with a new one, an API that fetched the keys before does not know it, and fetches them again. On the server recorded, the new set had the new key and the old one.',
+		title: 'What happens when the identity provider changes its key?',
+		summary: 'The API fetches the keys again, for a key it does not know.',
+		mode: 'advanced',
+		preset: 'new-key',
+		step: 'api-fetch-keys'
+	}),
+	node({
 		id: 'passkey-login',
 		alsoAskedAs: ['passkey login', 'log in with a passkey', 'webauthn', 'passwordless'],
 		answer:
