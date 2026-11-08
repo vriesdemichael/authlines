@@ -85,6 +85,8 @@ const KEYCLOAK_ONLY = new Set([
 	'credentialId',
 	// Which of the user's authenticator apps the code is from, which Keycloak's form sends along.
 	'selectedCredentialId',
+	// Empty, beside what a passkey signed, for the page to say what went wrong if it did.
+	'error',
 	'session_code',
 	'execution',
 	'tab_id',
@@ -118,6 +120,7 @@ const OPEN_ENDED = new Set([
 const SIGN_IN = new Set([
 	// The code after the password goes to the same form address as the password (2026-11-08).
 	'submit-otp',
+	'submit-passkey',
 	'submit-credentials',
 	'second-submit-credentials',
 	'upstream-sign-in',

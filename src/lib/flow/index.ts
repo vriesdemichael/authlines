@@ -305,6 +305,11 @@ const presets: readonly Preset[] = [
 		settings: { secondFactor: 'code' }
 	},
 	{
+		id: 'passkey',
+		title: 'A passkey, and no password',
+		settings: { secondFactor: 'passkey' }
+	},
+	{
 		id: 'broker-groups',
 		title: 'A group at the other provider becomes a role here',
 		settings: { broker: true, groupRoles: true }

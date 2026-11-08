@@ -70,7 +70,16 @@ import {
 	USERNAME
 } from './keycloak.ts';
 import { lookInConsole } from './console.ts';
-import { codeAt, forgetTheAuthenticatorApp, setUpAnAuthenticatorApp } from './factors.ts';
+import {
+	codeAt,
+	forgetTheAuthenticatorApp,
+	forgetThePasskey,
+	holdingThePasskey,
+	passkeysOn,
+	setUpAnAuthenticatorApp,
+	setUpAPasskey,
+	type StoredPasskey
+} from './factors.ts';
 import {
 	DIRECTORY_URL,
 	directoryLogLength,
@@ -320,6 +329,8 @@ const behindThePage = {
 
 /** The secret of the authenticator app set up for this run, to make the code the login asks for. */
 let authenticatorSecret: string | null = null;
+/** The passkey made for this run, for the device of the login that is recorded. */
+let passkeys: StoredPasskey[] = [];
 
 /** The page that asks for the code, and the code being sent, which go to the same address. */
 const isLoginForm = (url: URL) =>
@@ -382,12 +393,17 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 						)
 					: behind
 						? once(behindThePage.request(new URL(request.url())), 'request')
-						: run.settings.secondFactor === 'code' &&
+						: run.settings.secondFactor === 'passkey' &&
 							  request.method() === 'POST' &&
 							  isLoginForm(new URL(request.url())) &&
-							  /(^|&)otp=/.test(request.postData() ?? '')
-							? 'submit-otp'
-							: classifyRequest(new URL(request.url()), request.method())
+							  /(^|&)clientDataJSON=/.test(request.postData() ?? '')
+							? 'submit-passkey'
+							: run.settings.secondFactor === 'code' &&
+								  request.method() === 'POST' &&
+								  isLoginForm(new URL(request.url())) &&
+								  /(^|&)otp=/.test(request.postData() ?? '')
+								? 'submit-otp'
+								: classifyRequest(new URL(request.url()), request.method())
 			),
 			request.method(),
 			request.url(),
@@ -535,6 +551,8 @@ async function login(browser: Browser, run: Run, demo?: Demo) {
 	const page = await context.newPage();
 	const cookies: Promise<void>[] = [];
 	watch(page, run, cookies);
+	// The device the user logs in on holds the passkey, and answers the page by itself.
+	if (run.settings.secondFactor === 'passkey') await holdingThePasskey(context, page, passkeys);
 
 	// A link someone else made, which the user opens, so the app has no part in it.
 	const link = run.settings.attackerGets === 'link';
@@ -559,15 +577,22 @@ async function login(browser: Browser, run: Run, demo?: Demo) {
 		await page.click('#kc-login');
 		await page.locator('#password').waitFor({ timeout: 15_000 });
 	}
-	await page.locator('#username').waitFor();
-	if (!run.settings.companies) await page.fill('#username', USERNAME);
+	const withAPasskey = run.settings.secondFactor === 'passkey';
+	// The page asks the browser for a passkey as it loads, and the device answers with no password,
+	// often before there is anything to wait for here.
+	if (!withAPasskey) await page.locator('#username').waitFor();
+	if (withAPasskey) {
+		// Nothing to type.
+	} else if (!run.settings.companies) await page.fill('#username', USERNAME);
 	else if (!(await page.inputValue('#username'))) {
 		const { email } =
 			PERSON_AT[run.settings.customerSpeaks === 'saml' ? SAML_CUSTOMER : OIDC_CUSTOMER];
 		await page.fill('#username', email);
 	}
-	await page.fill('#password', PASSWORD);
-	await page.click('#kc-login');
+	if (!withAPasskey) {
+		await page.fill('#password', PASSWORD);
+		await page.click('#kc-login');
+	}
 	if (run.settings.secondFactor === 'code') {
 		if (!authenticatorSecret) throw new Error('No authenticator app was set up for this run');
 		await page.locator('#otp').waitFor();
@@ -744,12 +769,23 @@ async function record(
 			authenticatorSecret = await setUpAnAuthenticatorApp(browser, admin);
 			demo.current = run;
 		}
+		if (settings.secondFactor === 'passkey') {
+			demo.current = null;
+			await passkeysOn(admin, true);
+			passkeys = await setUpAPasskey(browser, admin);
+			demo.current = run;
+		}
 		try {
 			await login(browser, run, demo);
 		} finally {
 			if (settings.secondFactor === 'code') {
 				await forgetTheAuthenticatorApp(admin);
 				authenticatorSecret = null;
+			}
+			if (settings.secondFactor === 'passkey') {
+				await forgetThePasskey(admin);
+				await passkeysOn(admin, false);
+				passkeys = [];
 			}
 			demo.meanwhile = null;
 			if (settings.leaves) await turnOff(admin, customer, false);

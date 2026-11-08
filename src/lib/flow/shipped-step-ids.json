@@ -182,5 +182,6 @@
 	"map-group-to-role",
 	"give-the-app-its-roles",
 	"otp-page",
-	"submit-otp"
+	"submit-otp",
+	"submit-passkey"
 ]

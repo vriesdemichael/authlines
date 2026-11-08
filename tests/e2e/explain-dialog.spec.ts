@@ -395,4 +395,14 @@ test.describe('a second factor', () => {
 		await page.locator('.workspace[data-ready="true"]').waitFor();
 		await expect(page.getByTestId('step-detail')).toContainText('A page that asks for a code');
 	});
+
+	test('with a passkey sends what it signed, and no password', async ({ page }) => {
+		await open(page, 'mode=advanced&explain=term.mfa');
+		await page.getByTestId('picture').locator('[data-part="name-passkey"]').click();
+		await expect.poll(() => currentSearch(page)).toContain('factor=passkey');
+		await expect.poll(() => currentSearch(page)).toContain('step=submit-passkey');
+		const payload = page.getByTestId('payload');
+		await expect(payload).toContainText('clientDataJSON=');
+		await expect(payload).not.toContainText('password=');
+	});
 });
