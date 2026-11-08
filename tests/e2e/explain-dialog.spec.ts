@@ -320,6 +320,17 @@ test.describe('a picture in an explanation', () => {
 		await expect(token).toContainText('An access token for the app itself');
 	});
 
+	// The maintainer, 2026-11-08: mTLS is "Good to mention, but preferably not in the sequence diagrams".
+	test('mentions mTLS at the token type, explains it, and draws nothing for it', async ({
+		page
+	}) => {
+		await open(page, 'mode=advanced&explain=setting.binding');
+		await expect(explanation(page)).toContainText('mTLS ties a token to a certificate');
+		await open(page, 'mode=advanced&explain=term.mtls');
+		await expect(explanation(page)).toContainText('so it is explained here and not drawn');
+		await expect(page.getByTestId('picture')).toHaveCount(0);
+	});
+
 	// The maintainer decided on 2026-11-08 that simple mode leaves out what is tied to advanced settings.
 	test('leaves out in simple mode what advanced mode adds', async ({ page }) => {
 		await open(page, 'mode=simple&explain=term.oauth');

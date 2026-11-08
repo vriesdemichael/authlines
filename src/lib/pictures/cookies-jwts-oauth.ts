@@ -49,7 +49,7 @@ export function cookiesJwtsOauth(say: Say, keep: Keep = keepAll): Picture {
 		{
 			id: 'jwt',
 			title: 'A JWT',
-			says: 'Answers what a token looks like: claims anyone can read, signed so nobody can change them unseen.',
+			says: 'Answers what a token looks like: usually claims anyone can read, signed so nobody can change them unseen.',
 			rows: [
 				{
 					id: 'access',
@@ -68,12 +68,12 @@ export function cookiesJwtsOauth(say: Say, keep: Keep = keepAll): Picture {
 		{
 			id: 'oauth',
 			title: 'OAuth',
-			says: 'Answers how an app gets access for someone, without ever having their password.',
+			says: 'Answers how an app gets access to an API. For a user, current advice is that it never has their password.',
 			rows: [
 				{
 					id: 'logs-in',
 					says: 'The user logs in',
-					more: 'Never at the app',
+					more: 'At the identity provider',
 					opens: opensAt('flow', 'redirect-to-idp', 'oauth')
 				},
 				{

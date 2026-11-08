@@ -108,7 +108,7 @@ export function whatEachScopeAsksFor(say: Say, keep: Keep = keepAll): Picture {
 	}));
 	const drawn = matrix({
 		lead: say(
-			'A scope is a word the app asks with, and these do different jobs. openid is a switch, most ask for claims about the user, and offline_access asks for a kind of token. What the app may do at an API takes scopes defined for that API, which none of these is.'
+			'A scope is a word the app asks with, and these do different jobs. openid is a switch, most ask for claims about the user from the identity provider, and offline_access asks for a kind of token. What the app may do at your own API takes scopes defined for it, which none of these is.'
 		),
 		key: [
 			{ mark: 'full', says: say('Asked for, and given') },

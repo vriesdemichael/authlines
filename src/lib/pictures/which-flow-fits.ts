@@ -98,9 +98,9 @@ export function whichFlowFits(say: Say, keep: Keep): Picture {
 			branch: '',
 			says: ['The device flow'],
 			more: [
-				'The user logs in on a phone',
-				'with a short code, and the',
-				'app asks until they have.'
+				'The user logs in on a phone or',
+				'laptop with a short code, and',
+				'the app asks until they have.'
 			],
 			opens: opensIn('device', 'device-request', 'on-a-device')
 		},
@@ -244,7 +244,7 @@ export function whichFlowFits(say: Say, keep: Keep): Picture {
 		oldTop + oldZone.h + 12,
 		780,
 		say(
-			'Current advice is RFC 9700. It says to use PKCE with the code, that the implicit flow should not be used, and that the password must not be.'
+			'Current advice is RFC 9700. It says to use PKCE with the code, that the implicit flow should not be used, and that the grant where the app sends the password for a token must not be.'
 		),
 		{ size: 'more' }
 	);
