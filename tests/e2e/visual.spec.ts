@@ -47,6 +47,7 @@ const states: readonly [string, string, 'flow' | 'setup'][] = [
 	['passwords-keys-tokens', 'mode=simple&explain=term.api-key', 'flow'],
 	['oidc-or-saml', 'mode=advanced&explain=term.saml', 'flow'],
 	['an-accounts-life', 'mode=advanced&explain=term.account', 'flow'],
+	['what-the-api-does', 'mode=advanced&explain=setting.apiToken', 'flow'],
 	['address-refused', 'mode=simple&address=other&step=address-refused', 'flow'],
 	[
 		'the-token-in-the-address',
