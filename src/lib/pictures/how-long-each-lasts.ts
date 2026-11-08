@@ -1,6 +1,7 @@
 import type { Say } from '#lib/flow/wording.ts';
 import { opensAsRecorded } from './build.ts';
 import type { Picture } from './model.ts';
+import { keepAll, type Keep } from './simple.ts';
 import { DAY, HOUR, MINUTE, timeline, type TimelineRow } from './timeline.ts';
 
 /**
@@ -23,7 +24,7 @@ export const LIFETIMES = {
  * 2026-11-07 that it otherwise took knowing already, and a key drawn with the same bars and circles
  * says what those mean.
  */
-export function howLongEachLasts(say: Say): Picture {
+export function howLongEachLasts(say: Say, keep: Keep = keepAll): Picture {
 	const logout = (step: string, keeps?: 'offline') =>
 		opensAsRecorded('flow', step, keeps ? 'logout-offline' : 'logout', {
 			oidc: true,
@@ -122,7 +123,7 @@ export function howLongEachLasts(say: Say): Picture {
 		],
 		rightHead: say('Ends at a logout?'),
 		scale: say('Minutes are stretched and days squeezed, so both fit.'),
-		rows,
+		rows: rows.filter((row) => keep(row.opens)),
 		note: say(
 			'On the server recorded, by default. Unused means nothing used it in that time, and a logout of the user ends their session there.'
 		)

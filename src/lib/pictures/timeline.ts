@@ -52,7 +52,18 @@ export function timeline(options: {
 
 	const lead = options.lead ? textAt('lead', 10, 8, 780, options.lead) : null;
 	const keyTop = lead ? bottomOf(lead) + 10 : 8;
-	const key = keyAt('key', 10, keyTop, 780, options.key);
+	// A key says only what is drawn, so a row simple mode leaves out takes its marks with it.
+	const used = new Set<string>([
+		...options.rows.flatMap((row) => row.bars.map((bar) => bar.tone)),
+		...options.rows.map((row) => row.right)
+	]);
+	const key = keyAt(
+		'key',
+		10,
+		keyTop,
+		780,
+		options.key.filter((entry) => used.has(entry.mark ?? entry.tone ?? ''))
+	);
 	const parts: PicturePart[] = lead ? [lead, ...key.parts] : [...key.parts];
 	const head = textAt('right-head', RIGHT.left, keyTop + key.h + 10, RIGHT.w, options.rightHead, {
 		size: 'more',

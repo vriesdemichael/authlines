@@ -196,13 +196,23 @@ test.describe('a picture in an explanation', () => {
 
 	// The concept pictures of 2026-11-07, each in what explains its concept (#167).
 	for (const [search, id, part, lands] of [
-		['explain=setting.broker', 'trust-across-providers', 'directory', 'step=directory-bind'],
+		[
+			'mode=advanced&explain=setting.broker',
+			'trust-across-providers',
+			'directory',
+			'step=directory-bind'
+		],
 		['explain=term.issuer', 'how-an-api-trusts-a-token', 'token.exp', 'send=expired'],
 		['explain=term.token', 'which-token-is-for-whom', 'session.browser', 'step=redirect-with-code'],
-		['explain=term.session', 'how-long-each-lasts', 'right-offline-token', 'keeps=offline'],
+		[
+			'mode=advanced&explain=term.session',
+			'how-long-each-lasts',
+			'right-offline-token',
+			'keeps=offline'
+		],
 		['explain=setting.pkce', 'what-stops-what', 'pkce.handed', 'attacker=1'],
 		['explain=setting.appRuns', 'where-the-tokens-are', 'head-bff', 'runs=bff'],
-		['explain=term.oauth', 'what-each-spec-adds', 'dpop', 'binding=dpop'],
+		['mode=advanced&explain=term.oauth', 'what-each-spec-adds', 'dpop', 'binding=dpop'],
 		[
 			'mode=advanced&explain=term.realm',
 			'what-is-in-a-token-here',
@@ -221,6 +231,17 @@ test.describe('a picture in an explanation', () => {
 			await expect(page.getByTestId('picture')).toHaveAttribute('data-picture', id);
 		});
 	}
+
+	// The maintainer decided on 2026-11-08 that simple mode leaves out what is tied to advanced settings.
+	test('leaves out in simple mode what advanced mode adds', async ({ page }) => {
+		await open(page, 'mode=simple&explain=term.oauth');
+		const picture = page.getByTestId('picture');
+		await expect(picture).toHaveAttribute('data-picture', 'what-each-spec-adds');
+		await expect(picture.locator('[data-part="pkce"]')).toHaveCount(1);
+		await expect(picture.locator('[data-part="dpop"]')).toHaveCount(0);
+		await open(page, 'mode=advanced&explain=term.oauth');
+		await expect(page.getByTestId('picture').locator('[data-part="dpop"]')).toHaveCount(1);
+	});
 
 	test('is not in an explanation it does not belong to', async ({ page }) => {
 		await open(page, 'mode=simple&step=token-response&explain=artifact.code');

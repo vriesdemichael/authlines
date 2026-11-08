@@ -5,8 +5,9 @@ import { nameIn, sayer, type Say, type Wording } from '#lib/flow/wording.ts';
 import { whatIsInATokenHere } from '#lib/keycloak/token-contents.ts';
 import { howAnApiTrustsAToken } from './how-an-api-trusts-a-token.ts';
 import { howLongEachLasts } from './how-long-each-lasts.ts';
-import type { Picture, PictureId } from './model.ts';
+import type { Opens, Picture, PictureId } from './model.ts';
 import { refreshPicture } from './refresh.ts';
+import { inSimpleMode } from './simple.ts';
 import { trustAcrossProviders } from './trust-across-providers.ts';
 import { whatAThiefCanDo } from './what-a-thief-can-do.ts';
 import { whatEachFactorProves } from './what-each-factor-proves.ts';
@@ -107,31 +108,34 @@ export function draw(id: PictureId, state: AppState, wording: Wording, say: Say)
 			: state.settings.federation
 				? 'in-a-directory'
 				: 'demo';
+	// Simple mode leaves out what is tied to advanced settings, as the maintainer decided on 2026-11-08.
+	const keep = (opens: Opens | undefined) =>
+		state.mode !== 'simple' || inSimpleMode(opens, state.settings);
 	switch (id) {
 		case 'refresh':
 			return refreshPicture(state.settings, say);
 		case 'who-knows-whom':
 			return whoKnowsWhom(state.settings, say, wording, namesOn(state, wording));
 		case 'trust-across-providers':
-			return trustAcrossProviders(say, wording, namesOn(state, wording));
+			return trustAcrossProviders(say, wording, namesOn(state, wording), keep);
 		case 'how-an-api-trusts-a-token':
 			return howAnApiTrustsAToken(say, realm);
 		case 'which-token-is-for-whom':
 			return whichTokenIsForWhom(state.settings, say, wording);
 		case 'how-long-each-lasts':
-			return howLongEachLasts(say);
+			return howLongEachLasts(say, keep);
 		case 'what-stops-what':
-			return whatStopsWhat(say);
+			return whatStopsWhat(say, keep);
 		case 'where-the-tokens-are':
-			return whereTheTokensAre(state.settings, say, wording);
+			return whereTheTokensAre(state.settings, say, wording, keep);
 		case 'what-each-spec-adds':
-			return whatEachSpecAdds(say);
+			return whatEachSpecAdds(say, keep);
 		case 'what-is-in-a-token-here':
 			return whatIsInATokenHere();
 		case 'what-each-factor-proves':
 			return whatEachFactorProves(say);
 		case 'what-a-thief-can-do':
-			return whatAThiefCanDo(say);
+			return whatAThiefCanDo(say, keep);
 	}
 }
 

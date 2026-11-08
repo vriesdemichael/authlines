@@ -31,7 +31,17 @@ export function matrix(options: {
 	const NAME = { left: 10, w: 230 };
 	const COLUMNS = { left: 250, right: 790 };
 	const column = (COLUMNS.right - COLUMNS.left) / options.columns.length;
-	const key = keyAt('key', 10, 8, 780, options.key);
+	// A key says only what is drawn, so a column simple mode leaves out takes its marks with it.
+	const used = new Set(
+		options.rows.flatMap((row) => options.columns.map((head) => row.cells[head.id]?.mark))
+	);
+	const key = keyAt(
+		'key',
+		10,
+		8,
+		780,
+		options.key.filter((entry) => !entry.mark || used.has(entry.mark))
+	);
 	const parts: PicturePart[] = [...key.parts];
 	const lines: PictureLine[] = [];
 	const headTop = 8 + key.h + 12;
