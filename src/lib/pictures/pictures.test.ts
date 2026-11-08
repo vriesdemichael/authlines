@@ -20,6 +20,7 @@ import { PICTURE_OF, pictureFor, type Opens } from '#lib/pictures/index.ts';
 import { noteDefs } from '#lib/keycloak/notes.ts';
 import { SIZE, widthOf, type Picture, type PicturePart } from '#lib/pictures/model.ts';
 import { refreshPicture } from '#lib/pictures/refresh.ts';
+import { inSimpleMode } from '#lib/pictures/simple.ts';
 import oidc from '../../../static/recordings/authorization-code/oidc.json';
 
 const base = flows['authorization-code'];
@@ -28,15 +29,20 @@ const stateFor = (search: string): AppState => parseState(base, 'flow', search);
 /** One thing that each picture explains, to draw it from. */
 const ONE_OF_EACH = [...new Map(Object.entries(PICTURE_OF).map(([key, id]) => [id, key])).values()];
 
-/** Each different picture the settings can give, in each kind of words, as an explanation has it. */
+/**
+ * Each different picture the settings can give, in each kind of words and each mode, as an
+ * explanation has it.
+ */
 function everyPicture(): Picture[] {
 	const seen = new Map<string, Picture>();
 	for (const settings of allValidSettings()) {
 		for (const wording of wordings) {
 			for (const explain of ONE_OF_EACH) {
-				const state = { ...stateFor(`explain=${explain}&say=${wording}&mode=advanced`), settings };
-				const picture = pictureFor(state, wording);
-				if (picture) seen.set(JSON.stringify(picture), picture);
+				for (const mode of ['advanced', 'simple']) {
+					const state = { ...stateFor(`explain=${explain}&say=${wording}&mode=${mode}`), settings };
+					const picture = pictureFor(state, wording);
+					if (picture) seen.set(JSON.stringify(picture), picture);
+				}
 			}
 		}
 	}
@@ -328,8 +334,11 @@ describe('the refresh picture', () => {
 	});
 });
 
-const picture = (search: string) =>
-	pictureFor(stateFor(search), stateFor(search).wording ?? 'plain')!;
+// Each in advanced mode, which draws all of it, unless the search says otherwise.
+const picture = (search: string) => {
+	const state = stateFor(search.includes('mode=') ? search : `${search}&mode=advanced`);
+	return pictureFor(state, state.wording ?? 'plain')!;
+};
 const words = (found: Picture) =>
 	JSON.stringify([
 		found.parts.map((part) => [
@@ -485,5 +494,41 @@ describe('what the circles and the rows mean', () => {
 			(part) => part.id === 'is-offline-token'
 		)!;
 		expect(offline.says.join(' ')).toContain('for when the user is gone');
+	});
+});
+
+describe('a picture in simple mode', () => {
+	const linked = (picture: Picture) => [
+		...picture.parts,
+		...picture.parts.flatMap((part) => part.rows ?? [])
+	];
+	const drawn = (explain: string, search = '') =>
+		pictureFor(stateFor(`explain=${explain}&mode=simple${search}`), 'plain');
+
+	// The maintainer decided on 2026-11-08 that simple mode leaves out what is tied to advanced settings.
+	it.each(ONE_OF_EACH)('leaves out what only advanced mode reaches: %s', (explain) => {
+		const picture = drawn(explain);
+		if (!picture) return;
+		const advanced = linked(picture).filter((part) => !inSimpleMode(part.opens));
+		expect(advanced.map((part) => part.id)).toEqual([]);
+	});
+
+	it('leaves out less than advanced mode, which draws it all', () => {
+		const simple = drawn('setting.pkce');
+		const advanced = pictureFor(stateFor('explain=setting.pkce&mode=advanced'), 'plain');
+		expect(simple?.parts.some((part) => part.id === 'head-link')).toBe(false);
+		expect(advanced?.parts.some((part) => part.id === 'head-link')).toBe(true);
+	});
+
+	it('keeps what a setting on screen has on, as simple mode keeps it as a chip', () => {
+		const ids = (picture: Picture | null) => picture?.parts.map((part) => part.id) ?? [];
+		expect(ids(drawn('setting.pkce'))).not.toContain('dpop.token');
+		expect(ids(drawn('setting.pkce', '&binding=dpop&thief=1'))).toContain('dpop.token');
+	});
+
+	it('says in its key only what it draws', () => {
+		const picture = drawn('term.session');
+		const keyed = picture?.parts.filter((part) => part.id.startsWith('key.')) ?? [];
+		expect(keyed.map((part) => part.says.join(' ')).join(' ')).not.toContain('does not end it');
 	});
 });

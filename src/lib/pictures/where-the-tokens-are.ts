@@ -5,6 +5,7 @@ import { artifacts, type ArtifactId } from '#lib/flow/vocabulary.ts';
 import { nameIn, type Say, type Wording } from '#lib/flow/wording.ts';
 import { bottomOf, opensAt, partyBox, textAt, zone } from './build.ts';
 import type { Picture, PicturePart } from './model.ts';
+import { keepAll, type Keep } from './simple.ts';
 
 /** What is worth keeping from someone, of everything a party has seen. */
 const WORTH: readonly ArtifactId[] = [
@@ -57,15 +58,23 @@ const worked = (id: string) => {
  * each one's own steps. The user's computer and the app's server are two zones, and the one on
  * screen is marked. What a script in the page can reach is the point of three of the four.
  */
-export function whereTheTokensAre(settings: Settings, say: Say, wording: Wording): Picture {
+export function whereTheTokensAre(
+	settings: Settings,
+	say: Say,
+	wording: Wording,
+	keep: Keep = keepAll
+): Picture {
 	const W = 800;
-	const COLUMN = 190;
 	const GAP = 10;
+	const cases = CASES.filter((c) =>
+		keep(opensAt('flow', 'token-response', c.preset, worked(c.preset).preset.settings))
+	);
+	const COLUMN = (780 - (cases.length - 1) * GAP) / cases.length;
 	const options = settingDefs.appRuns.kind === 'choice' ? settingDefs.appRuns.options : [];
 	const parts: PicturePart[] = [];
 	let height = 0;
 
-	CASES.forEach((c, i) => {
+	cases.forEach((c, i) => {
 		const left = 10 + i * (COLUMN + GAP);
 		const { preset, view, held } = worked(c.preset);
 		const listed = (id: string) =>
@@ -173,7 +182,7 @@ export function whereTheTokensAre(settings: Settings, say: Say, wording: Wording
 		height + 14,
 		780,
 		say(
-			'The API has the same in all four. Each column is worked out from its own steps, with OpenID Connect where it was recorded.'
+			`The API has the same in all ${['', 'one', 'two', 'three', 'four'][cases.length]}. Each column is worked out from its own steps, with OpenID Connect where it was recorded.`
 		),
 		{ size: 'more' }
 	);

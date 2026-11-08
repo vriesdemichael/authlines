@@ -1,6 +1,7 @@
 import type { Say } from '#lib/flow/wording.ts';
 import { bottomOf, opensAt, partyBox, textAt } from './build.ts';
 import type { Opens, Picture, PicturePart } from './model.ts';
+import { keepAll, type Keep } from './simple.ts';
 
 interface Block {
 	id: string;
@@ -16,12 +17,12 @@ interface Block {
  * others and not a second floor. Each block opens the setting that draws what it adds, and only specs
  * a setting already cites are here.
  */
-export function whatEachSpecAdds(say: Say): Picture {
+export function whatEachSpecAdds(say: Say, keep: Keep = keepAll): Picture {
 	const W = 800;
 	const PER_ROW = 4;
 	const GAP = 10;
 	const BLOCK = (780 - (PER_ROW - 1) * GAP) / PER_ROW;
-	const blocks: readonly Block[] = [
+	const all: readonly Block[] = [
 		{
 			id: 'openid-connect',
 			name: 'OpenID Connect',
@@ -116,6 +117,7 @@ export function whatEachSpecAdds(say: Say): Picture {
 			})
 		}
 	];
+	const blocks = all.filter((block) => keep(block.opens));
 	const parts: PicturePart[] = [
 		textAt('adds', 10, 10, 780, say('Each of these adds to OAuth, or says how to use it'), {
 			size: 'more'

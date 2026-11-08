@@ -3,6 +3,7 @@ import type { Say } from '#lib/flow/wording.ts';
 import { opensAsRecorded } from './build.ts';
 import { matrix, type MatrixCell } from './matrix.ts';
 import type { Opens, Picture } from './model.ts';
+import { keepAll, type Keep } from './simple.ts';
 
 type Attack = 'trade' | 'handed' | 'link' | 'token' | 'csrf';
 type Cell = MatrixCell;
@@ -16,8 +17,8 @@ const at = (step: string, preset: string, settings: Partial<Settings>) =>
  * what the specs say and nothing here draws, and a blank is what nothing here shows either way. The
  * answers to a dozen questions are each one cell of this.
  */
-export function whatStopsWhat(say: Say): Picture {
-	const attacks: readonly { id: Attack; name: string; opens?: Opens }[] = [
+export function whatStopsWhat(say: Say, keep: Keep = keepAll): Picture {
+	const allAttacks: readonly { id: Attack; name: string; opens?: Opens }[] = [
 		{
 			id: 'trade',
 			name: 'Someone trades a stolen code',
@@ -59,7 +60,7 @@ export function whatStopsWhat(say: Say): Picture {
 		says: 'Does not stop it: whoever holds a bearer token can use it, as RFC 6750 says'
 	};
 	const none: Cell = { mark: 'none', says: 'Not shown here' };
-	const protections: readonly {
+	const allProtections: readonly {
 		id: string;
 		name: string;
 		/** What it is, for someone who has not met it before. */
@@ -208,6 +209,19 @@ export function whatStopsWhat(say: Say): Picture {
 		}
 	];
 
+	// A protection with nothing left to say about the attacks still drawn goes with them.
+	// A column stays where its head or one of its cells does, so a setting on screen keeps its own.
+	const attacks = allAttacks.filter(
+		(attack) =>
+			keep(attack.opens) ||
+			allProtections.some((protection) => {
+				const cell = protection.cells[attack.id];
+				return cell.opens && keep(cell.opens);
+			})
+	);
+	const protections = allProtections.filter((protection) =>
+		attacks.some((attack) => protection.cells[attack.id].mark !== 'none')
+	);
 	const drawn = matrix({
 		// The key first, drawn with the circles below, so nothing has to be matched up from words.
 		key: [

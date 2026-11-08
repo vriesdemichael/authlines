@@ -2,6 +2,7 @@ import type { Say, Wording } from '#lib/flow/wording.ts';
 import { realmHolds } from '#lib/keycloak/words.ts';
 import { bottomOf, opensAt, partyBox, textAt } from './build.ts';
 import type { Picture, PictureLine, PictureRow } from './model.ts';
+import { keepAll, type Keep } from './simple.ts';
 import type { PartyNames } from './who-knows-whom.ts';
 
 /**
@@ -10,7 +11,12 @@ import type { PartyNames } from './who-knows-whom.ts';
  * connections between the IDP and how the trust relates", as a concept for the whole and not for one
  * flow. The app is on the other side of it, and knows only the one provider.
  */
-export function trustAcrossProviders(say: Say, wording: Wording, names: PartyNames): Picture {
+export function trustAcrossProviders(
+	say: Say,
+	wording: Wording,
+	names: PartyNames,
+	keep: Keep = keepAll
+): Picture {
 	const keycloak = wording === 'keycloak';
 	const held = (plain: string, key: keyof typeof realmHolds) =>
 		keycloak ? realmHolds[key] : say(plain);
@@ -50,7 +56,7 @@ export function trustAcrossProviders(say: Say, wording: Wording, names: PartyNam
 			trust: ['checks passwords', 'there'],
 			opens: opensAt('flow', 'directory-bind', 'in-a-directory', { federation: true })
 		}
-	];
+	].filter((other) => keep(other.opens));
 	let top = TOP;
 	const right = others.map((other) => {
 		const part = partyBox(other.id, RIGHT.left, top, RIGHT.w, other.title, other.text, {
@@ -61,32 +67,34 @@ export function trustAcrossProviders(say: Say, wording: Wording, names: PartyNam
 	});
 	const rightBottom = bottomOf(right.at(-1)!);
 
-	const rows: PictureRow[] = [
-		{
-			id: 'apps',
-			says: held('Apps it knows', 'apps'),
-			more: say('The app, as one client'),
-			opens: opensAt('setup', 'create-client', 'oauth')
-		},
-		{
-			id: 'providers',
-			says: held('Other providers', 'providers'),
-			more: say('Each, with what it was given'),
-			opens: opensAt('setup', 'register-with-upstream', 'broker', { broker: true })
-		},
-		{
-			id: 'customers',
-			says: held('Customers', 'customers'),
-			more: say('A domain, and its provider'),
-			opens: opensAt('setup', 'add-organization', 'companies', { broker: true, companies: true })
-		},
-		{
-			id: 'directories',
-			says: held('Directories', 'directories'),
-			more: say('Its address, and an account'),
-			opens: opensAt('setup', 'connect-directory', 'in-a-directory', { federation: true })
-		}
-	];
+	const rows: PictureRow[] = (
+		[
+			{
+				id: 'apps',
+				says: held('Apps it knows', 'apps'),
+				more: say('The app, as one client'),
+				opens: opensAt('setup', 'create-client', 'oauth')
+			},
+			{
+				id: 'providers',
+				says: held('Other providers', 'providers'),
+				more: say('Each, with what it was given'),
+				opens: opensAt('setup', 'register-with-upstream', 'broker', { broker: true })
+			},
+			{
+				id: 'customers',
+				says: held('Customers', 'customers'),
+				more: say('A domain, and its provider'),
+				opens: opensAt('setup', 'add-organization', 'companies', { broker: true, companies: true })
+			},
+			{
+				id: 'directories',
+				says: held('Directories', 'directories'),
+				more: say('Its address, and an account'),
+				opens: opensAt('setup', 'connect-directory', 'in-a-directory', { federation: true })
+			}
+		] satisfies PictureRow[]
+	).filter((row) => keep(row.opens));
 	const idp = partyBox('idp', 250, TOP, 220, names.idp, say('The one the app knows.'), {
 		rows,
 		minH: rightBottom - TOP,

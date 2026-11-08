@@ -2,6 +2,7 @@ import type { Say } from '#lib/flow/wording.ts';
 import { opensAsRecorded, opensAt } from './build.ts';
 import { LIFETIMES } from './how-long-each-lasts.ts';
 import type { Picture } from './model.ts';
+import { keepAll, type Keep } from './simple.ts';
 import { DAY, timeline, type TimelineRow } from './timeline.ts';
 
 /**
@@ -17,7 +18,7 @@ import { DAY, timeline, type TimelineRow } from './timeline.ts';
  * version understated: using a session or a refresh token counts as using it, so it lasts up to its
  * maximum, and an offline token has none by default (the server notes, and research/followup-checks).
  */
-export function whatAThiefCanDo(say: Say): Picture {
+export function whatAThiefCanDo(say: Say, keep: Keep = keepAll): Picture {
 	const neverEnds = (says: string) => [{ to: 60 * DAY, tone: 'open' as const, says }];
 	const rows: TimelineRow[] = [
 		{
@@ -109,7 +110,7 @@ export function whatAThiefCanDo(say: Say): Picture {
 		],
 		rightHead: say('What else a thief needs'),
 		rightWidth: 170,
-		rows,
+		rows: rows.filter((row) => keep(row.opens)),
 		scale: say('Minutes are stretched and days squeezed, so both fit.'),
 		note: say(
 			'A second factor is asked for at the login. After it, a cookie or token stands in for the user, and works for whoever holds it until it ends. NIST’s security controls want a second factor on every account, and name admins’ accounts on their own. Lifetimes are from the server recorded, by default, where using a session or a refresh token keeps it going, up to its maximum.'
