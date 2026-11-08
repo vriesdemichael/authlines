@@ -7,6 +7,7 @@ import {
 	browserWords,
 	directoryWords,
 	idpWords,
+	kdcWords,
 	secondApiWords,
 	secondAppWords,
 	upstreamWords
@@ -26,6 +27,13 @@ const inAProgram = is('appRuns', 'program');
 const implicit = is('implicit', true);
 const fromADocument = is('registration', 'cimd');
 const inADirectory = is('federation', true);
+// On a company network, with a Kerberos ticket from logging in to the computer (#148).
+const kerberos = is('kerberos', true);
+const withATicket = all(kerberos, is('ticket', 'sent'));
+const noTicketSent = all(kerberos, is('ticket', 'not-sent'));
+// Not OpenID Connect's nonce, though it has the same name.
+const KERBEROS_NONCE =
+	'A random number the answer has to repeat, so an old answer cannot pass for it';
 const byHand = is('registration', 'manual');
 const attacker = is('attacker', true);
 // The code is one-time, and on a public client nothing stops someone else using it first.
@@ -113,6 +121,17 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		'An app wants to do something for a user, such as read their calendar, without ever seeing their password. OAuth is how it gets permission. OpenID Connect adds who the user is, which is what logging in with an account elsewhere comes down to. Press Next to follow it, one message at a time.',
 	specs: ['rfc6749', 'rfc6750'],
 	lifelines: [
+		// Only the user's computer talks to it, so it goes beside the browser, where no arrow crosses.
+		{
+			id: 'kdc',
+			plainName: 'Ticket server',
+			plainRole: 'Kerberos',
+			...kdcWords,
+			icon: 'api',
+			concept:
+				'The key distribution center, which hands out Kerberos tickets and keeps a key for every user and service on the network. On a Windows network it runs on every domain controller, with Active Directory behind it. The one recorded here was not Windows, and neither was the computer.',
+			when: kerberos
+		},
 		{
 			id: 'browser',
 			plainName: "User's browser",
@@ -352,6 +371,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 	],
 	parts: [
 		{
+			label: 'That morning',
+			why: 'Logging in to their computer got a ticket for getting more, so no password is needed again.',
+			from: 'computer-asks',
+			when: kerberos
+		},
+		{
 			label: 'Their link',
 			why: 'Someone else starts the login with a link of theirs, and the app has no part in it.',
 			from: 'attacker-makes-link'
@@ -365,7 +390,8 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		{
 			label: 'Log in',
 			why: 'The user proves who they are away from the app, which never sees the password.',
-			from: 'login-page'
+			// Only Kerberos steps come before the login page, so without it this starts there.
+			from: 'idp-negotiate'
 		},
 		{
 			label: 'Theirs',
@@ -444,6 +470,137 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		}
 	],
 	steps: [
+		// That morning, on a company network: the computer gets a ticket for getting tickets (#148).
+		{
+			id: 'computer-asks',
+			when: kerberos,
+			from: 'browser',
+			to: 'kdc',
+			kind: 'request',
+			plain: 'Their computer asks for a ticket for tickets',
+			label: 'AS-REQ',
+			concept:
+				'That morning the user logged in to their computer, the one the browser runs on, with their password. The computer asks the KDC for a ticket-granting ticket for them, and offers no proof yet.',
+			recordedAs:
+				'Caught on the wire and read by RFC 4120, because Kerberos is not HTTP. The KDC was MIT Kerberos and the computer ran Linux, where kinit stood in for logging in to it. On a Windows network the KDC is a domain controller, and Windows logs in with its own additions, set out in MS-KILE, which were not recorded.',
+			cites: [
+				{
+					source: 'rfc4120',
+					why: 'Section 3.1 is this exchange, which a login session usually starts with, to get a ticket-granting ticket.'
+				},
+				{
+					source: 'windows-kerberos',
+					why: 'In Windows the first login is the one at the computer, and the KDC runs on every domain controller.'
+				}
+			],
+			fields: [
+				{ name: 'msg-type', place: 'body' },
+				{ name: 'padata', place: 'body', note: 'What it can do later, and no proof yet' },
+				{ name: 'kdc-options', place: 'body' },
+				{ name: 'cname', place: 'body' },
+				{ name: 'realm', place: 'body' },
+				{ name: 'sname', place: 'body', note: 'krbtgt, the KDC itself: a ticket for tickets' },
+				{ name: 'till', place: 'body' },
+				{ name: 'nonce', place: 'body', note: KERBEROS_NONCE },
+				{ name: 'etype', place: 'body' }
+			]
+		},
+		{
+			id: 'kdc-wants-proof',
+			when: kerberos,
+			from: 'kdc',
+			to: 'browser',
+			kind: 'response',
+			plain: 'Prove you know the password first',
+			label: 'KRB-ERROR, pre-authentication required',
+			concept:
+				'Its answer would be sealed with a key made from the password, which anyone who asked could take away and try passwords against. So the KDC wants proof first, as the one recorded was set to, and says which kind of key to make and the salt to make it with, here the realm and the username.',
+			recordedAs: 'Caught on the wire and read by RFC 4120, because Kerberos is not HTTP.',
+			cites: [
+				{
+					source: 'rfc4120',
+					why: 'Section 3.1.3 is this answer, with the ways it may prove itself in e-data. Section 10 says an answer sealed with a key from the password can be guessed at, which is why realms should ask for this.'
+				}
+			],
+			fields: [
+				{ name: 'msg-type', place: 'body' },
+				{ name: 'stime', place: 'body' },
+				{ name: 'error-code', place: 'body', note: 'Pre-authentication required' },
+				{ name: 'cname', place: 'body' },
+				{ name: 'realm', place: 'body' },
+				{ name: 'sname', place: 'body' },
+				{ name: 'e-text', place: 'body' },
+				{ name: 'e-data', place: 'body', note: 'How to make the key, and ways to prove it' }
+			]
+		},
+		{
+			id: 'computer-proves',
+			when: kerberos,
+			from: 'browser',
+			to: 'kdc',
+			kind: 'request',
+			plain: 'The time, sealed with the password',
+			label: 'AS-REQ, with the time sealed',
+			concept:
+				'The computer makes a key from the password and the salt, and seals the time with it. The KDC keeps the same key, so it can open it and see that the time is now. The password itself does not cross the network, which the recording checked.',
+			recordedAs: 'Caught on the wire and read by RFC 4120, because Kerberos is not HTTP.',
+			cites: [
+				{
+					source: 'rfc4120',
+					why: 'Section 5.2.7.2 is this proof: the time, sealed with the user’s key.'
+				}
+			],
+			fields: [
+				{ name: 'msg-type', place: 'body' },
+				{
+					name: 'padata',
+					place: 'body',
+					note: 'The time, sealed with the key from the password, as PA-ENC-TIMESTAMP'
+				},
+				{ name: 'kdc-options', place: 'body' },
+				{ name: 'cname', place: 'body' },
+				{ name: 'realm', place: 'body' },
+				{ name: 'sname', place: 'body' },
+				{ name: 'till', place: 'body' },
+				{ name: 'nonce', place: 'body', note: KERBEROS_NONCE },
+				{ name: 'etype', place: 'body' }
+			]
+		},
+		{
+			id: 'kdc-gives-tgt',
+			when: kerberos,
+			from: 'kdc',
+			to: 'browser',
+			kind: 'response',
+			plain: 'A ticket for getting tickets',
+			label: 'AS-REP',
+			concept:
+				'The ticket-granting ticket is sealed with a key only the KDC has, so the computer can show it but not read it. With it comes a session key, sealed with the key from the password, which is how the computer will show the ticket is its own. Until it runs out the password is not needed again.',
+			recordedAs: 'Caught on the wire and read by RFC 4120, because Kerberos is not HTTP.',
+			cites: [
+				{
+					source: 'rfc4120',
+					why: 'Section 3.1.3 is this answer: a ticket sealed with the KDC’s key, and a session key sealed with the user’s.'
+				}
+			],
+			fields: [
+				{ name: 'msg-type', place: 'body' },
+				{ name: 'padata', place: 'body', note: 'How the key from the password was made' },
+				{ name: 'crealm', place: 'body' },
+				{ name: 'cname', place: 'body' },
+				{
+					name: 'ticket',
+					place: 'body',
+					artifact: 'tgt',
+					note: 'Sealed with a key only the KDC has'
+				},
+				{
+					name: 'enc-part',
+					place: 'body',
+					note: 'The session key, sealed with the key from the password'
+				}
+			]
+		},
 		{
 			id: 'attacker-makes-link',
 			when: byLink,
@@ -1117,6 +1274,165 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			]
 		},
 		{
+			id: 'idp-negotiate',
+			when: kerberos,
+			from: 'idp',
+			to: 'browser',
+			kind: 'response',
+			plain: 'Show a ticket, or log in here',
+			label: '401, WWW-Authenticate: Negotiate',
+			concept: [
+				{
+					when: noTicketSent,
+					text: 'The identity provider sends a page with status 401 and a header that says it takes a Kerberos ticket. This browser was never told it may send one here, so it shows the page, which sends itself straight back.'
+				},
+				{
+					text: 'The identity provider sends a page with status 401 and a header that says it takes a Kerberos ticket. A browser that was told it may send one here asks for a ticket and sends the request again. The one recorded that was not told showed the page.'
+				}
+			],
+			cites: [
+				{
+					source: 'rfc4559',
+					why: 'Section 4.1 is this answer: 401, and Negotiate with nothing after it the first time.'
+				}
+			],
+			fields: [{ name: 'WWW-Authenticate', place: 'header', note: 'Negotiate: it takes a ticket' }]
+		},
+		{
+			id: 'ask-for-service-ticket',
+			when: withATicket,
+			from: 'browser',
+			to: 'kdc',
+			kind: 'request',
+			plain: 'A ticket for the identity provider, please',
+			label: 'TGS-REQ',
+			concept:
+				'The browser asks the KDC for a ticket for HTTP and the server’s host name, from the address, HTTP/localhost here. It shows the ticket-granting ticket, with the time sealed with its session key to show it is its own. Nobody is asked for a password.',
+			recordedAs: 'Caught on the wire and read by RFC 4120, because Kerberos is not HTTP.',
+			cites: [
+				{
+					source: 'rfc4559',
+					why: 'Section 4.1 says the server’s name for a ticket is HTTP and its host name.'
+				},
+				{
+					source: 'rfc4120',
+					why: 'Section 3.3.1 is this request, made with a ticket-granting ticket in place of a password.'
+				}
+			],
+			fields: [
+				{ name: 'msg-type', place: 'body' },
+				{
+					name: 'padata',
+					place: 'body',
+					artifact: 'tgt',
+					note: 'The ticket for tickets, and the time sealed with its session key'
+				},
+				{ name: 'kdc-options', place: 'body' },
+				{ name: 'realm', place: 'body' },
+				{ name: 'sname', place: 'body', note: 'HTTP, and the server’s host name' },
+				{ name: 'till', place: 'body' },
+				{ name: 'nonce', place: 'body', note: KERBEROS_NONCE },
+				{ name: 'etype', place: 'body' }
+			]
+		},
+		{
+			id: 'kdc-gives-service-ticket',
+			when: withATicket,
+			from: 'kdc',
+			to: 'browser',
+			kind: 'response',
+			plain: 'A ticket only the identity provider can open',
+			label: 'TGS-REP',
+			concept:
+				'The ticket is sealed with the key the KDC keeps for the identity provider, the one an admin gave it. On the outside the ticket says only what it is for, HTTP/localhost in the Kerberos realm. Who the user is and a session key are inside, where only the identity provider can read them. The browser gets its own copy of that key beside the ticket, and the user’s name crosses in the clear too.',
+			recordedAs: 'Caught on the wire and read by RFC 4120, because Kerberos is not HTTP.',
+			cites: [
+				{
+					source: 'rfc4120',
+					why: 'Section 5.3 is what a ticket holds: the realm and the service in the clear, and the user and the session key sealed.'
+				}
+			],
+			fields: [
+				{ name: 'msg-type', place: 'body' },
+				{ name: 'padata', place: 'body' },
+				{ name: 'crealm', place: 'body' },
+				{ name: 'cname', place: 'body' },
+				{
+					name: 'ticket',
+					place: 'body',
+					artifact: 'service-ticket',
+					note: 'Sealed with the identity provider’s key'
+				},
+				{
+					name: 'enc-part',
+					place: 'body',
+					note: 'A session key for it, sealed so only the computer can open it'
+				}
+			]
+		},
+		{
+			id: 'send-ticket',
+			when: withATicket,
+			from: 'browser',
+			to: 'idp',
+			kind: 'request',
+			plain: 'The same request, with the ticket',
+			label: 'Authorization: Negotiate',
+			concept:
+				'The browser sends the same request again, with the ticket in the header and the time sealed with the session key that came with it. The identity provider opens the ticket with its own key, takes the session key from it, and checks the time, without asking the KDC. Nobody typed anything.',
+			pitfall: {
+				title: 'What if the login page shows anyway?',
+				text: 'Then the ticket did not get the user in. On the server recorded it first did not, with a good ticket: the identity provider looks the user up in the directory by an attribute, krb5PrincipalName unless set otherwise, which these users did not have. It logged that it found nobody, and showed its page. With the attribute left empty it looks them up by the name before the @.'
+			},
+			inPractice:
+				'Nothing for your app, which never sees a ticket. Whoever runs the identity provider needs HTTPS in front of it: the header carries the ticket, and nothing in Negotiate protects the headers.',
+			cites: [
+				{
+					source: 'rfc4559',
+					why: 'Section 4.2 is this request: the same one again, with Authorization: Negotiate and a token. Section 6 says nothing in it protects the headers, and that TLS can.'
+				},
+				{
+					source: 'rfc4120',
+					why: 'Section 3.2.3 is how the service checks it: it opens the ticket with its own key, and the time with the session key inside.'
+				}
+			],
+			fields: [
+				{
+					name: 'Authorization',
+					place: 'header',
+					artifact: 'service-ticket',
+					note: 'Negotiate, and SPNEGO around the ticket'
+				},
+				// The request is the same one again, address and all.
+				{ name: 'response_type=code', place: 'query' },
+				{ name: 'client_id', place: 'query' },
+				{ name: 'redirect_uri', place: 'query' },
+				{ name: 'state', place: 'query' }
+			]
+		},
+		{
+			id: 'no-ticket',
+			when: noTicketSent,
+			from: 'browser',
+			to: 'idp',
+			kind: 'request',
+			plain: 'The page sends itself back, with no ticket',
+			label: 'POST, empty',
+			concept:
+				'The page that came with the 401 sends itself straight back, with nothing in it. The identity provider takes that to mean no ticket is coming, and shows its login form. The ticket the computer got that morning is never used.',
+			pitfall: {
+				title: 'Why does this one site ask for my password?',
+				text: 'It can be because the browser was not told it may send a ticket there. Chromium sends one only to a site on its list, which on Windows, with no list set, Windows decides by its security zones. The one recorded was told with --auth-server-allowlist. A good ticket can still end at the login page, when the identity provider cannot find who it names.'
+			},
+			cites: [
+				{
+					source: 'chromium-http-auth',
+					why: 'Chromium’s own account of when it sends a ticket: only to a server on its list.'
+				}
+			],
+			fields: []
+		},
+		{
 			id: 'login-page',
 			from: 'idp',
 			to: 'browser',
@@ -1124,6 +1440,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'The login page',
 			label: 'Login page',
 			concept: [
+				{
+					when: noTicketSent,
+					text: 'The identity provider’s own login form, as for anyone with no ticket.'
+				},
 				{
 					when: passkey,
 					text: 'The identity provider’s own page, which asks the browser for a passkey for this site as it loads, with a challenge made for this login. It asks for a username and a password too, for someone with no passkey.'
@@ -1147,7 +1467,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					marks: ['redirect_uri', 'state']
 				}
 			],
-			when: not(broker)
+			when: all(not(broker), not(withATicket))
 		},
 		{
 			id: 'submit-credentials',
@@ -1167,7 +1487,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				title: 'What if someone else has this password?',
 				text: 'Then they can log in as the user, from anywhere, until it is changed, unless the identity provider also asks for a second factor. On the server recorded it asks for nothing else, by default. Even with one, a session or token taken after the login works without it, for as long as it lasts.'
 			},
-			when: all(not(broker), not(passkey)),
+			when: all(not(broker), not(passkey), not(withATicket)),
 			// With the token in the redirect, that is the answer, and the call to the API uses it.
 			execute: [
 				{ answer: 'redirect-with-token', when: implicit },
@@ -1254,15 +1574,29 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			kind: 'request',
 			plain: 'It looks the user up in the directory',
 			label: 'LDAP search',
-			concept:
-				'The identity provider does not have the password to compare, so it asks the directory, with an account an admin gave it. The server recorded asked at every login it was tried on, and after the first it looks the user up by an ID it kept.',
+			concept: [
+				{
+					when: withATicket,
+					text: 'The ticket says who the user is, alice in the Kerberos realm, and the identity provider looks them up in the directory by the name before the @, as it was set to. The user’s password is not asked about, and did not cross this connection, which the recording checked. The identity provider logs in with its own account first, as at any search.'
+				},
+				{
+					text: 'The identity provider does not have the password to compare, so it asks the directory, with an account an admin gave it. The server recorded asked at every login it was tried on, and after the first it looks the user up by an ID it kept.'
+				}
+			],
 			recordedAs:
 				'From the log of an OpenLDAP server, because this is LDAP and not HTTP. Active Directory was not tried.',
 			fields: [
 				{
 					name: 'filter',
 					place: 'body',
-					note: 'At a first login, the username from the login page'
+					note: 'The name in the ticket, before the @',
+					when: withATicket
+				},
+				{
+					name: 'filter',
+					place: 'body',
+					note: 'At a first login, the username from the login page',
+					when: not(withATicket)
 				},
 				{ name: 'attributes', place: 'body', note: 'What it wants to know about them' }
 			]
@@ -1282,7 +1616,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		},
 		{
 			id: 'directory-bind',
-			when: inADirectory,
+			when: all(inADirectory, not(withATicket)),
 			from: 'idp',
 			to: 'directory',
 			kind: 'request',
@@ -1301,7 +1635,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		},
 		{
 			id: 'directory-bound',
-			when: inADirectory,
+			when: all(inADirectory, not(withATicket)),
 			from: 'directory',
 			to: 'idp',
 			kind: 'response',
@@ -1759,6 +2093,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					place: 'header',
 					note: 'The session, on the address of the identity provider',
 					artifact: 'session'
+				},
+				{
+					name: 'WWW-Authenticate',
+					place: 'header',
+					note: 'SPNEGO saying it is done, with nothing that proves the server',
+					when: withATicket
 				}
 			]
 		},

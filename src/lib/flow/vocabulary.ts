@@ -17,7 +17,9 @@ export type ArtifactId =
 	| 'user-code'
 	| 'request-uri'
 	| 'exchanged-token'
-	| 'exchanged-refresh-token';
+	| 'exchanged-refresh-token'
+	| 'tgt'
+	| 'service-ticket';
 
 export const artifacts: Readonly<
 	Record<ArtifactId, { label: string; short: string; explains: string }>
@@ -123,6 +125,18 @@ export const artifacts: Readonly<
 		explains:
 			'An access token for the same user, which the identity provider issued in return for the one the first API was sent. It names the second API, so the first API sends this one on, and the token that names the first API does not have to work anywhere else.'
 	},
+	tgt: {
+		label: 'ticket-granting ticket',
+		short: 'ticket for tickets',
+		explains:
+			'What the computer got when the user logged in to it: a ticket for asking the KDC for other tickets, so that the password is not needed again until it runs out. It is sealed with a key only the KDC has, so the computer can show it but not read it.'
+	},
+	'service-ticket': {
+		label: 'service ticket',
+		short: 'ticket',
+		explains:
+			'A ticket for one service, here the identity provider, which says who the user is. It is sealed with a key only that service and the KDC have, so the browser that carries it cannot read it, and no password goes with it.'
+	},
 	'exchanged-refresh-token': {
 		label: 'exchanged refresh token',
 		short: 'exchanged refresh',
@@ -195,7 +209,19 @@ const parameterWhy: Readonly<Record<string, string>> = {
 	'prompt=none': 'Says not to show a form, whatever happens.',
 	error_description: 'What went wrong, in words for a person to read.',
 	keys: 'The public keys that check signatures.',
-	device_authorization_endpoint: 'Where to ask for the two codes that start the device flow.'
+	device_authorization_endpoint: 'Where to ask for the two codes that start the device flow.',
+	// Kerberos, read off the wire by RFC 4120 (#148).
+	'msg-type': 'Which Kerberos message this is.',
+	padata: 'What goes beside the request or the answer, to prove something or say how.',
+	'kdc-options': 'Flags for the ticket it wants, such as one that can be renewed.',
+	cname: 'The user, without the realm.',
+	crealm: 'The user’s Kerberos realm.',
+	realm: 'The Kerberos realm, in capitals, which is not the identity provider’s realm.',
+	sname: 'What the ticket is for, where krbtgt is the KDC itself.',
+	till: 'When the ticket is asked to run out.',
+	etype: 'The kinds of key the computer can use, the one it would rather have first.',
+	stime: 'The KDC’s own time. Kerberos needs the clocks to roughly agree.',
+	'e-text': 'The error, in a word or two.'
 };
 
 /** Why a field is there: what the step says about it, or else what it always means. */

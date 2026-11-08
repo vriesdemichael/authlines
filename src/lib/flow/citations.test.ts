@@ -175,6 +175,18 @@ describe('a claim about a spec', () => {
 		expect([...left]).toEqual([]);
 	});
 
+	// The screen lists them by source and section, and two the same broke a step (2026-11-08).
+	it('cites each source and section once on a step', () => {
+		const twice = new Set<string>();
+		for (const { base, step } of everyStep()) {
+			const keys = step.cites.map((cite) => `${cite.source}:${cite.section}`);
+			for (const key of keys) {
+				if (keys.indexOf(key) !== keys.lastIndexOf(key)) twice.add(`${base.id} ${step.id} ${key}`);
+			}
+		}
+		expect([...twice]).toEqual([]);
+	});
+
 	it('cites the RFC it names', () => {
 		const wrong = new Set<string>();
 		for (const { step } of everyStep()) {

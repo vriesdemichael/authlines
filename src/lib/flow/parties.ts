@@ -57,6 +57,29 @@ export const directoryWords: Words = {
 	knownAs: []
 };
 
+export const kdcWords: Words = {
+	name: 'KDC',
+	role: 'Key distribution center',
+	knownAs: [
+		{
+			word: 'key distribution center',
+			by: 'Kerberos',
+			source: {
+				source: 'rfc4120',
+				why: 'Section 1.7 defines the KDC, the key distribution center: a service that hands out tickets, and session keys to use them with.'
+			}
+		},
+		{
+			word: 'domain controller',
+			by: 'Windows',
+			source: {
+				source: 'windows-kerberos',
+				why: 'In Windows Server the KDC runs on every domain controller.'
+			}
+		}
+	]
+};
+
 export const upstreamWords: Words = {
 	name: 'Upstream provider',
 	role: 'Other provider',

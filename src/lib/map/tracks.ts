@@ -383,6 +383,28 @@ export const mapTracks: readonly MapTrack[] = [
 					mode: 'advanced',
 					step: 'directory-bind'
 				}),
+				// The headline of #148, on a company network with the same directory (2026-11-08).
+				node({
+					id: 'no-password-on-the-network',
+					alsoAskedAs: [
+						'kerberos',
+						'spnego',
+						'negotiate',
+						'windows login',
+						'windows authentication',
+						'active directory',
+						'ticket',
+						'single sign-on on the company network',
+						'why did I not have to log in'
+					],
+					answer:
+						'Logging in to your computer got it a Kerberos ticket, and the browser used that to get a ticket for the identity provider, which it sent in place of a password. On the server recorded nobody typed anything, and the identity provider never saw a password.',
+					title: 'Why did I not have to log in?',
+					summary: 'A ticket from logging in to the computer, sent in place of a password.',
+					mode: 'advanced',
+					preset: 'kerberos',
+					step: 'send-ticket'
+				}),
 				node({
 					id: 'another-provider',
 					alsoAskedAs: [
@@ -703,16 +725,6 @@ export const mapTracks: readonly MapTrack[] = [
 					summary: 'Yes, by sending you their code. It is called device code phishing.',
 					answer:
 						'Yes. They start this flow on a device of their own and send you the address and the user code. If you log in and agree, the tokens go to them. The page asking you to agree can name an app you know, so ask whether you started this.'
-				}),
-				node({
-					id: 'device-someone-reads-it',
-					flow: 'device',
-					preset: 'on-a-device-read',
-					step: 'read-code-refused',
-					title: 'What if someone else can see the user code on the screen?',
-					summary: 'They can get there first, and the device ends up logged in as them.',
-					answer:
-						'They can enter it first, with an account of their own. They get no token for themselves, but the device ends up logged in as them, and the user is told the user code is not valid. So it matters who can see the screen.'
 				})
 			]
 		]

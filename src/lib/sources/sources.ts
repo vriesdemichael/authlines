@@ -20,6 +20,11 @@ export type SourceId =
 	| 'oidc-backchannel-logout'
 	| 'keycloak-brokering'
 	| 'keycloak-federation'
+	| 'keycloak-kerberos'
+	| 'rfc4120'
+	| 'rfc4559'
+	| 'windows-kerberos'
+	| 'chromium-http-auth'
 	| 'keycloak-organizations'
 	| 'keycloak-timeouts'
 	| 'saml-core'
@@ -131,6 +136,25 @@ export const sources: Record<SourceId, SourceDef> = {
 		url: 'https://www.rfc-editor.org/rfc/rfc6238.html',
 		textFile: 'rfc6238.txt'
 	},
+	rfc4120: {
+		label: 'RFC 4120',
+		title: 'The Kerberos Network Authentication Service (V5)',
+		status: 'Proposed Standard, July 2005.',
+		summary:
+			'Kerberos: a user proves who they are once, to a key distribution centre (KDC), and gets a ticket-granting ticket. With it they ask the KDC for a ticket to each service. A ticket is sealed with a key that only that service and the KDC have, so whoever carries it cannot read it, and it comes with a session key sealed for the user, which they use to show the service the ticket is theirs. The KDC can ask for proof before it answers, such as the time sealed with a key made from the password, so the password itself is not sent.',
+		// From 2005, before the IETF Trust's provisions, which grant only what the Trust holds (TLP 5.0,
+		// sections 2.c and 5.c), so this one is a summary and a link, and not the text (ADR-009).
+		url: 'https://www.rfc-editor.org/rfc/rfc4120.html'
+	},
+	rfc4559: {
+		label: 'RFC 4559',
+		title: 'SPNEGO-based Kerberos and NTLM HTTP Authentication in Microsoft Windows',
+		status: 'Informational, June 2006.',
+		summary:
+			'How a browser hands a Kerberos ticket to a website. The site answers 401 with WWW-Authenticate: Negotiate, and the browser sends the request again with Authorization: Negotiate and a token holding a ticket for HTTP and the site’s host name. The site can put a last token in its answer. None of this protects the headers, so it needs TLS around it.',
+		// From 2006, so a summary and a link as for RFC 4120.
+		url: 'https://www.rfc-editor.org/rfc/rfc4559.html'
+	},
 	rfc9126: {
 		label: 'RFC 9126',
 		title: 'OAuth 2.0 Pushed Authorization Requests',
@@ -224,6 +248,30 @@ export const sources: Record<SourceId, SourceDef> = {
 		summary:
 			'Keycloak can use users from LDAP or Active Directory, imported or not, and check their passwords on the LDAP server.',
 		url: 'https://www.keycloak.org/docs/26.8.1/server_admin/#_user-storage-federation'
+	},
+	'keycloak-kerberos': {
+		label: 'Keycloak docs: Kerberos',
+		title: 'Kerberos',
+		status: 'Keycloak 26.8.1, Server Administration Guide.',
+		summary:
+			'Keycloak can take a Kerberos ticket from the browser through SPNEGO. Its guide says it answers the login with its login page, status 401 and WWW-Authenticate: Negotiate, and a browser with a ticket sends its request again with one. The server recorded sent a page that sent itself back, and its login page after that. It needs a service principal, HTTP and its own host name, with the key exported from the KDC to a keytab it can read. The users come from LDAP with Kerberos allowed on that provider, or from a Kerberos provider of its own. A browser has to be told which sites it may send a ticket to, and otherwise the login page shows.',
+		url: 'https://www.keycloak.org/docs/26.8.1/server_admin/#_kerberos'
+	},
+	'windows-kerberos': {
+		label: 'Microsoft: Kerberos in Windows Server',
+		title: 'Kerberos authentication overview in Windows Server',
+		status: 'Microsoft Learn, updated September 2026.',
+		summary:
+			'In Windows Server the KDC runs on every domain controller, with Active Directory as the database of accounts. The first login is the one at the computer, and after it Kerberos gets the tickets for whatever the user reaches. Windows adds to the Kerberos of RFC 4120, such as authorization data carried in the ticket, which its own specification, MS-KILE, sets out.',
+		url: 'https://learn.microsoft.com/en-us/windows-server/security/kerberos/kerberos-authentication-overview'
+	},
+	'chromium-http-auth': {
+		label: 'Chromium: HTTP authentication',
+		title: 'HTTP authentication',
+		status: 'Chromium design document, read on 2026-11-08.',
+		summary:
+			'Chromium sends a Kerberos ticket through Negotiate only to a proxy, or to a server on its permitted list, because of the attacks it would allow otherwise. On Windows, with no list set, the list is whatever Windows allows by its security zones. It asks for a ticket for HTTP and the server’s canonical host name, and does not let a server pass the ticket on, delegation, unless a policy allows it.',
+		url: 'https://www.chromium.org/developers/design-documents/http-authentication/'
 	},
 	'keycloak-organizations': {
 		label: 'Keycloak docs: organizations',

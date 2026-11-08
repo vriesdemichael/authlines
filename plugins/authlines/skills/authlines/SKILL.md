@@ -29,7 +29,7 @@ Leave out a setting to keep its default. The flow, its settings and the step are
 
 ## What is not drawn here
 
-Do not link to something near it. Say that Authlines does not draw apps on a phone, a PKCE downgrade, Kerberos, NTLM, or client certificates.
+Do not link to something near it. Say that Authlines does not draw apps on a phone, a PKCE downgrade, NTLM, or client certificates.
 
 A login the other provider hands on again, to a provider behind it, is drawn as one hop, and `broker=1&step=upstream-authorize` says why.
 

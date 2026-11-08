@@ -42,9 +42,11 @@ test.describe('every named state, walked in advanced mode', () => {
 					await expect(first).toContainText(
 						inTheFile.log
 							? inTheFile.log[0]
-							: inTheFile.direction === 'response'
-								? String(inTheFile.status)
-								: new URL(inTheFile.url!).pathname
+							: inTheFile.protocol
+								? `Kerberos ${inTheFile.method}`
+								: inTheFile.direction === 'response'
+									? String(inTheFile.status)
+									: new URL(inTheFile.url!).pathname
 					);
 				}
 				const recorded = recording.messages.some((message) => message.step === step.id);

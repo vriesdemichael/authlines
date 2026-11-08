@@ -162,6 +162,36 @@ export const offTheMap: readonly MapNode[] = [
 		preset: 'gives-a-role',
 		step: 'service-gives-role'
 	}),
+	// Off the map since 2026-11-08, for Kerberos (#148), as the map's budget is 54. The device flow's
+	// own choice of someone misusing it still brings this on, in simple mode too.
+	node({
+		id: 'device-someone-reads-it',
+		flow: 'device',
+		preset: 'on-a-device-read',
+		step: 'read-code-refused',
+		title: 'What if someone else can see the user code on the screen?',
+		summary: 'They can get there first, and the device ends up logged in as them.',
+		answer:
+			'They can enter it first, with an account of their own. They get no token for themselves, but the device ends up logged in as them, and the user is told the user code is not valid. So it matters who can see the screen.'
+	}),
+	node({
+		id: 'one-site-asks-for-the-password',
+		alsoAskedAs: [
+			'kerberos not working',
+			'spnego not working',
+			'password prompt on one site',
+			'asks for my password',
+			'auth-server-allowlist',
+			'trusted-uris'
+		],
+		answer:
+			'It can be that the browser was not told it may send a ticket to that site, so the identity provider’s page falls back to its login form. On the server recorded the ticket from that morning was never used, and the password went to the directory.',
+		title: 'Why does this one site ask for my password?',
+		summary: 'The browser was not told it may send a ticket there.',
+		mode: 'advanced',
+		preset: 'kerberos-no-ticket',
+		step: 'no-ticket'
+	}),
 	node({
 		id: 'new-signing-key',
 		alsoAskedAs: ['key rotation', 'rotate keys', 'kid', 'jwks', 'unknown kid'],

@@ -435,7 +435,6 @@ export const notDrawn: readonly { says: string; term: string }[] = [
 		term: 'mobile app'
 	},
 	{ says: 'a PKCE downgrade', term: 'pkce downgrade' },
-	{ says: 'Kerberos', term: 'kerberos' },
 	{ says: 'NTLM', term: 'ntlm' },
 	{ says: 'client certificates', term: 'client certificate' }
 ];

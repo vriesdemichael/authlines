@@ -61,6 +61,7 @@ import {
 	allowClientDocuments,
 	connectDirectory,
 	DIRECTORY_REALM,
+	kerberosOn,
 	makeInitialAccessToken,
 	newSigningKey,
 	letTheServiceGiveOneRole,
@@ -85,6 +86,7 @@ import {
 import {
 	DIRECTORY_URL,
 	directoryLogLength,
+	lookupFromTheLog,
 	messagesFromTheLog,
 	passThrough,
 	SERVICE_DN,
@@ -93,6 +95,18 @@ import {
 	stopDirectory,
 	USERS_DN
 } from './directory.ts';
+import {
+	browserInTheRealm,
+	headOf,
+	KERBEROS_REALM,
+	kerberosMessage,
+	logInToTheComputer,
+	SERVICE_PRINCIPAL,
+	startKerberos,
+	stopKerberos,
+	whatHappened,
+	wire
+} from './kerberos.ts';
 import { capturePages } from './pages.ts';
 import {
 	questionsOnADevice,
@@ -579,7 +593,9 @@ async function login(browser: Browser, run: Run, demo?: Demo) {
 		await page.click('#kc-login');
 		await page.locator('#password').waitFor({ timeout: 15_000 });
 	}
-	const withAPasskey = run.settings.secondFactor === 'passkey';
+	// A browser with a Kerberos ticket that may send it has nothing to type either.
+	const withATicket = run.settings.kerberos && run.settings.ticket === 'sent';
+	const withAPasskey = run.settings.secondFactor === 'passkey' || withATicket;
 	// The page asks the browser for a passkey as it loads, and the device answers with no password,
 	// often before there is anything to wait for here.
 	if (!withAPasskey) await page.locator('#username').waitFor();
@@ -764,7 +780,8 @@ async function record(
 	await admin.forgetBrokeredUsers();
 	await forgetCustomersPeople(admin);
 	demo.current = run;
-	if (settings.federation) await loginThroughTheDirectory(browser, admin, run);
+	if (settings.kerberos) await loginWithATicket(admin, run);
+	else if (settings.federation) await loginThroughTheDirectory(browser, admin, run);
 	else {
 		const customer = settings.customerSpeaks === 'saml' ? SAML_CUSTOMER : OIDC_CUSTOMER;
 		if (settings.leaves) demo.meanwhile = () => turnOff(admin, customer);
@@ -815,6 +832,105 @@ async function loginThroughTheDirectory(browser: Browser, admin: Admin, run: Run
 	} finally {
 		connection.stop();
 		stopDirectory();
+	}
+}
+
+/**
+ * The same directory, on a computer in a Kerberos realm that the user logged in to that morning. The
+ * browser runs on Linux in a container, where it asks for tickets itself, and the 401 it answers by
+ * itself and everything sent to the KDC are taken from the wire there and put where they happened.
+ */
+async function loginWithATicket(admin: Admin, run: Run) {
+	await startDirectory();
+	const connection = passThrough();
+	const told = run.settings.ticket === 'sent';
+	let browser: Browser | null = null;
+	try {
+		const keytab = await startKerberos();
+		await connectDirectory(admin, DIRECTORY_URL, USERS_DN, SERVICE_DN, SERVICE_PASSWORD);
+		// So that the lookup is the same whatever ran before: the user is not known here yet.
+		const users = await admin.call<{ id: string }[]>(
+			'GET',
+			`/realms/${DIRECTORY_REALM}/users?username=${USERNAME}&exact=true`
+		);
+		for (const { id } of users) {
+			await admin.call('DELETE', `/realms/${DIRECTORY_REALM}/users/${id}`);
+		}
+		await kerberosOn(admin, { keytab, realm: KERBEROS_REALM, principal: SERVICE_PRINCIPAL });
+		// That morning, before anything here.
+		run.messages.push(...logInToTheComputer());
+		browser = await browserInTheRealm(told);
+		const before = directoryLogLength();
+		const caught = wire().length;
+		await login(browser, run);
+		const since = wire().slice(caught);
+		const heads = since.filter(({ kind }) => kind === 'http');
+		const toTheKdc = since.filter(({ kind }) => kind === 'kerberos');
+		const at = (step: string) => run.messages.findIndex((message) => message.step === step);
+		const authorize = at('authorize');
+		if (authorize < 0) throw new Error('This login never got to the identity provider.');
+		const challenge = heads.find(
+			({ from, head }) => from === 'server' && /^HTTP\/1\.1 401 /.test(head ?? '')
+		);
+		if (!challenge) throw new Error('The identity provider never answered 401.');
+		const asked = headOf(challenge.head ?? '').headers;
+		if (asked['www-authenticate'] !== 'Negotiate') {
+			throw new Error(`The 401 said ${asked['www-authenticate']}`);
+		}
+		if (told) {
+			const kinds = toTheKdc.map((entry) => kerberosMessage('', entry).method);
+			if (kinds.join() !== 'TGS-REQ,TGS-REP') {
+				throw new Error(`The browser asked the KDC otherwise: ${kinds.join(', ')}`);
+			}
+			const sent = heads.find(
+				({ from, head }) => from === 'browser' && /\r\nAuthorization: Negotiate /i.test(head ?? '')
+			);
+			if (!sent) throw new Error('The browser never sent a ticket.');
+			const { first, headers } = headOf(sent.head ?? '');
+			const [method, path] = first.split(' ');
+			// The browser's own events have the first answer as the last, so this is the one it got.
+			const answered = run.messages[authorize + 1];
+			if (answered?.status !== 302) throw new Error('The ticket was not answered with a redirect.');
+			run.messages.splice(
+				authorize + 1,
+				0,
+				responseMessage('idp-negotiate', 401, asked),
+				kerberosMessage('ask-for-service-ticket', toTheKdc[0]),
+				kerberosMessage('kdc-gives-service-ticket', toTheKdc[1]),
+				requestMessage('send-ticket', method, `${KEYCLOAK}${path}`, headers),
+				...lookupFromTheLog(before, connection.sawPassword())
+			);
+			// What the browser was not sent, the HTML page meant for a browser with no ticket.
+			run.messages[authorize + 1].bodyNote = 'An HTML page';
+		} else {
+			if (toTheKdc.length) throw new Error('A browser that was not told asked the KDC anyway.');
+			const challenged = run.messages[authorize + 1];
+			if (challenged?.status !== 401) throw new Error('The browser was not answered 401.');
+			challenged.step = 'idp-negotiate';
+			// The page sends itself back with nothing in it, and the identity provider shows its form.
+			const back = run.messages[authorize + 2];
+			if (back?.method !== 'POST' || back.body !== undefined) {
+				throw new Error('The page did not send itself back empty.');
+			}
+			back.step = 'no-ticket';
+			run.messages[authorize + 3].step = 'login-page';
+			const submitted = run.messages.findLastIndex(({ step }) => step === 'submit-credentials');
+			if (submitted <= authorize + 3) throw new Error('No password was ever sent.');
+			run.messages.splice(
+				submitted + 1,
+				0,
+				...messagesFromTheLog(before, connection.sawPassword())
+			);
+		}
+	} catch (error) {
+		console.error(whatHappened());
+		throw error;
+	} finally {
+		await browser?.close();
+		await kerberosOn(admin, null).catch(() => {});
+		connection.stop();
+		stopDirectory();
+		stopKerberos();
 	}
 }
 

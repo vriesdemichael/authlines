@@ -7,6 +7,10 @@ export interface RecordedMessage {
 	direction: 'request' | 'response';
 	/** Not HTTP: the other side's own log, word for word, and all that is shown of this message. */
 	log?: readonly string[];
+	/** Not HTTP: a Kerberos message, read from the wire by its spec (RFC 4120), and named by method. */
+	protocol?: 'kerberos';
+	/** A Kerberos message as it crossed, in base64, so that a test can read the body from it again. */
+	bytes?: string;
 	method?: string;
 	url?: string;
 	status?: number;

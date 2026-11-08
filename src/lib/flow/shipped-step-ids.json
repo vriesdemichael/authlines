@@ -186,5 +186,18 @@
 	"submit-passkey",
 	"new-signing-key",
 	"api-fetch-keys",
-	"api-keys"
+	"api-keys",
+	"computer-asks",
+	"kdc-wants-proof",
+	"computer-proves",
+	"kdc-gives-tgt",
+	"idp-negotiate",
+	"ask-for-service-ticket",
+	"kdc-gives-service-ticket",
+	"send-ticket",
+	"no-ticket",
+	"service-principal",
+	"hand-over-keytab",
+	"allow-kerberos",
+	"tell-the-browsers"
 ]

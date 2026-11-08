@@ -966,13 +966,84 @@ const list: readonly Term[] = [
 		explains:
 			'A free identity provider you can run yourself. The messages on this site came from one. What the specs say is the same on other identity providers, and the wording of its errors, its token contents, defaults and console are its own.'
 	},
+	// Kerberos on a company network (#148), where realm means something else again.
+	{
+		id: 'kerberos',
+		name: 'Kerberos',
+		words: ['Kerberos'],
+		explains:
+			'How a company network logs people in once. The computer gets a ticket when they log in to it, and with that a ticket for each service they reach, so the password is not typed again. A Windows domain uses it.',
+		at: flowAt('computer-asks', { federation: true, kerberos: true })
+	},
+	{
+		id: 'kdc',
+		name: 'KDC',
+		words: ['KDC', 'KDCs', 'key distribution center', 'key distribution centers'],
+		alsoCalled: ['key distribution center', 'domain controller'],
+		explains:
+			'The Kerberos server that hands out tickets. It keeps a key for every user and service in its realm, so it can seal a ticket that only one service can open. On Windows it runs on the domain controllers.',
+		at: flowAt('kdc-gives-tgt', { federation: true, kerberos: true })
+	},
+	{
+		id: 'tgt',
+		name: 'Ticket-granting ticket',
+		words: ['ticket-granting ticket', 'ticket-granting tickets', 'TGT', 'ticket for tickets'],
+		alsoCalled: ['TGT'],
+		artifact: 'tgt',
+		explains:
+			'What the computer gets when the user logs in to it, for asking the KDC for other tickets, so that the password is not needed again until it runs out.',
+		at: flowAt('kdc-gives-tgt', { federation: true, kerberos: true })
+	},
+	{
+		id: 'service-ticket',
+		name: 'Service ticket',
+		words: ['service ticket', 'service tickets'],
+		artifact: 'service-ticket',
+		explains:
+			'A Kerberos ticket for one service, which says who the user is and is sealed so that only that service can open it.',
+		at: flowAt('kdc-gives-service-ticket', { federation: true, kerberos: true })
+	},
+	{
+		id: 'kerberos-realm',
+		name: 'Kerberos realm',
+		words: ['Kerberos realm', 'Kerberos realms'],
+		explains:
+			'The users and services one KDC looks after, named in capitals like a domain, EXAMPLE.TEST here. It is not the realm of an identity provider such as Keycloak, though both are called realms.',
+		at: flowAt('computer-asks', { federation: true, kerberos: true })
+	},
+	{
+		id: 'keytab',
+		name: 'Keytab',
+		words: ['keytab', 'keytabs'],
+		explains:
+			'A file with a service’s Kerberos key in it, from the KDC. With it the service opens the tickets meant for it without asking the KDC, and so can anyone else who has the file.',
+		at: setupAt('hand-over-keytab', { federation: true, kerberos: true })
+	},
+	{
+		id: 'service-principal',
+		name: 'Service principal',
+		words: ['service principal', 'service principals', 'SPN', 'SPNs'],
+		alsoCalled: ['SPN', 'server principal'],
+		explains:
+			'A service’s name in a Kerberos realm. For a website it is HTTP and its host name, and a browser asks for a ticket by the host name it reaches, after any alias in DNS, so the two have to match.',
+		at: setupAt('service-principal', { federation: true, kerberos: true })
+	},
+	{
+		id: 'negotiate',
+		name: 'Negotiate',
+		words: ['Negotiate', 'SPNEGO'],
+		alsoCalled: ['SPNEGO', 'integrated Windows authentication'],
+		explains:
+			'How a website asks for a Kerberos ticket over HTTP. It answers 401 with WWW-Authenticate: Negotiate, and a browser that may send one asks for a ticket and sends the request again with it, wrapped in SPNEGO.',
+		at: flowAt('idp-negotiate', { federation: true, kerberos: true })
+	},
 	{
 		id: 'realm',
 		name: 'Realm',
 		words: ['realm', 'realms'],
 		vendor: true,
 		explains:
-			'What Keycloak calls one separate set of users and apps. Each realm has its own issuer, so to an app each one is an identity provider of its own.',
+			'What Keycloak calls one separate set of users and apps. Each realm has its own issuer, so to an app each one is an identity provider of its own. A Kerberos realm is another thing with the same name.',
 		at: { diagram: 'setup', step: 'configure-app' }
 	}
 ];

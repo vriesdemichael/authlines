@@ -80,6 +80,8 @@ body {
 [data-artifact='upstream-token'],
 [data-artifact='exchanged-token'],
 [data-artifact='exchanged-refresh-token'],
+[data-artifact='tgt'],
+[data-artifact='service-ticket'],
 [data-artifact='assertion'] {
 	--chip: var(--grants);
 	--chip-soft: var(--grants-soft);

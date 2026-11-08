@@ -144,6 +144,10 @@ export function rawLines(
 	{ serverNamed = true }: { serverNamed?: boolean } = {}
 ): Line[] {
 	if (message.log) return message.log.map((line) => ({ before: '', value: line, whole: true }));
+	// Kerberos is not HTTP: what kind of message it is, and its fields as RFC 4120 names them.
+	if (message.protocol === 'kerberos') {
+		return [{ before: `Kerberos ${message.method ?? ''}, over TCP` }, ...bodyLines(message)];
+	}
 	const first =
 		message.direction === 'request'
 			? urlLines(`${message.method} `, message.url ?? '')

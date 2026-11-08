@@ -140,6 +140,57 @@ export function whatALoginAsked(since: number) {
 	};
 }
 
+/** The search for the user, and its answer, as messages. */
+function searchFrom(lines: readonly string[]): RecordedMessage[] {
+	const find = finding(lines);
+	const search = find(
+		new RegExp(`SRCH base=.*filter="[^"]*(uid=${USERNAME}|entryUUID=)`),
+		'search for the user'
+	);
+	const conn = search.split(' ')[0];
+	const filter = search.match(/filter="([^"]*)"/)?.[1];
+	const answer = find(new RegExp(`^${conn} .*SEARCH RESULT`), 'search result');
+	const attributes = find(new RegExp(`^${conn} .*SRCH attr=`), 'list of attributes');
+	return [
+		{
+			step: 'directory-search',
+			direction: 'request',
+			method: 'SEARCH',
+			headers: {},
+			log: lines.filter(
+				(line) => line.startsWith(`${conn} `) && !line.includes('UNBIND') && line !== answer
+			),
+			body: { filter, attributes: attributes.split('attr=')[1].trim().split(' ') }
+		},
+		{
+			step: 'directory-found',
+			direction: 'response',
+			status: Number(answer.match(/err=(\d+)/)?.[1]),
+			headers: {},
+			log: [answer],
+			body: { entries: Number(answer.match(/nentries=(\d+)/)?.[1]) }
+		}
+	];
+}
+
+const finding = (lines: readonly string[]) => (pattern: RegExp, what: string) => {
+	const found = lines.find((line) => pattern.test(line));
+	if (!found) {
+		throw new Error(`The directory's log has no ${what}:\n${lines.slice(-20).join('\n')}`);
+	}
+	return found;
+};
+
+/** A login with a Kerberos ticket: the user looked up, and no password anywhere near the directory. */
+export function lookupFromTheLog(since: number, sawPassword: boolean): RecordedMessage[] {
+	if (sawPassword) throw new Error('The password crossed the connection to the directory.');
+	const lines = logLines().slice(since);
+	if (lines.some((line) => USER_BIND.test(line))) {
+		throw new Error('The directory was asked to check a password.');
+	}
+	return searchFrom(lines);
+}
+
 /** What the log says one login asked, as messages, because the diagram draws them as messages. */
 export function messagesFromTheLog(since: number, sawPassword: boolean): RecordedMessage[] {
 	if (!sawPassword) throw new Error('The password never crossed the connection to the directory.');
