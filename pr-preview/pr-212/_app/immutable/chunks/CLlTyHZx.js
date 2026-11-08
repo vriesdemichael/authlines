@@ -1,1 +1,0 @@
-import{yt as e}from"./CpU21Zm7.js";var t=e({open:!1});export{t};
