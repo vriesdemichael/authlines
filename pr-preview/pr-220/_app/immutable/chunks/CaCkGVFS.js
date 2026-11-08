@@ -1,1 +1,0 @@
-import{Et as e}from"./BPqIM8el.js";e();
