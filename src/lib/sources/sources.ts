@@ -6,6 +6,7 @@ export type SourceId =
 	| 'cimd-draft'
 	| 'rfc7636'
 	| 'rfc9449'
+	| 'rfc9068'
 	| 'rfc9126'
 	| 'rfc8693'
 	| 'rfc9207'
@@ -23,6 +24,8 @@ export type SourceId =
 	| 'saml-core'
 	| 'keycloak-stored-tokens'
 	| 'keycloak-account-linking'
+	| 'keycloak-broker-mappers'
+	| 'keycloak-role-scope'
 	| 'keycloak-concepts';
 
 export interface SourceDef {
@@ -106,6 +109,15 @@ export const sources: Record<SourceId, SourceDef> = {
 			'Ties a token to a key. The app proves it holds a private key by sending a signed JWT in a DPoP header, and the server binds the tokens it issues to the matching public key. The aim is that a leaked or stolen token cannot be used without the key. It works at the application level, so it also suits apps in a browser, where binding through TLS does not work.',
 		url: 'https://www.rfc-editor.org/rfc/rfc9449.html',
 		textFile: 'rfc9449.txt'
+	},
+	rfc9068: {
+		label: 'RFC 9068',
+		title: 'JSON Web Token (JWT) Profile for OAuth 2.0 Access Tokens',
+		status: 'Proposed Standard, October 2021.',
+		summary:
+			'Says what an access token that is a JWT holds, so that APIs from different makers can read it the same way: who issued it, who it is about and for, when it runs out, which client it went to, and its scope. Roles, groups and entitlements are left open, with names to use for them if a server puts them in, and no words for what they mean.',
+		url: 'https://www.rfc-editor.org/rfc/rfc9068.html',
+		textFile: 'rfc9068.txt'
 	},
 	rfc9126: {
 		label: 'RFC 9126',
@@ -248,6 +260,22 @@ export const sources: Record<SourceId, SourceDef> = {
 		summary:
 			'How an app sends a logged-in user to link an account at another identity provider: an ordinary authentication request, with kc_action=idp_link and the provider’s alias added. The user needs a role that lets them manage their account links. An older way, with a protocol of its own rather than application-initiated actions, is off by default and may be removed.',
 		url: 'https://www.keycloak.org/docs/26.8.1/server_development/#_client-initiated-account-linking'
+	},
+	'keycloak-broker-mappers': {
+		label: 'Keycloak docs: identity provider mappers',
+		title: 'Mapping claims and assertions',
+		status: 'Keycloak 26.8.1, Server Administration Guide.',
+		summary:
+			'Each user who logs in through another provider has a user here too, made from what that provider said. Mappers on the provider take a claim or an assertion and turn it into something here, such as an attribute or a role, and each says whether it does that at the first login only or at every login.',
+		url: 'https://www.keycloak.org/docs/26.8.1/server_admin/#_mappers'
+	},
+	'keycloak-role-scope': {
+		label: 'Keycloak docs: role scope mappings',
+		title: 'Role scope mappings',
+		status: 'Keycloak 26.8.1, Server Administration Guide.',
+		summary:
+			'A user’s roles become claims in the tokens made for them. With Full Scope Allowed on, every token has every role the user has, so one that is stolen carries all of them. Turned off, a token has only the roles given to that client’s scope. The guide says the switch is deprecated, and to turn it off on every client.',
+		url: 'https://www.keycloak.org/docs/26.8.1/server_admin/#_role_scope_mappings'
 	},
 	'keycloak-concepts': {
 		label: 'Keycloak docs: core concepts',

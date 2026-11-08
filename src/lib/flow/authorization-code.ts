@@ -58,6 +58,9 @@ const apiV1 = is('upstreamTokens', 'v1');
 const apiV2 = is('upstreamTokens', 'v2');
 // Logged in, the user links an account at another provider (#179). Named, so old recordings are off.
 const links = is('linkAccount', true);
+// A group at the other provider becomes a role here, and maybe the only one the app is given (#183).
+const groupRoles = is('groupRoles', true);
+const onlyGiven = all(groupRoles, is('rolesReach', 'given'));
 const linked = all(links, not(is('linkEnds', 'cancelled')));
 const linkCancelled = all(links, is('linkEnds', 'cancelled'));
 // With API V2, an API can read the stored token with a client of its own, or be refused (#180).
@@ -1482,12 +1485,25 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			kind: 'response',
 			plain: 'Tokens for the identity provider',
 			label: 'Upstream tokens',
-			concept:
-				'These tokens belong to the identity provider. The app will get tokens the identity provider issues itself.',
+			concept: [
+				{
+					when: groupRoles,
+					text: 'These tokens belong to the identity provider, and the app will get tokens it issues itself. The ID token here also says which groups the user is in at the other provider: sales.'
+				},
+				{
+					text: 'These tokens belong to the identity provider. The app will get tokens the identity provider issues itself.'
+				}
+			],
 			when: all(broker, not(saml)),
 			fields: [
 				{ name: 'access_token', place: 'body', artifact: 'upstream-token' },
 				{ name: 'id_token', place: 'body' },
+				{
+					name: 'groups',
+					place: 'token',
+					note: 'In its ID token: the groups they are in there',
+					when: groupRoles
+				},
 				{ name: 'token_type=Bearer', place: 'body' },
 				{ name: 'expires_in', place: 'body' },
 				{ name: 'refresh_token', place: 'body' },
@@ -1521,8 +1537,15 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			kind: 'internal',
 			plain: 'It links this person to a user',
 			label: 'Match or create the user',
-			concept:
-				'The identity provider links the external identity to a local user, and where there is none yet, makes one from what the other provider sent. On the server recorded, whether a later login copies those details again, and whether the email counts as verified, are settings for this provider.',
+			concept: [
+				{
+					when: groupRoles,
+					text: 'The identity provider makes a user here from what the other provider sent. That said they are in the group sales, so it gives this user the role reads-orders, as an admin set it up to. The role is the identity provider’s own, and the other provider knows nothing of it.'
+				},
+				{
+					text: 'The identity provider links the external identity to a local user, and where there is none yet, makes one from what the other provider sent. On the server recorded, whether a later login copies those details again, and whether the email counts as verified, are settings for this provider.'
+				}
+			],
 			when: broker
 		},
 		{
@@ -2508,6 +2531,14 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			label: [{ when: oidc, text: 'Access token and ID token' }, { text: 'Access token' }],
 			concept: [
 				{
+					when: onlyGiven,
+					text: 'The access token carries only the role given to this app, reads-orders, and none of the user’s other roles. Those had also put the identity provider’s own account service in its audience, so this app is set up to have its tokens name the API instead.'
+				},
+				{
+					when: groupRoles,
+					text: 'The access token carries every role the user has here, reads-orders among them, from their group at the other provider. Every app they log in to gets all of them, whether it needs them or not.'
+				},
+				{
 					when: behindThePage,
 					text: 'The tokens stop here, at the server, and no script in the page can get them, which is what the server is for.'
 				},
@@ -2572,6 +2603,18 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{ name: 'token_type=Bearer', place: 'body', when: bearer },
 				{ name: 'token_type=DPoP', place: 'body', when: dpop },
 				{ name: 'id_token', place: 'body', artifact: 'id-token', when: oidc },
+				{
+					name: 'realm_access',
+					place: 'token',
+					note: 'In the access token: every role they have here, reads-orders among them',
+					when: all(groupRoles, not(onlyGiven))
+				},
+				{
+					name: 'realm_access',
+					place: 'token',
+					note: 'In the access token: reads-orders, and nothing else',
+					when: onlyGiven
+				},
 				{ name: 'expires_in', place: 'body' },
 				{
 					name: 'refresh_token',
@@ -2806,6 +2849,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'The API checks the token',
 			label: 'Check the token',
 			concept: [
+				{
+					when: groupRoles,
+					text: 'The API checks the signature, who issued the token, that it has not expired, and who it is for. It can read the role in it too, and whether reads-orders lets this user see this thing is the API’s own decision. Nothing in the token says what a role allows.'
+				},
 				{
 					when: bearerOnly,
 					text: 'The API checks the token as a Bearer token: the signature, who issued it, that it has not run out, and who it is for. It never looks at what the token is tied to.'

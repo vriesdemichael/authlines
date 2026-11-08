@@ -300,6 +300,16 @@ const presets: readonly Preset[] = [
 		settings: { broker: true, upstreamTokens: 'v2' }
 	},
 	{
+		id: 'broker-groups',
+		title: 'A group at the other provider becomes a role here',
+		settings: { broker: true, groupRoles: true }
+	},
+	{
+		id: 'broker-groups-given',
+		title: 'A group becomes a role, and only roles given to the app reach its token',
+		settings: { broker: true, groupRoles: true, rolesReach: 'given' }
+	},
+	{
 		id: 'link-account',
 		title: 'Linking another account after the login',
 		settings: { linkAccount: true }

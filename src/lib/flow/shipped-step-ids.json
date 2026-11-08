@@ -177,5 +177,8 @@
 	"api-after-logout-response",
 	"program-starts",
 	"program-opens-browser",
-	"redirect-with-token"
+	"redirect-with-token",
+	"ask-for-groups",
+	"map-group-to-role",
+	"give-the-app-its-roles"
 ]

@@ -1347,6 +1347,9 @@ export class Demo {
 			// It trades the token for one meant for the API behind it, which it may only do with one that
 			// names it, so here it checks for its own name, as yours should.
 			const passesItOn = Boolean(this.current?.settings.exchange);
+			// Or the app is given only some roles, which leaves the account service out of the audience,
+			// so it is set up to name this API instead (#183).
+			const namedOnly = this.current?.settings.rolesReach === 'given';
 			// Or it reads the user's token at the other provider itself, with a client of its own (#180).
 			const readsStored =
 				this.current?.settings.upstreamTokens === 'v2' &&
@@ -1364,7 +1367,7 @@ export class Demo {
 					),
 					// One API that expects its own name, as yours should, which a default client's token lacks.
 					audience:
-						passesItOn || readsStored
+						passesItOn || readsStored || namedOnly
 							? API_CLIENT
 							: request.url?.startsWith('/my-api/')
 								? 'my-api'
