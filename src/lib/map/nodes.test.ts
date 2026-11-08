@@ -41,9 +41,11 @@ describe('the map', () => {
 		expect(nodeSettings(second)).toEqual(defaultSettings);
 	});
 
-	// "Very busy and cluttered", the maintainer said on 2026-11-02. A new question takes one off (#142).
+	// "Very busy and cluttered", the maintainer said on 2026-11-02. A new question takes one off, or
+	// says why not (#142). 54 since 2026-11-08, when the maintainer put the implicit flow on: "a good one
+	// because the name is vague".
 	it('stays short enough to look through', () => {
-		expect(mapNodes.length).toBeLessThanOrEqual(53);
+		expect(mapNodes.length).toBeLessThanOrEqual(54);
 	});
 
 	it('offers everything that was recorded', () => {
@@ -187,7 +189,8 @@ describe('going on from a question', () => {
 
 	it('goes to the next one the map lays out', () => {
 		expect(nextQuestion(node('how-access-works'))?.id).toBe('why-a-code');
-		expect(nextQuestion(node('why-a-code'))?.id).toBe('what-the-browser-sees');
+		expect(nextQuestion(node('why-a-code'))?.id).toBe('the-implicit-flow');
+		expect(nextQuestion(node('the-implicit-flow'))?.id).toBe('what-the-browser-sees');
 		expect(nextQuestion(mapNodes.at(-1)!)).toBeNull();
 	});
 });
