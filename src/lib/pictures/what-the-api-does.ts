@@ -163,7 +163,7 @@ export function whatTheApiDoes(say: Say, keep: Keep = keepAll): Picture {
 		doneY + doneH / 2 + 16,
 		740,
 		say(
-			'The answers are what the demo API recorded here said. A 401 means a new token may help, and a 403 that it usually will not. Checking who issued the token is one more check of the same kind, not drawn here.'
+			'The answers are what the demo API recorded here said. A 401 means a new token may help. A 403 means this one is not enough, and only a token that allows this will do, which the answer names. Checking who issued the token is one more check of the same kind, not drawn here.'
 		),
 		{ size: 'more' }
 	);
