@@ -571,6 +571,14 @@ const list: readonly Term[] = [
 		at: flowAt('open-app')
 	},
 	{
+		id: 'mtls',
+		name: 'mTLS',
+		words: ['mTLS', 'mutual TLS'],
+		explains:
+			'TLS where the app shows a certificate too, and not only the server. In OAuth it does two things. The app can prove who it is to the identity provider with its certificate, in place of a secret. And a token can be tied to that certificate, so an API refuses it over a connection with any other, which is what DPoP does in a header. It is part of the connection under every message, so it is explained here and not drawn.',
+		alsoCalled: ['mutual TLS', 'certificate-bound tokens', 'RFC 8705']
+	},
+	{
 		id: 'tls',
 		name: 'TLS',
 		words: ['TLS'],
