@@ -1,1 +1,0 @@
-import{t as e}from"./iframe-CYq32z4d.js";e();
