@@ -244,6 +244,7 @@ test.describe('a picture in an explanation', () => {
 		['explain=term.scope', 'what-each-scope-asks-for', 'openid.oidc', 'oidc=1'],
 		['explain=term.cookie', 'cookies-jwts-oauth', 'jwt.id', 'step=validate-id-token'],
 		['explain=term.api-key', 'passwords-keys-tokens', 'password.to-the-api', 'oldway=1'],
+		['mode=advanced&explain=term.saml', 'oidc-or-saml', 'browser.saml', 'speaks=saml'],
 		['explain=setting.appRuns', 'where-the-tokens-are', 'head-bff', 'runs=bff'],
 		['mode=advanced&explain=term.oauth', 'what-each-spec-adds', 'dpop', 'binding=dpop'],
 		[

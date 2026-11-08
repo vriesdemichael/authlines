@@ -45,6 +45,7 @@ const states: readonly [string, string, 'flow' | 'setup'][] = [
 	['what-each-scope-asks-for', 'mode=advanced&explain=term.scope', 'flow'],
 	['cookies-jwts-oauth', 'mode=advanced&explain=term.cookie', 'flow'],
 	['passwords-keys-tokens', 'mode=simple&explain=term.api-key', 'flow'],
+	['oidc-or-saml', 'mode=advanced&explain=term.saml', 'flow'],
 	['address-refused', 'mode=simple&address=other&step=address-refused', 'flow'],
 	[
 		'the-token-in-the-address',

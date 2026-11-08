@@ -7,6 +7,7 @@ import { cookiesJwtsOauth } from './cookies-jwts-oauth.ts';
 import { howAnApiTrustsAToken } from './how-an-api-trusts-a-token.ts';
 import { howLongEachLasts } from './how-long-each-lasts.ts';
 import type { Opens, Picture, PictureId } from './model.ts';
+import { oidcOrSaml } from './oidc-or-saml.ts';
 import { passwordsKeysTokens } from './passwords-keys-tokens.ts';
 import { refreshPicture } from './refresh.ts';
 import { inSimpleMode } from './simple.ts';
@@ -77,7 +78,8 @@ export const PICTURE_OF: Readonly<Record<string, PictureId>> = {
 	'setting.broker': 'trust-across-providers',
 	'setting.companies': 'trust-across-providers',
 	'setting.federation': 'trust-across-providers',
-	'term.saml': 'trust-across-providers',
+	'term.saml': 'oidc-or-saml',
+	'setting.customerSpeaks': 'oidc-or-saml',
 	'term.ldap': 'trust-across-providers',
 	'term.issuer': 'how-an-api-trusts-a-token',
 	'term.signature': 'how-an-api-trusts-a-token',
@@ -181,6 +183,8 @@ export function draw(id: PictureId, state: AppState, wording: Wording, say: Say)
 			return cookiesJwtsOauth(say, keep);
 		case 'passwords-keys-tokens':
 			return passwordsKeysTokens(say, keep);
+		case 'oidc-or-saml':
+			return oidcOrSaml(say, keep);
 		case 'the-app-keeps-asking':
 			return theAppKeepsAsking(say, keep);
 		case 'what-a-token-says':

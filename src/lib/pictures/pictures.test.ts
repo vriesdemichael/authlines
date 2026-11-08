@@ -677,6 +677,18 @@ describe('passwords and API keys, against tokens (#200)', () => {
 	});
 });
 
+describe('OpenID Connect or SAML, for company logins (#200)', () => {
+	it('opens each answer where its recorded run has it', () => {
+		const found = picture('explain=term.saml&mode=advanced');
+		expect(found.id).toBe('oidc-or-saml');
+		const cell = (id: string) => found.parts.find((part) => part.id === id)!;
+		expect(cell('traded.oidc').opens?.step).toBe('upstream-token-request');
+		expect(cell('traded.saml').says.join(' ')).toContain('Nothing');
+		expect(cell('browser.saml').opens?.preset).toBe('companies-saml');
+		expect(cell('setup.oidc').opens?.diagram).toBe('setup');
+	});
+});
+
 describe('what the circles and the rows mean', () => {
 	it('is in a key drawn with the same marks, wherever there are marks', () => {
 		for (const found of pictures) {
