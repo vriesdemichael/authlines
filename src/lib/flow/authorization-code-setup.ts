@@ -448,7 +448,7 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plain: 'Hand over its key',
 			label: 'A keytab',
 			concept:
-				'They write its key to a file, a keytab, and hand it to whoever runs the identity provider. With it the identity provider can open tickets meant for it without asking the KDC. So can anyone who has the file, and they can also make tickets of their own that it takes, naming any user, because a ticket that opens with its key is all it checks. So the file is kept like a password.',
+				'They write its key to a file, a keytab, and hand it to whoever runs the identity provider. With it the identity provider can open tickets meant for it without asking the KDC. So can anyone who has the file. They can also pass as the identity provider’s own account, and make tickets of their own that it takes, naming any user, because a ticket that opens with its key is all it checks. So the file is kept like a password.',
 			cites: [
 				{
 					source: 'rfc4120',

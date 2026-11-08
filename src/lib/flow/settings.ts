@@ -652,7 +652,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			},
 			{
 				source: 'keycloak-kerberos',
-				why: 'Keycloak’s guide says how Firefox is told, and that Internet Explorer and Edge on a Windows domain need nothing changed.'
+				why: 'Keycloak’s guide says how Firefox is told, and that Internet Explorer and Edge on a Windows domain need nothing changed, which by Chromium’s page holds for a site Windows counts as the local intranet.'
 			}
 		],
 		requires: {

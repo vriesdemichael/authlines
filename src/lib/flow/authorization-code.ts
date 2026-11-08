@@ -141,7 +141,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			...computerWords,
 			icon: 'app',
 			concept:
-				'The computer the user logged in to that morning, which the browser runs on. Its Kerberos keeps their tickets and asks the KDC for more, so the browser is handed only the ticket for the site it is on. On Windows the system does that for the browser. On Linux, as recorded, the browser does it itself, with the system’s Kerberos library and the tickets kept for the user’s login.',
+				'The computer the user logged in to that morning, which the browser runs on. Its Kerberos keeps their tickets and asks the KDC for more. On Windows the system does that for the browser, which is handed only the ticket for the site it is on. On Linux, as recorded, the system’s Kerberos library does it inside the browser, so the browser itself reads the ticket-granting ticket and sends it to the KDC. This lane is that part, wherever it runs.',
 			when: kerberos
 		},
 		{
@@ -1331,9 +1331,9 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'A ticket for the identity provider, please',
 			label: 'TGS-REQ',
 			concept:
-				'The browser wants a ticket for HTTP and the server’s host name, from the address, HTTP/localhost here, and the computer asks the KDC for it. It shows the ticket-granting ticket, with the time sealed with its session key to show it is its own. Nobody is asked for a password.',
+				'The browser wants a ticket for HTTP and the server’s host name, its real name where the address used an alias, HTTP/localhost here, and the computer asks the KDC for it. It shows the ticket-granting ticket, with the time sealed with its session key to show it is its own. Nobody is asked for a password.',
 			recordedAs:
-				'Caught on the wire and read by RFC 4120, because Kerberos is not HTTP. On Linux, as recorded, Chromium sent this itself, through the system’s Kerberos library. On Windows the system asks for the browser.',
+				'Caught on the wire and read by RFC 4120, because Kerberos is not HTTP. On Linux, as recorded, Chromium sent this itself, through the system’s Kerberos library, so the browser held the ticket-granting ticket. On Windows the system asks for the browser.',
 			cites: [
 				{
 					source: 'rfc4559',
@@ -1407,7 +1407,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				'The browser sends the same request again, with the ticket the computer got in the header, and the time sealed with the session key that came with it. The identity provider opens the ticket with its own key, takes the session key from it, and checks the time, without asking the KDC. Nobody typed anything.',
 			pitfall: {
 				title: 'What if the login page shows anyway?',
-				text: 'Then the ticket did not get the user in. On the server recorded it first did not, with a good ticket: the identity provider looks the user up in the directory by an attribute that names their Kerberos principal, which it picks by the kind of directory. For this one it picked krb5PrincipalName, which these users did not have, and for Active Directory it picks userPrincipalName. It logged that it found nobody, and showed its page. With the attribute left empty it looks them up by the name before the @.'
+				text: 'Then the ticket did not get the user in. Seen once while setting this up, and not recorded: with a good ticket, the identity provider looked the user up in the directory by an attribute that names their Kerberos principal, which it picks by the kind of directory. For this one it picked krb5PrincipalName, which these users did not have, and for Active Directory it picks userPrincipalName. It logged that it found nobody, and showed its page. With the attribute left empty it looks them up by the name before the @, as in the recording.'
 			},
 			inPractice:
 				'Nothing for your app, which never sees a ticket. Whoever runs the identity provider needs HTTPS in front of it: the header carries the ticket, and nothing in Negotiate protects the headers.',
@@ -1447,7 +1447,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				'The page that came with the 401 sends itself straight back, with nothing in it. The identity provider takes that to mean no ticket is coming, and shows its login form. The ticket the computer got that morning is never used.',
 			pitfall: {
 				title: 'Why does this one site ask for my password?',
-				text: 'It can be because the browser was not told it may send a ticket there. Chromium sends one only to a site on its list, or on Windows, with no list set, to sites Windows counts as the local intranet. The one recorded here was given no list, and the one that sent a ticket was given one. A good ticket can still end at the login page, when the identity provider cannot find who it names. Other reasons a ticket does not get someone in, which were not recorded: a computer with no ticket at all, because the user did not log in to the network, a clock too far from the others, or a host name in the address that is not the one the identity provider’s principal names.'
+				text: 'It can be because the browser was not told it may send a ticket there. Chromium sends one only to a site on its list, or on Windows, with no list set, to sites Windows counts as the local intranet. The one recorded here was given no list, and the one that sent a ticket was given one. A good ticket can still end at the login page, when the identity provider cannot find who it names. Other reasons a ticket does not get someone in, which were not recorded: a computer with no ticket at all, because the user did not log in to the network, a clock too far from the others, or a host name, the real one behind any alias, that is not the one the identity provider’s principal names.'
 			},
 			cites: [
 				{

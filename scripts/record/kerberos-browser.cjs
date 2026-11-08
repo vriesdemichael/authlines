@@ -41,7 +41,7 @@ function httpHeads(onHead) {
 				const line = buffer.indexOf('\r\n');
 				if (line < 0) return;
 				const size = parseInt(buffer.subarray(0, line).toString('latin1'), 16);
-				if (Number.isNaN(size)) {
+				if (Number.isNaN(size) || size < 0) {
 					console.error('A chunk size that is not one, so no more heads on this connection');
 					lost = true;
 					return;

@@ -325,13 +325,18 @@ export async function kerberosOn(
 	} else {
 		// Back as it was, since what it asks the directory for changes with these: the recordings
 		// with no ticket ask for krb5PrincipalName, and those made with one do not.
+		// An update keeps a setting it is not sent, and drops one sent empty, by updateComponent in
+		// RepresentationToModel at 26.8.1. A secret it masked and is sent back is kept too.
+		const before = configBeforeKerberos ?? component.config;
+		const added = Object.keys(component.config).filter((key) => !(key in before));
 		component.config = {
-			...(configBeforeKerberos ?? component.config),
+			...before,
+			...Object.fromEntries(added.map((key) => [key, []])),
 			allowKerberosAuthentication: ['false']
 		};
-		configBeforeKerberos = undefined;
 	}
 	await admin.call('PUT', path, component);
+	if (!on) configBeforeKerberos = undefined;
 	// Allowing it turns the Kerberos step of the browser flow on, and turning it off turns it off.
 	const steps = await admin.call<{ displayName: string; requirement: string }[]>(
 		'GET',

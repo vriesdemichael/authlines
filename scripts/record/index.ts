@@ -845,6 +845,8 @@ async function loginWithATicket(admin: Admin, run: Run) {
 	const connection = passThrough();
 	const told = run.settings.ticket === 'sent';
 	let browser: Browser | null = null;
+	// Wrapped, so that whatever was thrown, even undefined, still counts as a failure.
+	let failure: { error: unknown } | undefined;
 	try {
 		const keytab = await startKerberos();
 		await connectDirectory(admin, DIRECTORY_URL, USERS_DN, SERVICE_DN, SERVICE_PASSWORD);
@@ -927,15 +929,20 @@ async function loginWithATicket(admin: Admin, run: Run) {
 			);
 		}
 	} catch (error) {
+		failure = { error };
 		console.error(whatHappened());
-		throw error;
-	} finally {
-		await browser?.close();
-		await kerberosOn(admin, null).catch(() => {});
-		connection.stop();
-		stopDirectory();
-		stopKerberos();
 	}
+	const caught = (error: unknown) => {
+		failure ??= { error };
+	};
+	await browser?.close().catch(caught);
+	// Left on, the recordings after this one would get a 401 with Negotiate and say nothing, so its
+	// failure is thrown too, unless something failed first, which is the one to read.
+	await kerberosOn(admin, null).catch(caught);
+	connection.stop();
+	stopDirectory();
+	stopKerberos();
+	if (failure) throw failure.error;
 }
 
 /** No user and no browser, so it is only what the app sends and gets, and the real server's keys. */

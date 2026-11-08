@@ -1016,7 +1016,7 @@ const list: readonly Term[] = [
 		name: 'Keytab',
 		words: ['keytab', 'keytabs'],
 		explains:
-			'A file with a service’s Kerberos key in it, from the KDC. With it the service opens the tickets meant for it without asking the KDC. Anyone else who has the file can do the same, and make tickets for that service naming any user.',
+			'A file with a service’s Kerberos key in it, from the KDC. With it the service opens the tickets meant for it without asking the KDC. Anyone else who has the file can do the same, pass as the service itself, and make tickets for it naming any user.',
 		at: setupAt('hand-over-keytab', { federation: true, kerberos: true })
 	},
 	{
@@ -1034,7 +1034,7 @@ const list: readonly Term[] = [
 		words: ['Negotiate', 'SPNEGO'],
 		alsoCalled: ['SPNEGO', 'integrated Windows authentication'],
 		explains:
-			'How a website asks for a Kerberos ticket over HTTP. It answers 401 with WWW-Authenticate: Negotiate, and a browser that may send one gets a ticket and sends the request again with it, wrapped in SPNEGO. SPNEGO can carry an older Windows login in place of Kerberos, and a Windows browser may fall back to it. The identity provider recorded took Kerberos.',
+			'How a website asks for a Kerberos ticket over HTTP. It answers 401 with WWW-Authenticate: Negotiate, and a browser that may send one gets a ticket and sends the request again with it, wrapped in SPNEGO. SPNEGO can carry an older Windows login in place of Kerberos, and a Windows browser may fall back to it. The identity provider recorded does not take that, its guide says, so there the user gets a dialog to cancel, and then its login page.',
 		at: flowAt('idp-negotiate', { federation: true, kerberos: true })
 	},
 	{
