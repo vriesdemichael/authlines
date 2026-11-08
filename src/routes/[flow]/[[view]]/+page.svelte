@@ -17,6 +17,8 @@
 	} from '#lib/flow/state.ts';
 	import { namesHash, type GivenNames } from '#lib/flow/names.ts';
 	import type { Settings } from '#lib/flow/settings.ts';
+	import { landingSettings } from '#lib/pictures/build.ts';
+	import type { Opens } from '#lib/pictures/model.ts';
 	import {
 		nextQuestion,
 		nodeMatching,
@@ -152,9 +154,18 @@
 	$effect(() => {
 		leftIn[appState.flow] = appState.settings;
 	});
-	function goToFlow(id: string) {
+	function goToFlow(id: string, opens?: Opens) {
 		const other = flows[id];
-		const next = stateInFlow(other, base, appState, leftIn[id]);
+		const moved = stateInFlow(other, base, appState, leftIn[id]);
+		// At the step a picture's part opens, with the settings that draw it there.
+		const next = opens
+			? {
+					...moved,
+					diagram: opens.diagram,
+					settings: landingSettings(opens, moved.settings),
+					step: opens.step
+				}
+			: moved;
 		const search = serializeState(other, next);
 		const there = resolve('/[flow]/[[view]]', { flow: id, view: undefined });
 		// eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above

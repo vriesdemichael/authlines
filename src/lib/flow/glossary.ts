@@ -601,6 +601,24 @@ const list: readonly Term[] = [
 		at: flowAt('authorize')
 	},
 	{
+		id: 'authorization-code-flow',
+		name: 'Authorization code flow',
+		words: ['authorization code flow', 'code flow', 'authorization code grant'],
+		explains:
+			'The flow most apps use for a user. They log in at the identity provider in a browser, the browser brings back a one-time code, and the app trades it for tokens on a direct call.',
+		alsoCalled: ['authorization code grant', 'RFC 6749 section 4.1'],
+		at: flowAt('redirect-with-code')
+	},
+	{
+		id: 'client-credentials',
+		name: 'Client credentials',
+		words: ['client credentials', 'client credentials grant', 'client credentials flow'],
+		explains:
+			'For an app that calls an API for itself, with no user. It shows its own secret and gets an access token, with no browser and nobody logging in.',
+		alsoCalled: ['client credentials grant', 'machine to machine', 'RFC 6749 section 4.4'],
+		opens: { flow: 'client-credentials', step: 'service-token-request' }
+	},
+	{
 		id: 'device-flow',
 		name: 'Device flow',
 		words: ['device flow', 'device authorization grant', 'device code flow', 'device grant'],

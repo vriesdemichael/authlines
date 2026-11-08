@@ -21,6 +21,15 @@ export const opensAt = (
 	exact = false
 ): Opens => ({ diagram, step, settings, preset, ...(exact ? { exact } : {}) });
 
+/** A step of another base flow, with one of its presets, which a picture about choosing one opens. */
+export const opensIn = (flow: string, step: string, preset: string): Opens => ({
+	flow,
+	diagram: 'flow',
+	step,
+	settings: {},
+	preset
+});
+
 /** The same, opening the recording just as it was made, for a part that says how something ended. */
 export const opensAsRecorded = (
 	diagram: DiagramId,
@@ -34,7 +43,7 @@ export const opensAsRecorded = (
  * and otherwise, or where it says how something ended, its recorded preset's.
  */
 export function landingSettings(opens: Opens, screen: Settings): Settings {
-	const base = flows['authorization-code'];
+	const base = flows[opens.flow ?? 'authorization-code'];
 	const preset = base.presets.find((candidate) => candidate.id === opens.preset);
 	const recorded = normalize({ ...defaultSettings, ...preset?.settings }).settings;
 	if (opens.exact) return recorded;

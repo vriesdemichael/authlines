@@ -262,6 +262,29 @@ test.describe('a picture in an explanation', () => {
 		});
 	}
 
+	// Which flow fits an app (#200), whose parts open the other flows, and Back comes back.
+	test('opens another flow from which flow fits, and Back comes back to it', async ({ page }) => {
+		await open(page, 'mode=simple&explain=term.authorization-code-flow');
+		const picture = page.getByTestId('picture');
+		await expect(picture).toHaveAttribute('data-picture', 'which-flow-fits');
+		await expect(picture.locator('[data-part="program"]')).toHaveCount(0);
+		await picture.locator('[data-part="device"]').click();
+		// At its first step, which the address leaves out.
+		await expect(page).toHaveURL(/\/device\//);
+		await expect(page.getByTestId('picture')).toHaveCount(0);
+		await page.goBack();
+		await expect(page.getByTestId('picture')).toHaveAttribute('data-picture', 'which-flow-fits');
+
+		await page.goto('device/?mode=advanced&explain=term.device-flow');
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		const there = page.getByTestId('picture');
+		await expect(there).toHaveAttribute('data-picture', 'which-flow-fits');
+		await there.locator('[data-part="program"]').click();
+		await expect(page).toHaveURL(/\/authorization-code\//);
+		await expect.poll(() => currentSearch(page)).toContain('runs=program');
+		await expect.poll(() => currentSearch(page)).toContain('step=redirect-with-code');
+	});
+
 	// The maintainer decided on 2026-11-08 that simple mode leaves out what is tied to advanced settings.
 	test('leaves out in simple mode what advanced mode adds', async ({ page }) => {
 		await open(page, 'mode=simple&explain=term.oauth');
