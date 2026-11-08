@@ -7,6 +7,7 @@ export type SourceId =
 	| 'rfc7636'
 	| 'rfc9449'
 	| 'rfc9068'
+	| 'rfc6238'
 	| 'rfc9126'
 	| 'rfc8693'
 	| 'rfc9207'
@@ -118,6 +119,15 @@ export const sources: Record<SourceId, SourceDef> = {
 			'Says what an access token that is a JWT holds, so that APIs from different makers can read it the same way: who issued it, who it is about and for, when it runs out, which client it went to, and its scope. Roles, groups and entitlements are left open, with names to use for them if a server puts them in, and no words for what they mean.',
 		url: 'https://www.rfc-editor.org/rfc/rfc9068.html',
 		textFile: 'rfc9068.txt'
+	},
+	rfc6238: {
+		label: 'RFC 6238',
+		title: 'TOTP: Time-Based One-Time Password Algorithm',
+		status: 'Informational, May 2011.',
+		summary:
+			'How an authenticator app and a server make the same code without talking: both keep a secret shared once, and make a code from it and the number of time steps since 1970. A step is 30 seconds unless set otherwise, and a server can take a code from a step or so either side, for clocks that differ.',
+		url: 'https://www.rfc-editor.org/rfc/rfc6238.html',
+		textFile: 'rfc6238.txt'
 	},
 	rfc9126: {
 		label: 'RFC 9126',

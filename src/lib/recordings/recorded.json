@@ -78,7 +78,8 @@
 		"broker": "2026-11-05",
 		"implicit": "2026-11-08",
 		"broker-groups": "2026-11-08",
-		"broker-groups-given": "2026-11-08"
+		"broker-groups-given": "2026-11-08",
+		"one-time-code": "2026-11-08"
 	},
 	"flows": {
 		"authorization-code": {
@@ -150,6 +151,7 @@
 				"companies-oidc-leaves",
 				"upstream-v1",
 				"upstream-v2",
+				"one-time-code",
 				"broker-groups",
 				"broker-groups-given",
 				"link-account",
@@ -242,6 +244,7 @@
 				"old-way-call",
 				"old-way-form",
 				"open-app",
+				"otp-page",
 				"page-calls-api",
 				"page-gets-answer",
 				"page-served",
@@ -276,6 +279,7 @@
 				"set-session",
 				"submit-credentials",
 				"submit-email",
+				"submit-otp",
 				"thief-api-request",
 				"thief-api-response",
 				"token-after-logout",

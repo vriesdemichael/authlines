@@ -104,6 +104,8 @@ const CITED: readonly [step: string, SourceId, section: string, phrase: string][
 	['program-starts', 'rfc8252', '8.3', 'listen on the loopback network interface only'],
 	['program-opens-browser', 'rfc8252', '8.12', 'MUST NOT use embedded user-agents'],
 	['program-opens-browser', 'rfc8252', '6', 'MUST implement the Proof Key for Code Exchange'],
+	// A code from an authenticator app (2026-11-08).
+	['otp-page', 'rfc6238', '4', 'the number of time steps between the initial counter'],
 	['callback', 'rfc8252', '8.1', 'other apps accessing the same loopback interface'],
 	['callback', 'rfc8252', '8.3', 'the HTTP request never leaves the device'],
 	['token-request', 'rfc8252', '8.5', 'should not be treated as confidential secrets'],

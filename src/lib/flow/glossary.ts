@@ -798,7 +798,7 @@ const list: readonly Term[] = [
 		alsoCalled: ['2FA', 'two-factor authentication', 'two-step verification'],
 		explains:
 			'Asking at the login for proof of two different kinds, such as a password and a code from a phone, so that one stolen is not enough. Each kind proves something different, and falls to different things. After the login a cookie or token stands in for the user, and it works without the second factor.',
-		at: flowAt('submit-credentials')
+		at: flowAt('otp-page', { secondFactor: 'code' })
 	},
 	{
 		id: 'passkey',
@@ -822,7 +822,7 @@ const list: readonly Term[] = [
 		],
 		explains:
 			'A code that works once, or for a short time: sent by text message or email, or made by an authenticator app from a secret it shares with the site and the time. Nobody can guess one in time, and a fake site can still ask for it and pass it on while it works.',
-		at: flowAt('submit-credentials')
+		at: flowAt('submit-otp', { secondFactor: 'code' })
 	},
 	{
 		id: 'nist',
