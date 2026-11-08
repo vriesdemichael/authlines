@@ -288,6 +288,13 @@ const list: readonly Term[] = [
 		at: flowAt('token-response')
 	},
 	{
+		id: 'api-key',
+		name: 'API key',
+		words: ['API key', 'API keys'],
+		explains:
+			'A long-lived secret an app sends to an API with each call, to say which app is calling. It says nothing about a user, and lasts until someone changes it.'
+	},
+	{
 		id: 'cookie',
 		name: 'Cookie',
 		words: ['cookie', 'cookies'],
