@@ -40,6 +40,7 @@ const states: readonly [string, string, 'flow' | 'setup'][] = [
 		'mode=simple&step=submit-credentials&explain=term.one-time-password',
 		'flow'
 	],
+	['what-a-token-says', 'mode=advanced&oidc=1&step=token-response&explain=term.claim', 'flow'],
 	['address-refused', 'mode=simple&address=other&step=address-refused', 'flow'],
 	[
 		'the-token-in-the-address',

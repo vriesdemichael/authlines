@@ -33,6 +33,8 @@
 		decoded?: boolean;
 		/** Offered only where decoding changes something, so the switch never seems to do nothing. */
 		ondecode?: ((decoded: boolean) => void) | null;
+		/** Opens what explains a word: here, what each claim in a token says (#200). */
+		onterm?: (id: string) => void;
 	}
 
 	let {
@@ -46,7 +48,8 @@
 		redacted = false,
 		whole = false,
 		decoded = false,
-		ondecode = null
+		ondecode = null,
+		onterm
 	}: Props = $props();
 
 	const LONG = 40;
@@ -90,6 +93,17 @@
 		note.querySelector('summary')?.focus();
 	}
 </script>
+
+<!-- The word explains itself, as any on screen does (ADR-016), with what each claim says. -->
+{#snippet claimsHead()}
+	{#if onterm}
+		<button type="button" class="part term" data-term="claim" onclick={() => onterm('claim')}
+			>claims</button
+		>
+	{:else}
+		<span class="part">claims</span>
+	{/if}
+{/snippet}
 
 {#snippet behind(jwt: DecodedJwt)}
 	{#if settingsBehind(jwt).length}
@@ -178,7 +192,7 @@
 						null,
 						2
 					)}</pre>
-				<span class="part">claims</span>
+				{@render claimsHead()}
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 				<pre tabindex="0" aria-label={`Claims of ${token.name}`}>{JSON.stringify(
 						token.claims,
@@ -378,6 +392,22 @@
 		color: var(--muted);
 		font-family: var(--sans);
 		font-size: 11px;
+	}
+
+	/* Quiet, as a word in a step's text is, because what is under it matters more. */
+	.part.term {
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: none;
+		text-decoration: underline dotted var(--strong-line);
+		text-underline-offset: 3px;
+		cursor: help;
+	}
+
+	.part.term:hover {
+		color: var(--accent);
+		text-decoration-color: var(--accent);
 	}
 
 	.opened pre {

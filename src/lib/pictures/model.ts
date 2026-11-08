@@ -29,7 +29,8 @@ export type PictureId =
 	| 'what-is-in-a-token-here'
 	| 'what-each-factor-proves'
 	| 'what-a-thief-can-do'
-	| 'what-a-code-looks-like';
+	| 'what-a-code-looks-like'
+	| 'what-a-token-says';
 
 /**
  * Where something starts or ends, a step, or a question with more than one way on: those make a

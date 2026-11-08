@@ -44,6 +44,8 @@
 		/** Each value decoded and each token opened where it is, instead of as it was sent. */
 		decoded?: boolean;
 		ondecode?: ((decoded: boolean) => void) | null;
+		/** Opens what explains a word, such as what the claims in a token are. */
+		onterm?: (id: string) => void;
 	}
 
 	let {
@@ -63,7 +65,8 @@
 		seam = null,
 		folded = false,
 		decoded = false,
-		ondecode = null
+		ondecode = null,
+		onterm
 	}: Props = $props();
 
 	const message = $derived(recording?.messages.find((candidate) => candidate.step === step.id));
@@ -162,6 +165,7 @@
 			whole={large}
 			decoded={decoded && !message.log}
 			ondecode={message.log ? null : ondecode}
+			{onterm}
 		/>
 		<RunValues values={soFar} {numberOf} {onstep} />
 		<p class="origin" data-testid="payload-origin">
