@@ -133,6 +133,16 @@ for (const scheme of ['light', 'dark'] as const) {
 			});
 		});
 
+		test('the app keeps asking, on two devices', async ({ page }) => {
+			await page.goto('device/?mode=advanced&explain=term.polling');
+			await page.locator('.workspace[data-ready="true"]').waitFor();
+			await expect(page.getByTestId('picture')).toBeVisible();
+			await page.mouse.move(0, 0);
+			await expect(page).toHaveScreenshot(`the-app-keeps-asking-${scheme}.png`, {
+				maxDiffPixelRatio: 0.002
+			});
+		});
+
 		test('running it yourself', async ({ page }) => {
 			await page.goto('run-it-yourself/');
 			await expect(page.locator('[data-ready="true"]')).toBeVisible();

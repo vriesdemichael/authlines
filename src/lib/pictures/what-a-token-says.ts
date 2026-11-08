@@ -1,8 +1,9 @@
 import type { Say } from '#lib/flow/wording.ts';
-import { bottomOf, keyAt, markAt, opensAt, textAt } from './build.ts';
+import { bottomOf, keyAt, markAt, opensAt, opensIn, textAt } from './build.ts';
 import {
 	SIZE,
 	widthOf,
+	type MarkKind,
 	type Opens,
 	type Picture,
 	type PictureLine,
@@ -60,11 +61,33 @@ export const RECORDED = {
 		given_name: 'Alice',
 		family_name: 'Example',
 		email: 'alice@example.test'
+	},
+	/** The access token an app got for itself, in the `as-itself` preset of client credentials. */
+	service: {
+		exp: 1793591233,
+		iat: 1793590933,
+		jti: 'trrtcc:5ff505ea-536e-d659-0f7c-ab4af7cc1457',
+		iss: 'http://localhost:18080/realms/demo',
+		aud: 'account',
+		sub: 'a3b638b4-2fdd-49a3-9636-89012f59871d',
+		typ: 'Bearer',
+		azp: 'demo-service',
+		acr: '1',
+		'allowed-origins': ['http://localhost:9100'],
+		realm_access: { roles: ['offline_access', 'default-roles-demo', 'uma_authorization'] },
+		resource_access: {
+			account: { roles: ['manage-account', 'manage-account-links', 'view-profile'] }
+		},
+		scope: 'profile email',
+		clientHost: '172.16.0.1',
+		email_verified: false,
+		preferred_username: 'service-account-demo-service',
+		clientAddress: '172.16.0.1',
+		client_id: 'demo-service'
 	}
 } as const;
 
 type Token = keyof typeof RECORDED;
-const TOKENS: readonly Token[] = ['access', 'id'];
 
 interface ClaimRow {
 	id: string;
@@ -74,6 +97,8 @@ interface ClaimRow {
 	opens: Opens;
 	/** Kept in simple mode, which has to look much emptier, and named there in plain words if need be. */
 	simple?: string;
+	/** What it says beside a token an app got for itself, where that differs. */
+	forItself?: string;
 }
 
 const at = (step: string) => opensAt('flow', step, 'oidc', { oidc: true });
@@ -95,6 +120,8 @@ const ROWS: readonly ClaimRow[] = [
 		names: ['sub'],
 		simple: 'sub',
 		is: 'Who it is about: an ID the identity provider never gives anyone else. Not their name, which can change.',
+		forItself:
+			'Who it is about: an ID that never changes. With no user, one that stands for the app itself.',
 		opens: at('validate-id-token')
 	},
 	{
@@ -116,6 +143,12 @@ const ROWS: readonly ClaimRow[] = [
 		simple: 'exp',
 		is: 'When it runs out, in seconds since the start of 1970.',
 		opens: at('api-check-token')
+	},
+	{
+		id: 'client_id',
+		names: ['client_id'],
+		is: 'The app it was given to, under the name RFC 9068 gives it.',
+		opens: opensIn('client-credentials', 'service-token-response', 'as-itself')
 	},
 	{
 		id: 'iat',
@@ -152,6 +185,7 @@ const ROWS: readonly ClaimRow[] = [
 		names: ['scope'],
 		simple: 'scope',
 		is: 'What the app may do for the user.',
+		forItself: 'What the app may do.',
 		opens: at('api-check-token')
 	},
 	{
@@ -172,11 +206,20 @@ const ROWS: readonly ClaimRow[] = [
 		names: ['name', 'preferred_username', 'given_name', 'family_name', 'email', 'email_verified'],
 		simple: 'name, email and more',
 		is: 'About the user, under names OpenID Connect gives them.',
+		forItself:
+			'About the user, under names OpenID Connect gives them. With no user, some can still be there, about the app.',
 		opens: at('token-response')
 	},
 	{
 		id: 'own',
-		names: ['typ', 'allowed-origins', 'realm_access', 'resource_access'],
+		names: [
+			'typ',
+			'allowed-origins',
+			'realm_access',
+			'resource_access',
+			'clientHost',
+			'clientAddress'
+		],
 		is: 'The identity provider’s own. Another one would send others, or none.',
 		opens: at('token-response')
 	}
@@ -212,14 +255,23 @@ function shown(row: ClaimRow, token: Token, width: number): string | null {
  * plain words, beside each other. The raw view decodes them, and nothing said what they mean. Simple
  * mode shows no values, so there a circle says whether a token has it.
  */
-export function whatATokenSays(say: Say, values: boolean): Picture {
+export function whatATokenSays(say: Say, values: boolean, flow = 'authorization-code'): Picture {
+	// With no user, the token an app gets for itself beside one for a user, which says the difference.
+	const itself = flow === 'client-credentials';
+	const TOKENS: readonly Token[] = itself ? ['access', 'service'] : ['access', 'id'];
 	const W = 800;
 	const NAME = { left: 10, w: 260 };
 	const COLUMNS = { left: 280, right: 790 };
 	const column = (COLUMNS.right - COLUMNS.left) / TOKENS.length;
 	const HEADS: Record<Token, string> = {
-		access: say('The access token'),
-		id: say('The ID token')
+		access: say(itself ? 'An access token for a user' : 'The access token'),
+		id: say('The ID token'),
+		service: say('An access token for the app itself')
+	};
+	const HEAD_OPENS: Record<Token, Opens> = {
+		access: at('token-response'),
+		id: at('token-response'),
+		service: opensIn('client-credentials', 'service-token-response', 'as-itself')
 	};
 
 	const lead = textAt(
@@ -232,6 +284,18 @@ export function whatATokenSays(say: Say, values: boolean): Picture {
 		),
 		{ size: 'more' }
 	);
+	// Simple mode has to look much emptier than advanced, as the maintainer decided on 2026-11-02. It
+	// keeps the rows where two tokens differ as well, which is what a token for the app itself is about.
+	const has = (row: ClaimRow, token: Token) =>
+		row.names.filter((name) => name in RECORDED[token]).length;
+	const differs = (row: ClaimRow) => Boolean(has(row, TOKENS[0])) !== Boolean(has(row, TOKENS[1]));
+	const rows = ROWS.filter(
+		(row) =>
+			TOKENS.some((token) => has(row, token)) && (values || row.simple || (itself && differs(row)))
+	);
+	const markOf = (row: ClaimRow, token: Token): MarkKind =>
+		!has(row, token) ? 'none' : has(row, token) < row.names.length ? 'half' : 'full';
+	const marks = new Set(rows.flatMap((row) => TOKENS.map((token) => markOf(row, token))));
 	const key = keyAt(
 		'key',
 		10,
@@ -240,9 +304,10 @@ export function whatATokenSays(say: Say, values: boolean): Picture {
 		values
 			? [{ mark: 'none', says: say('Not in it') }]
 			: [
-					{ mark: 'full', says: say('In it') },
-					{ mark: 'none', says: say('Not in it') }
-				]
+					{ mark: 'full' as const, says: say('In it') },
+					{ mark: 'half' as const, says: say('Some of them') },
+					{ mark: 'none' as const, says: say('Not in it') }
+				].filter((entry) => marks.has(entry.mark))
 	);
 	const parts: PicturePart[] = [lead, ...key.parts];
 	const lines: PictureLine[] = [];
@@ -251,20 +316,20 @@ export function whatATokenSays(say: Say, values: boolean): Picture {
 		textAt(`head-${token}`, COLUMNS.left + i * column + 4, headTop, column - 8, HEADS[token], {
 			size: 'more',
 			align: values ? 'start' : 'middle',
-			opens: at('token-response')
+			opens: HEAD_OPENS[token]
 		})
 	);
 	parts.push(...heads);
 	let top = Math.max(...heads.map(bottomOf)) + 8;
 	lines.push({ d: `M10 ${top} H${W - 10}`, bare: true, faint: true });
 
-	// Simple mode has to look much emptier than advanced, as the maintainer decided on 2026-11-02.
-	for (const row of values ? ROWS : ROWS.filter((candidate) => candidate.simple)) {
-		const named = values ? row.names.join(', ') : row.simple!;
+	for (const row of rows) {
+		const named = values ? row.names.join(', ') : (row.simple ?? row.names.join(', '));
 		const name = textAt(`name-${row.id}`, NAME.left, top + 8, NAME.w, named, {
 			opens: row.opens
 		});
-		const is = textAt(`is-${row.id}`, NAME.left, bottomOf(name) + 2, NAME.w, say(row.is), {
+		const words = itself && row.forItself ? row.forItself : row.is;
+		const is = textAt(`is-${row.id}`, NAME.left, bottomOf(name) + 2, NAME.w, say(words), {
 			size: 'more'
 		});
 		const cells = TOKENS.map((token, i) => {
@@ -272,7 +337,16 @@ export function whatATokenSays(say: Say, values: boolean): Picture {
 			const left = COLUMNS.left + i * column;
 			const whose = `${named}, in ${HEADS[token].toLowerCase()}`;
 			if (value === null) return markAt(`${row.id}.${token}`, 0, 0, 'none', `${whose}: not in it`);
-			if (!values) return markAt(`${row.id}.${token}`, 0, 0, 'full', `${whose}: in it`);
+			if (!values) {
+				const mark = markOf(row, token);
+				return markAt(
+					`${row.id}.${token}`,
+					0,
+					0,
+					mark,
+					`${whose}: ${mark === 'half' ? 'some of them' : 'in it'}`
+				);
+			}
 			return textAt(`${row.id}.${token}`, left + 4, top + 10, column - 8, value, { size: 'more' });
 		});
 		const height = Math.max(bottomOf(is), ...cells.map(bottomOf)) - top + 10;
@@ -296,9 +370,12 @@ export function whatATokenSays(say: Say, values: boolean): Picture {
 		top + 12,
 		780,
 		say(
-			values
-				? 'Both from one recorded run with OpenID Connect on, which adds the ID token. Long values are cut short.'
-				: 'Both from one recorded run with OpenID Connect on, which adds the ID token. Each has more claims than these, which advanced mode shows with what was in them.'
+			itself
+				? 'Both from recorded runs, one where a user logged in, and one where an app asked for itself.' +
+						(values ? ' Long values are cut short.' : '')
+				: values
+					? 'Both from one recorded run with OpenID Connect on, which adds the ID token. Long values are cut short.'
+					: 'Both from one recorded run with OpenID Connect on, which adds the ID token. Each has more claims than these, which advanced mode shows with what was in them.'
 		),
 		{ size: 'more' }
 	);

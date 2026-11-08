@@ -285,6 +285,30 @@ test.describe('a picture in an explanation', () => {
 		await expect.poll(() => currentSearch(page)).toContain('step=redirect-with-code');
 	});
 
+	// The device flow's own picture, and a token an app got for itself beside a user's (#200).
+	test('has pictures of its own on the device flow and client credentials', async ({ page }) => {
+		await page.goto('device/?mode=advanced&explain=term.polling');
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		const picture = page.getByTestId('picture');
+		await expect(picture).toHaveAttribute('data-picture', 'the-app-keeps-asking');
+		await picture.locator('[data-part="expired-token"]').click();
+		await expect.poll(() => currentSearch(page)).toContain('step=device-expired-response');
+		await expect.poll(() => currentSearch(page)).toContain('ends=runs-out');
+		await page.goBack();
+		await expect(page.getByTestId('picture')).toHaveAttribute(
+			'data-picture',
+			'the-app-keeps-asking'
+		);
+
+		await page.goto('client-credentials/?mode=advanced&step=service-check-token');
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		await page.locator('[data-term="claim"]').first().click();
+		const token = page.getByTestId('picture');
+		await expect(token).toHaveAttribute('data-picture', 'what-a-token-says');
+		await expect(token).toContainText('client_id');
+		await expect(token).toContainText('An access token for the app itself');
+	});
+
 	// The maintainer decided on 2026-11-08 that simple mode leaves out what is tied to advanced settings.
 	test('leaves out in simple mode what advanced mode adds', async ({ page }) => {
 		await open(page, 'mode=simple&explain=term.oauth');

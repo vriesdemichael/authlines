@@ -31,7 +31,8 @@ export type PictureId =
 	| 'what-a-thief-can-do'
 	| 'what-a-code-looks-like'
 	| 'what-a-token-says'
-	| 'which-flow-fits';
+	| 'which-flow-fits'
+	| 'the-app-keeps-asking';
 
 /**
  * Where something starts or ends, a step, or a question with more than one way on: those make a

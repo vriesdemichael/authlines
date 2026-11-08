@@ -16,6 +16,7 @@ import { whatEachFactorProves } from './what-each-factor-proves.ts';
 import { whatEachSpecAdds } from './what-each-spec-adds.ts';
 import { whatStopsWhat } from './what-stops-what.ts';
 import { whereTheTokensAre } from './where-the-tokens-are.ts';
+import { theAppKeepsAsking } from './the-app-keeps-asking.ts';
 import { whichFlowFits } from './which-flow-fits.ts';
 import { whichTokenIsForWhom } from './which-token-is-for-whom.ts';
 import { whoKnowsWhom, type PartyNames } from './who-knows-whom.ts';
@@ -47,6 +48,16 @@ function namesOn(state: AppState, wording: Wording): PartyNames {
 }
 
 const key = (explained: Explained) => `${explained.kind}.${explained.id}`;
+
+/**
+ * The flows a picture shows on, where it is not only the authorization code flow: which flow fits
+ * opens them all, and the others are about steps of their own flow.
+ */
+const SHOWN_ON: Partial<Record<PictureId, readonly string[]>> = {
+	'which-flow-fits': Object.keys(flows),
+	'the-app-keeps-asking': ['device'],
+	'what-a-token-says': ['authorization-code', 'client-credentials']
+};
 
 /**
  * Which picture goes in which explanation (#167). A concept gets one where a picture says in a glance
@@ -106,7 +117,12 @@ export const PICTURE_OF: Readonly<Record<string, PictureId>> = {
 	'term.device-flow': 'which-flow-fits',
 	'term.implicit-flow': 'which-flow-fits',
 	'setting.implicit': 'which-flow-fits',
-	'term.password-grant': 'which-flow-fits'
+	'term.password-grant': 'which-flow-fits',
+	'term.polling': 'the-app-keeps-asking',
+	'term.authorization-pending': 'the-app-keeps-asking',
+	'term.slow-down': 'the-app-keeps-asking',
+	'term.expired-token': 'the-app-keeps-asking',
+	'artifact.device-code': 'the-app-keeps-asking'
 };
 
 /** Each picture, drawn for the state on screen in the words chosen. */
@@ -150,9 +166,11 @@ export function draw(id: PictureId, state: AppState, wording: Wording, say: Say)
 			return whatAThiefCanDo(say, keep);
 		case 'which-flow-fits':
 			return whichFlowFits(say, keep);
+		case 'the-app-keeps-asking':
+			return theAppKeepsAsking(say, keep);
 		case 'what-a-token-says':
 			// Simple mode shows no values, so there a circle says whether a token has it.
-			return whatATokenSays(say, state.mode !== 'simple');
+			return whatATokenSays(say, state.mode !== 'simple', state.flow);
 	}
 }
 
@@ -165,8 +183,8 @@ export function pictureFor(state: AppState, wording: Wording): Picture | null {
 	if (!explained) return null;
 	const id = PICTURE_OF[key(explained)];
 	if (!id) return null;
-	// Only on the flow whose steps it opens, except the one about which flow fits, which opens them all.
-	if (state.flow !== 'authorization-code' && id !== 'which-flow-fits') return null;
+	// Only on a flow whose steps it is about.
+	if (!(SHOWN_ON[id] ?? ['authorization-code']).includes(state.flow)) return null;
 	// Like the server's notes, it is in advanced mode only, and goes when they do (ADR-015).
 	if (id === 'what-is-in-a-token-here' && (!state.serverNotes || state.mode !== 'advanced'))
 		return null;

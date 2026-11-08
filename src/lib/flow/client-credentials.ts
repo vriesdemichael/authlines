@@ -185,7 +185,7 @@ export const clientCredentials: DiagramDef = {
 					text: 'The API checks the token, and that the proof was signed with the key the token names.'
 				},
 				{
-					text: 'The API checks the signature, who issued the token, that it has not expired, and who it is for, the same as for a token with a user behind it.'
+					text: 'The API checks the signature, who issued the token, that it has not expired, and who it is for, the same as for a token with a user behind it. Where the claims of that one name the user, these name the app.'
 				}
 			],
 			inPractice: [
