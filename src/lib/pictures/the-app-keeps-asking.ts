@@ -7,7 +7,7 @@ import type { Keep } from './simple.ts';
  * What the device answered in the recorded run: how many seconds to wait between asking, and how
  * long the codes last. A test holds these to the recording.
  */
-export const ASKING = { interval: 5, expiresIn: 600 } as const;
+export const ASKING = { interval: 5, expiresIn: 600, expiresInWhenTheyRunOut: 2 } as const;
 
 /**
  * What an app on a device does while the user logs in somewhere else (#200, and a flowchart #167
@@ -113,7 +113,7 @@ export function theAppKeepsAsking(say: Say, keep: Keep): Picture {
 		{
 			id: 'expired-token',
 			says: ['expired_token'],
-			more: [`The codes ran out, after ${minutes}`, 'minutes. It stops.'],
+			more: ['The codes ran out before the', 'user finished. It stops.'],
 			opens: opensIn('device', 'device-expired-response', 'on-a-device-runs-out', {
 				deviceEnds: 'runs-out'
 			})
@@ -144,7 +144,7 @@ export function theAppKeepsAsking(say: Say, keep: Keep): Picture {
 		bottom + 16,
 		740,
 		say(
-			`From recorded runs. The identity provider said to wait ${ASKING.interval} seconds between asking, and that the codes last ${minutes} minutes. Asking sooner got slow_down.`
+			`From recorded runs. The identity provider said to wait ${ASKING.interval} seconds between asking, and that the codes last ${minutes} minutes. In the run where they ran out, they were made to last ${ASKING.expiresInWhenTheyRunOut} seconds. Asking sooner got slow_down.`
 		),
 		{ size: 'more' }
 	);

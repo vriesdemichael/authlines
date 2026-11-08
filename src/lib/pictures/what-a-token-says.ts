@@ -120,8 +120,7 @@ const ROWS: readonly ClaimRow[] = [
 		names: ['sub'],
 		simple: 'sub',
 		is: 'Who it is about: an ID the identity provider never gives anyone else. Not their name, which can change.',
-		forItself:
-			'Who it is about: an ID that never changes. With no user, one that stands for the app itself.',
+		forItself: 'Who it is about. With no user, an ID that stands for the app itself.',
 		opens: at('validate-id-token')
 	},
 	{
@@ -280,7 +279,7 @@ export function whatATokenSays(say: Say, values: boolean, flow = 'authorization-
 		8,
 		780,
 		say(
-			'A JWT is three parts joined by dots: a header, the claims, and a signature over both. These are the claims, each a name and a value.'
+			'A signed JWT, as these are, is three parts joined by dots: a header, the claims, and a signature over both. These are the claims, each a name and a value.'
 		),
 		{ size: 'more' }
 	);

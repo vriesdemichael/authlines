@@ -595,6 +595,12 @@ describe('the pictures of the other flows (#200)', () => {
 		).messages.find((message) => message.step === 'device-response')!.body!;
 		expect(ASKING.interval).toBe(answer.interval);
 		expect(ASKING.expiresIn).toBe(answer.expires_in);
+		const ranOut = JSON.parse(
+			readFileSync('static/recordings/device/on-a-device-runs-out.json', 'utf8')
+		) as { messages: { step: string; body?: Record<string, unknown> }[] };
+		expect(ASKING.expiresInWhenTheyRunOut).toBe(
+			ranOut.messages.find((message) => message.step === 'device-response')!.body!.expires_in
+		);
 		const polling = (deviceQuestions as { answers: { devicePolling: Record<string, string> } })
 			.answers.devicePolling;
 		expect(polling.tooSoon).toBe('slow_down');

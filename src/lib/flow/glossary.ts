@@ -300,7 +300,7 @@ const list: readonly Term[] = [
 		name: 'API key',
 		words: ['API key', 'API keys'],
 		explains:
-			'A long-lived secret an app sends to an API with each call, to say which app is calling. It says nothing about a user, and lasts until someone changes it.'
+			'A secret an app sends to an API with each call, to say which app is calling. None is recorded here.'
 	},
 	{
 		id: 'cookie',
@@ -575,7 +575,7 @@ const list: readonly Term[] = [
 		name: 'mTLS',
 		words: ['mTLS', 'mutual TLS'],
 		explains:
-			'TLS where the app shows a certificate too, and not only the server. In OAuth it does two things. The app can prove who it is to the identity provider with its certificate, in place of a secret. And a token can be tied to that certificate, so an API refuses it over a connection with any other, which is what DPoP does in a header. It is part of the connection under every message, so it is explained here and not drawn.',
+			'TLS where the app shows a certificate too, and not only the server. In OAuth it does two things. The app can prove who it is to the identity provider with its certificate, in place of a secret. And a token can be tied to that certificate, so an API refuses it over a connection with any other, which is what DPoP does in a header. It is part of the app’s own connections to the identity provider and the API, under the messages on them, so it is explained here and not drawn.',
 		alsoCalled: ['mutual TLS', 'certificate-bound tokens', 'RFC 8705']
 	},
 	{
@@ -644,7 +644,7 @@ const list: readonly Term[] = [
 		name: 'Authorization code flow',
 		words: ['authorization code flow', 'code flow', 'authorization code grant'],
 		explains:
-			'The flow most apps use for a user. They log in at the identity provider in a browser, the browser brings back a one-time code, and the app trades it for tokens on a direct call.',
+			'The flow for an app that acts for a user. They log in at the identity provider in a browser, the browser brings back a one-time code, and the app trades it for tokens on a direct call.',
 		alsoCalled: ['authorization code grant', 'RFC 6749 section 4.1'],
 		at: flowAt('redirect-with-code')
 	},
