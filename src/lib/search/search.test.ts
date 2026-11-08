@@ -39,7 +39,7 @@ describe('what people bring', () => {
 		['PKCE', 'word', 'PKCE'],
 		['refresh token', 'word', 'Refresh token'],
 		['logout', 'word', 'Logging out'],
-		['cookie', 'word', 'Session'],
+		['cookie', 'word', 'Cookie'],
 		['expired', 'question', undefined],
 		['401', 'question', undefined],
 		['403', 'question', undefined],

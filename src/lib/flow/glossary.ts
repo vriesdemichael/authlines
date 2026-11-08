@@ -288,6 +288,14 @@ const list: readonly Term[] = [
 		at: flowAt('token-response')
 	},
 	{
+		id: 'cookie',
+		name: 'Cookie',
+		words: ['cookie', 'cookies'],
+		explains:
+			'A small value a site asks the browser to keep, which the browser then sends back to that site by itself with each request. It is how a site remembers a browser between one page and the next.',
+		at: flowAt('redirect-with-code')
+	},
+	{
 		id: 'session',
 		name: 'Session',
 		words: ['session', 'sessions'],

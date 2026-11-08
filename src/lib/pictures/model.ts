@@ -33,7 +33,8 @@ export type PictureId =
 	| 'what-a-token-says'
 	| 'which-flow-fits'
 	| 'the-app-keeps-asking'
-	| 'what-each-scope-asks-for';
+	| 'what-each-scope-asks-for'
+	| 'cookies-jwts-oauth';
 
 /**
  * Where something starts or ends, a step, or a question with more than one way on: those make a
