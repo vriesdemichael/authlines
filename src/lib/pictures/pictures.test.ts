@@ -704,6 +704,30 @@ describe('an account’s life (#200)', () => {
 	});
 });
 
+describe('what the API does with a request (#167, #200)', () => {
+	it('opens each refusal as the demo API recorded it, and leaves the last word to your code', () => {
+		const found = picture('explain=setting.apiToken&mode=advanced');
+		expect(found.id).toBe('what-the-api-does');
+		for (const [id, preset, status] of [
+			['has-token.refused', 'api-no-token', 401],
+			['signature.refused', 'api-changed', 401],
+			['in-time.refused', 'api-expired', 401],
+			['for-this-api.refused', 'api-elsewhere', 401],
+			['scope.refused', 'api-no-scope', 403]
+		] as const) {
+			const part = found.parts.find((candidate) => candidate.id === id)!;
+			expect(part.opens?.preset, id).toBe(preset);
+			const run = JSON.parse(
+				readFileSync(`static/recordings/authorization-code/${preset}.json`, 'utf8')
+			) as { messages: { step: string; status?: number }[] };
+			const answer = run.messages.find((message) => message.step === 'api-response')!;
+			expect(answer.status, id).toBe(status);
+			expect(part.says[0], id).toContain(String(status));
+		}
+		expect(found.parts.some((part) => part.id === 'your-code')).toBe(true);
+	});
+});
+
 describe('what the circles and the rows mean', () => {
 	it('is in a key drawn with the same marks, wherever there are marks', () => {
 		for (const found of pictures) {

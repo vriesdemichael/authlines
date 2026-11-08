@@ -246,6 +246,12 @@ test.describe('a picture in an explanation', () => {
 		['explain=term.api-key', 'passwords-keys-tokens', 'password.to-the-api', 'oldway=1'],
 		['mode=advanced&explain=term.saml', 'oidc-or-saml', 'browser.saml', 'speaks=saml'],
 		['mode=advanced&explain=term.account', 'an-accounts-life', 'stays-on', 'leaves=1'],
+		[
+			'mode=advanced&explain=setting.apiToken',
+			'what-the-api-does',
+			'scope.refused',
+			'send=noscope'
+		],
 		['explain=setting.appRuns', 'where-the-tokens-are', 'head-bff', 'runs=bff'],
 		['mode=advanced&explain=term.oauth', 'what-each-spec-adds', 'dpop', 'binding=dpop'],
 		[

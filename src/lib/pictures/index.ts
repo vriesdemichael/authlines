@@ -22,6 +22,7 @@ import { whatStopsWhat } from './what-stops-what.ts';
 import { whereTheTokensAre } from './where-the-tokens-are.ts';
 import { theAppKeepsAsking } from './the-app-keeps-asking.ts';
 import { whatEachScopeAsksFor } from './what-each-scope-asks-for.ts';
+import { whatTheApiDoes } from './what-the-api-does.ts';
 import { whichFlowFits } from './which-flow-fits.ts';
 import { whichTokenIsForWhom } from './which-token-is-for-whom.ts';
 import { whoKnowsWhom, type PartyNames } from './who-knows-whom.ts';
@@ -82,6 +83,10 @@ export const PICTURE_OF: Readonly<Record<string, PictureId>> = {
 	'term.saml': 'oidc-or-saml',
 	'setting.customerSpeaks': 'oidc-or-saml',
 	'term.account': 'an-accounts-life',
+	'setting.apiToken': 'what-the-api-does',
+	'term.invalid-token': 'what-the-api-does',
+	'term.insufficient-scope': 'what-the-api-does',
+	'term.www-authenticate': 'what-the-api-does',
 	'setting.leaves': 'an-accounts-life',
 	'setting.linkAccount': 'an-accounts-life',
 	'term.ldap': 'trust-across-providers',
@@ -191,6 +196,8 @@ export function draw(id: PictureId, state: AppState, wording: Wording, say: Say)
 			return oidcOrSaml(say, keep);
 		case 'an-accounts-life':
 			return anAccountsLife(say, keep);
+		case 'what-the-api-does':
+			return whatTheApiDoes(say, keep);
 		case 'the-app-keeps-asking':
 			return theAppKeepsAsking(say, keep);
 		case 'what-a-token-says':

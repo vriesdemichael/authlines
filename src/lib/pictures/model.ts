@@ -37,7 +37,8 @@ export type PictureId =
 	| 'cookies-jwts-oauth'
 	| 'passwords-keys-tokens'
 	| 'oidc-or-saml'
-	| 'an-accounts-life';
+	| 'an-accounts-life'
+	| 'what-the-api-does';
 
 /**
  * Where something starts or ends, a step, or a question with more than one way on: those make a
