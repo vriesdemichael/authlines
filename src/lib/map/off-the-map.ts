@@ -151,6 +151,17 @@ export const offTheMap: readonly MapNode[] = [
 		step: 'otp-page'
 	}),
 	node({
+		id: 'passkey-login',
+		alsoAskedAs: ['passkey login', 'log in with a passkey', 'webauthn', 'passwordless'],
+		answer:
+			'The login page asks the browser for a passkey for this site, and the device signs the page’s challenge once the user unlocks it. On the server recorded, no password was sent, and the token was the same as after one.',
+		title: 'What does logging in with a passkey look like?',
+		summary: 'A signed challenge in place of a password, for this site only.',
+		mode: 'advanced',
+		preset: 'passkey',
+		step: 'submit-passkey'
+	}),
+	node({
 		id: 'roles-from-groups',
 		alsoAskedAs: ['roles', 'groups', 'claim to role'],
 		answer:

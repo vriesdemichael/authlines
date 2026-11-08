@@ -60,6 +60,8 @@ const apiV2 = is('upstreamTokens', 'v2');
 const links = is('linkAccount', true);
 // A code from an authenticator app, asked for after the password (2026-11-08).
 const code = is('secondFactor', 'code');
+// A passkey in place of the password, which the login page asks the browser for (2026-11-08).
+const passkey = is('secondFactor', 'passkey');
 // A group at the other provider becomes a role here, and maybe the only one the app is given (#183).
 const groupRoles = is('groupRoles', true);
 const onlyGiven = all(groupRoles, is('rolesReach', 'given'));
@@ -1119,7 +1121,13 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			kind: 'response',
 			plain: 'The login page',
 			label: 'Login page',
-			concept: 'The identity provider asks the user to prove who they are, on its own page.',
+			concept: [
+				{
+					when: passkey,
+					text: 'The identity provider’s own page, which asks the browser for a passkey for this site as it loads, with a challenge made for this login. It asks for a username and a password too, for someone with no passkey.'
+				},
+				{ text: 'The identity provider asks the user to prove who they are, on its own page.' }
+			],
 			page: [
 				{
 					// The server recorded sends a pushed request on to its own form first, so the address
@@ -1157,13 +1165,40 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				title: 'What if someone else has this password?',
 				text: 'Then they can log in as the user, from anywhere, until it is changed, unless the identity provider also asks for a second factor. On the server recorded it asks for nothing else, by default. Even with one, a session or token taken after the login works without it, for as long as it lasts.'
 			},
-			when: not(broker),
+			when: all(not(broker), not(passkey)),
 			// With the token in the redirect, that is the answer, and the call to the API uses it.
 			execute: [
 				{ answer: 'redirect-with-token', when: implicit },
 				{ answer: 'redirect-with-code', when: all(not(consent), not(code)) }
 			],
 			fields: [{ name: 'username and password', place: 'body', artifact: 'password' }]
+		},
+		{
+			id: 'submit-passkey',
+			when: passkey,
+			from: 'browser',
+			to: 'idp',
+			kind: 'request',
+			plain: 'The browser sends what the passkey signed',
+			label: 'Sign in with a passkey',
+			concept:
+				'The user picks their passkey and unlocks it on their device, with a fingerprint, a face or a PIN that never leaves it. It signs the challenge from the page, and the browser adds which site asked. The identity provider checks the signature with the public half it keeps, and no password is sent.',
+			pitfall: {
+				title: 'What if a fake site asks for it?',
+				text: 'The browser only offers a passkey to the site it was made for, and puts the address of the page that asked into what is signed. A fake site at another address gets nothing it can pass on, which a password or a code cannot say.'
+			},
+			execute: { answer: 'redirect-with-code' },
+			fields: [
+				{ name: 'clientDataJSON', place: 'body', note: 'The challenge, and the page that asked' },
+				{
+					name: 'authenticatorData',
+					place: 'body',
+					note: 'Which site the key is for, and that the user was checked'
+				},
+				{ name: 'signature', place: 'body', note: 'Over both, with the private key' },
+				{ name: 'credentialId', place: 'body', note: 'Which passkey' },
+				{ name: 'userHandle', place: 'body', note: 'Whose it is' }
+			]
 		},
 		{
 			id: 'otp-page',
@@ -2579,7 +2614,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			label: [{ when: oidc, text: 'Access token and ID token' }, { text: 'Access token' }],
 			concept: [
 				{
-					when: code,
+					when: any(code, passkey),
 					text: 'The same tokens as after a password alone. On the server recorded, the access token said acr 1 either way, and nothing else in it says a second factor was used, so neither the app nor the API can tell from the token unless the server is set up to say.'
 				},
 				{

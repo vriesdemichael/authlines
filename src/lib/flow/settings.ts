@@ -34,7 +34,7 @@ export interface Settings {
 	appRuns: 'server' | 'page' | 'bff' | 'program';
 	oldWay: boolean;
 	implicit: boolean;
-	secondFactor: 'none' | 'code';
+	secondFactor: 'none' | 'code' | 'passkey';
 	registration: 'manual' | 'dcr' | 'cimd';
 	federation: boolean;
 	companies: boolean;
@@ -1360,17 +1360,21 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 	// reached from what explains it, and is not a control of its own.
 	secondFactor: {
 		kind: 'choice',
-		label: 'A second factor',
+		label: 'How the user logs in',
 		param: 'factor',
 		default: 'none',
 		onlyOn: 'authorization-code',
 		notOnOffer: true,
-		summary: 'What the user is asked for after the password.',
-		why: 'Whoever else has the password can log in with it. A second factor asks for proof of another kind as well, such as a code from an app on the user’s phone, so one stolen thing is not enough. It is asked for at the login, and the app gets the same tokens afterwards.',
+		summary: 'A password alone, with a code after it, or a passkey in its place.',
+		why: 'Whoever else has the password can log in with it. A second factor asks for proof of another kind as well, such as a code from an app on the user’s phone, so one stolen thing is not enough. A passkey is both in one, with nothing to type: a key on their device for this site only, unlocked with a fingerprint or a PIN. Either way it is asked for at the login, and the app gets the same tokens afterwards.',
 		sources: [
 			{
 				source: 'rfc6238',
 				why: 'This is how an authenticator app makes the code: from a secret it shares with the server and the time, with a new one every 30 seconds by default.'
+			},
+			{
+				source: 'webauthn',
+				why: 'This is how a passkey answers: the browser asks the device to sign the site’s challenge, with the page’s origin in what is signed, and the site checks it with the public half.'
 			}
 		],
 		requires: {
@@ -1400,8 +1404,9 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			because: 'Drawn so far on the plain flow, with nothing else on.'
 		},
 		options: [
-			{ value: 'none', label: 'None' },
-			{ value: 'code', label: 'A code from an authenticator app' }
+			{ value: 'none', label: 'A password' },
+			{ value: 'code', label: 'A password, then a code from an app' },
+			{ value: 'passkey', label: 'A passkey, and no password' }
 		]
 	},
 	address: {

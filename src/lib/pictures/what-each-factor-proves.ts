@@ -119,6 +119,7 @@ export function whatEachFactorProves(say: Say, keep: Keep = keepAll): Picture {
 		{
 			id: 'passkey',
 			name: 'A passkey or security key',
+			opens: opensAt('flow', 'submit-passkey', 'passkey', { secondFactor: 'passkey' }),
 			proves:
 				'Something you have, and with the PIN or fingerprint it usually asks for, both factors in one. Proves you hold a key made for this site’s domain.',
 			cells: {
@@ -159,7 +160,7 @@ export function whatEachFactorProves(say: Say, keep: Keep = keepAll): Picture {
 			)
 		})),
 		note: say(
-			'A second factor is one of a different kind from the first, asked for at the login: a password and something you have. The last column is why it is not the end of it. This is from the standards: NIST’s guidance 800-63B, revision 4, the WebAuthn spec and RFC 6238. A password and a code from an authenticator app are also recorded on a real server.'
+			'A second factor is one of a different kind from the first, asked for at the login: a password and something you have. The last column is why it is not the end of it. This is from the standards: NIST’s guidance 800-63B, revision 4, the WebAuthn spec and RFC 6238. A password, a code from an authenticator app and a passkey are also recorded on a real server.'
 		)
 	});
 	return {

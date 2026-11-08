@@ -79,7 +79,8 @@
 		"implicit": "2026-11-08",
 		"broker-groups": "2026-11-08",
 		"broker-groups-given": "2026-11-08",
-		"one-time-code": "2026-11-08"
+		"one-time-code": "2026-11-08",
+		"passkey": "2026-11-08"
 	},
 	"flows": {
 		"authorization-code": {
@@ -152,6 +153,7 @@
 				"upstream-v1",
 				"upstream-v2",
 				"one-time-code",
+				"passkey",
 				"broker-groups",
 				"broker-groups-given",
 				"link-account",
@@ -280,6 +282,7 @@
 				"submit-credentials",
 				"submit-email",
 				"submit-otp",
+				"submit-passkey",
 				"thief-api-request",
 				"thief-api-response",
 				"token-after-logout",

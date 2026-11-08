@@ -807,7 +807,7 @@ const list: readonly Term[] = [
 		alsoCalled: ['WebAuthn credential', 'FIDO2 credential'],
 		explains:
 			'A key made for one site’s domain, kept on a device or a security key, or synced between someone’s devices. The site keeps only the public half, and the browser only lets the key answer that domain, so a fake site gets nothing it can use. It usually asks for a PIN, a fingerprint or a face as well, which is checked on the device and never sent.',
-		at: flowAt('submit-credentials')
+		at: flowAt('submit-passkey', { secondFactor: 'passkey' })
 	},
 	{
 		id: 'one-time-password',

@@ -27,7 +27,8 @@ export type SourceId =
 	| 'keycloak-account-linking'
 	| 'keycloak-broker-mappers'
 	| 'keycloak-role-scope'
-	| 'keycloak-concepts';
+	| 'keycloak-concepts'
+	| 'webauthn';
 
 export interface SourceDef {
 	label: string;
@@ -286,6 +287,14 @@ export const sources: Record<SourceId, SourceDef> = {
 		summary:
 			'A user’s roles become claims in the tokens made for them. With Full Scope Allowed on, every token has every role the user has, so one that is stolen carries all of them. Turned off, a token has only the roles given to that client’s scope. The guide says the switch is deprecated, and to turn it off on every client.',
 		url: 'https://www.keycloak.org/docs/26.8.1/server_admin/#_role_scope_mappings'
+	},
+	webauthn: {
+		label: 'WebAuthn',
+		title: 'Web Authentication: An API for accessing Public Key Credentials, Level 3',
+		status: 'W3C Recommendation.',
+		summary:
+			'How a site has the browser make a key pair for its domain, and later asks for a signature with it. The site keeps only the public half. The browser puts the page’s origin and the site’s challenge into what the key signs, and offers a key only to the site it was made for, which is why a fake site gets nothing it can pass on.',
+		url: 'https://www.w3.org/TR/webauthn-3/'
 	},
 	'keycloak-concepts': {
 		label: 'Keycloak docs: core concepts',
