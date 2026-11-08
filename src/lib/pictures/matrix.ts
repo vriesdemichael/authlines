@@ -26,6 +26,8 @@ export function matrix(options: {
 	columns: readonly { id: string; name: string; opens?: Opens }[];
 	rows: readonly MatrixRow[];
 	note?: string;
+	/** Above the key, for what the rows have in common, or do not. */
+	lead?: string;
 }): { parts: PicturePart[]; lines: PictureLine[]; height: number } {
 	const W = 800;
 	const NAME = { left: 10, w: 230 };
@@ -35,16 +37,18 @@ export function matrix(options: {
 	const used = new Set(
 		options.rows.flatMap((row) => options.columns.map((head) => row.cells[head.id]?.mark))
 	);
+	const lead = options.lead ? textAt('lead', 10, 8, 780, options.lead, { size: 'more' }) : null;
+	const keyTop = lead ? bottomOf(lead) + 8 : 8;
 	const key = keyAt(
 		'key',
 		10,
-		8,
+		keyTop,
 		780,
 		options.key.filter((entry) => !entry.mark || used.has(entry.mark))
 	);
-	const parts: PicturePart[] = [...key.parts];
+	const parts: PicturePart[] = [...(lead ? [lead] : []), ...key.parts];
 	const lines: PictureLine[] = [];
-	const headTop = 8 + key.h + 12;
+	const headTop = keyTop + key.h + 12;
 	const heads = options.columns.map((head, i) =>
 		textAt(`head-${head.id}`, COLUMNS.left + i * column + 4, headTop, column - 8, head.name, {
 			size: 'more',

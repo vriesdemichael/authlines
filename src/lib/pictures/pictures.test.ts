@@ -639,6 +639,9 @@ describe('what each scope asks for', () => {
 		expect(mark(advanced, 'openid.oauth')).toBe('none');
 		expect(mark(advanced, 'profile.oidc')).toBe('empty');
 		expect(mark(advanced, 'offline_access.logout-offline')).toBe('full');
+		// Not a permission, which is what it looks like to someone who has not met it.
+		const openid = advanced.parts.find((part) => part.id === 'is-openid')!.says.join(' ');
+		expect(openid).toContain('A switch, not a permission');
 		const simple = picture('explain=term.scope&mode=simple');
 		expect(simple.parts.some((part) => part.id.startsWith('offline_access'))).toBe(false);
 		expect(simple.parts.some((part) => part.id.endsWith('.logout-offline'))).toBe(false);

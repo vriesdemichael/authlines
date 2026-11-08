@@ -33,24 +33,24 @@ interface ScopeRow {
 const ROWS: readonly ScopeRow[] = [
 	{
 		scope: 'openid',
-		is: 'Makes it OpenID Connect. The app gets an ID token, made for it to read who logged in. Without it, there is none.',
+		is: 'A switch, not a permission. It makes the login OpenID Connect, so an ID token comes back. Without it, it is plain OAuth, and the server recorded sent none.',
 		opens: opensAt('flow', 'authorize', 'oidc', { oidc: true })
 	},
 	{
 		scope: 'profile',
-		is: 'Their name, username, picture, birthdate, locale and the like.',
+		is: 'Asks for claims: their name, username, picture, birthdate, locale and the like.',
 		opens: opensAt('flow', 'token-response', 'oidc', { oidc: true })
 	},
 	{
 		scope: 'email',
-		is: 'Their email address, and whether it was checked.',
+		is: 'Asks for claims: their email address, and whether it was checked.',
 		opens: opensAt('flow', 'token-response', 'oidc', { oidc: true })
 	},
-	{ scope: 'address', is: 'Their postal address.' },
-	{ scope: 'phone', is: 'Their phone number, and whether it was checked.' },
+	{ scope: 'address', is: 'Asks for a claim: their postal address.' },
+	{ scope: 'phone', is: 'Asks for claims: their phone number, and whether it was checked.' },
 	{
 		scope: 'offline_access',
-		is: 'A refresh token for when the user is not there. OpenID Connect says they have to agree to it.',
+		is: 'Asks for a kind of token: a refresh token for when the user is not there. OpenID Connect says they have to agree to it.',
 		opens: opensAt('flow', 'token-response', 'logout-offline', {
 			oidc: true,
 			logout: true,
@@ -107,6 +107,9 @@ export function whatEachScopeAsksFor(say: Say, keep: Keep = keepAll): Picture {
 		cells: Object.fromEntries(columns.map((run) => [run.id, cell(row.scope, run)]))
 	}));
 	const drawn = matrix({
+		lead: say(
+			'A scope is a word the app asks with, and these do different jobs. openid is a switch, most ask for claims about the user, and offline_access asks for a kind of token. What the app may do at an API takes scopes defined for that API, which none of these is.'
+		),
 		key: [
 			{ mark: 'full', says: say('Asked for, and given') },
 			{ mark: 'empty', says: say('Given without being asked') },
