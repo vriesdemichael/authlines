@@ -151,6 +151,18 @@ export const offTheMap: readonly MapNode[] = [
 		step: 'otp-page'
 	}),
 	node({
+		id: 'gives-a-role',
+		flow: 'client-credentials',
+		alsoAskedAs: ['service account', 'admin api', 'map roles', 'assign a role'],
+		answer:
+			'Its own token can be let do one thing at the identity provider’s admin API, and nothing more. On the server recorded, it gave the user reads-orders, and was refused manages-orders, which nobody let it give.',
+		title: 'Can an app give a user a role, and only that one?',
+		summary: 'With its own token, at the admin API, allowed one role.',
+		mode: 'advanced',
+		preset: 'gives-a-role',
+		step: 'service-gives-role'
+	}),
+	node({
 		id: 'new-signing-key',
 		alsoAskedAs: ['key rotation', 'rotate keys', 'kid', 'jwks', 'unknown kid'],
 		answer:

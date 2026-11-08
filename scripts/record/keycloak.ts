@@ -88,6 +88,8 @@ export const API_AUDIENCE = 'account';
 /** A group the user is in at the other provider, and the role it becomes here (#183). */
 export const UPSTREAM_GROUP = 'sales';
 export const ROLE_FROM_GROUP = 'reads-orders';
+/** A role nobody lets the app with no user give, beside the one it may (#183). */
+export const ANOTHER_ROLE = 'manages-orders';
 const GROUPS_MAPPER = 'groups';
 const GROUP_TO_ROLE = 'sales-reads-orders';
 
@@ -335,6 +337,10 @@ export async function setUpRealms(admin: Admin) {
 		})
 	);
 
+	// Roles the app with no user may give, or may not, which nobody has until it gives one (#183).
+	for (const name of [ROLE_FROM_GROUP, ANOTHER_ROLE]) {
+		await admin.call('POST', `/realms/${LOCAL_REALM}/roles`, { name });
+	}
 	await admin.call('POST', `/realms/${UPSTREAM_REALM}/users`, user);
 	const group = await admin.created('POST', `/realms/${UPSTREAM_REALM}/groups`, {
 		name: UPSTREAM_GROUP
@@ -492,6 +498,69 @@ export async function newSigningKey(admin: Admin, realm: string, on: boolean) {
 			algorithm: ['RS256']
 		}
 	});
+}
+
+/**
+ * Lets the app with no user look users up and give them one role, and nothing else, with the realm's
+ * admin permissions (#183). Turned off again after, with the role it gave taken back, so that no other
+ * recording has it.
+ */
+export async function letTheServiceGiveOneRole(
+	admin: Admin,
+	on: boolean
+): Promise<{ allowed: object; other: object } | null> {
+	const realmPath = `/realms/${LOCAL_REALM}`;
+	const realm = await admin.call<object>('GET', realmPath);
+	if (!on) {
+		const [them] = await admin.call<{ id: string }[]>(
+			'GET',
+			`${realmPath}/users?username=${USERNAME}&exact=true`
+		);
+		const given = await admin.call<{ name: string }[]>(
+			'GET',
+			`${realmPath}/users/${them.id}/role-mappings/realm`
+		);
+		const back = given.filter((role) => [ROLE_FROM_GROUP, ANOTHER_ROLE].includes(role.name));
+		if (back.length) {
+			await admin.call('DELETE', `${realmPath}/users/${them.id}/role-mappings/realm`, back);
+		}
+		await admin.call('PUT', realmPath, { ...realm, adminPermissionsEnabled: false });
+		return null;
+	}
+	await admin.call('PUT', realmPath, { ...realm, adminPermissionsEnabled: true });
+	const [permissions] = await admin.call<{ id: string }[]>(
+		'GET',
+		`${realmPath}/clients?clientId=admin-permissions`
+	);
+	const [service] = await admin.call<{ id: string }[]>(
+		'GET',
+		`${realmPath}/clients?clientId=${SERVICE_CLIENT}`
+	);
+	const server = `${realmPath}/clients/${permissions.id}/authz/resource-server`;
+	const policy = await admin.call<{ id: string }>('POST', `${server}/policy/client`, {
+		name: 'the-app-with-no-user',
+		clients: [service.id],
+		logic: 'POSITIVE'
+	});
+	const role = await admin.call<{ id: string }>('GET', `${realmPath}/roles/${ROLE_FROM_GROUP}`);
+	for (const [name, resourceType, scopes, resources] of [
+		['look-up-and-map-users', 'Users', ['view', 'map-roles'], []],
+		['give-reads-orders', 'Roles', ['map-role'], [role.id]]
+	] as const) {
+		await admin.call('POST', `${server}/permission/scope`, {
+			name,
+			resourceType,
+			scopes,
+			resources,
+			policies: [policy.id],
+			decisionStrategy: 'UNANIMOUS'
+		});
+	}
+	// The app may not read roles, so an admin hands it the one it gives, as the admin API names it.
+	return {
+		allowed: role,
+		other: await admin.call<object>('GET', `${realmPath}/roles/${ANOTHER_ROLE}`)
+	};
 }
 
 /** A scope that puts the second API in a token's audience, for a client that trades for it. */

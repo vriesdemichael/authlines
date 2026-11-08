@@ -384,7 +384,7 @@ const ONLY_DRAWN_THERE = 'Only drawn on the authorization code flow so far, from
 export const clientCredentialsBase: BaseFlow = {
 	id: clientCredentials.id,
 	diagrams: { flow: clientCredentials, setup: clientCredentialsSetup },
-	settings: ['binding'],
+	settings: ['binding', 'givesRole'],
 	notHere: {
 		oidc: 'It says who logged in, and here nobody does.',
 		consent: 'There is no user to ask.',
@@ -400,6 +400,11 @@ export const clientCredentialsBase: BaseFlow = {
 	},
 	presets: [
 		{ id: 'as-itself', title: 'An app acting for itself', settings: {} },
+		{
+			id: 'gives-a-role',
+			title: 'An app that may give a user one role, and nothing else',
+			settings: { givesRole: true }
+		},
 		{
 			id: 'as-itself-dpop',
 			title: 'An app acting for itself, with DPoP',

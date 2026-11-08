@@ -1,10 +1,12 @@
 import type { DiagramDef } from '#lib/flow/model.ts';
 import { example } from '#lib/flow/libraries.ts';
 import { apiWords, appWords, idpWords } from '#lib/flow/parties.ts';
-import { is } from '#lib/flow/settings.ts';
+import { is, not } from '#lib/flow/settings.ts';
 
 const dpop = is('binding', 'dpop');
 const bearer = is('binding', 'bearer');
+// At the identity provider's admin API, with one role it may give (#183).
+const givesRole = is('givesRole', true);
 
 /**
  * Every field here is held to the recordings of a real Keycloak, as they are for the other flow. It
@@ -144,7 +146,78 @@ export const clientCredentials: DiagramDef = {
 			]
 		},
 		{
+			id: 'service-finds-user',
+			when: givesRole,
+			from: 'app',
+			to: 'idp',
+			kind: 'request',
+			plain: 'The app looks the user up',
+			label: 'GET /admin/…/users',
+			concept:
+				'The app sends its own token to the identity provider’s admin API, which is the server’s own and not part of OAuth. It may look users up, so it finds the one it means.',
+			fields: [
+				{ name: 'username', place: 'query' },
+				{ name: 'exact', place: 'query' },
+				{ name: 'Authorization: Bearer', place: 'header', artifact: 'access-token' }
+			]
+		},
+		{
+			id: 'service-user-found',
+			when: givesRole,
+			from: 'idp',
+			to: 'app',
+			kind: 'response',
+			plain: 'The user',
+			label: '200 with the user',
+			concept: 'Their ID at the identity provider, which the next call names.'
+		},
+		{
+			id: 'service-gives-role',
+			when: givesRole,
+			from: 'app',
+			to: 'idp',
+			kind: 'request',
+			plain: 'It gives the user a role',
+			label: 'POST role-mappings',
+			concept:
+				'It asks to give the user reads-orders, by the ID an admin handed it, which is the one role it was let give.',
+			fields: [{ name: 'Authorization: Bearer', place: 'header', artifact: 'access-token' }]
+		},
+		{
+			id: 'service-role-given',
+			when: givesRole,
+			from: 'idp',
+			to: 'app',
+			kind: 'response',
+			plain: 'Done',
+			label: '204',
+			concept: 'The user has the role now, and the next token made for them says so.'
+		},
+		{
+			id: 'service-gives-other-role',
+			when: givesRole,
+			from: 'app',
+			to: 'idp',
+			kind: 'request',
+			plain: 'It tries to give another role',
+			label: 'POST role-mappings',
+			concept: 'The same call, for manages-orders, by its ID, which nobody let it give.',
+			fields: [{ name: 'Authorization: Bearer', place: 'header', artifact: 'access-token' }]
+		},
+		{
+			id: 'service-role-refused',
+			when: givesRole,
+			from: 'idp',
+			to: 'app',
+			kind: 'response',
+			plain: 'Refused',
+			label: '403',
+			concept:
+				'It may give one role and nothing else, so another is refused. A token that leaks from this app can do no more than that.'
+		},
+		{
 			id: 'service-api-request',
+			when: not(givesRole),
 			from: 'app',
 			to: 'api',
 			kind: 'request',
@@ -174,6 +247,7 @@ export const clientCredentials: DiagramDef = {
 		},
 		{
 			id: 'service-check-token',
+			when: not(givesRole),
 			from: 'api',
 			to: 'api',
 			kind: 'internal',
@@ -226,6 +300,7 @@ export const clientCredentials: DiagramDef = {
 		},
 		{
 			id: 'service-api-response',
+			when: not(givesRole),
 			from: 'api',
 			to: 'app',
 			kind: 'response',

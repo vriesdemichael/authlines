@@ -306,6 +306,24 @@ async function call(
 
 const jsonOf = <T>(text: string) => JSON.parse(text) as T;
 
+/** The same, with a JSON body, as an admin API takes. */
+async function callWithJson(
+	run: Run,
+	steps: [string | null, string | null],
+	method: string,
+	url: string,
+	headers: Record<string, string>,
+	json: unknown
+) {
+	const payload = JSON.stringify(json);
+	const sent = { ...headers, 'content-type': 'application/json' };
+	run.messages.push(requestMessage(steps[0], method, url, sent, payload));
+	const response = await fetch(url, { method, headers: sent, body: payload, redirect: 'manual' });
+	const text = await response.text();
+	run.messages.push(responseMessage(steps[1], response.status, response.headers, text));
+	return { status: response.status, text };
+}
+
 /** What the app learns from the issuer it was given, which is the last step of setup. */
 interface Discovered {
 	issuer: string;
@@ -394,6 +412,8 @@ export class Demo {
 	#seenProofs = new Set<string>();
 	/** The keys the API fetched in setup, which it keeps until a token names one it does not have. */
 	#apiKeys: Jwk[] = [];
+	/** The roles an admin handed the app with no user, by ID, which is how the admin API names one. */
+	rolesToGive: { allowed: object; other: object } | null = null;
 	/** The refresh token the first API got from a trade, for later, when the trade gave one (#185). */
 	#tradedRefresh: string | null = null;
 	/** Someone is handing the real app a stolen code, from a login of their own. */
@@ -752,6 +772,40 @@ export class Demo {
 		return 'Logged in';
 	}
 
+	/**
+	 * At the identity provider's admin API, which is the server's own: it finds the user, gives the one
+	 * role it may, and is refused another (#183).
+	 */
+	async #givesARole(run: Run, token: string) {
+		const admin = `${KEYCLOAK}/admin/realms/${run.realm}`;
+		const bearer = { authorization: `Bearer ${token}` };
+		const found = await call(
+			run,
+			['finds-user', 'user-found'],
+			'GET',
+			`${admin}/users?username=${USERNAME}&exact=true`,
+			bearer
+		);
+		const [them] = jsonOf<{ id: string }[]>(found.text);
+		if (!them) throw new Error(`No user: ${found.text}`);
+		const roles = `${admin}/users/${them.id}/role-mappings/realm`;
+		if (!this.rolesToGive) throw new Error('No roles were handed to the app');
+		const given = await callWithJson(run, ['gives-role', 'role-given'], 'POST', roles, bearer, [
+			this.rolesToGive.allowed
+		]);
+		if (given.status !== 204)
+			throw new Error(`The role was not given: ${given.status} ${given.text}`);
+		const refused = await callWithJson(
+			run,
+			['gives-other-role', 'role-refused'],
+			'POST',
+			roles,
+			bearer,
+			[this.rolesToGive.other]
+		);
+		if (refused.status !== 403) throw new Error(`Another role was not refused: ${refused.status}`);
+	}
+
 	/** With no user and no browser: what an app asks for itself, and what it does with that. */
 	async asItself(run: Run) {
 		this.#key = run.settings.binding === 'dpop' ? new ProofKey() : null;
@@ -770,6 +824,10 @@ export class Demo {
 		);
 		const tokens = jsonOf<Tokens>(result.text);
 		if (!tokens.access_token) throw new Error(`No token: ${result.text}`);
+		if (run.settings.givesRole) {
+			await this.#givesARole(run, tokens.access_token);
+			return;
+		}
 		const resource = `${API}/resource`;
 		const answer = await call(
 			run,
