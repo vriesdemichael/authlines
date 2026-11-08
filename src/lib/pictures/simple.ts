@@ -39,7 +39,9 @@ const reached: ReadonlySet<string> = (() => {
 
 /** The settings a part is about: its recorded preset's, with what it adds. */
 function settingsOf(opens: Opens): Settings {
-	const preset = flows['authorization-code'].presets.find(({ id }) => id === opens.preset);
+	const preset = flows[opens.flow ?? 'authorization-code'].presets.find(
+		({ id }) => id === opens.preset
+	);
 	return normalize({ ...defaultSettings, ...preset?.settings, ...opens.settings }).settings;
 }
 

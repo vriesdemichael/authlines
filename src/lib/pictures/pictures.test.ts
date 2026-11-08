@@ -213,10 +213,11 @@ describe('a picture', () => {
 				...(part.rows ?? []).map((row) => ({ id: `${part.id}.${row.id}`, opens: row.opens }))
 			]);
 			for (const { id, opens } of opening) {
-				const preset = base.presets.find((candidate) => candidate.id === opens.preset);
+				const flow = flows[opens.flow ?? 'authorization-code'];
+				const preset = flow.presets.find((candidate) => candidate.id === opens.preset);
 				expect(preset, `${picture.id}: ${id}: ${opens.preset}`).toBeDefined();
 				const settings = normalize({ ...defaultSettings, ...preset!.settings }).settings;
-				const steps = evaluate(base.diagrams[opens.diagram], settings).steps.map((step) => step.id);
+				const steps = evaluate(flow.diagrams[opens.diagram], settings).steps.map((step) => step.id);
 				expect(steps, `${picture.id}: ${id} with ${opens.preset}`).toContain(opens.step);
 				// What it adds to the settings on screen is what the preset has, so the two agree.
 				for (const [setting, value] of Object.entries(opens.settings)) {
@@ -246,6 +247,16 @@ describe('a picture', () => {
 		}
 		let checked = 0;
 		for (const opens of links.values()) {
+			// Another flow is opened from where it starts, with what that flow keeps (stateInFlow).
+			if (opens.flow && opens.flow !== base.id) {
+				const other = flows[opens.flow];
+				const landed = evaluate(
+					other.diagrams[opens.diagram],
+					landingSettings(opens, defaultSettings)
+				).steps.find((step) => step.id === opens.step);
+				expect(landed, `${opens.flow}: ${opens.step}`).toBeDefined();
+				continue;
+			}
 			const preset = base.presets.find((candidate) => candidate.id === opens.preset)!;
 			const recorded = drawn(
 				opens,
@@ -284,6 +295,9 @@ describe('a picture', () => {
 		expect(pictureFor(stateFor(''), 'plain')).toBeNull();
 		const device = parseState(flows.device, 'flow', 'explain=artifact.refresh-token');
 		expect(pictureFor(device, 'plain')).toBeNull();
+		// Except which flow fits, which opens every flow, and is in what explains each.
+		const fits = parseState(flows.device, 'flow', 'explain=term.device-flow');
+		expect(pictureFor(fits, 'plain')?.id).toBe('which-flow-fits');
 	});
 });
 

@@ -30,7 +30,8 @@ export type PictureId =
 	| 'what-each-factor-proves'
 	| 'what-a-thief-can-do'
 	| 'what-a-code-looks-like'
-	| 'what-a-token-says';
+	| 'what-a-token-says'
+	| 'which-flow-fits';
 
 /**
  * Where something starts or ends, a step, or a question with more than one way on: those make a
@@ -85,6 +86,8 @@ export interface PictureRow {
 
 /** The steps a part stands for: the first of them, on a diagram, with the settings that draw it. */
 export interface Opens {
+	/** Another base flow, for a picture about which one fits. The authorization code flow if none. */
+	flow?: string;
 	diagram: DiagramId;
 	step: string;
 	/** Added to the settings on screen. */

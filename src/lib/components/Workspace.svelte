@@ -138,7 +138,8 @@
 		/** All that is left to someone is what they came for, so it says so. */
 		questionOffersList?: boolean;
 		flowChoices?: readonly { id: string; title: string }[];
-		onflow?: (flow: string) => void;
+		/** To another base flow, at a step a picture opens if there is one. */
+		onflow?: (flow: string, opens?: Opens) => void;
 		/** Settles once the address has caught up with what is on screen. */
 		onnavigate: (next: AppState, history: 'push' | 'replace') => void | Promise<void>;
 		/** The part of the address after #, where a link can name the parties (#168). */
@@ -443,6 +444,11 @@
 	// A part of a picture goes to the steps it stands for, with the settings on screen where they can
 	// draw them, and otherwise with a recorded preset's. Back comes back to the picture.
 	function openPart(opens: Opens) {
+		// A picture about which flow fits opens the others too, which have addresses of their own.
+		if ((opens.flow ?? 'authorization-code') !== base.id) {
+			onflow?.(opens.flow ?? 'authorization-code', opens);
+			return;
+		}
 		const settings = landingSettings(opens, appState.settings);
 		onnavigate(
 			{

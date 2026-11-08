@@ -41,6 +41,7 @@ const states: readonly [string, string, 'flow' | 'setup'][] = [
 		'flow'
 	],
 	['what-a-token-says', 'mode=advanced&oidc=1&step=token-response&explain=term.claim', 'flow'],
+	['which-flow-fits', 'mode=advanced&explain=term.authorization-code-flow', 'flow'],
 	['address-refused', 'mode=simple&address=other&step=address-refused', 'flow'],
 	[
 		'the-token-in-the-address',

@@ -16,6 +16,7 @@ import { whatEachFactorProves } from './what-each-factor-proves.ts';
 import { whatEachSpecAdds } from './what-each-spec-adds.ts';
 import { whatStopsWhat } from './what-stops-what.ts';
 import { whereTheTokensAre } from './where-the-tokens-are.ts';
+import { whichFlowFits } from './which-flow-fits.ts';
 import { whichTokenIsForWhom } from './which-token-is-for-whom.ts';
 import { whoKnowsWhom, type PartyNames } from './who-knows-whom.ts';
 
@@ -99,7 +100,13 @@ export const PICTURE_OF: Readonly<Record<string, PictureId>> = {
 	'term.one-time-password': 'what-a-code-looks-like',
 	'artifact.password': 'what-a-thief-can-do',
 	'term.claim': 'what-a-token-says',
-	'term.jwt': 'what-a-token-says'
+	'term.jwt': 'what-a-token-says',
+	'term.authorization-code-flow': 'which-flow-fits',
+	'term.client-credentials': 'which-flow-fits',
+	'term.device-flow': 'which-flow-fits',
+	'term.implicit-flow': 'which-flow-fits',
+	'setting.implicit': 'which-flow-fits',
+	'term.password-grant': 'which-flow-fits'
 };
 
 /** Each picture, drawn for the state on screen in the words chosen. */
@@ -141,6 +148,8 @@ export function draw(id: PictureId, state: AppState, wording: Wording, say: Say)
 			return whatACodeLooksLike(say);
 		case 'what-a-thief-can-do':
 			return whatAThiefCanDo(say, keep);
+		case 'which-flow-fits':
+			return whichFlowFits(say, keep);
 		case 'what-a-token-says':
 			// Simple mode shows no values, so there a circle says whether a token has it.
 			return whatATokenSays(say, state.mode !== 'simple');
@@ -153,9 +162,11 @@ export function draw(id: PictureId, state: AppState, wording: Wording, say: Say)
  */
 export function pictureFor(state: AppState, wording: Wording): Picture | null {
 	const explained = state.explained;
-	if (!explained || state.flow !== 'authorization-code') return null;
+	if (!explained) return null;
 	const id = PICTURE_OF[key(explained)];
 	if (!id) return null;
+	// Only on the flow whose steps it opens, except the one about which flow fits, which opens them all.
+	if (state.flow !== 'authorization-code' && id !== 'which-flow-fits') return null;
 	// Like the server's notes, it is in advanced mode only, and goes when they do (ADR-015).
 	if (id === 'what-is-in-a-token-here' && (!state.serverNotes || state.mode !== 'advanced'))
 		return null;
