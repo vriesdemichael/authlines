@@ -36,7 +36,8 @@ export type PictureId =
 	| 'what-each-scope-asks-for'
 	| 'cookies-jwts-oauth'
 	| 'passwords-keys-tokens'
-	| 'oidc-or-saml';
+	| 'oidc-or-saml'
+	| 'an-accounts-life';
 
 /**
  * Where something starts or ends, a step, or a question with more than one way on: those make a
