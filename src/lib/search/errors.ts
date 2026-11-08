@@ -30,7 +30,7 @@ export const knownErrors: readonly KnownError[] = [
 	{
 		text: 'HTTP 403 Forbidden',
 		means:
-			'The identity provider’s admin API refused: whoever the token is for was not let do this, such as give a role nobody allowed it.',
+			'The identity provider’s admin API refused: the app the token was given to was not let do this, such as give a role nobody allowed it.',
 		step: 'service-role-refused',
 		settings: { givesRole: true },
 		flow: 'client-credentials'

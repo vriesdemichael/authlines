@@ -180,7 +180,7 @@ export const clientCredentials: DiagramDef = {
 			plain: 'It gives the user a role',
 			label: 'POST role-mappings',
 			concept:
-				'It asks to give the user reads-orders, by the ID an admin handed it, which is the one role it was let give.',
+				'It asks to give the user reads-orders, as an admin handed it, with its name and ID, which is the one role it was let give.',
 			fields: [{ name: 'Authorization: Bearer', place: 'header', artifact: 'access-token' }]
 		},
 		{
@@ -191,7 +191,7 @@ export const clientCredentials: DiagramDef = {
 			kind: 'response',
 			plain: 'Done',
 			label: '204',
-			concept: 'The user has the role now, and the next token made for them says so.'
+			concept: 'The user has the role now.'
 		},
 		{
 			id: 'service-gives-other-role',
@@ -201,7 +201,7 @@ export const clientCredentials: DiagramDef = {
 			kind: 'request',
 			plain: 'It tries to give another role',
 			label: 'POST role-mappings',
-			concept: 'The same call, for manages-orders, by its ID, which nobody let it give.',
+			concept: 'The same call, for manages-orders, which nobody let it give.',
 			fields: [{ name: 'Authorization: Bearer', place: 'header', artifact: 'access-token' }]
 		},
 		{
@@ -213,7 +213,7 @@ export const clientCredentials: DiagramDef = {
 			plain: 'Refused',
 			label: '403',
 			concept:
-				'It may give one role and nothing else, so another is refused. A token that leaks from this app can do no more than that.'
+				'It may look users up and give one role, and nothing else, so another is refused. A token that leaks from this app can do no more than that.'
 		},
 		{
 			id: 'service-api-request',

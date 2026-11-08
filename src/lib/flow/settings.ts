@@ -1419,7 +1419,7 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		default: false,
 		onlyOn: 'client-credentials',
 		summary: 'At the identity provider’s admin API, with only one role it may give.',
-		why: 'Some apps manage users, such as one that gives a role after someone signs up. Its own token can be let do that at the identity provider’s admin API, which is the server’s own and not part of OAuth. What it may do there is worth keeping as small as the job: here, one role, and nothing else.',
+		why: 'Some apps manage users, such as one that gives a role after someone signs up. Its own token can be let do that at the identity provider’s admin API, which is the server’s own and not part of OAuth. What it may do there is worth keeping as small as the job: here, looking users up and giving one role, and nothing else.',
 		sources: [
 			{
 				source: 'keycloak-admin-permissions',

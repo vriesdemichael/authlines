@@ -137,11 +137,11 @@ export const clientCredentialsSetup: DiagramDef = {
 			plain: 'Let it give one role, and nothing else',
 			label: 'One role it may give',
 			concept:
-				'An admin turns on permissions for the admin API, and lets this app’s service account look users up and give them reads-orders. Nothing else is allowed, so it cannot give other roles, or read them. The admin hands it the role’s ID, which is how the admin API names a role.',
+				'An admin turns on permissions for the admin API, and lets this app’s service account look users up and give them reads-orders. Nothing else is allowed, so it cannot give other roles. It may not look roles up either, so the admin hands it reads-orders as the admin API wants it, with its name and ID.',
 			fields: [
 				{ name: 'Users: view, map-roles', place: 'setting', note: 'For any user' },
 				{ name: 'Roles: map-role', place: 'setting', note: 'For reads-orders only' },
-				{ name: 'role ID', place: 'setting', note: 'Of reads-orders, for the app’s configuration' }
+				{ name: 'reads-orders, with its ID', place: 'setting', note: 'For the app’s configuration' }
 			]
 		},
 		{

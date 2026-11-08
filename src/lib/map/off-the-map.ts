@@ -155,7 +155,7 @@ export const offTheMap: readonly MapNode[] = [
 		flow: 'client-credentials',
 		alsoAskedAs: ['service account', 'admin api', 'map roles', 'assign a role'],
 		answer:
-			'Its own token can be let do one thing at the identity provider’s admin API, and nothing more. On the server recorded, it gave the user reads-orders, and was refused manages-orders, which nobody let it give.',
+			'Its own token can be let look users up and give one role at the identity provider’s admin API, and nothing more. On the server recorded, it gave the user reads-orders, and was refused manages-orders, which nobody let it give.',
 		title: 'Can an app give a user a role, and only that one?',
 		summary: 'With its own token, at the admin API, allowed one role.',
 		mode: 'advanced',
@@ -199,7 +199,7 @@ export const offTheMap: readonly MapNode[] = [
 		id: 'only-roles-given',
 		alsoAskedAs: ['full scope allowed', 'role scope mappings'],
 		answer:
-			'Every role the user had went into the token, until the app was given only reads-orders. Then the token had that alone, and named the API, because the account service had left its audience.',
+			'Every role the user had went into the token, until the app was given only reads-orders. Then the token had that alone and lost the account service from its audience, so the app was set up to name the API.',
 		title: 'Why does my token have roles the app does not need?',
 		summary: 'Some providers put every role in every token, unless the app is given only its own.',
 		mode: 'advanced',

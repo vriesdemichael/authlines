@@ -760,6 +760,9 @@ describe('where a token’s roles come from (#183)', () => {
 			ROLES_RECORDED.every.roles
 		);
 		expect(every.app.aud).toBe(ROLES_RECORDED.every.aud);
+		expect((every.app.resource_access as { account: { roles: string[] } }).account.roles).toEqual(
+			ROLES_RECORDED.every.accountRoles
+		);
 		const given = tokens('broker-groups-given');
 		expect((given.app.realm_access as { roles: string[] }).roles).toEqual(
 			ROLES_RECORDED.given.roles
@@ -780,7 +783,7 @@ describe('where a token’s roles come from (#183)', () => {
 				.parts.flatMap((part) => (part.rows ?? []).map((row) => row.says))
 				.join(' ');
 		expect(said('explain=setting.groupRoles&mode=advanced&broker=1&groups=1')).toContain(
-			'and 3 more'
+			'and 6 more'
 		);
 		expect(
 			said('explain=setting.groupRoles&mode=advanced&broker=1&groups=1&reach=given')
