@@ -6,6 +6,7 @@ import { defaultSettings, type Settings } from '#lib/flow/settings.ts';
 import type { Recording } from '#lib/recordings/format.ts';
 import dpopNonce from '../../../static/recordings/authorization-code/dpop-nonce.json';
 import inADirectory from '../../../static/recordings/authorization-code/in-a-directory.json';
+import kerberos from '../../../static/recordings/authorization-code/kerberos.json';
 import oauth from '../../../static/recordings/authorization-code/oauth.json';
 
 const viewOf = (settings: Partial<Settings> = {}) =>
@@ -46,6 +47,15 @@ export const FromALogAndNotTheWire: Story = {
 		step: stepIn('directory-bind', { federation: true }),
 		recording: inADirectory as unknown as Recording,
 		numberOf: numberOfIn({ federation: true })
+	}
+};
+
+// Kerberos is not HTTP: read off the wire by RFC 4120, with what is sealed left as bytes (#148).
+export const KerberosOffTheWire: Story = {
+	args: {
+		step: stepIn('kdc-gives-service-ticket', { federation: true, kerberos: true }),
+		recording: kerberos as unknown as Recording,
+		numberOf: numberOfIn({ federation: true, kerberos: true })
 	}
 };
 
