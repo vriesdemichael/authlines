@@ -648,6 +648,19 @@ describe('what each scope asks for', () => {
 	});
 });
 
+describe('cookies, JWTs and OAuth (#200)', () => {
+	it('opens where one recorded login has each of the three', () => {
+		const found = picture('explain=term.cookie&mode=advanced');
+		expect(found.id).toBe('cookies-jwts-oauth');
+		const rows = found.parts.flatMap((part) => (part.rows ?? []).map((row) => row.opens.step));
+		expect(rows).toEqual(
+			expect.arrayContaining(['redirect-with-code', 'set-session', 'validate-id-token'])
+		);
+		const said = found.parts.map((part) => [...(part.title ?? []), ...part.says].join(' '));
+		expect(said.join(' ')).toContain('One login here has all three');
+	});
+});
+
 describe('what the circles and the rows mean', () => {
 	it('is in a key drawn with the same marks, wherever there are marks', () => {
 		for (const found of pictures) {

@@ -3,6 +3,7 @@ import { evaluate } from '#lib/flow/model.ts';
 import type { AppState, Explained } from '#lib/flow/state.ts';
 import { nameIn, sayer, type Say, type Wording } from '#lib/flow/wording.ts';
 import { whatIsInATokenHere } from '#lib/keycloak/token-contents.ts';
+import { cookiesJwtsOauth } from './cookies-jwts-oauth.ts';
 import { howAnApiTrustsAToken } from './how-an-api-trusts-a-token.ts';
 import { howLongEachLasts } from './how-long-each-lasts.ts';
 import type { Opens, Picture, PictureId } from './model.ts';
@@ -124,7 +125,8 @@ export const PICTURE_OF: Readonly<Record<string, PictureId>> = {
 	'term.slow-down': 'the-app-keeps-asking',
 	'term.expired-token': 'the-app-keeps-asking',
 	'artifact.device-code': 'the-app-keeps-asking',
-	'term.scope': 'what-each-scope-asks-for'
+	'term.scope': 'what-each-scope-asks-for',
+	'term.cookie': 'cookies-jwts-oauth'
 };
 
 /** Each picture, drawn for the state on screen in the words chosen. */
@@ -170,6 +172,8 @@ export function draw(id: PictureId, state: AppState, wording: Wording, say: Say)
 			return whichFlowFits(say, keep);
 		case 'what-each-scope-asks-for':
 			return whatEachScopeAsksFor(say, keep);
+		case 'cookies-jwts-oauth':
+			return cookiesJwtsOauth(say, keep);
 		case 'the-app-keeps-asking':
 			return theAppKeepsAsking(say, keep);
 		case 'what-a-token-says':

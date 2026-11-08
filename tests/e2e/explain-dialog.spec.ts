@@ -242,6 +242,7 @@ test.describe('a picture in an explanation', () => {
 		// A token, part by part (#200).
 		['explain=term.claim', 'what-a-token-says', 'name-aud', 'step=api-check-token'],
 		['explain=term.scope', 'what-each-scope-asks-for', 'openid.oidc', 'oidc=1'],
+		['explain=term.cookie', 'cookies-jwts-oauth', 'jwt.id', 'step=validate-id-token'],
 		['explain=setting.appRuns', 'where-the-tokens-are', 'head-bff', 'runs=bff'],
 		['mode=advanced&explain=term.oauth', 'what-each-spec-adds', 'dpop', 'binding=dpop'],
 		[
