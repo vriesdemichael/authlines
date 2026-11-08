@@ -1,6 +1,7 @@
 import type { DiagramDef } from '#lib/flow/model.ts';
 import { example } from '#lib/flow/libraries.ts';
 import { apiWords, appWords, idpWords } from '#lib/flow/parties.ts';
+import { is } from '#lib/flow/settings.ts';
 
 /** What happens before the app makes its first call, which is the same as for any app, with less. */
 export const clientCredentialsSetup: DiagramDef = {
@@ -124,6 +125,23 @@ export const clientCredentialsSetup: DiagramDef = {
 			fields: [
 				{ name: 'client_id', place: 'setting' },
 				{ name: 'client_secret', place: 'setting', artifact: 'secret' }
+			]
+		},
+		// The last of #183: what this app may do at the admin API, and no more.
+		{
+			id: 'service-allow-one-role',
+			when: is('givesRole', true),
+			from: 'idp-admin',
+			to: 'idp',
+			kind: 'human',
+			plain: 'Let it give one role, and nothing else',
+			label: 'One role it may give',
+			concept:
+				'An admin turns on permissions for the admin API, and lets this app’s service account look users up and give them reads-orders. Nothing else is allowed, so it cannot give other roles. It may not look roles up either, so the admin hands it reads-orders as the admin API wants it, with its name and ID.',
+			fields: [
+				{ name: 'Users: view, map-roles', place: 'setting', note: 'For any user' },
+				{ name: 'Roles: map-role', place: 'setting', note: 'For reads-orders only' },
+				{ name: 'reads-orders, with its ID', place: 'setting', note: 'For the app’s configuration' }
 			]
 		},
 		{

@@ -63,6 +63,7 @@ import {
 	DIRECTORY_REALM,
 	makeInitialAccessToken,
 	newSigningKey,
+	letTheServiceGiveOneRole,
 	setUpFor,
 	setUpRealms,
 	startKeycloak,
@@ -818,7 +819,7 @@ async function loginThroughTheDirectory(browser: Browser, admin: Admin, run: Run
 }
 
 /** No user and no browser, so it is only what the app sends and gets, and the real server's keys. */
-async function recordWithNoUser(demo: Demo, keycloak: string, recordedAt: string) {
+async function recordWithNoUser(demo: Demo, keycloak: string, recordedAt: string, admin: Admin) {
 	const recordings: Recording[] = [];
 	for (const preset of clientCredentialsBase.presets) {
 		const settings = normalize({ ...defaultSettings, ...preset.settings }).settings;
@@ -830,9 +831,14 @@ async function recordWithNoUser(demo: Demo, keycloak: string, recordedAt: string
 			messages: []
 		};
 		await demo.discover(run);
+		if (settings.givesRole) demo.rolesToGive = await letTheServiceGiveOneRole(admin, true);
 		demo.current = run;
-		await demo.asItself(run);
-		demo.current = null;
+		try {
+			await demo.asItself(run);
+		} finally {
+			demo.current = null;
+			if (settings.givesRole) demo.rolesToGive = await letTheServiceGiveOneRole(admin, false);
+		}
 		console.log(`${preset.id}: ${run.messages.length} messages`);
 		// The same messages as in the other flow, and a step id only ever means one thing.
 		const messages = run.messages.map((message) => ({
@@ -1053,7 +1059,8 @@ async function recordOnlyWithNoUser() {
 		const recordings = await recordWithNoUser(
 			demo,
 			keycloak,
-			new Date().toISOString().slice(0, 10)
+			new Date().toISOString().slice(0, 10),
+			admin
 		);
 		const browser = await chromium.launch();
 		const answers = {
@@ -1344,7 +1351,7 @@ async function main() {
 			await setUpFor(admin, LOCAL_REALM, forQuestions);
 			await setUpFor(admin, BROKERED_REALM, forQuestions);
 			if (!features.length) {
-				withNoUser = await recordWithNoUser(demo, keycloak, recordedAt);
+				withNoUser = await recordWithNoUser(demo, keycloak, recordedAt, admin);
 				noUserAnswers = {
 					...(await questionsWithNoUser(admin)),
 					console: await lookInConsole(browser, admin, [], noUserNoteDefs)

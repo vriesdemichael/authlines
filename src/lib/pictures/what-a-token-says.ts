@@ -64,12 +64,12 @@ export const RECORDED = {
 	},
 	/** The access token an app got for itself, in the `as-itself` preset of client credentials. */
 	service: {
-		exp: 1793591233,
-		iat: 1793590933,
-		jti: 'trrtcc:5ff505ea-536e-d659-0f7c-ab4af7cc1457',
+		exp: 1794148781,
+		iat: 1794148481,
+		jti: 'trrtcc:2d462bc9-1f47-4b23-68e7-4af256545248',
 		iss: 'http://localhost:18080/realms/demo',
 		aud: 'account',
-		sub: 'a3b638b4-2fdd-49a3-9636-89012f59871d',
+		sub: 'db5791ce-b988-41cc-a241-d4e4cb766ff2',
 		typ: 'Bearer',
 		azp: 'demo-service',
 		acr: '1',
@@ -78,7 +78,7 @@ export const RECORDED = {
 		resource_access: {
 			account: { roles: ['manage-account', 'manage-account-links', 'view-profile'] }
 		},
-		scope: 'profile email',
+		scope: 'email profile',
 		clientHost: '172.16.0.1',
 		email_verified: false,
 		preferred_username: 'service-account-demo-service',

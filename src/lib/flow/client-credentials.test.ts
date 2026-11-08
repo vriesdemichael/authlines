@@ -78,7 +78,9 @@ describe('the client credentials flow', () => {
 	it('does not say the answer is about a user, and neither does what comes back', () => {
 		for (const { recording } of recordings) {
 			const answer = recording.messages.find(({ step }) => step === 'service-api-response');
-			expect(JSON.stringify(answer?.body)).not.toMatch(/\buser\b/);
+			// An app that gives a user a role calls the admin API about one, and no API of its own (#183).
+			if (!answer) continue;
+			expect(JSON.stringify(answer.body)).not.toMatch(/\buser\b/);
 		}
 	});
 

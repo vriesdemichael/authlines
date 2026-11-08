@@ -27,8 +27,8 @@
 		"attack-at-the-app-oidc": "2026-11-02",
 		"attack-at-the-app-pkce": "2026-11-02",
 		"attack-at-the-app": "2026-11-02",
-		"as-itself-dpop": "2026-11-02",
-		"as-itself": "2026-11-02",
+		"as-itself-dpop": "2026-11-08",
+		"as-itself": "2026-11-08",
 		"on-a-device": "2026-11-02",
 		"on-a-device-oidc": "2026-11-02",
 		"refresh-public-ends": "2026-11-02",
@@ -81,7 +81,8 @@
 		"broker-groups-given": "2026-11-08",
 		"one-time-code": "2026-11-08",
 		"passkey": "2026-11-08",
-		"new-key": "2026-11-08"
+		"new-key": "2026-11-08",
+		"gives-a-role": "2026-11-08"
 	},
 	"flows": {
 		"authorization-code": {
@@ -309,6 +310,7 @@
 		"client-credentials": {
 			"presets": [
 				"as-itself",
+				"gives-a-role",
 				"as-itself-dpop"
 			],
 			"steps": [
@@ -317,9 +319,15 @@
 				"service-discover",
 				"service-discovery-document",
 				"service-fetch-keys",
+				"service-finds-user",
+				"service-gives-other-role",
+				"service-gives-role",
 				"service-keys",
+				"service-role-given",
+				"service-role-refused",
 				"service-token-request",
-				"service-token-response"
+				"service-token-response",
+				"service-user-found"
 			]
 		},
 		"device": {

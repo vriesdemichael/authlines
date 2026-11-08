@@ -26,6 +26,15 @@ const storedV1: Partial<Settings> = { broker: true, upstreamTokens: 'v1' };
 const storedV2: Partial<Settings> = { broker: true, upstreamTokens: 'v2' };
 
 export const knownErrors: readonly KnownError[] = [
+	// The admin API refusing an app with no user a role nobody let it give (#183).
+	{
+		text: 'HTTP 403 Forbidden',
+		means:
+			'The identity provider’s admin API refused: the app the token was given to was not let do this, such as give a role nobody allowed it.',
+		step: 'service-role-refused',
+		settings: { givesRole: true },
+		flow: 'client-credentials'
+	},
 	{
 		text: 'public clients not allowed',
 		means:

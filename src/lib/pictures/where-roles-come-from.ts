@@ -13,9 +13,10 @@ export const ROLES_RECORDED = {
 	role: 'reads-orders',
 	every: {
 		roles: ['reads-orders', 'default-roles-demo-brokered', 'offline_access', 'uma_authorization'],
+		accountRoles: ['manage-account', 'manage-account-links', 'view-profile'],
 		aud: 'account'
 	},
-	given: { roles: ['reads-orders'], aud: 'demo-api' }
+	given: { roles: ['reads-orders'], accountRoles: [], aud: 'demo-api' }
 } as const;
 
 /**
@@ -30,7 +31,7 @@ export function whereRolesComeFrom(settings: Settings, say: Say): Picture {
 	const at = (step: string, diagram: 'flow' | 'setup' = 'flow') =>
 		opensAt(diagram, step, preset, { broker: true, groupRoles: true, ...reach });
 	const token = given ? ROLES_RECORDED.given : ROLES_RECORDED.every;
-	const others = token.roles.length - 1;
+	const others = token.roles.length - 1 + token.accountRoles.length;
 
 	const W = 720;
 	const LEFT = 110;
@@ -90,7 +91,11 @@ export function whereRolesComeFrom(settings: Settings, say: Say): Picture {
 					{
 						id: 'roles',
 						says: others ? `${ROLES_RECORDED.role}, and ${others} more` : ROLES_RECORDED.role,
-						more: say('Under a name this server chose for them'),
+						more: say(
+							others
+								? 'Some for the account service, under names this server chose'
+								: 'Under a name this server chose for it'
+						),
 						opens: at('token-response')
 					},
 					{
@@ -113,7 +118,7 @@ export function whereRolesComeFrom(settings: Settings, say: Say): Picture {
 			BOX_W,
 			say('The API'),
 			say(
-				`Decides what ${ROLES_RECORDED.role} lets this user do. Nothing in the token says what a role allows.`
+				`Can decide, in its own code, what ${ROLES_RECORDED.role} lets this user do. Nothing in the token says what a role allows.`
 			),
 			{ opens: at('api-check-token') }
 		)
@@ -142,7 +147,7 @@ export function whereRolesComeFrom(settings: Settings, say: Say): Picture {
 		bottomOf(last) + 16,
 		700,
 		say(
-			'Neither OAuth nor OpenID Connect says what a role or a group is. RFC 9068 names claims for both in an access token, roles and groups, and the server recorded put its roles under a name of its own. From recorded runs.'
+			'Neither OAuth nor OpenID Connect says what a role or a group is. RFC 9068 names claims for both in an access token, roles and groups, and the server recorded put its roles under a name of its own. The other provider, the role and the token are from recorded runs, and the demo API there did not check the role.'
 		),
 		{ size: 'more' }
 	);

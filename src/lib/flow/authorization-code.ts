@@ -1187,11 +1187,15 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				'The user picks their passkey and unlocks it on their device, with a fingerprint, a face or a PIN that never leaves it. It signs the challenge from the page, and the browser adds which site asked. The identity provider checks the signature with the public half it keeps, and no password is sent.',
 			pitfall: {
 				title: 'What if a fake site asks for it?',
-				text: 'The browser only offers a passkey to the site it was made for, and puts the address of the page that asked into what is signed. A fake site at another address gets nothing it can pass on, which a password or a code cannot say.'
+				text: 'The browser only offers a passkey to the site it was made for, and puts the origin of the page that asked into what is signed. A fake site has another origin, and gets nothing it can pass on, which a password or a code cannot say.'
 			},
 			execute: { answer: 'redirect-with-code' },
 			fields: [
-				{ name: 'clientDataJSON', place: 'body', note: 'The challenge, and the page that asked' },
+				{
+					name: 'clientDataJSON',
+					place: 'body',
+					note: 'The challenge, and the origin of the page that asked'
+				},
 				{
 					name: 'authenticatorData',
 					place: 'body',
@@ -1234,7 +1238,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'The user enters the code',
 			label: 'Submit the code',
 			concept:
-				'The app on their phone made the code from the shared secret and the time, a new one every 30 seconds. The identity provider makes the same code and compares, and only then sends the browser back with a code for the app.',
+				'The app on their phone made the code from the shared secret and the time, a new one every 30 seconds. The identity provider makes the code for that time, and for a step either side because clocks differ, and compares. Only then does it send the browser back with a code for the app.',
 			pitfall: {
 				title: 'What if a fake site asks for the code?',
 				text: 'Then it can pass the code on while it still works, and log in as the user. A code proves the user has their phone, not which site they typed it into. A passkey answers only the real site.'
@@ -2636,7 +2640,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				},
 				{
 					when: groupRoles,
-					text: 'The access token carries every role the user has here, reads-orders among them, from their group at the other provider. Every app they log in to gets all of them, whether it needs them or not.'
+					text: 'The access token carries every role the user has here, reads-orders among them, from their group at the other provider. An app left as it was made gets all of them, whether it needs them or not.'
 				},
 				{
 					when: behindThePage,
@@ -2706,7 +2710,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					name: 'realm_access',
 					place: 'token',
-					note: 'In the access token: every role they have here, reads-orders among them',
+					note: 'In the access token: reads-orders, beside their other roles here',
 					when: all(groupRoles, not(onlyGiven))
 				},
 				{
@@ -3261,7 +3265,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'The API gets the keys again',
 			label: 'GET jwks_uri',
 			concept:
-				'For a kid it does not know, the API fetches the keys again from the same address, which is what a library does by itself.',
+				'For a kid it does not know, the API fetches the keys again from the same address, as many libraries do by themselves.',
 			fields: [{ name: '/certs', place: 'path', note: 'The jwks_uri, as in setup' }]
 		},
 		{

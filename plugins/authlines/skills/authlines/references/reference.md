@@ -305,7 +305,8 @@ An app gets access for itself, with no user and no browser.
 
 Each value says what it needs with it, and what it can share a link with, worked out from the rules the screen uses, two settings at a time. A link that names two that do not go together loses one of them.
 
-- `binding=bearer | dpop`: Token type, bearer by default. Whether holding the token is enough, or the app must also prove it holds a key.
+- `binding=bearer | dpop`: Token type, bearer by default. Whether holding the token is enough, or the app must also prove it holds a key. `binding=dpop` goes with none of the other settings yet, so leave them out.
+- `gives=1`: It gives a user a role, off by default. At the identity provider’s admin API, with only one role it may give. Drawn so far with a Bearer token. `gives=1` goes with none of the other settings yet, so leave them out.
 
 ### Client credentials flow: `https://vriesdemichael.github.io/authlines/client-credentials/`
 
@@ -319,10 +320,16 @@ Steps, for step=:
 
 - `service-token-request`: The app asks for a token, as itself.
 - `service-token-response`: An access token.
-- `service-api-request`: The app calls the API with the token.
-- `service-check-token`: The API checks the token.
-- `service-api-response`: The API answers.
+- `service-api-request`: The app calls the API with the token. Not with `gives=1`.
+- `service-check-token`: The API checks the token. Not with `gives=1`.
+- `service-api-response`: The API answers. Not with `gives=1`.
 - `service-make-key`: The app makes a key pair. Only with `binding=dpop`.
+- `service-finds-user`: The app looks the user up. Only with `gives=1`.
+- `service-user-found`: The user. Only with `gives=1`.
+- `service-gives-role`: It gives the user a role. Only with `gives=1`.
+- `service-role-given`: Done. Only with `gives=1`.
+- `service-gives-other-role`: It tries to give another role. Only with `gives=1`.
+- `service-role-refused`: Refused. Only with `gives=1`.
 
 ### Setting up the client credentials flow: `https://vriesdemichael.github.io/authlines/client-credentials/setup/`
 
@@ -345,6 +352,7 @@ Steps, for step=:
 - `service-configure-api`: You tell the API who to trust.
 - `service-fetch-keys`: The API gets the keys.
 - `service-keys`: The keys that check tokens.
+- `service-allow-one-role`: Let it give one role, and nothing else. Only with `gives=1`.
 
 ## Device flow: `device`
 

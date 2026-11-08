@@ -36,6 +36,7 @@ export interface Settings {
 	implicit: boolean;
 	secondFactor: 'none' | 'code' | 'passkey';
 	keysChange: boolean;
+	givesRole: boolean;
 	registration: 'manual' | 'dcr' | 'cimd';
 	federation: boolean;
 	companies: boolean;
@@ -1409,6 +1410,26 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			{ value: 'code', label: 'A password, then a code from an app' },
 			{ value: 'passkey', label: 'A passkey, and no password' }
 		]
+	},
+	// The last of #183: a service account that may give one role, and nothing else (2026-11-08).
+	givesRole: {
+		kind: 'toggle',
+		label: 'It gives a user a role',
+		param: 'gives',
+		default: false,
+		onlyOn: 'client-credentials',
+		summary: 'At the identity provider’s admin API, with only one role it may give.',
+		why: 'Some apps manage users, such as one that gives a role after someone signs up. Its own token can be let do that at the identity provider’s admin API, which is the server’s own and not part of OAuth. What it may do there is worth keeping as small as the job: here, looking users up and giving one role, and nothing else.',
+		sources: [
+			{
+				source: 'keycloak-admin-permissions',
+				why: 'This is how the server recorded lets an app give one role and nothing more: a permission to map that role, and to map roles of users.'
+			}
+		],
+		requires: {
+			when: is('binding', 'bearer'),
+			because: 'Drawn so far with a Bearer token.'
+		}
 	},
 	// Asked for on 2026-11-08 ("Both"), with the second factors. Reached from what explains a key, and
 	// not a control of its own, as they are.

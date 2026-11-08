@@ -27,6 +27,7 @@ export type SourceId =
 	| 'keycloak-account-linking'
 	| 'keycloak-broker-mappers'
 	| 'keycloak-role-scope'
+	| 'keycloak-admin-permissions'
 	| 'keycloak-concepts'
 	| 'webauthn';
 
@@ -295,6 +296,14 @@ export const sources: Record<SourceId, SourceDef> = {
 		summary:
 			'How a site has the browser make a key pair for its domain, and later asks for a signature with it. The site keeps only the public half. The browser puts the page’s origin and the site’s challenge into what the key signs, and offers a key only to the site it was made for, which is why a fake site gets nothing it can pass on.',
 		url: 'https://www.w3.org/TR/webauthn-3/'
+	},
+	'keycloak-admin-permissions': {
+		label: 'Keycloak docs: admin permissions',
+		title: 'Fine-grained admin permissions',
+		status: 'Keycloak 26.8.1, Server Administration Guide.',
+		summary:
+			'How to let someone, or an app’s own service account, manage only part of a realm through its admin console and API. Turned on for the realm, permissions name what may be done to users, roles, groups and clients, such as mapping one role, and policies name who may do it.',
+		url: 'https://www.keycloak.org/docs/26.8.1/server_admin/#_fine_grained_permissions'
 	},
 	'keycloak-concepts': {
 		label: 'Keycloak docs: core concepts',

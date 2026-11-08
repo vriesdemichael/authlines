@@ -398,6 +398,8 @@ describe('what gets downloaded', () => {
 
 	it('stays small for the index the application does load', () => {
 		// It grows by a preset's name and steps with each recording, so this is about a kilobyte of room.
-		expect(statSync('src/lib/recordings/recorded.json').size).toBeLessThan(9 * 1024);
+		// Raised on 2026-11-08, when roles, two second factors, a new key and an app giving a role were
+		// recorded, to a kilobyte of room again.
+		expect(statSync('src/lib/recordings/recorded.json').size).toBeLessThan(10 * 1024);
 	});
 });

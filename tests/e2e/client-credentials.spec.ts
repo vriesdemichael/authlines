@@ -14,6 +14,14 @@ const heads = (page: Page) =>
 const position = (page: Page) => page.getByTestId('position');
 const flow = (page: Page) => page.getByTestId('flow');
 
+// The last of #183: an app that may give one role, and nothing else.
+test('gives a user one role at the admin API, and is refused another', async ({ page }) => {
+	await page.goto('client-credentials/?mode=advanced&gives=1&step=service-role-refused');
+	await page.locator('.workspace[data-ready="true"]').waitFor();
+	await expect(page.getByTestId('step-detail')).toContainText('another is refused');
+	await expect(page.getByTestId('payload')).toContainText('403');
+});
+
 test.describe('a flow with no user', () => {
 	test('has no browser on it, and can be walked', async ({ page }) => {
 		await openIt(page);
