@@ -12,7 +12,7 @@ Leave out a setting to keep its default. The flow, its settings and the step are
 
 ## What is not drawn here
 
-Authlines does not draw apps on a phone, a PKCE downgrade, a login with a passkey, Kerberos, NTLM, or client certificates.
+Authlines does not draw apps on a phone, a PKCE downgrade, Kerberos, NTLM, or client certificates.
 
 A login the other provider hands on again, to a provider behind it, is drawn as one hop, and `broker=1&step=upstream-authorize` says why.
 
