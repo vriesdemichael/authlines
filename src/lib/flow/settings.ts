@@ -34,6 +34,7 @@ export interface Settings {
 	appRuns: 'server' | 'page' | 'bff' | 'program';
 	oldWay: boolean;
 	implicit: boolean;
+	secondFactor: 'none' | 'code';
 	registration: 'manual' | 'dcr' | 'cimd';
 	federation: boolean;
 	companies: boolean;
@@ -1353,6 +1354,55 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			),
 			because: 'Drawn so far for an app in the page, with nothing else on.'
 		}
+	},
+	// The maintainer asked for second factors to be recorded on 2026-11-08 ("Both"), after the
+	// pictures of what each one proves rested on the standards alone. Like the implicit flow, it is
+	// reached from what explains it, and is not a control of its own.
+	secondFactor: {
+		kind: 'choice',
+		label: 'A second factor',
+		param: 'factor',
+		default: 'none',
+		onlyOn: 'authorization-code',
+		notOnOffer: true,
+		summary: 'What the user is asked for after the password.',
+		why: 'Whoever else has the password can log in with it. A second factor asks for proof of another kind as well, such as a code from an app on the user’s phone, so one stolen thing is not enough. It is asked for at the login, and the app gets the same tokens afterwards.',
+		sources: [
+			{
+				source: 'rfc6238',
+				why: 'This is how an authenticator app makes the code: from a secret it shares with the server and the time, with a new one every 30 seconds by default.'
+			}
+		],
+		requires: {
+			when: all(
+				is('appRuns', 'server'),
+				is('clientType', 'confidential'),
+				is('oidc', false),
+				is('consent', false),
+				is('pkce', false),
+				is('par', false),
+				is('attacker', false),
+				is('binding', 'bearer'),
+				is('broker', false),
+				is('federation', false),
+				is('companies', false),
+				is('exchange', false),
+				is('apiToken', 'good'),
+				is('refresh', false),
+				is('sso', false),
+				is('logout', false),
+				is('address', 'registered'),
+				is('registration', 'manual'),
+				is('oldWay', false),
+				is('implicit', false),
+				is('linkAccount', false)
+			),
+			because: 'Drawn so far on the plain flow, with nothing else on.'
+		},
+		options: [
+			{ value: 'none', label: 'None' },
+			{ value: 'code', label: 'A code from an authenticator app' }
+		]
 	},
 	address: {
 		kind: 'choice',

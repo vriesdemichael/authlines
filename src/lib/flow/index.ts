@@ -300,6 +300,11 @@ const presets: readonly Preset[] = [
 		settings: { broker: true, upstreamTokens: 'v2' }
 	},
 	{
+		id: 'one-time-code',
+		title: 'A one-time code from an authenticator app, after the password',
+		settings: { secondFactor: 'code' }
+	},
+	{
 		id: 'broker-groups',
 		title: 'A group at the other provider becomes a role here',
 		settings: { broker: true, groupRoles: true }

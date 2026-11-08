@@ -108,6 +108,8 @@ describe('constraints', () => {
 		const theImplicitFlow = 1;
 		// A group at the other provider becomes a role, with every role or only those given (#183).
 		const rolesFromGroups = 2;
+		// A code from an authenticator app after the password, on the plain flow (2026-11-08).
+		const aSecondFactor = 1;
 		expect(allValidSettings()).toBe(allValidSettings());
 		expect(Object.isFrozen(allValidSettings())).toBe(true);
 		expect(allValidSettings().every((settings) => Object.isFrozen(settings))).toBe(true);
@@ -131,7 +133,8 @@ describe('constraints', () => {
 				linking +
 				inAProgram +
 				theImplicitFlow +
-				rolesFromGroups
+				rolesFromGroups +
+				aSecondFactor
 		);
 	});
 

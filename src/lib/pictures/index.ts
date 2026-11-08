@@ -184,7 +184,7 @@ export function draw(id: PictureId, state: AppState, wording: Wording, say: Say)
 		case 'what-is-in-a-token-here':
 			return whatIsInATokenHere();
 		case 'what-each-factor-proves':
-			return whatEachFactorProves(say);
+			return whatEachFactorProves(say, keep);
 		case 'what-a-code-looks-like':
 			return whatACodeLooksLike(say);
 		case 'what-a-thief-can-do':

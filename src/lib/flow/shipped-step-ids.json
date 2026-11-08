@@ -180,5 +180,7 @@
 	"redirect-with-token",
 	"ask-for-groups",
 	"map-group-to-role",
-	"give-the-app-its-roles"
+	"give-the-app-its-roles",
+	"otp-page",
+	"submit-otp"
 ]

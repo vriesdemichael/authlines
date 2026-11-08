@@ -2,7 +2,8 @@ import { flows } from '#lib/flow/index.ts';
 import { evaluate, type DiagramDef } from '#lib/flow/model.ts';
 import { defaultSettings, normalize, settingIds, type Settings } from '#lib/flow/settings.ts';
 import { resolveStep, serializeState, type AppState } from '#lib/flow/state.ts';
-import { allNodes, mapNodes, mapTracks, type MapNode, type MapTrack } from '#lib/map/tracks.ts';
+import { allNodes } from '#lib/map/off-the-map.ts';
+import { mapNodes, mapTracks, type MapNode, type MapTrack } from '#lib/map/tracks.ts';
 
 export { allNodes, mapNodes, mapTracks, type MapNode, type MapTrack };
 

@@ -83,6 +83,8 @@ const KEYCLOAK_ONLY = new Set([
 	'refresh_expires_in',
 	'not-before-policy',
 	'credentialId',
+	// Which of the user's authenticator apps the code is from, which Keycloak's form sends along.
+	'selectedCredentialId',
 	'session_code',
 	'execution',
 	'tab_id',
@@ -114,6 +116,8 @@ const OPEN_ENDED = new Set([
 
 // The address of a login form is Keycloak's own business. What matters is what the form sends.
 const SIGN_IN = new Set([
+	// The code after the password goes to the same form address as the password (2026-11-08).
+	'submit-otp',
 	'submit-credentials',
 	'second-submit-credentials',
 	'upstream-sign-in',

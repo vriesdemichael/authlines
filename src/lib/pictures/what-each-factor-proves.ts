@@ -1,6 +1,8 @@
 import type { Say } from '#lib/flow/wording.ts';
+import { opensAt } from './build.ts';
 import { matrix, type MatrixCell } from './matrix.ts';
-import type { Picture } from './model.ts';
+import type { Opens, Picture } from './model.ts';
+import { keepAll, type Keep } from './simple.ts';
 
 type Attack = 'guessed' | 'fake-site' | 'taken-over' | 'after-login';
 
@@ -17,7 +19,7 @@ type Attack = 'guessed' | 'fake-site' | 'taken-over' | 'after-login';
  * to a mailbox taken over through its reset, and made a key or secret synced through an account only
  * as safe as that account (Appendix B).
  */
-export function whatEachFactorProves(say: Say): Picture {
+export function whatEachFactorProves(say: Say, keep: Keep = keepAll): Picture {
 	const attacks: readonly { id: Attack; name: string }[] = [
 		{ id: 'guessed', name: 'Guessed, or reused from a leak elsewhere' },
 		{ id: 'fake-site', name: 'Asked for by a fake site' },
@@ -41,10 +43,13 @@ export function whatEachFactorProves(say: Say): Picture {
 		name: string;
 		proves: string;
 		cells: Record<Attack, MatrixCell>;
+		/** Where a real server was recorded asking for it, since 2026-11-08. */
+		opens?: Opens;
 	}[] = [
 		{
 			id: 'password',
 			name: 'A password',
+			opens: opensAt('flow', 'submit-credentials', 'oauth'),
 			proves: 'Something you know. Proves only that whoever typed it knows it.',
 			cells: {
 				guessed: {
@@ -98,6 +103,7 @@ export function whatEachFactorProves(say: Say): Picture {
 		{
 			id: 'authenticator-app',
 			name: 'A code from an authenticator app',
+			opens: opensAt('flow', 'submit-otp', 'one-time-code', { secondFactor: 'code' }),
 			proves:
 				'Something you have. Proves you hold the secret shared when it was set up, usually in an app on a phone. It can be copied, and the site keeps it too.',
 			cells: {
@@ -143,6 +149,8 @@ export function whatEachFactorProves(say: Say): Picture {
 			id: factor.id,
 			name: say(factor.name),
 			is: say(factor.proves),
+			// A factor is not an advanced idea, so simple mode keeps the row and leaves out only where it goes.
+			...(factor.opens && keep(factor.opens) ? { opens: factor.opens } : {}),
 			cells: Object.fromEntries(
 				Object.entries(factor.cells).map(([attack, cell]) => [
 					attack,
@@ -151,7 +159,7 @@ export function whatEachFactorProves(say: Say): Picture {
 			)
 		})),
 		note: say(
-			'A second factor is one of a different kind from the first, asked for at the login: a password and something you have. The last column is why it is not the end of it. This is from the standards, and not from a real server: NIST’s guidance 800-63B, revision 4, the WebAuthn spec and RFC 6238.'
+			'A second factor is one of a different kind from the first, asked for at the login: a password and something you have. The last column is why it is not the end of it. This is from the standards: NIST’s guidance 800-63B, revision 4, the WebAuthn spec and RFC 6238. A password and a code from an authenticator app are also recorded on a real server.'
 		)
 	});
 	return {

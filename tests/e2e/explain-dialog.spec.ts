@@ -380,3 +380,19 @@ test.describe('a source', () => {
 		}
 	});
 });
+
+// Asked for on 2026-11-08, so the pictures of second factors rest on a real server too.
+test.describe('a second factor', () => {
+	test('is drawn where what explains it says, and the factors picture opens it', async ({
+		page
+	}) => {
+		await open(page, 'mode=advanced&explain=term.mfa');
+		await page.getByTestId('picture').locator('[data-part="name-authenticator-app"]').click();
+		await expect.poll(() => currentSearch(page)).toContain('factor=code');
+		await expect.poll(() => currentSearch(page)).toContain('step=submit-otp');
+		await expect(page.getByTestId('payload')).toContainText('otp=');
+		await page.goto(page.url().replace('step=submit-otp', 'step=otp-page'));
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		await expect(page.getByTestId('step-detail')).toContainText('A page that asks for a code');
+	});
+});

@@ -58,6 +58,8 @@ const apiV1 = is('upstreamTokens', 'v1');
 const apiV2 = is('upstreamTokens', 'v2');
 // Logged in, the user links an account at another provider (#179). Named, so old recordings are off.
 const links = is('linkAccount', true);
+// A code from an authenticator app, asked for after the password (2026-11-08).
+const code = is('secondFactor', 'code');
 // A group at the other provider becomes a role here, and maybe the only one the app is given (#183).
 const groupRoles = is('groupRoles', true);
 const onlyGiven = all(groupRoles, is('rolesReach', 'given'));
@@ -1144,7 +1146,13 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			kind: 'request',
 			plain: 'The user enters their password',
 			label: 'Submit credentials',
-			concept: 'The user signs in at the identity provider. The app sees none of this.',
+			concept: [
+				{
+					when: code,
+					text: 'The user signs in at the identity provider with their password, and it asks for something more before it lets them in. The app sees none of this.'
+				},
+				{ text: 'The user signs in at the identity provider. The app sees none of this.' }
+			],
 			pitfall: {
 				title: 'What if someone else has this password?',
 				text: 'Then they can log in as the user, from anywhere, until it is changed, unless the identity provider also asks for a second factor. On the server recorded it asks for nothing else, by default. Even with one, a session or token taken after the login works without it, for as long as it lasts.'
@@ -1153,9 +1161,49 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			// With the token in the redirect, that is the answer, and the call to the API uses it.
 			execute: [
 				{ answer: 'redirect-with-token', when: implicit },
-				{ answer: 'redirect-with-code', when: not(consent) }
+				{ answer: 'redirect-with-code', when: all(not(consent), not(code)) }
 			],
 			fields: [{ name: 'username and password', place: 'body', artifact: 'password' }]
+		},
+		{
+			id: 'otp-page',
+			cites: [
+				{
+					source: 'rfc6238',
+					section: '4',
+					why: 'Section 4 is how the code is made, from the shared secret and the number of time steps since 1970.'
+				}
+			],
+			when: code,
+			from: 'idp',
+			to: 'browser',
+			kind: 'response',
+			plain: 'It asks for a code from their app',
+			label: 'A page that asks for a code',
+			page: {
+				address: 'submit-credentials',
+				shows:
+					"The identity provider's own page, asking for the code from the user's authenticator app, in one box."
+			},
+			concept:
+				'The password was right, and here that is not enough. The identity provider asks for a code from the authenticator app the user set up, which it can check because the two share a secret.'
+		},
+		{
+			id: 'submit-otp',
+			when: code,
+			from: 'browser',
+			to: 'idp',
+			kind: 'request',
+			plain: 'The user enters the code',
+			label: 'Submit the code',
+			concept:
+				'The app on their phone made the code from the shared secret and the time, a new one every 30 seconds. The identity provider makes the same code and compares, and only then sends the browser back with a code for the app.',
+			pitfall: {
+				title: 'What if a fake site asks for the code?',
+				text: 'Then it can pass the code on while it still works, and log in as the user. A code proves the user has their phone, not which site they typed it into. A passkey answers only the real site.'
+			},
+			execute: { answer: 'redirect-with-code' },
+			fields: [{ name: 'otp', place: 'body', note: 'Six digits from the app' }]
 		},
 		{
 			id: 'directory-search',
@@ -2530,6 +2578,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: [{ when: oidc, text: 'An access token and an ID token' }, { text: 'An access token' }],
 			label: [{ when: oidc, text: 'Access token and ID token' }, { text: 'Access token' }],
 			concept: [
+				{
+					when: code,
+					text: 'The same tokens as after a password alone. On the server recorded, the access token said acr 1 either way, and nothing else in it says a second factor was used, so neither the app nor the API can tell from the token unless the server is set up to say.'
+				},
 				{
 					when: onlyGiven,
 					text: 'The access token carries only the role given to this app, reads-orders, and none of the user’s other roles. Those had also put the identity provider’s own account service in its audience, so this app is set up to have its tokens name the API instead.'

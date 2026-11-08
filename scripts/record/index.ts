@@ -70,6 +70,7 @@ import {
 	USERNAME
 } from './keycloak.ts';
 import { lookInConsole } from './console.ts';
+import { codeAt, forgetTheAuthenticatorApp, setUpAnAuthenticatorApp } from './factors.ts';
 import {
 	DIRECTORY_URL,
 	directoryLogLength,
@@ -317,6 +318,13 @@ const behindThePage = {
 	}
 };
 
+/** The secret of the authenticator app set up for this run, to make the code the login asks for. */
+let authenticatorSecret: string | null = null;
+
+/** The page that asks for the code, and the code being sent, which go to the same address. */
+const isLoginForm = (url: URL) =>
+	url.pathname.startsWith(`/realms/${LOCAL_REALM}/login-actions/authenticate`);
+
 /** The one cookie that is the session. The rest of them are how Keycloak keeps its forms going. */
 const SESSION_COOKIE = /(?:^|\n|; )(KEYCLOAK_IDENTITY=[^\n]*)/;
 
@@ -374,7 +382,12 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 						)
 					: behind
 						? once(behindThePage.request(new URL(request.url())), 'request')
-						: classifyRequest(new URL(request.url()), request.method())
+						: run.settings.secondFactor === 'code' &&
+							  request.method() === 'POST' &&
+							  isLoginForm(new URL(request.url())) &&
+							  /(^|&)otp=/.test(request.postData() ?? '')
+							? 'submit-otp'
+							: classifyRequest(new URL(request.url()), request.method())
 			),
 			request.method(),
 			request.url(),
@@ -462,12 +475,17 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 							),
 							'response'
 						)
-					: classifyResponse(
-							new URL(response.url()),
-							response.status(),
-							headers.location ?? null,
-							response.request().method()
-						)
+					: run.settings.secondFactor === 'code' &&
+						  response.request().method() === 'POST' &&
+						  response.status() === 200 &&
+						  isLoginForm(new URL(response.url()))
+						? 'otp-page'
+						: classifyResponse(
+								new URL(response.url()),
+								response.status(),
+								headers.location ?? null,
+								response.request().method()
+							)
 		);
 		const message = responseMessage(step, response.status(), headers);
 		run.messages.push(message);
@@ -550,6 +568,13 @@ async function login(browser: Browser, run: Run, demo?: Demo) {
 	}
 	await page.fill('#password', PASSWORD);
 	await page.click('#kc-login');
+	if (run.settings.secondFactor === 'code') {
+		if (!authenticatorSecret) throw new Error('No authenticator app was set up for this run');
+		await page.locator('#otp').waitFor();
+		// The next step's code, which the server takes too, because the one set up with is used.
+		await page.fill('#otp', codeAt(authenticatorSecret, Date.now() / 1000 + 30));
+		await page.click('#kc-login');
+	}
 	if (run.settings.consent) {
 		// The same button id, on the page that asks.
 		await page.locator('[name="accept"]').click();
@@ -714,9 +739,18 @@ async function record(
 	else {
 		const customer = settings.customerSpeaks === 'saml' ? SAML_CUSTOMER : OIDC_CUSTOMER;
 		if (settings.leaves) demo.meanwhile = () => turnOff(admin, customer);
+		if (settings.secondFactor === 'code') {
+			demo.current = null;
+			authenticatorSecret = await setUpAnAuthenticatorApp(browser, admin);
+			demo.current = run;
+		}
 		try {
 			await login(browser, run, demo);
 		} finally {
+			if (settings.secondFactor === 'code') {
+				await forgetTheAuthenticatorApp(admin);
+				authenticatorSecret = null;
+			}
 			demo.meanwhile = null;
 			if (settings.leaves) await turnOff(admin, customer, false);
 			if (settings.appRuns === 'program') await demo.stopProgram();
