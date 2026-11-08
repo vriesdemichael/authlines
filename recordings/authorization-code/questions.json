@@ -35,16 +35,16 @@
 		"console.offline-session-lifetimes": "2026-11-07",
 		"loopbackRedirects": "2026-11-05",
 		"console.loopback-redirects": "2026-11-05",
-		"upstreamPrompt": "2026-11-05",
-		"upstreamScope": "2026-11-05",
-		"upstreamPkce": "2026-11-05",
-		"upstreamSync": "2026-11-05",
-		"upstreamTrustEmail": "2026-11-05",
-		"console.upstream-scopes": "2026-11-05",
-		"console.upstream-prompt": "2026-11-05",
-		"console.upstream-pkce": "2026-11-05",
-		"console.upstream-sync": "2026-11-05",
-		"console.upstream-trust-email": "2026-11-05"
+		"upstreamPrompt": "2026-11-08",
+		"upstreamScope": "2026-11-08",
+		"upstreamPkce": "2026-11-08",
+		"upstreamSync": "2026-11-08",
+		"upstreamTrustEmail": "2026-11-08",
+		"console.upstream-scopes": "2026-11-08",
+		"console.upstream-prompt": "2026-11-08",
+		"console.upstream-pkce": "2026-11-08",
+		"console.upstream-sync": "2026-11-08",
+		"console.upstream-trust-email": "2026-11-08"
 	},
 	"answers": {
 		"validRedirectUris": {
