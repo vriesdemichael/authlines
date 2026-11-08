@@ -4,6 +4,11 @@
 	interface Props {
 		/** As it was recorded. Nothing when these settings were not, and it is not made up. */
 		address: string | null;
+		/**
+		 * Whether these settings have a recording, and whether it has come. Without one, the picture is
+		 * from a run with other settings, and it says so (the maintainer, 2026-11-08).
+		 */
+		recorded?: 'loaded' | 'loading' | 'none' | 'failed';
 		marks?: readonly string[];
 		shows: string;
 		/** A picture of the real page, which is only ever of one server. */
@@ -17,6 +22,7 @@
 
 	let {
 		address,
+		recorded = 'loaded',
 		marks = [],
 		shows,
 		image = null,
@@ -50,15 +56,24 @@
 						>{:else}{part.name}{/if}={part.value}</span
 				>{/each}{#if read.left}<span class="left">{read.parts.length ? '&' : '?'}…</span>{/if}
 		{:else}
-			<span class="none" data-testid="page-no-address"
-				>The address was not recorded with these settings.</span
-			>
+			<span class="none" data-testid="page-no-address" data-recorded={recorded}>
+				{#if recorded === 'loading'}
+					Loading what was recorded.
+				{:else if recorded === 'failed'}
+					The recording did not load, so the address is not shown.
+				{:else}
+					Recorded with other settings, not these, so the address is not shown.
+				{/if}
+			</span>
 		{/if}
 	</div>
 	{#if image}
 		<img src={image} alt={shows} width="640" height="480" data-testid="page-picture" />
 		<figcaption data-testid="page-caption">
-			{#if upstream}
+			{#if recorded === 'none'}
+				Keycloak’s own page, from a run with other settings, as it looks by default. Yours will look
+				different.
+			{:else if upstream}
 				The other provider here is a second realm on the same Keycloak, so this is Keycloak’s own
 				page too, as it looks by default. Yours will look different.
 			{:else}

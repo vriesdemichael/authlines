@@ -53,6 +53,34 @@ test.describe('an explanation', () => {
 		await expect.poll(() => currentSearch(page)).toContain('step=token-response');
 	});
 
+	// The maintainer, 2026-11-08: Back after closing opened it again, and went on cycling between the
+	// two, because each close added a step to the history.
+	test('is not opened again by Back once closed', async ({ page }) => {
+		await page.goto('./');
+		await page.getByTestId('map').waitFor();
+		await open(page, 'step=token-response');
+		await page.locator('[data-lifeline="idp"]').first().click();
+		await expect(explanation(page)).toBeVisible();
+		await page.getByTestId('explanation-close').click();
+		await expect(explanation(page)).toHaveCount(0);
+		await expect.poll(() => currentSearch(page)).toContain('step=token-response');
+		await page.goBack();
+		await expect(page.getByTestId('map')).toBeVisible();
+		await expect(explanation(page)).toHaveCount(0);
+	});
+
+	test('opened by a question, is not opened again by Back once closed', async ({ page }) => {
+		await page.goto('./');
+		await page.getByTestId('map').waitFor();
+		await page.goto('authorization-code/what-is-an-identity-provider/');
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		await expect(explanation(page)).toBeVisible();
+		await page.getByTestId('explanation-close').click();
+		await expect(explanation(page)).toHaveCount(0);
+		await page.goBack();
+		await expect(page.getByTestId('map')).toBeVisible();
+	});
+
 	test('closes with a click beside it', async ({ page }) => {
 		await open(page, 'explain=term.issuer');
 		await expect(explanation(page)).toBeVisible();

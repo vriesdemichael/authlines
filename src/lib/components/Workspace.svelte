@@ -80,6 +80,7 @@
 		withSourceClosed,
 		withSourceOpen,
 		withSourceSection,
+		serializeState,
 		type AppState,
 		type DroppedFromLink,
 		type Explained
@@ -138,7 +139,8 @@
 		questionOffersList?: boolean;
 		flowChoices?: readonly { id: string; title: string }[];
 		onflow?: (flow: string) => void;
-		onnavigate: (next: AppState, history: 'push' | 'replace') => void;
+		/** Settles once the address has caught up with what is on screen. */
+		onnavigate: (next: AppState, history: 'push' | 'replace') => void | Promise<void>;
 		/** The part of the address after #, where a link can name the parties (#168). */
 		linkNames?: string;
 		/** Back to the site's own names. */
@@ -388,6 +390,13 @@
 		view.lifelines.map((line) => ({ id: line.id, name: nameIn(line, wording) }))
 	);
 	const eyesName = $derived(parties.find((party) => party.id === appState.eyes)?.name ?? null);
+	// A party as a sentence names it: the identity provider, and Keycloak or a name a link gave as is.
+	const PROPER = ['Keycloak'];
+	function seenAs(id: string) {
+		const name = parties.find((party) => party.id === id)?.name ?? id;
+		if (fromLink.names[id] || PROPER.includes(name) || /^.[A-Z]/.test(name)) return name;
+		return `the ${name[0].toLowerCase()}${name.slice(1)}`;
+	}
 	const seesStep = (id: string) => {
 		const step = steps.find((candidate) => candidate.id === id);
 		return !appState.eyes || !step || sees(step, appState.eyes);
@@ -448,8 +457,43 @@
 			'push'
 		);
 	}
+	// A dialog opened here closes by going back in the history, so that Back does not open it again.
+	// Closing one used to add a step to the history, and Back went through each open and close in turn,
+	// which the maintainer found on 2026-11-08. One that came with the page, or that the history no
+	// longer leads back from, closes where it is. Each remembers how many steps it is from none.
+	// Not state of the page, only of how it got here, so nothing redraws when it changes.
+	const opened: Record<string, number> = {};
+	const addressOf = (state: AppState) => serializeState(base, state);
+	const hasDialog = (state: AppState) => Boolean(state.explained || state.source || state.list);
+	// A dialog is drawn at once and its address follows, so going back has to wait for the address.
+	let pending: void | Promise<void>;
+	function openDialog(next: AppState) {
+		const from = hasDialog(appState) ? opened[addressOf(appState)] : 0;
+		if (from !== undefined) opened[addressOf(next)] = from + 1;
+		pending = onnavigate(next, 'push');
+	}
+	// It goes back to what it closes to: to before the explanation for one, and to the explanation for a
+	// source opened on top of it. One Escape reaches a dialog twice, as a key and as the dialog's own
+	// cancel, so a second close of what is already closing does nothing, or it would go back twice.
+	let closing: string | null = null;
+	async function closeDialog(next: AppState) {
+		const here = addressOf(appState);
+		if (closing === here) return;
+		closing = here;
+		await pending;
+		const depth = opened[here];
+		const to = hasDialog(next) ? opened[addressOf(next)] : 0;
+		if (depth !== undefined && to !== undefined && depth > to) window.history.go(to - depth);
+		else onnavigate(next, 'replace');
+	}
+	$effect(() => {
+		// Once the state has moved on, a close is about what is on screen now.
+		if (addressOf(appState) !== closing) closing = null;
+	});
 	const explain = (explained: Explained | null) =>
-		onnavigate(withExplained(appState, explained), 'push');
+		explained
+			? openDialog(withExplained(appState, explained))
+			: closeDialog(withExplained(appState, null));
 	const explanation = $derived(explanationOf(appState, view, holdings));
 	const lit = $derived(litBy(appState, view));
 	// Away from what it is about, so that it can still be seen. Otherwise it can be in the middle.
@@ -612,12 +656,12 @@
 				)?.why
 			: undefined
 	);
-	const closeSource = () => onnavigate(withSourceClosed(appState), 'push');
+	const closeSource = () => closeDialog(withSourceClosed(appState));
 
 	const left = $derived(appState.list ? leftToYou(base, appState.settings, say) : null);
-	const openList = () => onnavigate(withList(appState, true), 'push');
+	const openList = () => openDialog(withList(appState, true));
 	const closeList = () => {
-		onnavigate(withList(appState, false), 'push');
+		closeDialog(withList(appState, false));
 		tick().then(() =>
 			window.document
 				.querySelector<HTMLElement>('[data-testid="to-list"], [data-testid="answer-list"]')
@@ -1050,7 +1094,7 @@
 			mode={appState.mode}
 			{wording}
 			pageImage={imageOf}
-			oncite={(ref) => onnavigate(withSourceOpen(appState, null, ref, true), 'push')}
+			oncite={(ref) => openDialog(withSourceOpen(appState, null, ref, true))}
 			onlist={openList}
 			{intro}
 			{partWhy}
@@ -1079,6 +1123,7 @@
 				{#if page && inBrowser}
 					<PageWindow
 						address={pageAddress}
+						recorded={wireStatus}
 						marks={page.marks}
 						shows={page.shows}
 						image={page.shot && imageOf ? imageOf(page.shot) : null}
@@ -1193,7 +1238,8 @@
 				onleaveout={explanation.aboutTheServer
 					? () => onnavigate(withServerNotes(withExplained(appState, null), false), 'push')
 					: null}
-				onseeonly={explanation.party
+				// The view of one party is advanced, as its switch is, unless it is on (premise 5.4, 2026-11-08).
+				onseeonly={explanation.party && (!simple || appState.eyes)
 					? () =>
 							onnavigate(
 								withEyes(
@@ -1204,6 +1250,7 @@
 							)
 					: null}
 				seeingOnly={appState.eyes === explanation.party}
+				seenAs={explanation.party ? seenAs(explanation.party) : undefined}
 				rename={renameFor(explanation.party)}
 				onfollow={explanation.follows
 					? () =>
@@ -1219,7 +1266,7 @@
 				onclose={() => explain(null)}
 				onopenpart={openPart}
 				onexplainartifact={(id) => explain({ kind: 'artifact', id })}
-				onopensource={(ref) => onnavigate(withSourceOpen(appState, explainedSetting, ref), 'push')}
+				onopensource={(ref) => openDialog(withSourceOpen(appState, explainedSetting, ref))}
 			/>
 		</ExplainDialog>
 	{/if}

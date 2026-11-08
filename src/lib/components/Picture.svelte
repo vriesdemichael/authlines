@@ -11,7 +11,7 @@
 
 	const SAYS = 17;
 	const MORE = 15;
-	const LINE = { title: 18, says: 17, more: 15 } as const;
+	const LINE = { title: 18, says: 17, more: 15, code: 26 } as const;
 	/** Where its first line goes, so that what it says sits in the middle of it. */
 	const firstLine = (part: PicturePart) =>
 		part.y - (part.says.length * SAYS + (part.more?.length ?? 0) * MORE) / 2 + 12;
@@ -122,6 +122,22 @@
 			height={part.h}
 			rx="3"
 		/>
+	{:else if part.shape === 'char'}
+		<!-- A box of a field, as a page draws one, with its character or the cursor. -->
+		<rect
+			class="shape"
+			class:current={part.current}
+			x={leftOf(part)}
+			y={topOf(part)}
+			width={part.w}
+			height={part.h}
+			rx="6"
+		/>
+		{#if part.says[0]}
+			<text class="char" x={part.x} y={part.y + 7} text-anchor="middle">{`${part.says[0]} `}</text>
+		{:else if part.current}
+			<line class="caret" x1={part.x} y1={part.y - 11} x2={part.x} y2={part.y + 11} />
+		{/if}
 	{:else if part.shape === 'party'}
 		<rect
 			class="shape"
@@ -454,6 +470,23 @@
 	.more {
 		fill: var(--muted);
 		font-size: 11.5px;
+	}
+
+	/* A code as someone reads it off a screen, in the font of a value on the wire. */
+	.code,
+	.char {
+		fill: var(--fg);
+		font-family: var(--mono);
+		font-size: 20px;
+	}
+
+	.code {
+		letter-spacing: 0.18em;
+	}
+
+	.caret {
+		stroke: var(--fg);
+		stroke-width: 1.5;
 	}
 
 	.row-says {
