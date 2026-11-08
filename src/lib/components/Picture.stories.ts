@@ -7,6 +7,7 @@ import { whatIsInATokenHere } from '#lib/keycloak/token-contents.ts';
 import { howAnApiTrustsAToken } from '#lib/pictures/how-an-api-trusts-a-token.ts';
 import { howLongEachLasts } from '#lib/pictures/how-long-each-lasts.ts';
 import { trustAcrossProviders } from '#lib/pictures/trust-across-providers.ts';
+import { whatACodeLooksLike } from '#lib/pictures/what-a-code-looks-like.ts';
 import { whatAThiefCanDo } from '#lib/pictures/what-a-thief-can-do.ts';
 import { whatEachFactorProves } from '#lib/pictures/what-each-factor-proves.ts';
 import { whatEachSpecAdds } from '#lib/pictures/what-each-spec-adds.ts';
@@ -128,6 +129,9 @@ export const WhatEachFactorProves: Story = { args: { picture: whatEachFactorProv
 
 /** What a thief can do with each, and for how long: a timeline. */
 export const WhatAThiefCanDo: Story = { args: { picture: whatAThiefCanDo(plain) } };
+
+/** What a one-time code looks like, in a message and on the page that asks for it. */
+export const WhatACodeLooksLike: Story = { args: { picture: whatACodeLooksLike(plain) } };
 
 /** On Keycloak, what decides what is in a token: containment. */
 export const WhatIsInATokenHere: Story = { args: { picture: whatIsInATokenHere() } };

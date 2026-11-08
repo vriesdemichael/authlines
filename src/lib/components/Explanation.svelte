@@ -26,6 +26,8 @@
 		/** It is about a party, whose view can be shown, and whether it is. */
 		onseeonly?: (() => void) | null;
 		seeingOnly?: boolean;
+		/** Who, as a sentence says it, so the button names whose view it shows. */
+		seenAs?: string;
 		/** It is about something with a path to follow, and whether that is being done. */
 		onfollow?: (() => void) | null;
 		following?: boolean;
@@ -62,6 +64,7 @@
 		onleaveout = null,
 		onseeonly = null,
 		seeingOnly = false,
+		seenAs = 'this party',
 		onfollow = null,
 		following = false,
 		onexplainartifact,
@@ -140,7 +143,7 @@
 	{#if onseeonly}
 		<p class="seen">
 			<button type="button" class="chip" data-testid="see-only" onclick={onseeonly}>
-				{seeingOnly ? 'See everything again' : 'See only what this one saw'}
+				{seeingOnly ? 'Show everything again' : `Grey out what ${seenAs} never saw`}
 			</button>
 		</p>
 	{/if}
