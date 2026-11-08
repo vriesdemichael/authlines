@@ -32,7 +32,8 @@ export type PictureId =
 	| 'what-a-code-looks-like'
 	| 'what-a-token-says'
 	| 'which-flow-fits'
-	| 'the-app-keeps-asking';
+	| 'the-app-keeps-asking'
+	| 'what-each-scope-asks-for';
 
 /**
  * Where something starts or ends, a step, or a question with more than one way on: those make a

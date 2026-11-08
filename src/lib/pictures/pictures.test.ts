@@ -21,6 +21,7 @@ import { noteDefs } from '#lib/keycloak/notes.ts';
 import { SIZE, widthOf, type Picture, type PicturePart } from '#lib/pictures/model.ts';
 import { refreshPicture } from '#lib/pictures/refresh.ts';
 import { inSimpleMode } from '#lib/pictures/simple.ts';
+import { SCOPES_RECORDED } from '#lib/pictures/what-each-scope-asks-for.ts';
 import { CLAIM_ROWS, RECORDED } from '#lib/pictures/what-a-token-says.ts';
 import { ASKING } from '#lib/pictures/the-app-keeps-asking.ts';
 import oidc from '../../../static/recordings/authorization-code/oidc.json';
@@ -610,6 +611,40 @@ describe('the pictures of the other flows (#200)', () => {
 		expect(ids('simple')).not.toContain('access-denied');
 		expect(ids('advanced')).toContain('expired-token');
 		expect(pictureFor(stateFor('explain=term.polling'), 'plain')).toBeNull();
+	});
+});
+
+// The maintainer, 2026-11-08: "Perhaps something about expected scopes with oidc as well".
+describe('what each scope asks for', () => {
+	it('says what three recorded runs asked for and were given', () => {
+		for (const [preset, recorded] of Object.entries(SCOPES_RECORDED)) {
+			const run = JSON.parse(
+				readFileSync(`static/recordings/authorization-code/${preset}.json`, 'utf8')
+			) as { messages: { step: string; url?: string; body?: Record<string, unknown> }[] };
+			const url = run.messages.find((message) => message.step === 'authorize')!.url!;
+			const asked = new URL(url).searchParams.get('scope')?.split(' ') ?? [];
+			const given = String(
+				run.messages.find((message) => message.step === 'token-response')!.body!.scope
+			).split(' ');
+			expect([...asked].sort(), preset).toEqual([...recorded.asked].sort());
+			expect([...given].sort(), preset).toEqual([...recorded.given].sort());
+		}
+	});
+
+	it('is in what explains a scope, and keeps offline access to advanced mode', () => {
+		const advanced = picture('explain=term.scope&mode=advanced');
+		expect(advanced.id).toBe('what-each-scope-asks-for');
+		const mark = (found: Picture, id: string) => found.parts.find((part) => part.id === id)?.mark;
+		expect(mark(advanced, 'openid.oidc')).toBe('full');
+		expect(mark(advanced, 'openid.oauth')).toBe('none');
+		expect(mark(advanced, 'profile.oidc')).toBe('empty');
+		expect(mark(advanced, 'offline_access.logout-offline')).toBe('full');
+		// Not a permission, which is what it looks like to someone who has not met it.
+		const openid = advanced.parts.find((part) => part.id === 'is-openid')!.says.join(' ');
+		expect(openid).toContain('A switch, not a permission');
+		const simple = picture('explain=term.scope&mode=simple');
+		expect(simple.parts.some((part) => part.id.startsWith('offline_access'))).toBe(false);
+		expect(simple.parts.some((part) => part.id.endsWith('.logout-offline'))).toBe(false);
 	});
 });
 

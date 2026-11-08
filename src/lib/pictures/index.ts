@@ -17,6 +17,7 @@ import { whatEachSpecAdds } from './what-each-spec-adds.ts';
 import { whatStopsWhat } from './what-stops-what.ts';
 import { whereTheTokensAre } from './where-the-tokens-are.ts';
 import { theAppKeepsAsking } from './the-app-keeps-asking.ts';
+import { whatEachScopeAsksFor } from './what-each-scope-asks-for.ts';
 import { whichFlowFits } from './which-flow-fits.ts';
 import { whichTokenIsForWhom } from './which-token-is-for-whom.ts';
 import { whoKnowsWhom, type PartyNames } from './who-knows-whom.ts';
@@ -122,7 +123,8 @@ export const PICTURE_OF: Readonly<Record<string, PictureId>> = {
 	'term.authorization-pending': 'the-app-keeps-asking',
 	'term.slow-down': 'the-app-keeps-asking',
 	'term.expired-token': 'the-app-keeps-asking',
-	'artifact.device-code': 'the-app-keeps-asking'
+	'artifact.device-code': 'the-app-keeps-asking',
+	'term.scope': 'what-each-scope-asks-for'
 };
 
 /** Each picture, drawn for the state on screen in the words chosen. */
@@ -166,6 +168,8 @@ export function draw(id: PictureId, state: AppState, wording: Wording, say: Say)
 			return whatAThiefCanDo(say, keep);
 		case 'which-flow-fits':
 			return whichFlowFits(say, keep);
+		case 'what-each-scope-asks-for':
+			return whatEachScopeAsksFor(say, keep);
 		case 'the-app-keeps-asking':
 			return theAppKeepsAsking(say, keep);
 		case 'what-a-token-says':
