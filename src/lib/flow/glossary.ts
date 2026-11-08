@@ -972,7 +972,7 @@ const list: readonly Term[] = [
 		name: 'Kerberos',
 		words: ['Kerberos'],
 		explains:
-			'How a company network logs people in once. The computer gets a ticket when they log in to it, and with that a ticket for each service they reach, so the password is not typed again. A Windows domain uses it.',
+			'How a company network logs people in once. The computer gets a ticket when they log in to it, and with that a ticket for each service they reach, so a service that takes a ticket does not ask for the password. A Windows domain uses it.',
 		at: flowAt('computer-asks', { federation: true, kerberos: true })
 	},
 	{
@@ -991,7 +991,7 @@ const list: readonly Term[] = [
 		alsoCalled: ['TGT'],
 		artifact: 'tgt',
 		explains:
-			'What the computer gets when the user logs in to it, for asking the KDC for other tickets, so that the password is not needed again until it runs out.',
+			'What the computer gets when the user logs in to it, for asking the KDC for other tickets with no password, until it runs out.',
 		at: flowAt('kdc-gives-tgt', { federation: true, kerberos: true })
 	},
 	{
@@ -1016,7 +1016,7 @@ const list: readonly Term[] = [
 		name: 'Keytab',
 		words: ['keytab', 'keytabs'],
 		explains:
-			'A file with a service’s Kerberos key in it, from the KDC. With it the service opens the tickets meant for it without asking the KDC, and so can anyone else who has the file.',
+			'A file with a service’s Kerberos key in it, from the KDC. With it the service opens the tickets meant for it without asking the KDC. Anyone else who has the file can do the same, and make tickets for that service naming any user.',
 		at: setupAt('hand-over-keytab', { federation: true, kerberos: true })
 	},
 	{
@@ -1034,7 +1034,7 @@ const list: readonly Term[] = [
 		words: ['Negotiate', 'SPNEGO'],
 		alsoCalled: ['SPNEGO', 'integrated Windows authentication'],
 		explains:
-			'How a website asks for a Kerberos ticket over HTTP. It answers 401 with WWW-Authenticate: Negotiate, and a browser that may send one asks for a ticket and sends the request again with it, wrapped in SPNEGO.',
+			'How a website asks for a Kerberos ticket over HTTP. It answers 401 with WWW-Authenticate: Negotiate, and a browser that may send one gets a ticket and sends the request again with it, wrapped in SPNEGO. SPNEGO can carry an older Windows login in place of Kerberos, and a Windows browser may fall back to it. The identity provider recorded took Kerberos.',
 		at: flowAt('idp-negotiate', { federation: true, kerberos: true })
 	},
 	{

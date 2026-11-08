@@ -57,6 +57,22 @@ export const directoryWords: Words = {
 	knownAs: []
 };
 
+/** Kerberos calls it the client, a word this site already gives the app, so it keeps its own name. */
+export const computerWords: Words = {
+	name: 'Kerberos client',
+	role: 'User’s computer',
+	knownAs: [
+		{
+			word: 'client',
+			by: 'Kerberos',
+			source: {
+				source: 'rfc4120',
+				why: 'Section 1.7 defines a client as a process that uses a network service on behalf of a user.'
+			}
+		}
+	]
+};
+
 export const kdcWords: Words = {
 	name: 'KDC',
 	role: 'Key distribution center',

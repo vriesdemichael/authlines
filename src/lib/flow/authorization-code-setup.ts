@@ -137,7 +137,7 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			role: 'And their browsers',
 			icon: 'browser',
 			concept:
-				'The company’s own computers and the browsers on them, which the network admins set up before anyone logs in, and which send a ticket only to sites they were told to.',
+				'The company’s own computers and the browsers on them, which the network admins set up before anyone logs in. A browser sends a ticket only to sites it was told to, by a list in its settings, or on Windows with no list, by the sites Windows counts as the local intranet.',
 			when: withATicket
 		},
 		{
@@ -424,7 +424,13 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plain: 'An account for the identity provider',
 			label: 'Add a service principal',
 			concept:
-				'The network admins make an account in the Kerberos realm for the identity provider, a service principal: HTTP and its host name, HTTP/localhost here. The KDC makes a key for it, and tickets for the identity provider will be sealed with that key.',
+				'The network admins make an account in the Kerberos realm for the identity provider, a service principal: HTTP and its host name, HTTP/localhost here. The KDC keeps a key for it, and tickets for the identity provider will be sealed with that key. The KDC recorded made one at random. In Active Directory it comes from the password of an account for the service.',
+			cites: [
+				{
+					source: 'windows-ktpass',
+					why: 'In Active Directory the principal is mapped to an account, and its key comes from that account’s password.'
+				}
+			],
 			fields: [
 				{
 					name: 'service principal',
@@ -442,7 +448,13 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plain: 'Hand over its key',
 			label: 'A keytab',
 			concept:
-				'They write its key to a file, a keytab, and hand it to whoever runs the identity provider. With it the identity provider can open tickets meant for it without asking the KDC, and so can anyone who has the file, so it is kept like a password.'
+				'They write its key to a file, a keytab, and hand it to whoever runs the identity provider. With it the identity provider can open tickets meant for it without asking the KDC. So can anyone who has the file, and they can also make tickets of their own that it takes, naming any user, because a ticket that opens with its key is all it checks. So the file is kept like a password.',
+			cites: [
+				{
+					source: 'rfc4120',
+					why: 'Section 3.2.3 is how a service checks a ticket: it opens it with its own key, and the time with the session key inside. Section 10 says whoever steals a key can pass as its owner.'
+				}
+			]
 		},
 		{
 			id: 'allow-kerberos',

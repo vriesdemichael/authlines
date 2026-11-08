@@ -240,8 +240,8 @@ export function logInToTheComputer(): RecordedMessage[] {
 	if (kinds.join() !== 'AS-REQ,KRB-ERROR,AS-REQ,AS-REP') {
 		throw new Error(`Logging in to the computer went otherwise: ${kinds.join(', ')}`);
 	}
-	const raw = sent.map((entry) => entry.bytes ?? '').join('');
-	if (Buffer.from(raw, 'base64').includes(PASSWORD)) {
+	// Each on its own: base64 joined together stops decoding at the first message's padding.
+	if (sent.some((entry) => Buffer.from(entry.bytes ?? '', 'base64').includes(PASSWORD))) {
 		throw new Error('The password crossed the wire to the KDC.');
 	}
 	return ['computer-asks', 'kdc-wants-proof', 'computer-proves', 'kdc-gives-tgt'].map((step, i) =>

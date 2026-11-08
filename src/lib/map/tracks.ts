@@ -395,10 +395,14 @@ export const mapTracks: readonly MapTrack[] = [
 						'active directory',
 						'ticket',
 						'single sign-on on the company network',
-						'why did I not have to log in'
+						'why did I not have to log in',
+						'windows login no password',
+						'integrated windows authentication',
+						'login page instead of single sign-on',
+						'kerberos not working'
 					],
 					answer:
-						'Logging in to your computer got it a Kerberos ticket, and the browser used that to get a ticket for the identity provider, which it sent in place of a password. On the server recorded nobody typed anything, and the identity provider never saw a password.',
+						'Logging in to your computer got it a Kerberos ticket, and with that a ticket for the identity provider, which the browser sent in place of a password. A browser that was not told it may send one there gets the login page instead.',
 					title: 'Why did I not have to log in?',
 					summary: 'A ticket from logging in to the computer, sent in place of a password.',
 					mode: 'advanced',

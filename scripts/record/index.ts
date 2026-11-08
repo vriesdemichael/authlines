@@ -913,7 +913,11 @@ async function loginWithATicket(admin: Admin, run: Run) {
 				throw new Error('The page did not send itself back empty.');
 			}
 			back.step = 'no-ticket';
-			run.messages[authorize + 3].step = 'login-page';
+			const form = run.messages[authorize + 3];
+			if (form?.direction !== 'response' || form.status !== 200) {
+				throw new Error('The login form did not follow the empty post.');
+			}
+			form.step = 'login-page';
 			const submitted = run.messages.findLastIndex(({ step }) => step === 'submit-credentials');
 			if (submitted <= authorize + 3) throw new Error('No password was ever sent.');
 			run.messages.splice(

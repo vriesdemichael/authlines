@@ -15,7 +15,8 @@ let connections = 0;
 const write = (entry) => appendFileSync(WIRE, `${JSON.stringify({ at: Date.now(), ...entry })}\n`);
 
 /**
- * The heads of HTTP messages as they pass, skipping each body by its length or its chunks.
+ * The heads of HTTP messages as they pass, skipping each body by its length or its chunks. A reply
+ * to HEAD has no body either, which this does not know, and the browser here sends no HEAD.
  * @param {(head: string) => void} onHead
  * @returns {(data: Buffer) => void}
  */
@@ -23,7 +24,10 @@ function httpHeads(onHead) {
 	let buffer = Buffer.alloc(0);
 	let skip = 0;
 	let chunked = false;
+	// After something it cannot read, what follows on this connection is not a head it can find.
+	let lost = false;
 	return (data) => {
+		if (lost) return;
 		buffer = Buffer.concat([buffer, data]);
 		for (;;) {
 			if (skip > 0) {
@@ -37,9 +41,16 @@ function httpHeads(onHead) {
 				const line = buffer.indexOf('\r\n');
 				if (line < 0) return;
 				const size = parseInt(buffer.subarray(0, line).toString('latin1'), 16);
+				if (Number.isNaN(size)) {
+					console.error('A chunk size that is not one, so no more heads on this connection');
+					lost = true;
+					return;
+				}
 				if (size === 0) {
-					if (buffer.length < line + 4) return;
-					buffer = buffer.subarray(line + 4);
+					// The last chunk, then any trailers, then an empty line.
+					const end = buffer.indexOf('\r\n\r\n', line);
+					if (end < 0) return;
+					buffer = buffer.subarray(end + 4);
 					chunked = false;
 					continue;
 				}
@@ -52,6 +63,8 @@ function httpHeads(onHead) {
 			const head = buffer.subarray(0, end).toString('latin1');
 			buffer = buffer.subarray(end + 4);
 			onHead(head);
+			// A 1xx, 204 or 304 has no body, whatever its headers say (RFC 9112 section 6.3).
+			if (/^HTTP\/\S+ (1\d\d|204|304)\b/.test(head)) continue;
 			chunked = /\r\ntransfer-encoding: *chunked/i.test(head);
 			skip = Number(/\r\ncontent-length: *(\d+)/i.exec(head)?.[1] ?? 0);
 		}

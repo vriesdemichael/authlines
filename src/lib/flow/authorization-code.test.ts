@@ -261,6 +261,21 @@ describe('how a message travels', () => {
 		}
 	});
 
+	it('has the computer ask the KDC, so the browser only ever holds the ticket for the site', () => {
+		const settings = { ...defaultSettings, federation: true, kerberos: true } as const;
+		const kerberos = evaluate(flow, settings);
+		const toTheKdc = kerberos.steps.filter(({ from, to }) => from === 'kdc' || to === 'kdc');
+		expect(toTheKdc.map(({ id }) => id)).toContain('ask-for-service-ticket');
+		for (const step of toTheKdc) {
+			expect([step.from, step.to].sort(), step.id).toEqual(['computer', 'kdc']);
+			expect(step.channel, step.id).toBe('back');
+		}
+		const held = holdingsAt(kerberos, 'send-ticket');
+		expect(held.computer).toContain('tgt');
+		expect(held.browser).toContain('service-ticket');
+		expect(held.browser).not.toContain('tgt');
+	});
+
 	it('tells the code in the redirect from the tokens on the direct call', () => {
 		expect(channelOf('redirect-with-code')).toBe('front');
 		expect(channelOf('token-request')).toBe('back');

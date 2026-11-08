@@ -10,11 +10,15 @@ interface Element {
 }
 
 function read(bytes: Buffer, at = 0): { element: Element; next: number } {
+	if (at + 2 > bytes.length) throw new Error('A DER element runs past its message');
 	const tag = bytes[at];
 	let length = bytes[at + 1];
 	let start = at + 2;
 	if (length & 0x80) {
 		const octets = length & 0x7f;
+		if (octets === 0 || octets > 4 || start + octets > bytes.length) {
+			throw new Error('A DER length runs past its message, or is not one DER allows');
+		}
 		length = 0;
 		for (let i = 0; i < octets; i++) length = length * 256 + bytes[start + i];
 		start += octets;
@@ -263,6 +267,7 @@ function error(element: Element) {
 		'msg-type': named(MESSAGE_TYPES, 30),
 		stime: time(parts.get(4)!),
 		'error-code': named(ERRORS, code),
+		...(parts.get(7) ? { crealm: text(parts.get(7)!) } : {}),
 		...(parts.get(8) ? { cname: principal(parts.get(8)!) } : {}),
 		realm: text(parts.get(9)!),
 		sname: principal(parts.get(10)!),

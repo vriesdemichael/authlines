@@ -799,7 +799,7 @@ export const breakages = [
 	{
 		name: 'phone: a long field runs off the screen',
 		file: 'src/lib/diagram/layout.ts',
-		from: '\tif (field.artifact || chipWidth(field) <= room) return field;',
+		from: '\tif (chipWidth(field) <= room) return field;',
 		to: '\treturn field;'
 	},
 	{

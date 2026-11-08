@@ -127,13 +127,13 @@ export const artifacts: Readonly<
 	},
 	tgt: {
 		label: 'ticket-granting ticket',
-		short: 'ticket for tickets',
+		short: 'TGT',
 		explains:
-			'What the computer got when the user logged in to it: a ticket for asking the KDC for other tickets, so that the password is not needed again until it runs out. It is sealed with a key only the KDC has, so the computer can show it but not read it.'
+			'What the computer got when the user logged in to it: a ticket for asking the KDC for other tickets with no password, until it runs out. It is sealed with a key only the KDC has, so the computer can show it but not read it.'
 	},
 	'service-ticket': {
 		label: 'service ticket',
-		short: 'ticket',
+		short: 'service ticket',
 		explains:
 			'A ticket for one service, here the identity provider, which says who the user is. It is sealed with a key only that service and the KDC have, so the browser that carries it cannot read it, and no password goes with it.'
 	},

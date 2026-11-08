@@ -290,6 +290,9 @@ const KEYTAB_IN_THE_CONTAINER = '/opt/keycloak/data/service.keytab';
  * The directory's users may also log in with a Kerberos ticket, which the identity provider opens with
  * a key of its own from the KDC, a keytab. Off again, the login page is as it was.
  */
+/** The directory's settings before a ticket was allowed, to put back after. */
+let configBeforeKerberos: Record<string, string[]> | undefined;
+
 export async function kerberosOn(
 	admin: Admin,
 	on: { keytab: Buffer; realm: string; principal: string } | null
@@ -304,23 +307,30 @@ export async function kerberosOn(
 	}
 	const path = `/realms/${DIRECTORY_REALM}/components/${id}`;
 	const component = await admin.call<{ config: Record<string, string[]> }>('GET', path);
-	component.config = {
-		...component.config,
-		allowKerberosAuthentication: [on ? 'true' : 'false'],
-		...(on
-			? {
-					kerberosRealm: [on.realm],
-					serverPrincipal: [on.principal],
-					keyTab: [KEYTAB_IN_THE_CONTAINER],
-					useKerberosForPasswordAuthentication: ['false'],
-					// By default it looks for krb5PrincipalName, which these people do not have, and
-					// shows the login page. Empty, it looks them up by the name before the @.
-					krbPrincipalAttribute: [''],
-					// So that a run that goes wrong says why, in the identity provider's log.
-					debug: ['true']
-				}
-			: {})
-	};
+	if (on) {
+		configBeforeKerberos ??= component.config;
+		component.config = {
+			...component.config,
+			allowKerberosAuthentication: ['true'],
+			kerberosRealm: [on.realm],
+			serverPrincipal: [on.principal],
+			keyTab: [KEYTAB_IN_THE_CONTAINER],
+			useKerberosForPasswordAuthentication: ['false'],
+			// For this kind of directory it looks for krb5PrincipalName, which these people do not
+			// have, and shows the login page. Empty, it looks them up by the name before the @.
+			krbPrincipalAttribute: [''],
+			// So that a run that goes wrong says why, in the identity provider's log.
+			debug: ['true']
+		};
+	} else {
+		// Back as it was, since what it asks the directory for changes with these: the recordings
+		// with no ticket ask for krb5PrincipalName, and those made with one do not.
+		component.config = {
+			...(configBeforeKerberos ?? component.config),
+			allowKerberosAuthentication: ['false']
+		};
+		configBeforeKerberos = undefined;
+	}
 	await admin.call('PUT', path, component);
 	// Allowing it turns the Kerberos step of the browser flow on, and turning it off turns it off.
 	const steps = await admin.call<{ displayName: string; requirement: string }[]>(

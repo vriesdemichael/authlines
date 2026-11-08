@@ -208,9 +208,12 @@ interface Field {
 	name: string;
 	artifact?: ArtifactId;
 	mark?: boolean;
+	/** By its short name, where its whole one does not fit. */
+	short?: boolean;
 }
 
-const chipText = (field: Field) => (field.artifact ? artifacts[field.artifact].label : field.name);
+const chipText = (field: Field) =>
+	field.artifact ? artifacts[field.artifact][field.short ? 'short' : 'label'] : field.name;
 const chipWidth = (field: Field) =>
 	chipText(field).length * (field.artifact ? CHIP_CHAR_WIDTH : NAME_CHAR_WIDTH) + CHIP_PADDING;
 
@@ -314,7 +317,9 @@ function fitStrip(count: number, room?: Room) {
 
 /** A field's own name can be longer than a phone is wide. The detail has all of it. */
 function fitChip(field: Field, room: number): Field {
-	if (field.artifact || chipWidth(field) <= room) return field;
+	if (chipWidth(field) <= room) return field;
+	// What it carries keeps a name it has, the one under each lane.
+	if (field.artifact) return { ...field, short: true };
 	const most = Math.max(1, Math.floor((room - CHIP_PADDING) / NAME_CHAR_WIDTH) - 1);
 	return { ...field, name: `${field.name.slice(0, most)}…` };
 }

@@ -5,6 +5,7 @@ import {
 	apiWords,
 	appWords,
 	browserWords,
+	computerWords,
 	directoryWords,
 	idpWords,
 	kdcWords,
@@ -130,6 +131,17 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			icon: 'api',
 			concept:
 				'The key distribution center, which hands out Kerberos tickets and keeps a key for every user and service on the network. On a Windows network it runs on every domain controller, with Active Directory behind it. The one recorded here was not Windows, and neither was the computer.',
+			when: kerberos
+		},
+		// What holds the user's tickets is the computer and not the browser, which only ever gets one.
+		{
+			id: 'computer',
+			plainName: 'User’s computer',
+			plainRole: 'Holds their tickets',
+			...computerWords,
+			icon: 'app',
+			concept:
+				'The computer the user logged in to that morning, which the browser runs on. Its Kerberos keeps their tickets and asks the KDC for more, so the browser is handed only the ticket for the site it is on. On Windows the system does that for the browser. On Linux, as recorded, the browser does it itself, with the system’s Kerberos library and the tickets kept for the user’s login.',
 			when: kerberos
 		},
 		{
@@ -281,8 +293,15 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainRole: 'Has the users',
 			...directoryWords,
 			icon: 'api',
-			concept:
-				'Where the users already are, such as LDAP or Active Directory. On this diagram only the identity provider talks to it.',
+			concept: [
+				{
+					when: kerberos,
+					text: 'Where the users already are, such as LDAP or Active Directory. On this diagram only the identity provider talks to it. With Active Directory, it and the KDC are the same domain controllers, and the ones recorded here were two servers.'
+				},
+				{
+					text: 'Where the users already are, such as LDAP or Active Directory. On this diagram only the identity provider talks to it.'
+				}
+			],
 			when: inADirectory
 		},
 		{
@@ -372,7 +391,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 	parts: [
 		{
 			label: 'That morning',
-			why: 'Logging in to their computer got a ticket for getting more, so no password is needed again.',
+			why: 'Logging in to their computer got a ticket that gets them other tickets with no password.',
 			from: 'computer-asks',
 			when: kerberos
 		},
@@ -474,10 +493,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		{
 			id: 'computer-asks',
 			when: kerberos,
-			from: 'browser',
+			from: 'computer',
 			to: 'kdc',
 			kind: 'request',
-			plain: 'Their computer asks for a ticket for tickets',
+			plain: 'Their computer asks for a ticket-granting ticket',
 			label: 'AS-REQ',
 			concept:
 				'That morning the user logged in to their computer, the one the browser runs on, with their password. The computer asks the KDC for a ticket-granting ticket for them, and offers no proof yet.',
@@ -509,23 +528,24 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			id: 'kdc-wants-proof',
 			when: kerberos,
 			from: 'kdc',
-			to: 'browser',
+			to: 'computer',
 			kind: 'response',
 			plain: 'Prove you know the password first',
 			label: 'KRB-ERROR, pre-authentication required',
 			concept:
-				'Its answer would be sealed with a key made from the password, which anyone who asked could take away and try passwords against. So the KDC wants proof first, as the one recorded was set to, and says which kind of key to make and the salt to make it with, here the realm and the username.',
+				'Its answer would be sealed with a key made from the password, which anyone who asked could take away and try passwords against. So the KDC wants proof first, as the one recorded was set to, and says which kind of key to make and the salt to make it with, here the realm and the username. That stops anyone asking, and not someone watching the network, who can try passwords against the proof.',
 			recordedAs: 'Caught on the wire and read by RFC 4120, because Kerberos is not HTTP.',
 			cites: [
 				{
 					source: 'rfc4120',
-					why: 'Section 3.1.3 is this answer, with the ways it may prove itself in e-data. Section 10 says an answer sealed with a key from the password can be guessed at, which is why realms should ask for this.'
+					why: 'Section 3.1.3 is this answer, with the ways it may prove itself in e-data. Section 10 says anyone can ask for an answer unless the realm wants proof first, and that anything sealed with a key from the password can be guessed at.'
 				}
 			],
 			fields: [
 				{ name: 'msg-type', place: 'body' },
 				{ name: 'stime', place: 'body' },
 				{ name: 'error-code', place: 'body', note: 'Pre-authentication required' },
+				{ name: 'crealm', place: 'body' },
 				{ name: 'cname', place: 'body' },
 				{ name: 'realm', place: 'body' },
 				{ name: 'sname', place: 'body' },
@@ -536,13 +556,13 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		{
 			id: 'computer-proves',
 			when: kerberos,
-			from: 'browser',
+			from: 'computer',
 			to: 'kdc',
 			kind: 'request',
 			plain: 'The time, sealed with the password',
 			label: 'AS-REQ, with the time sealed',
 			concept:
-				'The computer makes a key from the password and the salt, and seals the time with it. The KDC keeps the same key, so it can open it and see that the time is now. The password itself does not cross the network, which the recording checked.',
+				'The computer makes a key from the password and the salt, and seals the time with it. The KDC keeps the same key, so it can open it and see that the time is now. The password itself does not cross the network, which the recording checked. What is sealed with it does, so a weak one can still be guessed by someone who catches this.',
 			recordedAs: 'Caught on the wire and read by RFC 4120, because Kerberos is not HTTP.',
 			cites: [
 				{
@@ -570,12 +590,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			id: 'kdc-gives-tgt',
 			when: kerberos,
 			from: 'kdc',
-			to: 'browser',
+			to: 'computer',
 			kind: 'response',
-			plain: 'A ticket for getting tickets',
+			plain: 'A ticket-granting ticket',
 			label: 'AS-REP',
 			concept:
-				'The ticket-granting ticket is sealed with a key only the KDC has, so the computer can show it but not read it. With it comes a session key, sealed with the key from the password, which is how the computer will show the ticket is its own. Until it runs out the password is not needed again.',
+				'The ticket-granting ticket is sealed with a key only the KDC has, so the computer can show it but not read it. With it comes a session key, sealed with the key from the password, which is how the computer will show the ticket is its own. Until it runs out, getting other tickets takes no password.',
 			recordedAs: 'Caught on the wire and read by RFC 4120, because Kerberos is not HTTP.',
 			cites: [
 				{
@@ -1287,13 +1307,17 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: 'The identity provider sends a page with status 401 and a header that says it takes a Kerberos ticket. This browser was never told it may send one here, so it shows the page, which sends itself straight back.'
 				},
 				{
-					text: 'The identity provider sends a page with status 401 and a header that says it takes a Kerberos ticket. A browser that was told it may send one here asks for a ticket and sends the request again. The one recorded that was not told showed the page.'
+					text: 'The identity provider sends a page with status 401 and a header that says it takes a Kerberos ticket. A browser that was told it may send one here, by a list it was given or on Windows by its security zones, gets a ticket and sends the request again. The one recorded that was not told showed the page.'
 				}
 			],
 			cites: [
 				{
 					source: 'rfc4559',
 					why: 'Section 4.1 is this answer: 401, and Negotiate with nothing after it the first time.'
+				},
+				{
+					source: 'chromium-http-auth',
+					why: 'Chromium’s own account of when it sends a ticket: to a server on its list, or on Windows with no list, by the security zones.'
 				}
 			],
 			fields: [{ name: 'WWW-Authenticate', place: 'header', note: 'Negotiate: it takes a ticket' }]
@@ -1301,14 +1325,15 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		{
 			id: 'ask-for-service-ticket',
 			when: withATicket,
-			from: 'browser',
+			from: 'computer',
 			to: 'kdc',
 			kind: 'request',
 			plain: 'A ticket for the identity provider, please',
 			label: 'TGS-REQ',
 			concept:
-				'The browser asks the KDC for a ticket for HTTP and the server’s host name, from the address, HTTP/localhost here. It shows the ticket-granting ticket, with the time sealed with its session key to show it is its own. Nobody is asked for a password.',
-			recordedAs: 'Caught on the wire and read by RFC 4120, because Kerberos is not HTTP.',
+				'The browser wants a ticket for HTTP and the server’s host name, from the address, HTTP/localhost here, and the computer asks the KDC for it. It shows the ticket-granting ticket, with the time sealed with its session key to show it is its own. Nobody is asked for a password.',
+			recordedAs:
+				'Caught on the wire and read by RFC 4120, because Kerberos is not HTTP. On Linux, as recorded, Chromium sent this itself, through the system’s Kerberos library. On Windows the system asks for the browser.',
 			cites: [
 				{
 					source: 'rfc4559',
@@ -1339,12 +1364,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			id: 'kdc-gives-service-ticket',
 			when: withATicket,
 			from: 'kdc',
-			to: 'browser',
+			to: 'computer',
 			kind: 'response',
 			plain: 'A ticket only the identity provider can open',
 			label: 'TGS-REP',
 			concept:
-				'The ticket is sealed with the key the KDC keeps for the identity provider, the one an admin gave it. On the outside the ticket says only what it is for, HTTP/localhost in the Kerberos realm. Who the user is and a session key are inside, where only the identity provider can read them. The browser gets its own copy of that key beside the ticket, and the user’s name crosses in the clear too.',
+				'The ticket is sealed with the key the KDC keeps for the identity provider, the one an admin gave it. On the outside the ticket says only what it is for, HTTP/localhost in the Kerberos realm. Who the user is and a session key are inside, where only the identity provider can read them. The computer gets its own copy of that key beside the ticket, and the user’s name crosses in the clear too.',
 			recordedAs: 'Caught on the wire and read by RFC 4120, because Kerberos is not HTTP.',
 			cites: [
 				{
@@ -1379,10 +1404,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'The same request, with the ticket',
 			label: 'Authorization: Negotiate',
 			concept:
-				'The browser sends the same request again, with the ticket in the header and the time sealed with the session key that came with it. The identity provider opens the ticket with its own key, takes the session key from it, and checks the time, without asking the KDC. Nobody typed anything.',
+				'The browser sends the same request again, with the ticket the computer got in the header, and the time sealed with the session key that came with it. The identity provider opens the ticket with its own key, takes the session key from it, and checks the time, without asking the KDC. Nobody typed anything.',
 			pitfall: {
 				title: 'What if the login page shows anyway?',
-				text: 'Then the ticket did not get the user in. On the server recorded it first did not, with a good ticket: the identity provider looks the user up in the directory by an attribute, krb5PrincipalName unless set otherwise, which these users did not have. It logged that it found nobody, and showed its page. With the attribute left empty it looks them up by the name before the @.'
+				text: 'Then the ticket did not get the user in. On the server recorded it first did not, with a good ticket: the identity provider looks the user up in the directory by an attribute that names their Kerberos principal, which it picks by the kind of directory. For this one it picked krb5PrincipalName, which these users did not have, and for Active Directory it picks userPrincipalName. It logged that it found nobody, and showed its page. With the attribute left empty it looks them up by the name before the @.'
 			},
 			inPractice:
 				'Nothing for your app, which never sees a ticket. Whoever runs the identity provider needs HTTPS in front of it: the header carries the ticket, and nothing in Negotiate protects the headers.',
@@ -1422,12 +1447,16 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				'The page that came with the 401 sends itself straight back, with nothing in it. The identity provider takes that to mean no ticket is coming, and shows its login form. The ticket the computer got that morning is never used.',
 			pitfall: {
 				title: 'Why does this one site ask for my password?',
-				text: 'It can be because the browser was not told it may send a ticket there. Chromium sends one only to a site on its list, which on Windows, with no list set, Windows decides by its security zones. The one recorded was told with --auth-server-allowlist. A good ticket can still end at the login page, when the identity provider cannot find who it names.'
+				text: 'It can be because the browser was not told it may send a ticket there. Chromium sends one only to a site on its list, or on Windows, with no list set, to sites Windows counts as the local intranet. The one recorded here was given no list, and the one that sent a ticket was given one. A good ticket can still end at the login page, when the identity provider cannot find who it names. Other reasons a ticket does not get someone in, which were not recorded: a computer with no ticket at all, because the user did not log in to the network, a clock too far from the others, or a host name in the address that is not the one the identity provider’s principal names.'
 			},
 			cites: [
 				{
 					source: 'chromium-http-auth',
-					why: 'Chromium’s own account of when it sends a ticket: only to a server on its list.'
+					why: 'Chromium’s own account of when it sends a ticket: to a server on its list, or on Windows with no list, by the security zones. It asks for one by the host name it reaches.'
+				},
+				{
+					source: 'rfc4120',
+					why: 'Section 1.6 says each host’s clock has to be in step with the others, typically to within 5 minutes.'
 				}
 			],
 			fields: []

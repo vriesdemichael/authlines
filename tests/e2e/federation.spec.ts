@@ -96,6 +96,9 @@ test.describe('a ticket on a company network', () => {
 		await expect(wire).toContainText('Kerberos TGS-REP, over TCP');
 		await expect(wire).toContainText('HTTP/localhost');
 		await expect(wire).toContainText('read by RFC 4120');
+		// A request, where an HTTP one would have a command to copy.
+		await open(page, '&directory=1&kerberos=1&step=ask-for-service-ticket');
+		await expect(wire).toContainText('Kerberos TGS-REQ, over TCP');
 		await expect(page.getByTestId('copy-request')).toHaveCount(0);
 		await open(page, '&directory=1&kerberos=1&step=idp-negotiate');
 		await expect(wire).toContainText('Negotiate');

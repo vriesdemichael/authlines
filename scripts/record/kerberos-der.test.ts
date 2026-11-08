@@ -37,6 +37,38 @@ describe('reading Kerberos off the wire', () => {
 		});
 	}
 
+	// Read by hand with openssl asn1parse, so that this does not only hold the reader to itself.
+	it.skipIf(!recorded('kerberos'))('reads what openssl reads in the same bytes', () => {
+		const body = (step: string) =>
+			recorded('kerberos')!.messages.find((message) => message.step === step)!.body as Record<
+				string,
+				unknown
+			>;
+		expect(body('computer-asks')).toMatchObject({
+			'msg-type': 'AS-REQ (10)',
+			// 00 00 00 10: bit 27 alone.
+			'kdc-options': ['renewable-ok']
+		});
+		expect(body('kdc-wants-proof')).toMatchObject({
+			'msg-type': 'KRB-ERROR (30)',
+			// 0x19
+			'error-code': 'KDC_ERR_PREAUTH_REQUIRED (25)',
+			crealm: 'EXAMPLE.TEST'
+		});
+		expect(body('ask-for-service-ticket')).toMatchObject({
+			'msg-type': 'TGS-REQ (12)',
+			// 00 01 00 00: bit 15 alone.
+			'kdc-options': ['canonicalize'],
+			// 0x13DBE632
+			nonce: 333178418
+		});
+	});
+
+	it('refuses a length whose bytes run past the message', () => {
+		expect(() => decodeKerberos(Buffer.from('6a84ff', 'hex'))).toThrow(/runs past/);
+		expect(() => decodeKerberos(Buffer.from('6a', 'hex'))).toThrow(/runs past/);
+	});
+
 	it.skipIf(!recorded('kerberos'))(
 		'the ticket the browser sends is the one the KDC gave it, sealed for the identity provider',
 		() => {

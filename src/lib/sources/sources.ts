@@ -24,6 +24,7 @@ export type SourceId =
 	| 'rfc4120'
 	| 'rfc4559'
 	| 'windows-kerberos'
+	| 'windows-ktpass'
 	| 'chromium-http-auth'
 	| 'keycloak-organizations'
 	| 'keycloak-timeouts'
@@ -254,7 +255,7 @@ export const sources: Record<SourceId, SourceDef> = {
 		title: 'Kerberos',
 		status: 'Keycloak 26.8.1, Server Administration Guide.',
 		summary:
-			'Keycloak can take a Kerberos ticket from the browser through SPNEGO. Its guide says it answers the login with its login page, status 401 and WWW-Authenticate: Negotiate, and a browser with a ticket sends its request again with one. The server recorded sent a page that sent itself back, and its login page after that. It needs a service principal, HTTP and its own host name, with the key exported from the KDC to a keytab it can read. The users come from LDAP with Kerberos allowed on that provider, or from a Kerberos provider of its own. A browser has to be told which sites it may send a ticket to, and otherwise the login page shows.',
+			'Keycloak can take a Kerberos ticket from the browser through SPNEGO. Its guide says it answers the login with its login page, status 401 and WWW-Authenticate: Negotiate, and a browser with a ticket sends its request again with one. The server recorded sent a page that sent itself back, and its login page after that. It needs a service principal, HTTP and its own host name, with the key exported from the KDC to a keytab it can read. The users come from LDAP with Kerberos allowed on that provider, or from a Kerberos provider of its own. Firefox has to be told which sites it may send a ticket to, and Internet Explorer and Edge on a Windows domain need nothing changed. A browser that sends none gets the login page.',
 		url: 'https://www.keycloak.org/docs/26.8.1/server_admin/#_kerberos'
 	},
 	'windows-kerberos': {
@@ -264,6 +265,14 @@ export const sources: Record<SourceId, SourceDef> = {
 		summary:
 			'In Windows Server the KDC runs on every domain controller, with Active Directory as the database of accounts. The first login is the one at the computer, and after it Kerberos gets the tickets for whatever the user reaches. Windows adds to the Kerberos of RFC 4120, such as authorization data carried in the ticket, which its own specification, MS-KILE, sets out.',
 		url: 'https://learn.microsoft.com/en-us/windows-server/security/kerberos/kerberos-authentication-overview'
+	},
+	'windows-ktpass': {
+		label: 'Microsoft: ktpass',
+		title: 'ktpass',
+		status: 'Microsoft Learn, updated November 2024.',
+		summary:
+			'The Windows command that gives a service that is not Windows a principal in Active Directory, and writes its key to a keytab. The principal is mapped to an account, and the key comes from that account’s password, which the command sets, or makes at random.',
+		url: 'https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/ktpass'
 	},
 	'chromium-http-auth': {
 		label: 'Chromium: HTTP authentication',
