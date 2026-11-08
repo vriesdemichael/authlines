@@ -21,6 +21,7 @@ import { noteDefs } from '#lib/keycloak/notes.ts';
 import { SIZE, widthOf, type Picture, type PicturePart } from '#lib/pictures/model.ts';
 import { refreshPicture } from '#lib/pictures/refresh.ts';
 import { inSimpleMode } from '#lib/pictures/simple.ts';
+import { CLAIM_ROWS, RECORDED } from '#lib/pictures/what-a-token-says.ts';
 import oidc from '../../../static/recordings/authorization-code/oidc.json';
 
 const base = flows['authorization-code'];
@@ -466,6 +467,54 @@ describe('the concept pictures (#167)', () => {
 });
 
 // The maintainer, 2026-11-07: the circles were not explained, and the rows took knowing already.
+describe('what a token says (#200)', () => {
+	const claimsIn = (name: string) => {
+		const body = (
+			oidc as { messages: { step: string; body?: Record<string, unknown> }[] }
+		).messages.find((message) => message.step === 'token-response')!.body!;
+		const payload = String(body[name]).split('.')[1];
+		return JSON.parse(Buffer.from(payload, 'base64url').toString()) as Record<string, unknown>;
+	};
+
+	it('says what the recorded tokens said, which a re-recording would show changing', () => {
+		const shape = (claims: Record<string, unknown>) =>
+			Object.fromEntries(Object.keys(claims).map((name) => [name, typeof claims[name]]));
+		// The values change with each run, so they are held to it in kind, and the names in full.
+		expect(shape(RECORDED.access)).toEqual(shape(claimsIn('access_token')));
+		expect(shape(RECORDED.id)).toEqual(shape(claimsIn('id_token')));
+		for (const name of ['iss', 'aud', 'azp', 'scope', 'acr', 'typ'] as const) {
+			expect(RECORDED.access[name], name).toEqual(claimsIn('access_token')[name]);
+		}
+		expect(RECORDED.id.aud).toEqual(claimsIn('id_token').aud);
+		expect(RECORDED.access.exp - RECORDED.access.iat).toBe(
+			(claimsIn('access_token').exp as number) - (claimsIn('access_token').iat as number)
+		);
+	});
+
+	it('has a row for every claim in either token, and none for a claim in neither', () => {
+		const named = CLAIM_ROWS.flatMap((row) => row.names);
+		const inEither = new Set([...Object.keys(RECORDED.access), ...Object.keys(RECORDED.id)]);
+		expect(new Set(named)).toEqual(inEither);
+		expect(named.length).toBe(inEither.size);
+	});
+
+	it('is in what explains a claim and a JWT, with values only where values are shown', () => {
+		const advanced = picture('explain=term.claim&mode=advanced');
+		const simple = picture('explain=term.jwt&mode=simple');
+		expect(advanced.id).toBe('what-a-token-says');
+		expect(simple.id).toBe('what-a-token-says');
+		const said = (found: Picture) => found.parts.map((part) => part.says.join(' ')).join(' ');
+		expect(said(advanced)).toContain(RECORDED.access.iss);
+		expect(said(simple)).not.toContain(RECORDED.access.iss);
+		// The access token has no nonce, and the ID token no scope, in either mode.
+		const cell = (found: Picture, id: string) => found.parts.find((part) => part.id === id);
+		expect(cell(simple, 'nonce.access')?.mark).toBe('none');
+		expect(cell(advanced, 'scope.id')?.mark).toBe('none');
+		expect(cell(simple, 'aud.id')?.mark).toBe('full');
+		expect(cell(advanced, 'aud.access')?.says).toEqual(['account']);
+	});
+});
+
 describe('what the circles and the rows mean', () => {
 	it('is in a key drawn with the same marks, wherever there are marks', () => {
 		for (const found of pictures) {

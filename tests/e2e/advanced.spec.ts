@@ -185,6 +185,18 @@ test.describe('values carried through a run', () => {
 		await expect(page.getByTestId('jwt')).toHaveCount(1);
 	});
 
+	// What each claim says was nowhere, though the raw view decodes them (#200).
+	test('says what the claims in a decoded token are, from the word over them', async ({ page }) => {
+		await open(page, 'oidc=1&step=token-response&decoded=1');
+		const token = page.getByTestId('opened-token').filter({ hasText: '"nonce"' });
+		await token.locator('[data-term="claim"]').click();
+		await expect.poll(() => currentSearch(page)).toContain('explain=term.claim');
+		const picture = page.getByTestId('picture');
+		await expect(picture).toHaveAttribute('data-picture', 'what-a-token-says');
+		await expect(picture).toContainText('at_hash');
+		await expect(picture).toContainText('http://localhost:18080/realms/demo');
+	});
+
 	test('is not offered a switch that would change nothing', async ({ page }) => {
 		await open(page, 'step=open-app');
 		await expect(page.getByTestId('payload')).toBeVisible();

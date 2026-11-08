@@ -1152,6 +1152,7 @@
 						onlarge={() => onnavigate(withRaw(appState, true), 'push')}
 						decoded={appState.decoded}
 						ondecode={decode}
+						onterm={explainTerm}
 					/>
 				{/if}
 			{/snippet}

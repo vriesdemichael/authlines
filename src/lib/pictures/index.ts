@@ -11,6 +11,7 @@ import { inSimpleMode } from './simple.ts';
 import { trustAcrossProviders } from './trust-across-providers.ts';
 import { whatACodeLooksLike } from './what-a-code-looks-like.ts';
 import { whatAThiefCanDo } from './what-a-thief-can-do.ts';
+import { whatATokenSays } from './what-a-token-says.ts';
 import { whatEachFactorProves } from './what-each-factor-proves.ts';
 import { whatEachSpecAdds } from './what-each-spec-adds.ts';
 import { whatStopsWhat } from './what-stops-what.ts';
@@ -65,7 +66,6 @@ export const PICTURE_OF: Readonly<Record<string, PictureId>> = {
 	'term.issuer': 'how-an-api-trusts-a-token',
 	'term.signature': 'how-an-api-trusts-a-token',
 	'term.audience': 'how-an-api-trusts-a-token',
-	'term.jwt': 'how-an-api-trusts-a-token',
 	'term.token': 'which-token-is-for-whom',
 	'artifact.access-token': 'which-token-is-for-whom',
 	'term.access-token': 'which-token-is-for-whom',
@@ -97,7 +97,9 @@ export const PICTURE_OF: Readonly<Record<string, PictureId>> = {
 	'term.mfa': 'what-each-factor-proves',
 	'term.passkey': 'what-each-factor-proves',
 	'term.one-time-password': 'what-a-code-looks-like',
-	'artifact.password': 'what-a-thief-can-do'
+	'artifact.password': 'what-a-thief-can-do',
+	'term.claim': 'what-a-token-says',
+	'term.jwt': 'what-a-token-says'
 };
 
 /** Each picture, drawn for the state on screen in the words chosen. */
@@ -139,6 +141,9 @@ export function draw(id: PictureId, state: AppState, wording: Wording, say: Say)
 			return whatACodeLooksLike(say);
 		case 'what-a-thief-can-do':
 			return whatAThiefCanDo(say, keep);
+		case 'what-a-token-says':
+			// Simple mode shows no values, so there a circle says whether a token has it.
+			return whatATokenSays(say, state.mode !== 'simple');
 	}
 }
 
