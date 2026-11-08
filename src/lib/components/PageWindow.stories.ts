@@ -35,4 +35,7 @@ export const TheCodeInTheAddress: Story = {
 
 export const WithoutTheServer: Story = { args: { image: null } };
 
-export const NotRecordedWithTheseSettings: Story = { args: { address: null } };
+export const NotRecordedWithTheseSettings: Story = { args: { address: null, recorded: 'none' } };
+
+/** While the recording loads, it does not say that there is none. */
+export const Loading: Story = { args: { address: null, recorded: 'loading' } };

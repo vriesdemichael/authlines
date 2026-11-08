@@ -80,8 +80,23 @@ test.describe('what a person sees in their browser', () => {
 
 	test('says so where the address was not recorded, and makes none up', async ({ page }) => {
 		await open(page, 'mode=simple&oidc=1&binding=dpop&step=login-page');
-		await expect(page.getByTestId('page-no-address')).toBeVisible();
+		await expect(page.getByTestId('page-no-address')).toHaveText(
+			'Recorded with other settings, not these, so the address is not shown.'
+		);
 		await expect(picture(page)).toBeVisible();
+		await expect(page.getByTestId('page-caption')).toContainText('from a run with other settings');
+	});
+
+	// The maintainer, 2026-11-08: it said there was no recording while the recording was loading.
+	test('does not say there is no recording while it loads', async ({ page }) => {
+		await page.route('**/recordings/authorization-code/*.json', async (route) => {
+			await new Promise((resolve) => setTimeout(resolve, 1500));
+			await route.continue();
+		});
+		await open(page, 'mode=advanced&address=other&step=address-refused');
+		await expect(page.getByTestId('page-no-address')).toHaveText('Loading what was recorded.');
+		await expect(page.getByTestId('page-address')).toContainText('redirect_uri');
+		await expect(page.getByTestId('page-caption')).not.toContainText('other settings');
 	});
 
 	test('loads a picture only for the step on screen', async ({ page }) => {

@@ -9,6 +9,7 @@ import type { Opens, Picture, PictureId } from './model.ts';
 import { refreshPicture } from './refresh.ts';
 import { inSimpleMode } from './simple.ts';
 import { trustAcrossProviders } from './trust-across-providers.ts';
+import { whatACodeLooksLike } from './what-a-code-looks-like.ts';
 import { whatAThiefCanDo } from './what-a-thief-can-do.ts';
 import { whatEachFactorProves } from './what-each-factor-proves.ts';
 import { whatEachSpecAdds } from './what-each-spec-adds.ts';
@@ -95,7 +96,7 @@ export const PICTURE_OF: Readonly<Record<string, PictureId>> = {
 	'term.realm': 'what-is-in-a-token-here',
 	'term.mfa': 'what-each-factor-proves',
 	'term.passkey': 'what-each-factor-proves',
-	'term.one-time-password': 'what-each-factor-proves',
+	'term.one-time-password': 'what-a-code-looks-like',
 	'artifact.password': 'what-a-thief-can-do'
 };
 
@@ -134,6 +135,8 @@ export function draw(id: PictureId, state: AppState, wording: Wording, say: Say)
 			return whatIsInATokenHere();
 		case 'what-each-factor-proves':
 			return whatEachFactorProves(say);
+		case 'what-a-code-looks-like':
+			return whatACodeLooksLike(say);
 		case 'what-a-thief-can-do':
 			return whatAThiefCanDo(say, keep);
 	}

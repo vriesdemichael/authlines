@@ -149,16 +149,27 @@ test.describe('getting there', () => {
 	});
 
 	test('can be done from what a lifeline says about itself, and undone', async ({ page }) => {
-		await open(page, 'mode=simple');
+		await open(page, 'mode=advanced');
 		await page.locator('[data-lifeline="browser"]').click();
+		await expect(page.getByTestId('see-only')).toHaveText(
+			"Grey out what the user's browser never saw"
+		);
 		await page.getByTestId('see-only').click();
 		await expect(page).toHaveURL(/eyes=browser/);
 		// Out of the way, because what it changed is on the diagram.
 		await expect(page.getByTestId('explanation')).toHaveCount(0);
 		await page.locator('[data-lifeline="browser"]').click();
-		await expect(page.getByTestId('see-only')).toHaveText('See everything again');
+		await expect(page.getByTestId('see-only')).toHaveText('Show everything again');
 		await page.getByTestId('see-only').click();
 		await expect(page).not.toHaveURL(/eyes=/);
+	});
+
+	// The maintainer, 2026-11-08: offered everywhere, it felt unnatural, and its name said nothing.
+	test('is not offered from what a party says about itself in simple mode', async ({ page }) => {
+		await open(page, 'mode=simple');
+		await page.locator('[data-lifeline="idp"]').first().click();
+		await expect(page.getByTestId('explanation')).toBeVisible();
+		await expect(page.getByTestId('see-only')).toHaveCount(0);
 	});
 
 	test('comes off from the note', async ({ page }) => {

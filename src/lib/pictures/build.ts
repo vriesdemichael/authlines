@@ -47,7 +47,7 @@ export function landingSettings(opens: Opens, screen: Settings): Settings {
 
 const PAD = 14;
 const ROW = 50;
-const LINE = { title: 18, says: 17, more: 15 } as const;
+const LINE = { title: 18, says: 17, more: 15, code: 26 } as const;
 
 /**
  * A party's box, as tall as what it says, from its top left. Its words break to fit, at the sizes the
@@ -121,7 +121,7 @@ export function textAt(
 	w: number,
 	words: string,
 	options: {
-		size?: 'title' | 'says' | 'more';
+		size?: 'title' | 'says' | 'more' | 'code';
 		align?: 'start' | 'middle' | 'end';
 		opens?: Opens;
 	} = {}
@@ -142,6 +142,19 @@ export function textAt(
 		opens: options.opens
 	};
 }
+
+/** One box of a field with a character in each, empty, or with the cursor in it. */
+export const charAt = (id: string, left: number, top: number, char: string, current = false) =>
+	({
+		id,
+		shape: 'char',
+		x: left + 20,
+		y: top + 24,
+		w: 40,
+		h: 48,
+		says: char ? [char] : [],
+		current
+	}) satisfies PicturePart;
 
 /** A cell of a matrix, with what it means read out. */
 export const markAt = (

@@ -35,6 +35,11 @@ const states: readonly [string, string, 'flow' | 'setup'][] = [
 	['what-is-in-a-token-here', 'mode=advanced&explain=term.realm', 'flow'],
 	['what-each-factor-proves', 'mode=simple&step=submit-credentials&explain=term.mfa', 'flow'],
 	['what-a-thief-can-do', 'mode=simple&step=submit-credentials&explain=artifact.password', 'flow'],
+	[
+		'what-a-code-looks-like',
+		'mode=simple&step=submit-credentials&explain=term.one-time-password',
+		'flow'
+	],
 	['address-refused', 'mode=simple&address=other&step=address-refused', 'flow'],
 	['app-in-the-page', 'mode=simple&runs=page&client=public&pkce=1&step=token-response', 'flow'],
 	['server-behind-the-page', 'mode=simple&runs=bff&pkce=1&step=set-session', 'flow'],

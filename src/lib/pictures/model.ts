@@ -28,14 +28,17 @@ export type PictureId =
 	| 'what-each-spec-adds'
 	| 'what-is-in-a-token-here'
 	| 'what-each-factor-proves'
-	| 'what-a-thief-can-do';
+	| 'what-a-thief-can-do'
+	| 'what-a-code-looks-like';
 
 /**
  * Where something starts or ends, a step, or a question with more than one way on: those make a
  * flowchart. A party, with what it holds, makes a relation diagram, and a zone holds parties. A text
- * is a heading or a label, a mark is a cell of a matrix, and a bar is a length of time.
+ * is a heading or a label, a mark is a cell of a matrix, and a bar is a length of time. A char is one
+ * box of a field that asks for one character in each, as a page asks for a one-time code.
  */
-export type PartShape = 'ends' | 'step' | 'ask' | 'party' | 'zone' | 'text' | 'mark' | 'bar';
+export type PartShape =
+	'ends' | 'step' | 'ask' | 'party' | 'zone' | 'text' | 'mark' | 'bar' | 'char';
 
 /** A cell of a matrix: all, some, none, what the specs say and nothing here shows, or nothing. */
 export type MarkKind = 'full' | 'half' | 'empty' | 'dot' | 'none';
@@ -60,7 +63,7 @@ export interface PicturePart {
 	/** How a call travels, when it is one, in the colours the arrows use (ADR-014). */
 	travels?: 'direct' | 'browser';
 	/** A text's words, at which size, and from which side. */
-	size?: 'title' | 'says' | 'more';
+	size?: 'title' | 'says' | 'more' | 'code';
 	align?: 'start' | 'middle' | 'end';
 	/** A cell of a matrix, whose words are only read out. */
 	mark?: MarkKind;
@@ -118,6 +121,8 @@ export const SIZE = {
 	title: 14,
 	says: 13,
 	more: 11.5,
+	/** A code as someone reads it off a screen, in the font of a value on the wire. */
+	code: 20,
 	label: 12,
 	row: 12.5,
 	rowMore: 11
