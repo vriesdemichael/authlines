@@ -28,7 +28,7 @@ test.describe('what a person sees in their browser', () => {
 		await expect(parameter(page, 'code')).toHaveClass(/marked/);
 		await expect(parameter(page, 'code')).toHaveAttribute('title', /.{20,}/);
 		await expect(picture(page)).toHaveCount(0);
-		await expect(outline(page)).toContainText('the code is in it');
+		await expect(outline(page)).toContainText('what came back is in it');
 	});
 
 	test('explains a part of the address when it is selected', async ({ page }) => {
