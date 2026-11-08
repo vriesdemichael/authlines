@@ -189,8 +189,8 @@ describe('going on from a question', () => {
 
 	it('goes to the next one the map lays out', () => {
 		expect(nextQuestion(node('how-access-works'))?.id).toBe('why-a-code');
-		expect(nextQuestion(node('why-a-code'))?.id).toBe('the-implicit-flow');
-		expect(nextQuestion(node('the-implicit-flow'))?.id).toBe('what-the-browser-sees');
+		expect(nextQuestion(node('why-a-code'))?.id).toBe('what-the-browser-sees');
+		expect(nextQuestion(node('no-secret'))?.id).toBe('the-implicit-flow');
 		expect(nextQuestion(mapNodes.at(-1)!)).toBeNull();
 	});
 });
