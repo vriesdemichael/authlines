@@ -319,6 +319,14 @@ const list: readonly Term[] = [
 		at: flowAt('token-response')
 	},
 	{
+		id: 'offline-access',
+		name: 'offline_access',
+		words: ['offline_access'],
+		explains:
+			'The scope an app asks for to get a refresh token it can use when the user is not there, an offline token. OpenID Connect says the user has to agree to it.',
+		at: flowAt('authorize', { oidc: true, logout: true, logoutKeeps: 'offline' })
+	},
+	{
 		id: 'code',
 		name: 'Code',
 		words: ['the code', 'one-time code', 'authorization code'],
