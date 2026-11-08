@@ -643,16 +643,16 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 		default: 'sent',
 		onlyOn: 'authorization-code',
 		summary:
-			'A browser sends one only to a site it was told to, and otherwise the identity provider shows its login page.',
-		why: 'A ticket says who someone is, so a browser does not hand one to any site that asks. It is told by a list in its settings, which the admins of a company’s computers set, or on Windows with no list, by the sites Windows counts as the local intranet. Someone on a company network who sees a password prompt on just one site can be seeing a browser that was not told about it.',
+			'A browser sends one only to a site it was told to. Otherwise the identity provider’s login page follows, after a password dialog of the browser’s own on Windows.',
+		why: 'A ticket says who someone is, so a browser does not hand one to any site that asks. Chromium is told by a list in its settings, which the admins of a company’s computers set, or on Windows with no list, by the sites Windows counts as local, on the intranet or the computer itself. Firefox goes by a list of its own. Someone on a company network who sees a password prompt on just one site can be seeing a browser that was not told about it.',
 		sources: [
 			{
 				source: 'chromium-http-auth',
-				why: 'Chromium’s own account of when it sends a ticket: to a server on its list, or on Windows with no list, by the security zones.'
+				why: 'Chromium’s own account of when it sends a ticket: to a server on its list, or on Windows with no list, by the security zones. A server off the list gets a username and password instead.'
 			},
 			{
 				source: 'keycloak-kerberos',
-				why: 'Keycloak’s guide says how Firefox is told, and that Internet Explorer and Edge on a Windows domain need nothing changed, which by Chromium’s page holds for a site Windows counts as the local intranet.'
+				why: 'Keycloak’s guide says how Firefox is told, and that Internet Explorer and Edge on a Windows domain need nothing changed, which by Chromium’s page holds for sites in the local intranet or local machine zones. Off the list, it says, a Windows browser may show a dialog the user has to cancel.'
 			}
 		],
 		requires: {

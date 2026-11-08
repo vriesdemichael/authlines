@@ -129,7 +129,7 @@ export const artifacts: Readonly<
 		label: 'ticket-granting ticket',
 		short: 'TGT',
 		explains:
-			'What the computer got when the user logged in to it: a ticket for asking the KDC for other tickets with no password, until it runs out. It is sealed with a key only the KDC has, so the computer can show it but not read it.'
+			'What the user got when they logged in to their computer, which keeps it for them: a ticket for asking the KDC for other tickets with no password, until it runs out. It is sealed with a key only the KDC has, so the computer can show it but not read it.'
 	},
 	'service-ticket': {
 		label: 'service ticket',
@@ -213,7 +213,7 @@ const parameterWhy: Readonly<Record<string, string>> = {
 	// Kerberos, read off the wire by RFC 4120 (#148).
 	'msg-type': 'Which Kerberos message this is.',
 	padata: 'What goes beside the request or the answer, to prove something or say how.',
-	'kdc-options': 'Flags for the ticket it wants, such as one that can be renewed.',
+	'kdc-options': 'Flags for the ticket it wants, and for how it may be answered.',
 	cname: 'The user, without the realm.',
 	crealm: 'The user’s Kerberos realm.',
 	realm: 'The Kerberos realm, in capitals, which is not the identity provider’s realm.',

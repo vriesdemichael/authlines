@@ -22,6 +22,7 @@ export type SourceId =
 	| 'keycloak-federation'
 	| 'keycloak-kerberos'
 	| 'rfc4120'
+	| 'rfc4556'
 	| 'rfc4559'
 	| 'windows-kerberos'
 	| 'windows-ktpass'
@@ -147,6 +148,15 @@ export const sources: Record<SourceId, SourceDef> = {
 		// sections 2.c and 5.c), so this one is a summary and a link, and not the text (ADR-009).
 		url: 'https://www.rfc-editor.org/rfc/rfc4120.html'
 	},
+	rfc4556: {
+		label: 'RFC 4556',
+		title: 'Public Key Cryptography for Initial Authentication in Kerberos (PKINIT)',
+		status: 'Proposed Standard, June 2006.',
+		summary:
+			'Lets a user prove who they are to the KDC with a key pair and an X.509 certificate, in place of a key made from a password, and get their ticket-granting ticket that way.',
+		// From 2006, so a summary and a link as for RFC 4120.
+		url: 'https://www.rfc-editor.org/rfc/rfc4556.html'
+	},
 	rfc4559: {
 		label: 'RFC 4559',
 		title: 'SPNEGO-based Kerberos and NTLM HTTP Authentication in Microsoft Windows',
@@ -269,7 +279,7 @@ export const sources: Record<SourceId, SourceDef> = {
 	'windows-ktpass': {
 		label: 'Microsoft: ktpass',
 		title: 'ktpass',
-		status: 'Microsoft Learn, updated November 2024.',
+		status: 'Microsoft Learn, updated October 2025.',
 		summary:
 			'The Windows command that gives a service that is not Windows a principal in Active Directory, and writes its key to a keytab. The principal is mapped to an account, and the key comes from that account’s password, which the command sets, or makes at random.',
 		url: 'https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/ktpass'

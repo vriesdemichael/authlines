@@ -316,6 +316,10 @@ function fitStrip(count: number, room?: Room) {
 }
 
 /** A field's own name can be longer than a phone is wide. The detail has all of it. */
+/** Over an arrow, a token or ticket wider than the room between its numbers would cover them. */
+const fitToken = (field: Field, room: number): Field =>
+	field.artifact && chipWidth(field) > room ? { ...field, short: true } : field;
+
 function fitChip(field: Field, room: number): Field {
 	if (chipWidth(field) <= room) return field;
 	// What it carries keeps a name it has, the one under each lane.
@@ -387,7 +391,7 @@ export function layoutDiagram(
 		const { self, room } = placeOf(step);
 		const counts = (strip ? [simple] : [true, false]).flatMap((plain) => {
 			const all = plain ? chipsOn(step).filter((f) => f.artifact || f.mark) : chipsOn(step);
-			const shown = strip ? all.map((field) => fitChip(field, room)) : all;
+			const shown = all.map((field) => (strip ? fitChip(field, room) : fitToken(field, room)));
 			return (strip ? [wording] : wordings).map((other) => {
 				const label = sayer(other)(plain ? step.plain : step.label);
 				return self && !strip
@@ -426,11 +430,9 @@ export function layoutDiagram(
 		const down = self || strip;
 		const y = down ? cursor : cursor + extra;
 		const onMessage = chipsOn(step);
-		const shown = whole
-			? []
-			: simple
-				? onMessage.filter((field) => field.artifact || field.mark)
-				: onMessage;
+		const shown = (
+			whole ? [] : simple ? onMessage.filter((field) => field.artifact || field.mark) : onMessage
+		).map((field) => fitToken(field, words));
 		const label = simple ? step.plain : step.label;
 		const lines: LabelLine[] = [];
 		const put = (field: Field, x: number, baseline: number) => {

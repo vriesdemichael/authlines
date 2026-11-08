@@ -402,7 +402,7 @@ export const mapTracks: readonly MapTrack[] = [
 						'kerberos not working'
 					],
 					answer:
-						'Logging in to your computer got it a Kerberos ticket, and with that a ticket for the identity provider, which the browser sent in place of a password. A browser that was not told it may send one there gets the login page instead.',
+						'Logging in to your computer got it a Kerberos ticket, and with that a ticket for the identity provider, which the browser sent in place of a password. A browser that was not told it may send one there gets the login page, on Windows after a dialog of its own.',
 					title: 'Why did I not have to log in?',
 					summary: 'A ticket from logging in to the computer, sent in place of a password.',
 					mode: 'advanced',

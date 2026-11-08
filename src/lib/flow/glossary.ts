@@ -972,7 +972,7 @@ const list: readonly Term[] = [
 		name: 'Kerberos',
 		words: ['Kerberos'],
 		explains:
-			'How a company network logs people in once. The computer gets a ticket when they log in to it, and with that a ticket for each service they reach, so a service that takes a ticket does not ask for the password. A Windows domain uses it.',
+			'How a company network logs people in once. Logging in to their computer gets the user a ticket, which the computer keeps for them, and with that a ticket for each service they reach, so a service that takes a ticket does not ask for the password. A Windows domain uses it.',
 		at: flowAt('computer-asks', { federation: true, kerberos: true })
 	},
 	{
@@ -991,7 +991,7 @@ const list: readonly Term[] = [
 		alsoCalled: ['TGT'],
 		artifact: 'tgt',
 		explains:
-			'What the computer gets when the user logs in to it, for asking the KDC for other tickets with no password, until it runs out.',
+			'What the user gets when they log in to their computer, which keeps it for them, for asking the KDC for other tickets with no password, until it runs out.',
 		at: flowAt('kdc-gives-tgt', { federation: true, kerberos: true })
 	},
 	{
@@ -1002,6 +1002,23 @@ const list: readonly Term[] = [
 		explains:
 			'A Kerberos ticket for one service, which says who the user is and is sealed so that only that service can open it.',
 		at: flowAt('kdc-gives-service-ticket', { federation: true, kerberos: true })
+	},
+	// Longer than the words of a browser's session and a DPoP proof, so these win where they are used.
+	{
+		id: 'session-key',
+		name: 'Session key',
+		words: ['session key', 'session keys'],
+		explains:
+			'In Kerberos, a key the KDC makes for one ticket and hands to both sides: sealed inside the ticket for the service, and beside it for whoever asked. The time sealed with it shows the ticket is theirs. It has nothing to do with a session at a website.',
+		at: flowAt('kdc-gives-service-ticket', { federation: true, kerberos: true })
+	},
+	{
+		id: 'pre-authentication',
+		name: 'Pre-authentication',
+		words: ['pre-authentication', 'no proof yet', 'proof first'],
+		explains:
+			'In Kerberos, showing the KDC that the user knows the password before it answers, here with the time sealed with a key made from it. Without it anyone could ask for an answer sealed with that key, and try passwords against it at leisure. Someone watching the network can still try them against what is sent.',
+		at: flowAt('kdc-wants-proof', { federation: true, kerberos: true })
 	},
 	{
 		id: 'kerberos-realm',
@@ -1025,7 +1042,7 @@ const list: readonly Term[] = [
 		words: ['service principal', 'service principals', 'SPN', 'SPNs'],
 		alsoCalled: ['SPN', 'server principal'],
 		explains:
-			'A service’s name in a Kerberos realm. For a website it is HTTP and its host name, and a browser asks for a ticket by the host name it reaches, after any alias in DNS, so the two have to match.',
+			'A service’s name in a Kerberos realm. For a website it is HTTP and its host name, also for a site on HTTPS. Chromium by default asks for a ticket by the host name behind any alias in DNS, so the two have to match.',
 		at: setupAt('service-principal', { federation: true, kerberos: true })
 	},
 	{

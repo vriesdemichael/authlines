@@ -185,7 +185,7 @@ export const offTheMap: readonly MapNode[] = [
 			'trusted-uris'
 		],
 		answer:
-			'It can be that the browser was not told it may send a ticket to that site, so the identity provider’s page falls back to its login form. On the server recorded the ticket from that morning was never used, and the password went to the directory.',
+			'It can be that the browser was not told it may send a ticket to that site, so the identity provider’s page falls back to its login form, after a password dialog of the browser’s own on Windows. On the server recorded the password went to the directory.',
 		title: 'Why does this one site ask for my password?',
 		summary: 'The browser was not told it may send a ticket there.',
 		mode: 'advanced',

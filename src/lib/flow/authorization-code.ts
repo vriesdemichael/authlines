@@ -499,7 +499,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'Their computer asks for a ticket-granting ticket',
 			label: 'AS-REQ',
 			concept:
-				'That morning the user logged in to their computer, the one the browser runs on, with their password. The computer asks the KDC for a ticket-granting ticket for them, and offers no proof yet.',
+				'That morning the user logged in to their computer, the one the browser runs on, with their password. The computer asks the KDC for a ticket-granting ticket for them, and offers no proof yet. A user can also prove who they are with a certificate in place of a password, which was not recorded.',
 			recordedAs:
 				'Caught on the wire and read by RFC 4120, because Kerberos is not HTTP. The KDC was MIT Kerberos and the computer ran Linux, where kinit stood in for logging in to it. On a Windows network the KDC is a domain controller, and Windows logs in with its own additions, set out in MS-KILE, which were not recorded.',
 			cites: [
@@ -510,12 +510,24 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					source: 'windows-kerberos',
 					why: 'In Windows the first login is the one at the computer, and the KDC runs on every domain controller.'
+				},
+				{
+					source: 'rfc4556',
+					why: 'PKINIT: proving who the user is with a key pair and a certificate, in place of a key made from the password.'
 				}
 			],
 			fields: [
 				{ name: 'msg-type', place: 'body' },
-				{ name: 'padata', place: 'body', note: 'What it can do later, and no proof yet' },
-				{ name: 'kdc-options', place: 'body' },
+				{
+					name: 'padata',
+					place: 'body',
+					note: 'No proof yet, only later additions to Kerberos, saying what it can use'
+				},
+				{
+					name: 'kdc-options',
+					place: 'body',
+					note: 'Renewable-ok: a ticket that can be renewed will do'
+				},
 				{ name: 'cname', place: 'body' },
 				{ name: 'realm', place: 'body' },
 				{ name: 'sname', place: 'body', note: 'krbtgt, the KDC itself: a ticket for tickets' },
@@ -533,7 +545,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'Prove you know the password first',
 			label: 'KRB-ERROR, pre-authentication required',
 			concept:
-				'Its answer would be sealed with a key made from the password, which anyone who asked could take away and try passwords against. So the KDC wants proof first, as the one recorded was set to, and says which kind of key to make and the salt to make it with, here the realm and the username. That stops anyone asking, and not someone watching the network, who can try passwords against the proof.',
+				'Its answer would be sealed with a key made from the password, which anyone who asked could take away and try passwords against. So the KDC wants proof first, as the one recorded was set to, and says which kind of key to make and the salt to make it with, here the realm and the username. That stops anyone asking, and not someone watching the network, who can try passwords against what the computer sends next.',
 			recordedAs: 'Caught on the wire and read by RFC 4120, because Kerberos is not HTTP.',
 			cites: [
 				{
@@ -577,7 +589,11 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					place: 'body',
 					note: 'The time, sealed with the key from the password, as PA-ENC-TIMESTAMP'
 				},
-				{ name: 'kdc-options', place: 'body' },
+				{
+					name: 'kdc-options',
+					place: 'body',
+					note: 'Renewable-ok: a ticket that can be renewed will do'
+				},
 				{ name: 'cname', place: 'body' },
 				{ name: 'realm', place: 'body' },
 				{ name: 'sname', place: 'body' },
@@ -1304,10 +1320,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept: [
 				{
 					when: noTicketSent,
-					text: 'The identity provider sends a page with status 401 and a header that says it takes a Kerberos ticket. This browser was never told it may send one here, so it shows the page, which sends itself straight back.'
+					text: 'The identity provider sends a page with status 401 and a header, Negotiate, that asks for a Kerberos ticket, or an older Windows login in its place. This browser was never told it may send one here, so it shows the page, which sends itself straight back.'
 				},
 				{
-					text: 'The identity provider sends a page with status 401 and a header that says it takes a Kerberos ticket. A browser that was told it may send one here, by a list it was given or on Windows by its security zones, gets a ticket and sends the request again. The one recorded that was not told showed the page.'
+					text: 'The identity provider sends a page with status 401 and a header, Negotiate, that asks for a Kerberos ticket, or an older Windows login in its place. A browser that was told it may send one here, as Chromium is by a list or on Windows by its security zones, gets a ticket and sends the request again. The one recorded that was not told showed the page.'
 				}
 			],
 			cites: [
@@ -1331,7 +1347,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'A ticket for the identity provider, please',
 			label: 'TGS-REQ',
 			concept:
-				'The browser wants a ticket for HTTP and the server’s host name, its real name where the address used an alias, HTTP/localhost here, and the computer asks the KDC for it. It shows the ticket-granting ticket, with the time sealed with its session key to show it is its own. Nobody is asked for a password.',
+				'The browser wants a ticket for HTTP and the server’s host name, which Chromium by default takes as the real one behind any alias, HTTP/localhost here, and the computer asks the KDC for it. It shows the ticket-granting ticket, with the time sealed with its session key to show it is its own. Nobody is asked for a password.',
 			recordedAs:
 				'Caught on the wire and read by RFC 4120, because Kerberos is not HTTP. On Linux, as recorded, Chromium sent this itself, through the system’s Kerberos library, so the browser held the ticket-granting ticket. On Windows the system asks for the browser.',
 			cites: [
@@ -1342,6 +1358,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{
 					source: 'rfc4120',
 					why: 'Section 3.3.1 is this request, made with a ticket-granting ticket in place of a password.'
+				},
+				{
+					source: 'chromium-http-auth',
+					why: 'Chromium asks for HTTP and the canonical host name, the real one behind any alias, unless a policy turns that off.'
 				}
 			],
 			fields: [
@@ -1352,7 +1372,11 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					artifact: 'tgt',
 					note: 'The ticket for tickets, and the time sealed with its session key'
 				},
-				{ name: 'kdc-options', place: 'body' },
+				{
+					name: 'kdc-options',
+					place: 'body',
+					note: 'Canonicalize: the name may be an alias the KDC knows'
+				},
 				{ name: 'realm', place: 'body' },
 				{ name: 'sname', place: 'body', note: 'HTTP, and the server’s host name' },
 				{ name: 'till', place: 'body' },
@@ -1369,7 +1393,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plain: 'A ticket only the identity provider can open',
 			label: 'TGS-REP',
 			concept:
-				'The ticket is sealed with the key the KDC keeps for the identity provider, the one an admin gave it. On the outside the ticket says only what it is for, HTTP/localhost in the Kerberos realm. Who the user is and a session key are inside, where only the identity provider can read them. The computer gets its own copy of that key beside the ticket, and the user’s name crosses in the clear too.',
+				'The ticket is sealed with the key the KDC keeps for the identity provider, the one in the keytab the admins handed over. On the outside the ticket says only what it is for, HTTP/localhost in the Kerberos realm. Who the user is and a session key are inside, where only the identity provider can read them. The computer gets its own copy of that key beside the ticket, and the user’s name crosses in the clear too.',
 			recordedAs: 'Caught on the wire and read by RFC 4120, because Kerberos is not HTTP.',
 			cites: [
 				{
@@ -1407,7 +1431,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				'The browser sends the same request again, with the ticket the computer got in the header, and the time sealed with the session key that came with it. The identity provider opens the ticket with its own key, takes the session key from it, and checks the time, without asking the KDC. Nobody typed anything.',
 			pitfall: {
 				title: 'What if the login page shows anyway?',
-				text: 'Then the ticket did not get the user in. Seen once while setting this up, and not recorded: with a good ticket, the identity provider looked the user up in the directory by an attribute that names their Kerberos principal, which it picks by the kind of directory. For this one it picked krb5PrincipalName, which these users did not have, and for Active Directory it picks userPrincipalName. It logged that it found nobody, and showed its page. With the attribute left empty it looks them up by the name before the @, as in the recording.'
+				text: 'Then the ticket did not get the user in. Seen once while setting this up, and not recorded: with a good ticket, the identity provider looked the user up in the directory by an attribute that names their Kerberos principal, which it picks by the kind of directory. For this one it picked krb5PrincipalName, which these users did not have, and for Active Directory it picks userPrincipalName. It logged that it found nobody, and showed its page. With the attribute left empty it looks them up by the name before the @, as in the recording. On Windows, a browser that cannot get a ticket for the site can send an older Windows login inside Negotiate instead, which the identity provider recorded does not take, its guide says.'
 			},
 			inPractice:
 				'Nothing for your app, which never sees a ticket. Whoever runs the identity provider needs HTTPS in front of it: the header carries the ticket, and nothing in Negotiate protects the headers.',
@@ -1447,7 +1471,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				'The page that came with the 401 sends itself straight back, with nothing in it. The identity provider takes that to mean no ticket is coming, and shows its login form. The ticket the computer got that morning is never used.',
 			pitfall: {
 				title: 'Why does this one site ask for my password?',
-				text: 'It can be because the browser was not told it may send a ticket there. Chromium sends one only to a site on its list, or on Windows, with no list set, to sites Windows counts as the local intranet. The one recorded here was given no list, and the one that sent a ticket was given one. A good ticket can still end at the login page, when the identity provider cannot find who it names. Other reasons a ticket does not get someone in, which were not recorded: a computer with no ticket at all, because the user did not log in to the network, a clock too far from the others, or a host name, the real one behind any alias, that is not the one the identity provider’s principal names.'
+				text: 'It can be because the browser was not told it may send a ticket there. Chromium sends one only to a site on its list, or on Windows, with no list set, to sites Windows counts as the local intranet. The one recorded here was given no list, and the one that sent a ticket was given one. Off its list, Chromium’s page says, a browser asks for a username and password, and on Windows it can, in a dialog of its own, which the user cancels to reach the login page. The Chromium recorded, on Linux, did not ask. A good ticket can still end at the login page, when the identity provider cannot find who it names. Other reasons a ticket does not get someone in, which were not recorded: a computer with no ticket at all, because the user did not log in to the network, a clock too far from the others, or a host name, the real one behind any alias, that is not the one the identity provider’s principal names.'
 			},
 			cites: [
 				{

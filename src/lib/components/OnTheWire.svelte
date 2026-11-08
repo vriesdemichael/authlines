@@ -177,8 +177,8 @@
 				log, and anywhere else it needs LDAPS or StartTLS.
 			{:else if message.protocol === 'kerberos'}
 				This is Kerberos and not HTTP, caught on the wire and read by RFC 4120, which assumes anyone
-				on the network can read it. A cipher, and the padata FAST seals, are for whoever has the
-				key, and the rest anyone could read.
+				on the network can read it, with some padata named by later additions to Kerberos. A cipher,
+				and the padata FAST seals, are for whoever has the key, and the rest anyone could read.
 			{:else}
 				Only the headers that matter here were kept.
 			{/if}

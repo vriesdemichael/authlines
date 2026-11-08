@@ -137,7 +137,7 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			role: 'And their browsers',
 			icon: 'browser',
 			concept:
-				'The company’s own computers and the browsers on them, which the network admins set up before anyone logs in. A browser sends a ticket only to sites it was told to, by a list in its settings, or on Windows with no list, by the sites Windows counts as the local intranet.',
+				'The company’s own computers and the browsers on them, which the network admins set up before anyone logs in. A browser sends a ticket only to sites it was told to: Chromium by a list in its settings, or on Windows with no list, by the sites Windows counts as local, and Firefox by a list of its own.',
 			when: withATicket
 		},
 		{

@@ -383,6 +383,12 @@ const onADevice = {
 
 /** Writes down what a page does, in order. Cookies arrive later, so they are added once they do. */
 function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
+	// Awaited only once a login works. One still waiting when a failed login closes the browser
+	// rejects, and must not end the recorder before it has cleaned up.
+	const later = (promise: Promise<void>) => {
+		promise.catch(() => {});
+		cookies.push(promise);
+	};
 	const inBrowser = (url: string) =>
 		url.startsWith(APP) ||
 		url.startsWith(SECOND_APP) ||
@@ -428,7 +434,7 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 		);
 		run.messages.push(message);
 		if (!request.url().startsWith(KEYCLOAK)) return;
-		cookies.push(
+		later(
 			request.allHeaders().then((all) => {
 				const session = all.cookie
 					?.split('; ')
@@ -459,7 +465,7 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 		if (!steps) return;
 		const step = once(steps[0], 'request');
 		const at = run.messages.push(requestMessage(step, request.method(), request.url(), {})) - 1;
-		cookies.push(
+		later(
 			request.allHeaders().then((headers) => {
 				const message = requestMessage(
 					step,
@@ -481,7 +487,7 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 		if (!steps) return;
 		const step = once(steps[1], 'response');
 		const at = run.messages.push(responseMessage(step, response.status(), {})) - 1;
-		cookies.push(
+		later(
 			Promise.all([response.allHeaders(), response.text()]).then(([headers, text]) => {
 				run.messages[at] = responseMessage(step, response.status(), headers, text);
 			})
@@ -522,14 +528,14 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 		const message = responseMessage(step, response.status(), headers);
 		run.messages.push(message);
 		if (step === 'set-session') {
-			cookies.push(
+			later(
 				response.allHeaders().then((all) => {
 					message.headers['set-cookie'] = all['set-cookie'];
 				})
 			);
 		}
 		if (!response.url().startsWith(KEYCLOAK)) return;
-		cookies.push(
+		later(
 			response.allHeaders().then((all) => {
 				const session = all['set-cookie']?.match(SESSION_COOKIE)?.[1];
 				if (session) message.headers['set-cookie'] = session;
@@ -930,7 +936,13 @@ async function loginWithATicket(admin: Admin, run: Run) {
 		}
 	} catch (error) {
 		failure = { error };
-		console.error(whatHappened());
+		// Read while the browser's container may still be writing, so it can fail too, and must not
+		// take the cleanup or the first error with it.
+		try {
+			console.error(whatHappened());
+		} catch (reading) {
+			console.error('Could not say what happened:', reading);
+		}
 	}
 	const caught = (error: unknown) => {
 		failure ??= { error };
