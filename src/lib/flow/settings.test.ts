@@ -106,6 +106,8 @@ describe('constraints', () => {
 		const inAProgram = 2;
 		// The token in the redirect, for an app in the page, with nothing else on (2026-11-08).
 		const theImplicitFlow = 1;
+		// A group at the other provider becomes a role, with every role or only those given (#183).
+		const rolesFromGroups = 2;
 		expect(allValidSettings()).toBe(allValidSettings());
 		expect(Object.isFrozen(allValidSettings())).toBe(true);
 		expect(allValidSettings().every((settings) => Object.isFrozen(settings))).toBe(true);
@@ -128,7 +130,8 @@ describe('constraints', () => {
 				exchanged +
 				linking +
 				inAProgram +
-				theImplicitFlow
+				theImplicitFlow +
+				rolesFromGroups
 		);
 	});
 

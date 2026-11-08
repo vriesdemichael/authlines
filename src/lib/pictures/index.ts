@@ -19,6 +19,7 @@ import { whatATokenSays } from './what-a-token-says.ts';
 import { whatEachFactorProves } from './what-each-factor-proves.ts';
 import { whatEachSpecAdds } from './what-each-spec-adds.ts';
 import { whatStopsWhat } from './what-stops-what.ts';
+import { whereRolesComeFrom } from './where-roles-come-from.ts';
 import { whereTheTokensAre } from './where-the-tokens-are.ts';
 import { theAppKeepsAsking } from './the-app-keeps-asking.ts';
 import { whatEachScopeAsksFor } from './what-each-scope-asks-for.ts';
@@ -84,6 +85,10 @@ export const PICTURE_OF: Readonly<Record<string, PictureId>> = {
 	'setting.customerSpeaks': 'oidc-or-saml',
 	'term.account': 'an-accounts-life',
 	'setting.apiToken': 'what-the-api-does',
+	'setting.groupRoles': 'where-roles-come-from',
+	'setting.rolesReach': 'where-roles-come-from',
+	'term.role': 'where-roles-come-from',
+	'term.group': 'where-roles-come-from',
 	'term.invalid-token': 'what-the-api-does',
 	'term.insufficient-scope': 'what-the-api-does',
 	'term.www-authenticate': 'what-the-api-does',
@@ -198,6 +203,8 @@ export function draw(id: PictureId, state: AppState, wording: Wording, say: Say)
 			return anAccountsLife(say, keep);
 		case 'what-the-api-does':
 			return whatTheApiDoes(say, keep);
+		case 'where-roles-come-from':
+			return whereRolesComeFrom(state.settings, say);
 		case 'the-app-keeps-asking':
 			return theAppKeepsAsking(say, keep);
 		case 'what-a-token-says':
@@ -219,6 +226,9 @@ export function pictureFor(state: AppState, wording: Wording): Picture | null {
 	if (!(SHOWN_ON[id] ?? ['authorization-code']).includes(state.flow)) return null;
 	// Like the server's notes, it is in advanced mode only, and goes when they do (ADR-015).
 	if (id === 'what-is-in-a-token-here' && (!state.serverNotes || state.mode !== 'advanced'))
+		return null;
+	// Every part of it is about settings simple mode does not offer, so it is there only when they are on.
+	if (id === 'where-roles-come-from' && state.mode === 'simple' && !state.settings.groupRoles)
 		return null;
 	return draw(id, state, wording, sayer(wording));
 }

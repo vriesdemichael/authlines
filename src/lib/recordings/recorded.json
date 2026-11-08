@@ -76,7 +76,9 @@
 		"on-their-computer": "2026-11-05",
 		"on-their-computer-oidc": "2026-11-05",
 		"broker": "2026-11-05",
-		"implicit": "2026-11-08"
+		"implicit": "2026-11-08",
+		"broker-groups": "2026-11-08",
+		"broker-groups-given": "2026-11-08"
 	},
 	"flows": {
 		"authorization-code": {
@@ -148,6 +150,8 @@
 				"companies-oidc-leaves",
 				"upstream-v1",
 				"upstream-v2",
+				"broker-groups",
+				"broker-groups-given",
 				"link-account",
 				"link-cancelled",
 				"upstream-v2-api",

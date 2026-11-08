@@ -18,6 +18,8 @@ export interface Settings {
 	apiToken: 'good' | 'none' | 'expired' | 'changed' | 'elsewhere' | 'noscope';
 	exchange: boolean;
 	exchangeGives: 'token' | 'refresh';
+	groupRoles: boolean;
+	rolesReach: 'all' | 'given';
 	linkAccount: boolean;
 	linkEnds: 'linked' | 'cancelled';
 	logoutKeeps: 'refresh' | 'offline';
@@ -849,6 +851,75 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 					because: 'Drawn so far with no other provider.'
 				}
 			}
+		]
+	},
+	// The maintainer, 2026-11-08: "183, yes it should be in scope as should roles and groups".
+	groupRoles: {
+		kind: 'toggle',
+		label: 'Their groups become roles',
+		param: 'groups',
+		default: false,
+		onlyOn: 'authorization-code',
+		sources: [
+			{
+				source: 'rfc9068',
+				section: '2.2.3.1',
+				why: 'Section 2.2.3.1 names the roles and groups claims an access token can have, and gives no words for what they mean.'
+			},
+			{
+				source: 'keycloak-broker-mappers',
+				why: 'A mapper on the other provider is what turns its claim into a role here.'
+			}
+		],
+		summary:
+			'A group the user is in at the other provider becomes a role here, in the app’s token.',
+		why: 'Neither OAuth nor OpenID Connect says what a role or a group is. A token can still say which groups the user is in, under a name both sides agree on, and the identity provider can turn one into a role of its own. What the app gets is that role, in a token the identity provider makes, and what it allows is for the app and the API to decide.',
+		requires: {
+			when: all(
+				is('broker', true),
+				is('companies', false),
+				is('upstreamTokens', 'off'),
+				is('attacker', false),
+				is('binding', 'bearer'),
+				is('apiToken', 'good'),
+				is('refresh', false),
+				is('sso', false),
+				is('logout', false),
+				is('address', 'registered'),
+				is('appRuns', 'server'),
+				is('registration', 'manual'),
+				is('par', false),
+				is('exchange', false),
+				is('oidc', false),
+				is('consent', false),
+				is('pkce', false),
+				is('clientType', 'confidential')
+			),
+			because:
+				'Drawn so far only with another provider and nothing else on, where the groups come from.'
+		}
+	},
+	rolesReach: {
+		kind: 'choice',
+		label: 'Which roles reach the token',
+		param: 'reach',
+		default: 'all',
+		onlyOn: 'authorization-code',
+		sources: [
+			{
+				source: 'keycloak-role-scope',
+				why: 'Every role the user has is Full Scope Allowed, which the guide says is deprecated, and only those given to this app is role scope mappings.'
+			}
+		],
+		summary: 'Every role the user has, or only the ones given to this app.',
+		why: 'A user can have many roles, and one app needs few of them. Some identity providers put every role the user has into every app’s token unless told not to, so a token says more than the app needs, to whoever reads it.',
+		requires: {
+			when: is('groupRoles', true),
+			because: 'Drawn so far only with roles from the other provider.'
+		},
+		options: [
+			{ value: 'all', label: 'Every role the user has' },
+			{ value: 'given', label: 'Only those given to this app' }
 		]
 	},
 	linkAccount: {

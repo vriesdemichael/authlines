@@ -38,7 +38,8 @@ export type PictureId =
 	| 'passwords-keys-tokens'
 	| 'oidc-or-saml'
 	| 'an-accounts-life'
-	| 'what-the-api-does';
+	| 'what-the-api-does'
+	| 'where-roles-come-from';
 
 /**
  * Where something starts or ends, a step, or a question with more than one way on: those make a

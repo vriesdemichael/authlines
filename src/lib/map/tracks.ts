@@ -852,6 +852,29 @@ export const offTheMap: readonly MapNode[] = [
 		preset: 'link-account',
 		step: 'link-ask'
 	}),
+	// The maintainer, 2026-11-08: roles and groups are in scope (#183).
+	node({
+		id: 'roles-from-groups',
+		alsoAskedAs: ['roles', 'groups', 'claim to role'],
+		answer:
+			'The other provider’s ID token says which groups the user is in, and the identity provider gives a role of its own to whoever is in one. Recorded: sales became reads-orders, in the app’s token.',
+		title: 'How does a group at another provider become a role in the token?',
+		summary: 'Their ID token says the group, and the identity provider gives a role of its own.',
+		mode: 'advanced',
+		preset: 'broker-groups',
+		step: 'match-user'
+	}),
+	node({
+		id: 'only-roles-given',
+		alsoAskedAs: ['full scope allowed', 'role scope mappings'],
+		answer:
+			'Every role the user had went into the token, until the app was given only reads-orders. Then the token had that alone, and named the API, because the account service had left its audience.',
+		title: 'Why does my token have roles the app does not need?',
+		summary: 'Some providers put every role in every token, unless the app is given only its own.',
+		mode: 'advanced',
+		preset: 'broker-groups-given',
+		step: 'token-response'
+	}),
 	node({
 		id: 'link-cancelled',
 		alsoAskedAs: ['kc_action_status', 'cancelled'],

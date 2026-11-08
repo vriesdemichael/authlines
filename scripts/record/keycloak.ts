@@ -85,6 +85,12 @@ export const namesTheApi = {
 // A real API expects its own name, which takes the Audience mapper, as the note on that step says.
 export const API_AUDIENCE = 'account';
 
+/** A group the user is in at the other provider, and the role it becomes here (#183). */
+export const UPSTREAM_GROUP = 'sales';
+export const ROLE_FROM_GROUP = 'reads-orders';
+const GROUPS_MAPPER = 'groups';
+const GROUP_TO_ROLE = 'sales-reads-orders';
+
 const CONTAINER = 'authlines-keycloak';
 export const ADMIN_PASSWORD = 'throwaway-admin';
 export const DIRECTORY_REALM = 'in-a-directory';
@@ -330,6 +336,21 @@ export async function setUpRealms(admin: Admin) {
 	);
 
 	await admin.call('POST', `/realms/${UPSTREAM_REALM}/users`, user);
+	const group = await admin.created('POST', `/realms/${UPSTREAM_REALM}/groups`, {
+		name: UPSTREAM_GROUP
+	});
+	const [them] = await admin.call<{ id: string }[]>(
+		'GET',
+		`/realms/${UPSTREAM_REALM}/users?username=${USERNAME}&exact=true`
+	);
+	await admin.call(
+		'PUT',
+		`/realms/${UPSTREAM_REALM}/users/${them.id}/groups/${group.split('/').at(-1)}`
+	);
+	await admin.call('POST', `/realms/${BROKERED_REALM}/roles`, {
+		name: ROLE_FROM_GROUP,
+		description: `Given to everyone in ${UPSTREAM_GROUP} at the other provider`
+	});
 	await admin.call('POST', `/realms/${UPSTREAM_REALM}/clients`, {
 		clientId: BROKER_CLIENT,
 		enabled: true,
@@ -394,6 +415,52 @@ export async function setUpRealms(admin: Admin) {
 
 	await setUpFor(admin, LOCAL_REALM, defaultsForQuestions);
 	await setUpFor(admin, BROKERED_REALM, defaultsForQuestions);
+}
+
+/**
+ * The other provider says which groups the user is in, in its ID token, and a mapper here turns one
+ * of them into a role (#183). Both are taken off again for every other run.
+ */
+async function groupsBecomeRoles(admin: Admin, onProvider: string, on: boolean) {
+	const [broker] = await admin.call<{ id: string }[]>(
+		'GET',
+		`/realms/${UPSTREAM_REALM}/clients?clientId=${BROKER_CLIENT}`
+	);
+	const onBroker = `/realms/${UPSTREAM_REALM}/clients/${broker.id}/protocol-mappers/models`;
+	for (const mapper of await admin.call<{ id: string; name: string }[]>('GET', onBroker)) {
+		if (mapper.name === GROUPS_MAPPER) await admin.call('DELETE', `${onBroker}/${mapper.id}`);
+	}
+	for (const mapper of await admin.call<{ id: string; name: string }[]>(
+		'GET',
+		`${onProvider}/mappers`
+	)) {
+		if (mapper.name === GROUP_TO_ROLE)
+			await admin.call('DELETE', `${onProvider}/mappers/${mapper.id}`);
+	}
+	if (!on) return;
+	await admin.call('POST', onBroker, {
+		name: GROUPS_MAPPER,
+		protocol: 'openid-connect',
+		protocolMapper: 'oidc-group-membership-mapper',
+		config: {
+			'claim.name': 'groups',
+			'full.path': 'false',
+			'id.token.claim': 'true',
+			'access.token.claim': 'false',
+			'userinfo.token.claim': 'false'
+		}
+	});
+	await admin.call('POST', `${onProvider}/mappers`, {
+		name: GROUP_TO_ROLE,
+		identityProviderAlias: UPSTREAM_REALM,
+		identityProviderMapper: 'oidc-role-idp-mapper',
+		config: {
+			claim: 'groups',
+			'claim.value': UPSTREAM_GROUP,
+			role: ROLE_FROM_GROUP,
+			syncMode: 'INHERIT'
+		}
+	});
 }
 
 /** A scope that puts the second API in a token's audience, for a client that trades for it. */
@@ -584,6 +651,8 @@ export async function setUpFor(
 				| 'upstreamReader'
 				| 'linkAccount'
 				| 'implicit'
+				| 'groupRoles'
+				| 'rolesReach'
 			>
 		>
 ) {
@@ -605,6 +674,7 @@ export async function setUpFor(
 			...(settings.clientType === 'public' ? { publicClient: true } : confidential),
 			// Off on a new client, and on here, which is the Implicit flow switch in the console.
 			...(settings.implicit ? { implicitFlowEnabled: true } : {}),
+			...(settings.rolesReach === 'given' ? { fullScopeAllowed: false } : {}),
 			// Set when a client is created through this API, this also turns off Full scope allowed, and
 			// the token has no roles and no audience. Turned on afterwards, as anyone does it in the
 			// console, it changes nothing in the token (questions.json).
@@ -629,11 +699,21 @@ export async function setUpFor(
 				: {}),
 			// The first API can only trade a token that names it (questions.json), and an API reads a
 			// stored token only with one that names it too (#180).
-			...(settings.exchange || (settings.upstreamReader ?? 'app') !== 'app'
+			...(settings.exchange ||
+			(settings.upstreamReader ?? 'app') !== 'app' ||
+			settings.rolesReach === 'given'
 				? { protocolMappers: [namesTheApi] }
 				: {})
 		})
 	);
+	if (settings.rolesReach === 'given') {
+		const [made] = await admin.call<{ id: string }[]>(
+			'GET',
+			`${onClients}?clientId=${CONFIDENTIAL_CLIENT}`
+		);
+		const role = await admin.call<object>('GET', `/realms/${realm}/roles/${ROLE_FROM_GROUP}`);
+		await admin.call('POST', `${onClients}/${made.id}/scope-mappings/realm`, [role]);
+	}
 	await admin.call('PUT', `/realms/${realm}`, { revokeRefreshToken: settings.reuse === 'ends' });
 	if (realm === LOCAL_REALM) {
 		await linkingWith(admin, Boolean(settings.linkAccount));
@@ -674,7 +754,15 @@ export async function setUpFor(
 			BROKERED_REALM
 		);
 	}
+	// The API, so that the app's token can name it, which is what an audience mapper names (#183).
+	if (settings.rolesReach === 'given') {
+		await admin.call('POST', onClients, {
+			...client(API_CLIENT, confidential),
+			standardFlowEnabled: false
+		});
+	}
 	const onProvider = `/realms/${BROKERED_REALM}/identity-provider/instances/${UPSTREAM_REALM}`;
+	await groupsBecomeRoles(admin, onProvider, Boolean(settings.groupRoles));
 	const provider = await admin.call<object>('GET', onProvider);
 	await admin.call('PUT', onProvider, {
 		...provider,

@@ -394,6 +394,49 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 				{ name: 'client_secret', place: 'setting' }
 			]
 		},
+		// A group at the other provider becomes a role here (#183).
+		{
+			id: 'ask-for-groups',
+			when: is('groupRoles', true),
+			from: 'idp-admin',
+			to: 'upstream',
+			kind: 'human',
+			plain: 'Ask them to say which groups the user is in',
+			label: 'Groups in the ID token',
+			concept:
+				'Whoever runs the other provider has its ID token say which groups the user is in there, as a claim both sides agree to call groups. Nothing in OAuth or OpenID Connect names it, so this is part of the conversation.',
+			fields: [{ name: 'groups', place: 'setting', note: 'A claim in their ID token' }]
+		},
+		{
+			id: 'map-group-to-role',
+			when: is('groupRoles', true),
+			from: 'idp-admin',
+			to: 'idp',
+			kind: 'human',
+			plain: 'Turn their group into a role here',
+			label: 'A role from a group',
+			concept:
+				'An admin makes a role, reads-orders, and has the identity provider give it to anyone the other provider says is in sales. A role is the identity provider’s own, so the name can be anything.',
+			fields: [
+				{ name: 'reads-orders', place: 'setting', note: 'A role here' },
+				{ name: 'groups contains sales', place: 'setting', note: 'Who is given it' }
+			]
+		},
+		{
+			id: 'give-the-app-its-roles',
+			when: all(is('groupRoles', true), is('rolesReach', 'given')),
+			from: 'idp-admin',
+			to: 'idp',
+			kind: 'human',
+			plain: 'Give the app only the role it needs',
+			label: 'Only this role',
+			concept:
+				'An admin stops this app’s tokens from carrying every role the user has, and gives it reads-orders alone. The account service was in the audience only because of the user’s roles there, so the admin also has the tokens name the API.',
+			fields: [
+				{ name: 'reads-orders', place: 'setting', note: 'The one role its tokens carry' },
+				{ name: 'audience', place: 'setting', note: 'The API, by name' }
+			]
+		},
 		{
 			id: 'add-provider-for-linking',
 			when: links,

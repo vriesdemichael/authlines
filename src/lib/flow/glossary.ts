@@ -288,6 +288,22 @@ const list: readonly Term[] = [
 		at: flowAt('token-response')
 	},
 	{
+		id: 'role',
+		name: 'Role',
+		words: ['role', 'roles'],
+		explains:
+			'A name an identity provider gives a user, such as reads-orders, for an app or an API to decide by. Neither OAuth nor OpenID Connect says what one is, so each server has its own, and what a role allows is up to whoever reads it.',
+		at: flowAt('token-response', { broker: true, groupRoles: true })
+	},
+	{
+		id: 'group',
+		name: 'Group',
+		words: ['group', 'groups'],
+		explains:
+			'A set of users, such as everyone in sales. A provider can say in a token which groups someone is in, and another can make a group into a role of its own.',
+		at: flowAt('upstream-token-response', { broker: true, groupRoles: true })
+	},
+	{
 		id: 'account',
 		name: 'Account',
 		words: ['account', 'accounts'],

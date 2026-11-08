@@ -48,7 +48,9 @@ describe('the RFC files', () => {
 		'rfc9126.txt': 'a79d0e30fcc24a22b79c8e18aa82362f6e63a7b8a5d58b480e746360e97388db',
 		'rfc8693.txt': '358d658014738bf4dc56c8aae2094ce716ede23b6d5a80488a7dc8e8d72da609',
 		// This one on 2026-11-05.
-		'rfc8252.txt': '4233c0650ec7e7918c20e0fde2dc565f85e2aa2d4c18123e3cd834295c2f68d0'
+		'rfc8252.txt': '4233c0650ec7e7918c20e0fde2dc565f85e2aa2d4c18123e3cd834295c2f68d0',
+		// This one on 2026-11-08, which rfc-editor.org now serves with a byte order mark.
+		'rfc9068.txt': '68d3ff3910c0f2340fd7b93b430e00053da845b6eebe095ebef0c8bfda5e14c5'
 	};
 
 	it.each(Object.entries(published))('%s is byte for byte what was published', (file, hash) => {

@@ -22,6 +22,7 @@ import { SIZE, widthOf, type Picture, type PicturePart } from '#lib/pictures/mod
 import { refreshPicture } from '#lib/pictures/refresh.ts';
 import { inSimpleMode } from '#lib/pictures/simple.ts';
 import { SCOPES_RECORDED } from '#lib/pictures/what-each-scope-asks-for.ts';
+import { ROLES_RECORDED } from '#lib/pictures/where-roles-come-from.ts';
 import { CLAIM_ROWS, RECORDED } from '#lib/pictures/what-a-token-says.ts';
 import { ASKING } from '#lib/pictures/the-app-keeps-asking.ts';
 import oidc from '../../../static/recordings/authorization-code/oidc.json';
@@ -731,6 +732,59 @@ describe('what the API does with a request (#167, #200)', () => {
 			expect(part.says[0], id).toContain(String(status));
 		}
 		expect(found.parts.some((part) => part.id === 'your-code')).toBe(true);
+	});
+});
+
+describe('where a token’s roles come from (#183)', () => {
+	const tokens = (preset: string) => {
+		const run = JSON.parse(
+			readFileSync(`static/recordings/authorization-code/${preset}.json`, 'utf8')
+		) as { messages: { step: string; body?: Record<string, unknown> }[] };
+		const claims = (step: string, name: string) =>
+			JSON.parse(
+				Buffer.from(
+					String(run.messages.find((message) => message.step === step)!.body![name]).split('.')[1],
+					'base64url'
+				).toString()
+			) as Record<string, unknown>;
+		return {
+			upstream: claims('upstream-token-response', 'id_token'),
+			app: claims('token-response', 'access_token')
+		};
+	};
+
+	it('says what the recorded runs had at each hop', () => {
+		const every = tokens('broker-groups');
+		expect(every.upstream.groups).toEqual([ROLES_RECORDED.group]);
+		expect((every.app.realm_access as { roles: string[] }).roles).toEqual(
+			ROLES_RECORDED.every.roles
+		);
+		expect(every.app.aud).toBe(ROLES_RECORDED.every.aud);
+		const given = tokens('broker-groups-given');
+		expect((given.app.realm_access as { roles: string[] }).roles).toEqual(
+			ROLES_RECORDED.given.roles
+		);
+		expect(given.app.aud).toBe(ROLES_RECORDED.given.aud);
+		expect(given.app.resource_access).toBeUndefined();
+		// Without the setting, the other provider says nothing about groups, and there is no such role.
+		const plain = tokens('broker');
+		expect(plain.upstream.groups).toBeUndefined();
+		expect((plain.app.realm_access as { roles: string[] }).roles).not.toContain(
+			ROLES_RECORDED.role
+		);
+	});
+
+	it('follows the screen, with every role or only those given', () => {
+		const said = (search: string) =>
+			picture(search)
+				.parts.flatMap((part) => (part.rows ?? []).map((row) => row.says))
+				.join(' ');
+		expect(said('explain=setting.groupRoles&mode=advanced&broker=1&groups=1')).toContain(
+			'and 3 more'
+		);
+		expect(
+			said('explain=setting.groupRoles&mode=advanced&broker=1&groups=1&reach=given')
+		).toContain('aud: demo-api');
 	});
 });
 
