@@ -288,6 +288,14 @@ const list: readonly Term[] = [
 		at: flowAt('token-response')
 	},
 	{
+		id: 'account',
+		name: 'Account',
+		words: ['account', 'accounts'],
+		explains:
+			'What an identity provider keeps about one user: who they are, and how they log in. One can be made the first time someone logs in through another provider.',
+		at: flowAt('match-user', { broker: true })
+	},
+	{
 		id: 'api-key',
 		name: 'API key',
 		words: ['API key', 'API keys'],

@@ -3,6 +3,7 @@ import { evaluate } from '#lib/flow/model.ts';
 import type { AppState, Explained } from '#lib/flow/state.ts';
 import { nameIn, sayer, type Say, type Wording } from '#lib/flow/wording.ts';
 import { whatIsInATokenHere } from '#lib/keycloak/token-contents.ts';
+import { anAccountsLife } from './an-accounts-life.ts';
 import { cookiesJwtsOauth } from './cookies-jwts-oauth.ts';
 import { howAnApiTrustsAToken } from './how-an-api-trusts-a-token.ts';
 import { howLongEachLasts } from './how-long-each-lasts.ts';
@@ -80,6 +81,9 @@ export const PICTURE_OF: Readonly<Record<string, PictureId>> = {
 	'setting.federation': 'trust-across-providers',
 	'term.saml': 'oidc-or-saml',
 	'setting.customerSpeaks': 'oidc-or-saml',
+	'term.account': 'an-accounts-life',
+	'setting.leaves': 'an-accounts-life',
+	'setting.linkAccount': 'an-accounts-life',
 	'term.ldap': 'trust-across-providers',
 	'term.issuer': 'how-an-api-trusts-a-token',
 	'term.signature': 'how-an-api-trusts-a-token',
@@ -185,6 +189,8 @@ export function draw(id: PictureId, state: AppState, wording: Wording, say: Say)
 			return passwordsKeysTokens(say, keep);
 		case 'oidc-or-saml':
 			return oidcOrSaml(say, keep);
+		case 'an-accounts-life':
+			return anAccountsLife(say, keep);
 		case 'the-app-keeps-asking':
 			return theAppKeepsAsking(say, keep);
 		case 'what-a-token-says':

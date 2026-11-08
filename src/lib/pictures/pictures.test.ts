@@ -689,6 +689,21 @@ describe('OpenID Connect or SAML, for company logins (#200)', () => {
 	});
 });
 
+describe('an account’s life (#200)', () => {
+	it('goes from a first login to staying on after the company turns it off', () => {
+		const ids = (search: string) => picture(search).parts.map((part) => part.id);
+		const advanced = ids('explain=term.account&mode=advanced');
+		expect(advanced).toEqual(
+			expect.arrayContaining(['first-login', 'made', 'found-again', 'linked', 'stays-on'])
+		);
+		// Linking and leaving are in advanced mode only, so simple mode keeps the account's start.
+		const simple = ids('explain=term.account&mode=simple');
+		expect(simple).toContain('made');
+		expect(simple).not.toContain('linked');
+		expect(simple).not.toContain('stays-on');
+	});
+});
+
 describe('what the circles and the rows mean', () => {
 	it('is in a key drawn with the same marks, wherever there are marks', () => {
 		for (const found of pictures) {
