@@ -463,6 +463,37 @@ async function groupsBecomeRoles(admin: Admin, onProvider: string, on: boolean) 
 	});
 }
 
+/**
+ * Gives the realm a new key to sign with, above the one it was made with, which stays listed. Or
+ * takes it away again, so that no other recording changes (2026-11-08).
+ */
+export async function newSigningKey(admin: Admin, realm: string, on: boolean) {
+	const KEY_PROVIDER = 'org.keycloak.keys.KeyProvider';
+	const NAME = 'a-newer-key';
+	for (const component of await admin.call<{ id: string; name: string }[]>(
+		'GET',
+		`/realms/${realm}/components?type=${KEY_PROVIDER}`
+	)) {
+		if (component.name === NAME)
+			await admin.call('DELETE', `/realms/${realm}/components/${component.id}`);
+	}
+	if (!on) return;
+	const { id } = await admin.call<{ id: string }>('GET', `/realms/${realm}`);
+	await admin.call('POST', `/realms/${realm}/components`, {
+		name: NAME,
+		providerId: 'rsa-generated',
+		providerType: KEY_PROVIDER,
+		parentId: id,
+		config: {
+			priority: ['200'],
+			keySize: ['2048'],
+			active: ['true'],
+			enabled: ['true'],
+			algorithm: ['RS256']
+		}
+	});
+}
+
 /** A scope that puts the second API in a token's audience, for a client that trades for it. */
 async function namesTheSecondApiIn(admin: Admin, realm: string) {
 	await admin.call('POST', `/realms/${realm}/client-scopes`, {

@@ -183,5 +183,8 @@
 	"give-the-app-its-roles",
 	"otp-page",
 	"submit-otp",
-	"submit-passkey"
+	"submit-passkey",
+	"new-signing-key",
+	"api-fetch-keys",
+	"api-keys"
 ]

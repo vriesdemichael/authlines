@@ -35,6 +35,7 @@ export interface Settings {
 	oldWay: boolean;
 	implicit: boolean;
 	secondFactor: 'none' | 'code' | 'passkey';
+	keysChange: boolean;
 	registration: 'manual' | 'dcr' | 'cimd';
 	federation: boolean;
 	companies: boolean;
@@ -1408,6 +1409,51 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			{ value: 'code', label: 'A password, then a code from an app' },
 			{ value: 'passkey', label: 'A passkey, and no password' }
 		]
+	},
+	// Asked for on 2026-11-08 ("Both"), with the second factors. Reached from what explains a key, and
+	// not a control of its own, as they are.
+	keysChange: {
+		kind: 'toggle',
+		label: 'The identity provider changes its key',
+		param: 'newkey',
+		default: false,
+		onlyOn: 'authorization-code',
+		notOnOffer: true,
+		summary: 'It signs with a new key after the API fetched the old ones.',
+		why: 'An identity provider changes the key it signs with from time to time, or at once if one leaks. An API that fetched the keys before has never seen the new one, so a token names its key, and the API fetches the keys again for one it does not know.',
+		sources: [
+			{
+				source: 'oidc-core',
+				why: 'Section 10.1.1 is this: the signer adds a key to its set and names it in each token, and whoever checks fetches the set again when it sees a key it does not know.'
+			}
+		],
+		requires: {
+			when: all(
+				is('appRuns', 'server'),
+				is('clientType', 'confidential'),
+				is('oidc', false),
+				is('consent', false),
+				is('pkce', false),
+				is('par', false),
+				is('attacker', false),
+				is('binding', 'bearer'),
+				is('broker', false),
+				is('federation', false),
+				is('companies', false),
+				is('exchange', false),
+				is('apiToken', 'good'),
+				is('refresh', false),
+				is('sso', false),
+				is('logout', false),
+				is('address', 'registered'),
+				is('registration', 'manual'),
+				is('oldWay', false),
+				is('implicit', false),
+				is('linkAccount', false),
+				is('secondFactor', 'none')
+			),
+			because: 'Drawn so far on the plain flow, with nothing else on.'
+		}
 	},
 	address: {
 		kind: 'choice',

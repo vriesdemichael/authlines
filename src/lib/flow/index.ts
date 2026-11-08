@@ -305,6 +305,11 @@ const presets: readonly Preset[] = [
 		settings: { secondFactor: 'code' }
 	},
 	{
+		id: 'new-key',
+		title: 'The identity provider signs with a new key',
+		settings: { keysChange: true }
+	},
+	{
 		id: 'passkey',
 		title: 'A passkey, and no password',
 		settings: { secondFactor: 'passkey' }

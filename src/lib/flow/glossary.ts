@@ -632,6 +632,15 @@ const list: readonly Term[] = [
 		at: flowAt('api-check-token')
 	},
 	{
+		id: 'kid',
+		name: 'kid',
+		words: ['kid'],
+		explains:
+			'Key ID: which key a token was signed with, named in its header. An API looks for the key with that name among those it fetched, and fetches them again for one it does not know.',
+		alsoCalled: ['key ID'],
+		at: flowAt('api-fetch-keys', { keysChange: true })
+	},
+	{
 		id: 'bearer',
 		name: 'Bearer token',
 		words: ['bearer', 'bearer token', 'bearer tokens'],

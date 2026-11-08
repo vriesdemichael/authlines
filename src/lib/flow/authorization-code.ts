@@ -62,6 +62,8 @@ const links = is('linkAccount', true);
 const code = is('secondFactor', 'code');
 // A passkey in place of the password, which the login page asks the browser for (2026-11-08).
 const passkey = is('secondFactor', 'passkey');
+// The identity provider signs with a key the API has not fetched yet (2026-11-08).
+const newKey = is('keysChange', true);
 // A group at the other provider becomes a role here, and maybe the only one the app is given (#183).
 const groupRoles = is('groupRoles', true);
 const onlyGiven = all(groupRoles, is('rolesReach', 'given'));
@@ -2573,6 +2575,17 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			]
 		},
 		{
+			id: 'new-signing-key',
+			when: newKey,
+			from: 'idp',
+			to: 'idp',
+			kind: 'internal',
+			plain: 'It signs with a newer key',
+			label: 'A new signing key',
+			concept:
+				'Since the API fetched the keys, the identity provider was given a new one, and signs with it now. It names the key in the token’s header, as kid. The old one is still listed, for what it signed before.'
+		},
+		{
 			id: 'token-response',
 			cites: [
 				{
@@ -2937,6 +2950,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			label: 'Check the token',
 			concept: [
 				{
+					when: newKey,
+					text: 'The token names a key, by its kid, that the API has not seen: it fetched the keys before this one was made. So it cannot check the signature yet.'
+				},
+				{
 					when: groupRoles,
 					text: 'The API checks the signature, who issued the token, that it has not expired, and who it is for. It can read the role in it too, and whether reads-orders lets this user see this thing is the API’s own decision. Nothing in the token says what a role allows.'
 				},
@@ -3228,6 +3245,36 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			concept:
 				'The token names it, so it answers. The token the app sent never got here, and a copy of it would not have got in.',
 			fields: [{ name: 'resource', place: 'body', note: 'What the first API needed to answer' }]
+		},
+		{
+			id: 'api-fetch-keys',
+			when: newKey,
+			cites: [
+				{
+					source: 'oidc-core',
+					why: 'Section 10.1.1 says to fetch the keys again on seeing a kid that is not known.'
+				}
+			],
+			from: 'api',
+			to: 'idp',
+			kind: 'request',
+			plain: 'The API gets the keys again',
+			label: 'GET jwks_uri',
+			concept:
+				'For a kid it does not know, the API fetches the keys again from the same address, which is what a library does by itself.',
+			fields: [{ name: '/certs', place: 'path', note: 'The jwks_uri, as in setup' }]
+		},
+		{
+			id: 'api-keys',
+			when: newKey,
+			from: 'idp',
+			to: 'api',
+			kind: 'response',
+			plain: 'The keys, with the new one',
+			label: '200 with keys',
+			concept:
+				'The new key and the old one, each with its kid. The API finds the one the token names, checks the signature, and goes on as before.',
+			fields: [{ name: 'keys', place: 'body' }]
 		},
 		{
 			id: 'api-response',
