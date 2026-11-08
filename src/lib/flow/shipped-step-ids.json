@@ -176,5 +176,6 @@
 	"api-after-logout",
 	"api-after-logout-response",
 	"program-starts",
-	"program-opens-browser"
+	"program-opens-browser",
+	"redirect-with-token"
 ]

@@ -36,6 +36,11 @@ const states: readonly [string, string, 'flow' | 'setup'][] = [
 	['what-each-factor-proves', 'mode=simple&step=submit-credentials&explain=term.mfa', 'flow'],
 	['what-a-thief-can-do', 'mode=simple&step=submit-credentials&explain=artifact.password', 'flow'],
 	['address-refused', 'mode=simple&address=other&step=address-refused', 'flow'],
+	[
+		'the-token-in-the-address',
+		'mode=simple&implicit=1&runs=page&client=public&step=callback',
+		'flow'
+	],
 	['app-in-the-page', 'mode=simple&runs=page&client=public&pkce=1&step=token-response', 'flow'],
 	['server-behind-the-page', 'mode=simple&runs=bff&pkce=1&step=set-session', 'flow'],
 	['settings-put-away', 'settings=off&step=callback', 'flow'],

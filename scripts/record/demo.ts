@@ -151,16 +151,34 @@ function appInThePage(
 		client: run.clientId,
 		back: REDIRECT_URI,
 		api: `${API}/resource`,
-		oidc: run.settings.oidc
+		oidc: run.settings.oidc,
+		implicit: run.settings.implicit
 	};
 	return `<!doctype html><title>An app in the page</title><body><script type="module">
-const { issuer, authorize, token, userinfo, client, back, api, oidc } = ${JSON.stringify(values)};
+const { issuer, authorize, token, userinfo, client, back, api, oidc, implicit } = ${JSON.stringify(values)};
 const url = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes)))
 	.replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
 const random = () => url(crypto.getRandomValues(new Uint8Array(32)));
 const said = (text) => { document.body.innerHTML = '<h1>' + text + '</h1>'; };
 try {
-	if (location.pathname === '/') {
+	// The implicit flow: the token itself, after the # of the address, and no code or trade.
+	if (implicit && location.pathname === '/') {
+		const state = random();
+		sessionStorage.setItem('login', JSON.stringify({ state }));
+		location.assign(authorize + '?' + new URLSearchParams({
+			response_type: 'token', client_id: client, redirect_uri: back, state
+		}));
+	} else if (implicit) {
+		const { state } = JSON.parse(sessionStorage.getItem('login'));
+		const answer = new URLSearchParams(location.hash.slice(1));
+		if (answer.get('state') !== state) throw new Error('An answer to something this app did not ask.');
+		const accessToken = answer.get('access_token');
+		if (!accessToken) throw new Error(location.hash);
+		const called = await fetch(api, { headers: { authorization: 'Bearer ' + accessToken } });
+		await called.text();
+		if (!called.ok) throw new Error('The API said ' + called.status);
+		said('Logged in');
+	} else if (location.pathname === '/') {
 		const verifier = random();
 		const state = random();
 		const nonce = oidc ? random() : null;

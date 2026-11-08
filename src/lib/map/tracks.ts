@@ -713,6 +713,17 @@ export const mapNodes: readonly MapNode[] = mapTracks.flatMap((track) => track.c
  * they were about through the question that took them over.
  */
 export const offTheMap: readonly MapNode[] = [
+	// Asked for on 2026-11-08, from the step that says why the code is not a token. Off the map until
+	// the maintainer says which question it replaces there, and found through its word meanwhile.
+	node({
+		id: 'the-implicit-flow',
+		answer:
+			'The token comes back after the # of the address, with no code and no trade. The page and anything else running in it can read it, it stays in the browser’s history, and nothing ties it to the app that asked, so current advice is the code with PKCE instead.',
+		title: 'What is the implicit flow?',
+		summary: 'The token sent back in the address, and why current advice says not to.',
+		preset: 'implicit',
+		step: 'redirect-with-token'
+	}),
 	node({
 		id: 'pkce-stops-it',
 		answer:

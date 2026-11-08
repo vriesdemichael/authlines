@@ -325,6 +325,7 @@ An order for later releases. **Proposed**, and expected to change.
 |---|---|---|
 | Actors, issuer, tokens | Concept layer | Explained on the lifelines themselves, with questions for them at the start of the map |
 | The old way | Modifier, off to start with, never in the settings | Takes the identity provider off the diagram and gives the app the password, with HTTP Basic to the API (RFC 7617), recorded from the demo app and API |
+| The implicit flow, built | Modifier, never in the settings, one word away from where the code comes back | **Asked for on 2026-11-08.** The token comes back after the # of the address, with no code, no trade and no refresh token (RFC 6749 section 4.2.2), for an app in the page. What is after the # is never sent, so the server the page comes from does not see it, but the page and anything else in it can, and it stays in the browser’s history (RFC 9700 section 4.3.2). Recorded on Keycloak 26.8.1 with Implicit flow turned on for the client, which is off on a new one |
 | Client registration, discovery | Setup diagram | Steps before any user arrives |
 | Authorization code | Base flow | The main flow |
 | OIDC | Modifier | Adds the `openid` scope, an ID token and UserInfo. The access token does not change on a default Keycloak client |

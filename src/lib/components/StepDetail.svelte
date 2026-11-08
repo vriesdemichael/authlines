@@ -124,6 +124,7 @@
 		simple ? (settingDefs[id].simple?.label ?? settingDefs[id].label) : settingDefs[id].label;
 	const places: Record<string, string> = {
 		query: 'query',
+		fragment: 'after the #',
 		header: 'header',
 		body: 'body',
 		token: 'in the token',

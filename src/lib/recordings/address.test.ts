@@ -26,8 +26,11 @@ describe('what a person sees in their browser', () => {
 				const where = `${recording.preset} ${step.id}`;
 				const address = addressAt(recording, step.page!.address);
 				expect(address, where).toBeTruthy();
+				// Or where a redirect sent it, after the #, which the browser keeps and never sends.
 				expect(
-					recording.messages.map(({ url }) => url),
+					recording.messages.flatMap(({ url, headers }) =>
+						[url, headers.location?.includes('#') ? headers.location : undefined].filter(Boolean)
+					),
 					where
 				).toContain(address);
 			}

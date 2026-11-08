@@ -27,25 +27,34 @@ const decodeQueryValue = (value: string) => {
 	}
 };
 
-/** Kept encoded, because that is what went over the wire, and split only to fit on a screen. */
+/**
+ * Kept encoded, because that is what went over the wire, and split only to fit on a screen. What is
+ * after the # is split the same way, because the implicit flow sends the token there.
+ */
 function urlLines(start: string, url: string): Line[] {
-	const at = url.indexOf('?');
-	if (at < 0) return [{ before: `${start}${url}` }];
-	const pairs = url
-		.slice(at + 1)
-		.split('&')
-		.map((pair, i): Line => {
+	const hashAt = url.indexOf('#');
+	const beforeHash = hashAt < 0 ? url : url.slice(0, hashAt);
+	const fragment = hashAt < 0 ? null : url.slice(hashAt + 1);
+	const at = beforeHash.indexOf('?');
+	const query = at < 0 ? null : beforeHash.slice(at + 1);
+	if (query === null && fragment === null) return [{ before: `${start}${url}` }];
+	const pairsOf = (text: string, first: '?' | '#') =>
+		text.split('&').map((pair, i): Line => {
 			const equals = pair.indexOf('=');
 			const name = equals < 0 ? pair : pair.slice(0, equals);
 			const value = equals < 0 ? '' : pair.slice(equals + 1);
 			return {
-				before: `  ${i === 0 ? '?' : '&'}${name}=`,
+				before: `  ${i === 0 ? first : '&'}${name}=`,
 				value,
 				name,
 				decoded: decodeQueryValue(value)
 			};
 		});
-	return [{ before: `${start}${url.slice(0, at)}` }, ...pairs];
+	return [
+		{ before: `${start}${at < 0 ? beforeHash : beforeHash.slice(0, at)}` },
+		...(query === null ? [] : pairsOf(query, '?')),
+		...(fragment === null ? [] : pairsOf(fragment, '#'))
+	];
 }
 
 function headerLines(headers: Record<string, string>): Line[] {

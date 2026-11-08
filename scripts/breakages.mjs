@@ -489,14 +489,14 @@ export const breakages = [
 	{
 		name: 'cite: a claim loses its source',
 		file: AC,
-		from: "			id: 'redirect-with-code',\n			cites: [",
-		to: "			id: 'redirect-with-code',\n			cited: ["
+		from: "			id: 'redirect-with-code',\n			when: not(implicit),\n			cites: [",
+		to: "			id: 'redirect-with-code',\n			when: not(implicit),\n			cited: ["
 	},
 	{
 		name: 'cite: a step cites the wrong section',
 		file: AC,
-		from: "section: '2.1.2',",
-		to: "section: '2.2.2',"
+		from: "section: '2.1.2',\n					why: 'Section 2.1.2 is the current advice",
+		to: "section: '2.2.2',\n					why: 'Section 2.1.2 is the current advice"
 	},
 	{
 		name: 'cite: a citation shows with settings it is not about',

@@ -5,6 +5,13 @@ export function addressAt(recording: Recording, step: string): string | null {
 	const at = recording.messages.findIndex((candidate) => candidate.step === step);
 	const message = recording.messages[at];
 	if (!message) return null;
+	// A browser keeps what is after the # of the redirect that sent it, which it never sends.
+	if (message.url && !message.url.includes('#')) {
+		const sent = recording.messages
+			.slice(0, at)
+			.findLast((candidate) => candidate.headers.location?.startsWith(`${message.url}#`));
+		if (sent) return sent.headers.location!;
+	}
 	const own = message.url ?? message.headers.location;
 	if (own) return own;
 	// A page that is not a redirect is at the address of the request it answered.
@@ -23,6 +30,7 @@ const TERM_OF: Readonly<Record<string, string>> = {
 	scope: 'scope',
 	client_id: 'client-id',
 	redirect_uri: 'redirect-uri',
+	access_token: 'access-token',
 	code_challenge: 'challenge'
 };
 
@@ -35,6 +43,8 @@ export interface AddressPart {
 	whole: string;
 	marked: boolean;
 	term?: string;
+	/** After the #, which the browser keeps and never sends. */
+	fragment?: boolean;
 }
 
 export interface Address {
@@ -50,14 +60,21 @@ export function readAddress(
 	marks: readonly string[] = [],
 	{ everything = false }: { everything?: boolean } = {}
 ): Address {
-	const { host, pathname, searchParams } = new URL(url);
-	const all = [...searchParams].map(([name, whole]) => ({
-		name,
-		whole,
-		value: whole.length > LONGEST_VALUE ? `${whole.slice(0, LONGEST_VALUE)}…` : whole,
-		marked: marks.includes(name),
-		term: TERM_OF[name]
-	}));
+	const { host, pathname, searchParams, hash } = new URL(url);
+	const part =
+		(fragment: boolean) =>
+		([name, whole]: [string, string]) => ({
+			name,
+			whole,
+			value: whole.length > LONGEST_VALUE ? `${whole.slice(0, LONGEST_VALUE)}…` : whole,
+			marked: marks.includes(name),
+			term: TERM_OF[name],
+			...(fragment ? { fragment } : {})
+		});
+	const all = [
+		...[...searchParams].map(part(false)),
+		...[...new URLSearchParams(hash.slice(1))].map(part(true))
+	];
 	const parts = everything ? all : all.filter((part) => part.marked);
 	return { where: `${host}${pathname}`, parts, left: all.length - parts.length };
 }

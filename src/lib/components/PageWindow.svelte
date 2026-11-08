@@ -26,6 +26,14 @@
 	}: Props = $props();
 
 	const read = $derived(address ? readAddress(address, marks, { everything }) : null);
+	// ? before the first of the query, # before the first of what the browser keeps, & between.
+	const separator = (index: number) => {
+		const parts = read?.parts ?? [];
+		const part = parts[index];
+		const before = parts[index - 1];
+		if (part.fragment && !before?.fragment) return '#';
+		return before ? '&' : '?';
+	};
 </script>
 
 <figure data-testid="page-window">
@@ -36,7 +44,7 @@
 					class:marked={part.marked}
 					data-parameter={part.name}
 					title={part.whole}
-					>{index ? '&' : '?'}{#if part.term}<button
+					>{separator(index)}{#if part.term}<button
 							type="button"
 							onclick={() => onterm?.(part.term!)}>{part.name}</button
 						>{:else}{part.name}{/if}={part.value}</span

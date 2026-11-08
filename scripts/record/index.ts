@@ -238,6 +238,8 @@ function classifyResponse(
 	if (url.pathname === `/realms/${LOCAL_REALM}/protocol/openid-connect/auth` && status === 400) {
 		return 'address-refused';
 	}
+	// The implicit flow sends the token back after the #, where a code would be in the query.
+	if (location?.startsWith(`${REDIRECT_URI}#`)) return 'redirect-with-token';
 	if (location?.startsWith(REDIRECT_URI)) return 'redirect-with-code';
 	if (location?.startsWith(`${LOOPBACK}:`)) return 'redirect-with-code';
 	if (location?.startsWith(ATTACKER_SITE)) return 'redirect-with-code';

@@ -112,8 +112,9 @@ describe('the URL', () => {
 							serverNotes: onOff,
 							settingsHidden: !onOff,
 							eyes: onOff ? 'browser' : null,
-							// With the address refused there is no code to follow.
-							follow: onOff && settings.address === 'registered' ? 'code' : null,
+							// With the address refused, or the token sent in its place, there is no code to follow.
+							follow:
+								onOff && settings.address === 'registered' && !settings.implicit ? 'code' : null,
 							wording: onOff ? ('specs' as const) : null,
 							list: onOff,
 							whole: onOff,
