@@ -50,7 +50,7 @@ export type StepKind = 'request' | 'response' | 'internal' | 'human' | 'time';
 
 export interface FieldDef {
 	name: string;
-	place: 'query' | 'header' | 'body' | 'token' | 'setting' | 'path' | 'memory';
+	place: 'query' | 'fragment' | 'header' | 'body' | 'token' | 'setting' | 'path' | 'memory';
 	note?: string;
 	/** The credential or token this field carries, which the diagram draws on the message. */
 	artifact?: ArtifactId;
@@ -151,7 +151,8 @@ export interface StepDef {
 	practice?: readonly PracticeExample[];
 	links?: readonly StepLink[];
 	fields?: readonly FieldDef[];
-	execute?: ExecuteDef;
+	/** Several, as a text has several, where settings change which step has the answer. */
+	execute?: ExecuteDef | readonly ExecuteDef[];
 	/** Where this comes from, when a real Keycloak did not do it and so it could not be recorded. */
 	specOnly?: string;
 	/** How this got here, when it is not a message of its own in the recording. */
@@ -369,7 +370,7 @@ export function evaluate(flow: DiagramDef, settings: Settings): DiagramView {
 		largerJob: step.largerJob,
 		practice: (step.practice ?? []).filter((example) => present(example.when, settings)),
 		links: (step.links ?? []).filter((link) => present(link.when, settings)),
-		execute: step.execute && present(step.execute.when, settings) ? step.execute.answer : undefined,
+		execute: [step.execute ?? []].flat().find((one) => present(one.when, settings))?.answer,
 		specOnly: step.specOnly,
 		recordedAs: step.recordedAs,
 		causes: causes(step.when, settings),

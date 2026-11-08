@@ -31,6 +31,7 @@ export interface Settings {
 	address: 'registered' | 'other';
 	appRuns: 'server' | 'page' | 'bff' | 'program';
 	oldWay: boolean;
+	implicit: boolean;
 	registration: 'manual' | 'dcr' | 'cimd';
 	federation: boolean;
 	companies: boolean;
@@ -1230,6 +1231,56 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				is('registration', 'manual')
 			),
 			because: 'That is about logging in somewhere else, and this is what came before it.'
+		}
+	},
+	// What apps in a browser used to do, which the step that sends the code back names as the thing it
+	// is not. The maintainer asked for it on 2026-11-08 ("make implicit flow also clickable so you can
+	// see that one"), so it is drawn and recorded, and like the old way it is not a control of its own.
+	implicit: {
+		kind: 'toggle',
+		label: 'The token in the redirect (the implicit flow)',
+		param: 'implicit',
+		default: false,
+		onlyOn: 'authorization-code',
+		notOnOffer: true,
+		summary:
+			'What apps in a browser used to do: the token comes back in the address, with no code and no trade.',
+		why: 'The identity provider sends the token itself back in the address, after the #, with no code to trade. That is why there is a code: there, the browser’s history and anything running in the page can read the token, nothing ties it to the app that asked, and there is no refresh token. Current advice says not to use it.',
+		sources: [
+			{
+				source: 'rfc6749',
+				section: '4.2',
+				why: 'Section 4.2 is the implicit grant: the token is sent back in the fragment of the redirect, and there is never a refresh token.'
+			},
+			{
+				source: 'rfc9700',
+				section: '2.1.2',
+				why: 'Section 2.1.2 says clients should not use it, or anything else that puts an access token in the redirect, because it can leak there and cannot be tied to the app.'
+			}
+		],
+		setsWhenOn: { appRuns: 'page', clientType: 'public', pkce: false },
+		requires: {
+			when: all(
+				is('appRuns', 'page'),
+				is('clientType', 'public'),
+				is('oidc', false),
+				is('consent', false),
+				is('pkce', false),
+				is('par', false),
+				is('attacker', false),
+				is('binding', 'bearer'),
+				is('broker', false),
+				is('federation', false),
+				is('exchange', false),
+				is('apiToken', 'good'),
+				is('refresh', false),
+				is('sso', false),
+				is('logout', false),
+				is('address', 'registered'),
+				is('registration', 'manual'),
+				is('oldWay', false)
+			),
+			because: 'Drawn so far for an app in the page, with nothing else on.'
 		}
 	},
 	address: {

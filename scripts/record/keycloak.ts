@@ -583,6 +583,7 @@ export async function setUpFor(
 				| 'exchangeGives'
 				| 'upstreamReader'
 				| 'linkAccount'
+				| 'implicit'
 			>
 		>
 ) {
@@ -602,6 +603,8 @@ export async function setUpFor(
 			// Registered with no port, which a loopback address does not need (RFC 8252 section 7.3).
 			...(settings.appRuns === 'program' ? { redirectUris: [LOOPBACK_REDIRECT_URI] } : {}),
 			...(settings.clientType === 'public' ? { publicClient: true } : confidential),
+			// Off on a new client, and on here, which is the Implicit flow switch in the console.
+			...(settings.implicit ? { implicitFlowEnabled: true } : {}),
 			// Set when a client is created through this API, this also turns off Full scope allowed, and
 			// the token has no roles and no audience. Turned on afterwards, as anyone does it in the
 			// console, it changes nothing in the token (questions.json).

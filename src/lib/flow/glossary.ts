@@ -698,6 +698,14 @@ const list: readonly Term[] = [
 		at: flowAt('token-request', { oidc: true, clientType: 'public', pkce: true })
 	},
 	{
+		id: 'implicit-flow',
+		name: 'Implicit flow',
+		words: ['implicit flow', 'implicit grant'],
+		explains: '',
+		setting: 'implicit',
+		at: flowAt('redirect-with-token', { implicit: true, appRuns: 'page', clientType: 'public' })
+	},
+	{
 		id: 'password-grant',
 		name: 'Password grant',
 		words: ['password grant', 'resource owner password credentials'],

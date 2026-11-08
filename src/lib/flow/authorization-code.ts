@@ -22,6 +22,8 @@ const inPage = is('appRuns', 'page');
 const behindThePage = is('appRuns', 'bff');
 // A program on the user's own computer, which hears the answer on 127.0.0.1 (#178).
 const inAProgram = is('appRuns', 'program');
+// What apps in a browser used to do: the token comes back in the address, with no code (2026-11-08).
+const implicit = is('implicit', true);
 const fromADocument = is('registration', 'cimd');
 const inADirectory = is('federation', true);
 const byHand = is('registration', 'manual');
@@ -366,6 +368,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			label: 'Stolen',
 			why: 'What someone else can do with the code, if they get hold of it on its way back.',
 			from: 'attacker-steals-code'
+		},
+		{
+			label: 'Read',
+			why: 'The token itself came back through the browser, so nothing is traded. The page takes it from there.',
+			from: 'callback',
+			when: implicit
 		},
 		{
 			label: 'Trade',
@@ -871,6 +879,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: 'The browser asks the identity provider to log the user in, and carries only the app’s client ID and the reference. What the app asked for is already there, and checked, so it is not in this address and cannot be changed on the way. Someone could still swap in a reference to another request, which the spec counts on state, PKCE or a nonce to catch.'
 				},
 				{
+					when: implicit,
+					text: 'The browser asks the identity provider to log the user in, and asks for the access token itself in the answer, rather than a code to trade. The identity provider first checks that the address to send the user back to is one registered in setup.'
+				},
+				{
 					when: oidc,
 					text: 'The browser asks the identity provider to log the user in. The openid scope asks for proof of who that was as well. The identity provider first checks that the address to send the user back to is one registered in setup.'
 				},
@@ -895,7 +907,13 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				}
 			],
 			fields: [
-				{ name: 'response_type=code', place: 'query', when: not(par) },
+				{ name: 'response_type=code', place: 'query', when: all(not(par), not(implicit)) },
+				{
+					name: 'response_type=token',
+					place: 'query',
+					note: 'Asks for the token itself in the answer, not a code',
+					when: implicit
+				},
 				{
 					name: 'client_id',
 					place: 'query',
@@ -1129,7 +1147,11 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				text: 'Then they can log in as the user, from anywhere, until it is changed, unless the identity provider also asks for a second factor. On the server recorded it asks for nothing else, by default. Even with one, a session or token taken after the login works without it, for as long as it lasts.'
 			},
 			when: not(broker),
-			execute: { answer: 'redirect-with-code', when: not(consent) },
+			// With the token in the redirect, that is the answer, and the call to the API uses it.
+			execute: [
+				{ answer: 'redirect-with-token', when: implicit },
+				{ answer: 'redirect-with-code', when: not(consent) }
+			],
 			fields: [{ name: 'username and password', place: 'body', artifact: 'password' }]
 		},
 		{
@@ -1565,6 +1587,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		},
 		{
 			id: 'redirect-with-code',
+			when: not(implicit),
 			cites: [
 				{
 					source: 'rfc9207',
@@ -1618,6 +1641,46 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					name: 'iss',
 					place: 'query',
 					note: 'Names the server this came from, so an app that uses more than one can tell which answered'
+				},
+				{
+					name: 'Set-Cookie',
+					place: 'header',
+					note: 'The session, on the address of the identity provider',
+					artifact: 'session'
+				}
+			]
+		},
+		{
+			id: 'redirect-with-token',
+			when: implicit,
+			cites: [
+				{
+					source: 'rfc6749',
+					section: '4.2.2',
+					why: 'Section 4.2.2 is this answer: the token, its type and how long it lasts, and state, after the # of the address, and never a refresh token.'
+				},
+				{
+					source: 'rfc9700',
+					section: '2.1.2',
+					why: 'Section 2.1.2 says clients should not use the implicit grant, or anything else that puts an access token in this answer.'
+				}
+			],
+			from: 'idp',
+			to: 'browser',
+			kind: 'response',
+			plain: 'Sent back with the token in the address',
+			label: '302 back with a token',
+			concept:
+				'The identity provider sets its cookie, so it will know this browser next time, and sends the browser back to the app with the access token itself, after the # of the address. This is what the code is there to avoid: the token goes through the browser, where it can be seen, and there is no trade where anything shows it reached the app that asked.',
+			fields: [
+				{ name: 'access_token', place: 'fragment', artifact: 'access-token' },
+				{ name: 'token_type=Bearer', place: 'fragment' },
+				{ name: 'expires_in', place: 'fragment' },
+				{ name: 'state', place: 'fragment' },
+				{
+					name: 'iss',
+					place: 'fragment',
+					note: 'Names the server this came from, as it would with a code'
 				},
 				{
 					name: 'Set-Cookie',
@@ -2056,6 +2119,12 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					why: 'Section 4.7 is the same attack in the current advice, and says that PKCE or a nonce can stand in for state, once the app has made sure the server supports PKCE.'
 				},
 				{
+					source: 'rfc9700',
+					section: '4.3.2',
+					why: 'Section 4.3.2 is a token left in the browser’s history, which with the implicit grant is the address the answer sent it to.',
+					when: implicit
+				},
+				{
 					source: 'rfc8252',
 					section: '8.1',
 					why: 'Section 8.1 says another program on the same computer may be able to take a code sent to a loopback address, and that PKCE was made for this.',
@@ -2074,15 +2143,23 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			page: {
 				address: 'callback',
 				shows:
-					'Whatever the app answers here, a page of its own or a move straight on to another. What matters is the address, because the code is in it, for anything that can see the address.',
-				marks: ['code', 'state']
+					'Whatever the app answers here, a page of its own or a move straight on to another. What matters is the address, because what came back is in it, for anything that can see the address.',
+				marks: ['code', 'state', 'access_token']
 			},
 			plain: [
+				{ when: implicit, text: 'The page reads the token from the address' },
 				{ when: inAProgram, text: 'The code reaches the program' },
 				{ text: 'The code reaches the app' }
 			],
-			label: 'Deliver the code',
+			label: [
+				{ when: implicit, text: 'Open the page, token after #' },
+				{ text: 'Deliver the code' }
+			],
 			concept: [
+				{
+					when: implicit,
+					text: 'The browser opens the app’s page at the address it was sent to. What is after the # is never sent, so the server the page comes from does not see the token, but the page reads it from the address, and so can any other script running in the page. The address with the token in it is in the browser’s history now as well.'
+				},
 				{
 					when: inAProgram,
 					text: 'The browser hands the code to the program, at the port it opened, and this never leaves the computer, which is why plain http is all right here. On some systems another program may be able to take a code sent to this port, though, so the port does not show which program got it. The verifier does not say which program either, but only whoever started this login has it, so a program that only took the code cannot trade it.'
@@ -2105,6 +2182,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			],
 			inPractice: [
 				{
+					when: implicit,
+					text: 'Your page takes the token from after the #, compares state with what it sent, and should take the token out of the address. Current advice is the code with PKCE instead, even in the page.'
+				},
+				{
 					when: inAProgram,
 					text: 'Your code takes the code from the address, compares state with what it sent, and closes the port. The address has to be the one registered, apart from the port.'
 				},
@@ -2117,10 +2198,16 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				example('passport', false, 'only compares state with state: true')
 			],
 			fields: [
-				{ name: 'code', place: 'query', artifact: 'code' },
-				{ name: 'state', place: 'query', note: 'Must match what the app sent' },
+				{ name: 'code', place: 'query', artifact: 'code', when: not(implicit) },
+				{
+					name: 'state',
+					place: 'query',
+					note: 'Must match what the app sent',
+					when: not(implicit)
+				},
 				{
 					name: 'iss',
+					when: not(implicit),
 					place: 'query',
 					note: 'Names the server this came from, so an app that uses more than one can tell which answered'
 				}
@@ -2128,7 +2215,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 		},
 		{
 			id: 'token-request',
-			when: not(byLink),
+			when: all(not(byLink), not(implicit)),
 			cites: [
 				{
 					source: 'rfc8252',
@@ -2413,7 +2500,7 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					when: not(confidential)
 				}
 			],
-			when: stillGoing,
+			when: all(stillGoing, not(implicit)),
 			from: 'idp',
 			to: 'app',
 			kind: 'response',

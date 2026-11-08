@@ -75,7 +75,8 @@
 		"logout-offline": "2026-11-07",
 		"on-their-computer": "2026-11-05",
 		"on-their-computer-oidc": "2026-11-05",
-		"broker": "2026-11-05"
+		"broker": "2026-11-05",
+		"implicit": "2026-11-08"
 	},
 	"flows": {
 		"authorization-code": {
@@ -86,6 +87,7 @@
 				"points-at-a-document",
 				"points-at-a-document-oidc",
 				"points-at-a-document-broker",
+				"implicit",
 				"the-old-way",
 				"address-refused",
 				"api-no-token",
@@ -245,6 +247,7 @@
 				"redirect-to-idp",
 				"redirect-to-upstream",
 				"redirect-with-code",
+				"redirect-with-token",
 				"refresh-after-logout",
 				"refresh-after-logout-response",
 				"refresh-again",

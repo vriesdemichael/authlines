@@ -34,15 +34,16 @@ const onTheWire = (step: Step) => step.channel === 'front' || step.channel === '
 function carried(message: RecordedMessage) {
 	const target = message.url ?? message.headers.location;
 	const query = target ? new URL(target).searchParams : new URLSearchParams();
+	const fragment = new URLSearchParams(target ? new URL(target).hash.slice(1) : '');
 	const body: Record<string, unknown> =
 		message.body && typeof message.body === 'object'
 			? (message.body as Record<string, unknown>)
 			: {};
-	return { query, body };
+	return { query, fragment, body };
 }
 
 function fieldIsThere(field: Field, message: RecordedMessage): boolean {
-	const { query, body } = carried(message);
+	const { query, fragment, body } = carried(message);
 	const [name, value] = field.name.split('=');
 	switch (field.place) {
 		case 'path':
@@ -50,6 +51,9 @@ function fieldIsThere(field: Field, message: RecordedMessage): boolean {
 		case 'query':
 			if (value === undefined) return query.has(name);
 			return (query.get(name) ?? '').split(' ').includes(value);
+		case 'fragment':
+			if (value === undefined) return fragment.has(name);
+			return (fragment.get(name) ?? '').split(' ').includes(value);
 		case 'body':
 			if (field.name === 'username and password') return 'username' in body && 'password' in body;
 			if (value === undefined) return name in body;
@@ -118,9 +122,9 @@ const SIGN_IN = new Set([
 ]);
 
 function namesInMessage(message: RecordedMessage): string[] {
-	const { query, body } = carried(message);
+	const { query, fragment, body } = carried(message);
 	const inQuery = SIGN_IN.has(message.step ?? '') ? [] : query.keys();
-	return [...new Set([...inQuery, ...Object.keys(body)])];
+	return [...new Set([...inQuery, ...fragment.keys(), ...Object.keys(body)])];
 }
 
 function namesInStep(step: Step): Set<string> {

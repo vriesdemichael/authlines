@@ -263,6 +263,17 @@ export const mapTracks: readonly MapTrack[] = [
 					preset: 'public',
 					step: 'token-request'
 				}),
+				// The maintainer, 2026-11-08: "a good one because the name is vague", so people bring it. It is what an
+				// app with no secret used to do, and here rather than in Start here, which has to fit the first screen.
+				node({
+					id: 'the-implicit-flow',
+					answer:
+						'The token comes back after the # of the address, with no code and no trade. The page and anything else running in it can read it, it stays in the browser’s history, and nothing ties it to the app that asked, so current advice is the code with PKCE instead.',
+					title: 'What is the implicit flow?',
+					summary: 'The token sent back in the address, and why current advice says not to.',
+					preset: 'implicit',
+					step: 'redirect-with-token'
+				}),
 				node({
 					id: 'stolen-code',
 					answer:

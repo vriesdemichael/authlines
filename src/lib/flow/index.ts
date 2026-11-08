@@ -37,6 +37,11 @@ const presets: readonly Preset[] = [
 		}
 	},
 	{
+		id: 'implicit',
+		title: 'The token in the redirect, the implicit flow',
+		settings: { implicit: true, appRuns: 'page', clientType: 'public' }
+	},
+	{
 		id: 'the-old-way',
 		title: 'The old way: the app has your password',
 		settings: { oldWay: true }
