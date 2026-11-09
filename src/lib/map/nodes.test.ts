@@ -41,11 +41,15 @@ describe('the map', () => {
 		expect(nodeSettings(second)).toEqual(defaultSettings);
 	});
 
-	// "Very busy and cluttered", the maintainer said on 2026-11-02. A new question takes one off, or
-	// says why not (#142). 54 since 2026-11-08, when the maintainer put the implicit flow on: "a good one
-	// because the name is vague".
-	it('stays short enough to look through', () => {
-		expect(mapNodes.length).toBeLessThanOrEqual(54);
+	// There is no budget for the map any more. The maintainer, 2026-11-09: "I think we have too many
+	// overlapping flows, which are fine because they are in collapsed groups. The real power comes from
+	// the search function to set yourself up or by using an ai agent." So what keeps it readable is that
+	// one part is open at a time, and each says what it is about and how many questions it has.
+	it('shows one part open at a time, each with a title and its questions', () => {
+		for (const track of mapTracks) {
+			expect(track.title.length, track.id).toBeGreaterThan(3);
+			expect(track.chains.flat().length, track.id).toBeGreaterThan(0);
+		}
 	});
 
 	it('offers everything that was recorded', () => {
