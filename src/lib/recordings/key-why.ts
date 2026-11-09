@@ -1,10 +1,9 @@
 import { whyOf } from '#lib/flow/vocabulary.ts';
+import { CLAIM_ROWS } from '#lib/pictures/what-a-token-says.ts';
+import { CLAIMS, discovered, HEADERS, JOSE, WIRE } from '#lib/recordings/wire-words.ts';
 
-/** Where an explanation comes from: a section of an RFC, which opens at that section. */
-export interface KeyCite {
-	rfc: number;
-	section: string;
-}
+/** Where an explanation comes from: a section of an RFC, or another spec, which the link opens. */
+export type KeyCite = { rfc: number; section: string } | { title: string; url: string };
 
 export interface KeyWhy {
 	says: string;
@@ -142,19 +141,34 @@ const PADATA_TYPES: Readonly<Record<string, KeyWhy>> = {
 /** The name a reader gave a value, without its number: "PA-FX-FAST (136)" is PA-FX-FAST. */
 const named = (value: string) => value.replace(/\s*\(\d+\)$/, '');
 
-/** What a key on a line of the raw view means, and for a padata-type what its value is too. */
+/** What each claim in the picture of a token says, which is the same where the raw view opens one. */
+function claimIs(key: string): KeyWhy | undefined {
+	const row = CLAIM_ROWS.find(({ names }) => names.includes(key));
+	return row ? { says: row.is } : undefined;
+}
+
+/** Where a key is, which decides which of its meanings it has: accept is a header and a button. */
+export type KeyPlace = 'kerberos' | 'header' | 'jose' | 'claims' | 'wire';
+
+/** What a key in the raw view means, and for a padata-type what its value is too. */
 export function keyWhy(
 	key: string,
-	{ kerberos, value }: { kerberos: boolean; value?: string }
+	{ where, value }: { where: KeyPlace; value?: string }
 ): KeyWhy | undefined {
-	if (kerberos) {
+	if (where === 'kerberos') {
 		const about = KERBEROS_KEYS[key];
 		const kind = key === 'padata-type' && value ? PADATA_TYPES[named(value)] : undefined;
 		if (about && kind) return { says: `${about.says} This one: ${kind.says}`, cite: kind.cite };
 		return about;
 	}
+	if (where === 'header') return HEADERS[key];
+	// A proof's header holds its public key, whose fields are those of a key set.
+	if (where === 'jose') return JOSE[key] ?? WIRE[key];
+	if (where === 'claims') return claimIs(key) ?? CLAIMS[key];
 	const says = whyOf({ name: key });
-	return says ? { says } : undefined;
+	return (
+		WIRE[key] ?? (says ? { says } : undefined) ?? claimIs(key) ?? CLAIMS[key] ?? discovered(key)
+	);
 }
 
 /** Every key and kind this explains, for a test to hold the recordings to. */
@@ -163,5 +177,10 @@ export const explainedKerberos = {
 	padataTypes: Object.keys(PADATA_TYPES)
 };
 
-export const citeUrl = ({ rfc, section }: KeyCite) =>
-	`https://www.rfc-editor.org/rfc/rfc${rfc}.html#section-${section}`;
+export const citeUrl = (cite: KeyCite) =>
+	'rfc' in cite
+		? `https://www.rfc-editor.org/rfc/rfc${cite.rfc}.html#section-${cite.section}`
+		: cite.url;
+
+export const citeText = (cite: KeyCite) =>
+	'rfc' in cite ? `RFC ${cite.rfc}, section ${cite.section}` : cite.title;

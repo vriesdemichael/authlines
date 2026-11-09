@@ -76,6 +76,21 @@ test.describe('a key on the wire', () => {
 		await expect(page.getByTestId('key-why')).toHaveCount(0);
 	});
 
+	test('is everywhere a name is: a header, a parameter, and a claim in an opened token', async ({
+		page
+	}) => {
+		await open(page, '&oidc=1&step=token-response&decoded=1');
+		await page.locator('button.key[data-key="content-type"]').first().hover();
+		await expect(page.getByTestId('key-why')).toContainText('What kind of data the body is');
+		const azp = page.locator('[data-testid="opened-token"] button.key[data-key="azp"]').first();
+		await azp.click();
+		await page.mouse.move(0, 0);
+		await expect(page.getByTestId('key-why')).toContainText('The app it was given to');
+		await open(page, '&pkce=1&step=authorize');
+		await page.locator('button.key[data-key="code_challenge_method"]').first().focus();
+		await expect(page.getByTestId('key-why')).toContainText('one-way hash');
+	});
+
 	test('says which kind of pre-authentication data it is', async ({ page }) => {
 		await open(page, '&directory=1&kerberos=1&step=ask-for-service-ticket');
 		await page.locator('button.key[data-key="padata-type"]').first().focus();

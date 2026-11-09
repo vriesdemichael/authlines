@@ -9,8 +9,10 @@ export interface Line {
 	after?: string;
 	/** What the message calls the value. */
 	name?: string;
-	/** The key a line of JSON starts with, whatever its value is, which can explain itself. */
+	/** The name a line starts with, of a JSON key, a parameter or a header, which can explain itself. */
 	key?: string;
+	/** That name is a header, which means something of its own: accept is a header and a button. */
+	header?: boolean;
 	/** The value itself, where the message has it encoded. */
 	decoded?: string;
 	/** How long a value someone was not sent is, which is all they get of it. */
@@ -33,13 +35,14 @@ const decodeQueryValue = (value: string) => {
  * Kept encoded, because that is what went over the wire, and split only to fit on a screen. What is
  * after the # is split the same way, because the implicit flow sends the token there.
  */
-function urlLines(start: string, url: string): Line[] {
+/** An address as lines, the first named by the header it is in, if it is in one. */
+function urlLines(start: string, url: string, key?: string): Line[] {
 	const hashAt = url.indexOf('#');
 	const beforeHash = hashAt < 0 ? url : url.slice(0, hashAt);
 	const fragment = hashAt < 0 ? null : url.slice(hashAt + 1);
 	const at = beforeHash.indexOf('?');
 	const query = at < 0 ? null : beforeHash.slice(at + 1);
-	if (query === null && fragment === null) return [{ before: `${start}${url}` }];
+	if (query === null && fragment === null) return [{ before: `${start}${url}`, key }];
 	const pairsOf = (text: string, first: '?' | '#') =>
 		text.split('&').map((pair, i): Line => {
 			const equals = pair.indexOf('=');
@@ -49,48 +52,56 @@ function urlLines(start: string, url: string): Line[] {
 				before: `  ${i === 0 ? first : '&'}${name}=`,
 				value,
 				name,
+				key: name,
 				decoded: decodeQueryValue(value)
 			};
 		});
 	return [
-		{ before: `${start}${at < 0 ? beforeHash : beforeHash.slice(0, at)}` },
+		{ before: `${start}${at < 0 ? beforeHash : beforeHash.slice(0, at)}`, key },
 		...(query === null ? [] : pairsOf(query, '?')),
 		...(fragment === null ? [] : pairsOf(fragment, '#'))
 	];
 }
 
+/** The headers, each line that names one marked as a header, for what its name means there. */
 function headerLines(headers: Record<string, string>): Line[] {
-	return Object.entries(headers).flatMap(([name, value]): Line[] => {
-		if (name === 'location') return urlLines('location: ', value);
-		if (name === 'authorization') {
-			const space = value.indexOf(' ');
-			const token = value.slice(space + 1);
-			return [
-				{
-					before: `authorization: ${value.slice(0, space + 1)}`,
-					value: token,
-					name,
-					decoded: token
-				}
-			];
-		}
-		if (name === 'dpop') return [{ before: 'dpop: ', value, name, decoded: value }];
-		if (name === 'cookie' || name === 'set-cookie') {
-			const start = value.indexOf('=') + 1;
-			const end = value.indexOf(';') < 0 ? value.length : value.indexOf(';');
-			const token = value.slice(start, end);
-			return [
-				{
-					before: `${name}: ${value.slice(0, start)}`,
-					value: token,
-					after: value.slice(end),
-					name: value.startsWith('KEYCLOAK') ? 'session' : 'cookie',
-					decoded: token
-				}
-			];
-		}
-		return [{ before: `${name}: ${value}` }];
-	});
+	return Object.entries(headers).flatMap(([name, value]): Line[] =>
+		oneHeader(name, value).map((line) => (line.key === name ? { ...line, header: true } : line))
+	);
+}
+
+function oneHeader(name: string, value: string): Line[] {
+	if (name === 'location') return urlLines('location: ', value, name);
+	if (name === 'authorization') {
+		const space = value.indexOf(' ');
+		const token = value.slice(space + 1);
+		return [
+			{
+				before: `authorization: ${value.slice(0, space + 1)}`,
+				value: token,
+				name,
+				key: name,
+				decoded: token
+			}
+		];
+	}
+	if (name === 'dpop') return [{ before: 'dpop: ', value, name, key: name, decoded: value }];
+	if (name === 'cookie' || name === 'set-cookie') {
+		const start = value.indexOf('=') + 1;
+		const end = value.indexOf(';') < 0 ? value.length : value.indexOf(';');
+		const token = value.slice(start, end);
+		return [
+			{
+				before: `${name}: ${value.slice(0, start)}`,
+				value: token,
+				after: value.slice(end),
+				name: value.startsWith('KEYCLOAK') ? 'session' : 'cookie',
+				key: name,
+				decoded: token
+			}
+		];
+	}
+	return [{ before: `${name}: ${value}`, key: name }];
 }
 
 function formLines(body: Record<string, unknown>): Line[] {
@@ -101,6 +112,7 @@ function formLines(body: Record<string, unknown>): Line[] {
 			before: `${i === 0 ? '' : '&'}${prefix}`,
 			value: encoded.slice(prefix.length),
 			name,
+			key: name,
 			decoded: String(value)
 		};
 	});
@@ -117,6 +129,9 @@ function jsonLines(body: unknown): Line[] {
 			return { before, value, after, name, key, decoded: JSON.parse(`"${value}"`) as string };
 		});
 }
+
+/** A value as lines of JSON, each with the key it starts with, as an opened token is shown. */
+export const keyedLines = (value: unknown): Line[] => jsonLines(value);
 
 function bodyLines(message: RecordedMessage): Line[] {
 	if (message.bodyNote) return [{ before: '' }, { before: `(${message.bodyNote})` }];
