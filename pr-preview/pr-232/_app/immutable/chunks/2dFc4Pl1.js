@@ -1,1 +1,0 @@
-var e=({flow:e,kind:t,title:n,query:r})=>`${e}:${t}:${n}:${r}`;export{e as t};
