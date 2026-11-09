@@ -23,7 +23,43 @@
 				"gotRefreshToken": true
 			}
 		},
+		"adminApiScope": {
+			"before": {
+				"status": 401,
+				"scope": false,
+				"namesTheAdminApi": false
+			},
+			"after": {
+				"status": 200,
+				"scope": true,
+				"namesTheAdminApi": true
+			}
+		},
+		"adminPermissions": {
+			"before": {
+				"status": 403,
+				"scope": true,
+				"namesTheAdminApi": true
+			},
+			"after": {
+				"status": 200,
+				"scope": true,
+				"namesTheAdminApi": true
+			}
+		},
 		"console": {
+			"admin-permissions": {
+				"found": [
+					"Admin Permissions"
+				],
+				"missing": []
+			},
+			"admin-api-scope": {
+				"found": [
+					"kc-admin-api"
+				],
+				"missing": []
+			},
 			"service-accounts": {
 				"found": [
 					"Capability config",
