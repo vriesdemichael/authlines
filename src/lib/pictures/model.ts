@@ -39,7 +39,8 @@ export type PictureId =
 	| 'oidc-or-saml'
 	| 'an-accounts-life'
 	| 'what-the-api-does'
-	| 'where-roles-come-from';
+	| 'where-roles-come-from'
+	| 'who-or-what';
 
 /**
  * Where something starts or ends, a step, or a question with more than one way on: those make a

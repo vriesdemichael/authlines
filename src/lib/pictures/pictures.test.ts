@@ -660,6 +660,40 @@ describe('what each scope asks for', () => {
 	});
 });
 
+describe('who you are, or what you may do (#200)', () => {
+	it('asks four questions, and says the last is the API’s own code', () => {
+		const found = picture('explain=term.authn-authz&mode=advanced');
+		expect(found.id).toBe('who-or-what');
+		const titles = found.parts.flatMap((part) => part.title ?? []).join(' ');
+		for (const question of ['Who is this?', 'What may this user do?', 'May they see this one?']) {
+			expect(titles).toContain(question);
+		}
+		const rows = found.parts.flatMap((part) => (part.rows ?? []).map((row) => row.opens));
+		expect(rows.map((opens) => opens.step)).toEqual(
+			expect.arrayContaining([
+				'submit-credentials',
+				'consent-page',
+				'api-response',
+				'token-response'
+			])
+		);
+		// The refusal it opens is the one a real API answered, with the scope it needed.
+		expect(rows.find((opens) => opens.step === 'api-response')?.preset).toBe('api-no-scope');
+		const said = found.parts.map((part) => part.says.join(' ')).join(' ');
+		expect(said).toContain('No token here says it');
+	});
+
+	it('leaves out in simple mode what only advanced settings draw, and keeps every question', () => {
+		const simple = picture('explain=term.authn-authz&mode=simple');
+		const rows = simple.parts.flatMap((part) => (part.rows ?? []).map((row) => row.id));
+		expect(rows).not.toContain('role');
+		// A question on the map opens that refusal in simple mode, so it stays.
+		expect(rows).toContain('scope-refused');
+		expect(rows).toContain('logs-in');
+		expect(simple.parts.filter((part) => part.shape === 'party')).toHaveLength(4);
+	});
+});
+
 describe('cookies, JWTs and OAuth (#200)', () => {
 	it('opens where one recorded login has each of the three', () => {
 		const found = picture('explain=term.cookie&mode=advanced');
