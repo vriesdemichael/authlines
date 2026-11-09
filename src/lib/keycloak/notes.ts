@@ -21,6 +21,8 @@ const pkce = is('pkce', true);
 const dpop = is('binding', 'dpop');
 const apiV1 = is('upstreamTokens', 'v1');
 const apiV2 = is('upstreamTokens', 'v2');
+// A group at the other provider becomes a role here (#183).
+const groupRoles = is('groupRoles', true);
 // Named, not "not the app", so a recording made before this setting existed is the app reading.
 const apiReads = all(apiV2, any(is('upstreamReader', 'api'), is('upstreamReader', 'refused')));
 
@@ -38,6 +40,7 @@ export type ConsolePage =
 	| 'api-client-advanced'
 	| 'api-client-scopes'
 	| 'provider-settings'
+	| 'provider-mappers'
 	| 'realm-settings'
 	| 'realm-sessions'
 	| 'realm-tokens'
@@ -437,6 +440,52 @@ export const noteDefs: readonly NoteDef[] = [
 		backedBy: {
 			question: 'parLifespan',
 			shows: { before: { status: 201, expiresIn: 60 }, after: { status: 201, expiresIn: 30 } }
+		}
+	},
+	{
+		id: 'full-scope-allowed',
+		steps: ['give-the-app-its-roles', 'token-response'],
+		when: groupRoles,
+		claims: ['realm_access', 'resource_access'],
+		claimsVerb: 'can be narrowed with',
+		title: 'Full scope allowed',
+		text: 'On for a new client, so its tokens carry every role the user has. Turned off with no role given to the client, a token here lost the realm’s three default roles and the account service’s roles, and with them account from its audience. A role given to the client on the same tab comes back. The console says the switch is deprecated, and to keep it off and give only the roles an app needs.',
+		place: {
+			path: [
+				'Clients',
+				YOUR_CLIENT,
+				'Client scopes',
+				'your client-dedicated',
+				'Scope',
+				'Full scope allowed'
+			],
+			page: 'client-dedicated-scope',
+			opens: 'Scope',
+			shows: ['Full scope allowed']
+		},
+		backedBy: {
+			question: 'fullScopeAllowed',
+			shows: {
+				before: { realmRoles: 3, serviceRoles: ['account'], aud: 'account' },
+				after: { realmRoles: 0, serviceRoles: [], aud: null }
+			}
+		}
+	},
+	{
+		id: 'claim-to-role',
+		steps: ['match-user', 'map-group-to-role'],
+		when: groupRoles,
+		title: 'Claim to Role',
+		text: 'A mapper on the provider, of the type Claim to Role, gives the user a role here when a claim the other provider sent has a value. Here groups containing sales gives reads-orders. Without it, the same first login through the other provider gave a token with no reads-orders.',
+		place: {
+			path: ['Identity providers', 'the provider', 'Mappers', 'Add mapper', 'Mapper type'],
+			page: 'provider-mappers',
+			opens: 'Add mapper',
+			shows: ['Mapper type']
+		},
+		backedBy: {
+			question: 'claimToRole',
+			shows: { before: { hasRole: false }, after: { hasRole: true } }
 		}
 	},
 	{
@@ -1146,6 +1195,44 @@ export const noteDefs: readonly NoteDef[] = [
 
 /** About a flow with no user. What backs these is beside its own recordings. */
 export const noUserNoteDefs: readonly NoteDef[] = [
+	{
+		id: 'admin-permissions',
+		steps: ['service-allow-one-role', 'service-finds-user'],
+		when: is('givesRole', true),
+		title: 'Admin Permissions',
+		text: 'Off on a new realm. With it off, the app’s token got 403 from the admin API when it looked the user up, though the token was one that API takes. On, the permissions an admin makes decide what the app may do there, and nothing else lets it.',
+		place: {
+			path: ['Realm settings', 'General', 'Admin Permissions'],
+			page: 'realm-settings',
+			shows: ['Admin Permissions']
+		},
+		backedBy: {
+			question: 'adminPermissions',
+			shows: { before: { status: 403 }, after: { status: 200 } }
+		}
+	},
+	{
+		id: 'admin-api-scope',
+		steps: ['service-allow-one-role', 'service-token-response', 'service-finds-user'],
+		when: is('givesRole', true),
+		claims: ['aud', 'scope'],
+		claimsVerb: 'name the admin API because of',
+		title: 'kc-admin-api',
+		text: 'A client scope built in from Keycloak 26.8.2, which puts the admin API in a token’s audience and its own name in the token’s scope. Without it on the app’s client, the admin API answered 401 to the app’s token, whatever the permissions said.',
+		place: {
+			path: ['Clients', YOUR_CLIENT, 'Client scopes', 'Add client scope', 'kc-admin-api'],
+			page: 'client-scopes',
+			opens: 'Add client scope',
+			shows: ['kc-admin-api']
+		},
+		backedBy: {
+			question: 'adminApiScope',
+			shows: {
+				before: { status: 401, scope: false, namesTheAdminApi: false },
+				after: { status: 200, scope: true, namesTheAdminApi: true }
+			}
+		}
+	},
 	{
 		id: 'service-accounts',
 		steps: ['service-token-request', 'service-create-client'],

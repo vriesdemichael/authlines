@@ -510,3 +510,14 @@ On 2026-11-09 the weekly run against `latest`, then 26.8.2 and released on 5 Nov
 - **An app that registers itself** lost its audience, which is under "DCR and CIMD on a real server" above.
 - **The admin API checks who a token is for.** The app with no user that gives one role got 401 `HTTP 401 Unauthorized` when it looked the user up. The commit behind CVE-2026-19688, "Enforce scope and audience check in the Admin API", says the admin API now takes only a token that carries a new built-in scope, `kc-admin-api`, and that scope's audience, the realm's admin API address. Before, it took any token whose subject had the permissions. `admin-cli` and the admin console get the scope by default, and any other client has to be given it. It can be turned off with `--spi-admin--audience-check-enabled=false`, which the change's notes strongly discourage. Given the scope, the app's token had `scope: kc-admin-api profile email` and `aud: ["http://localhost:18080/admin/realms/demo", "account"]`, and the rest went as on 26.8.1: the user found, reads-orders given, and manages-orders refused with 403.
 - **An app that points at a document kept its user's answer.** Recorded one after another, the second run with a client document logged in with no consent page, where on 26.8.1 the document was fetched again and the user asked again. Why was not looked into. The recorder now removes the client a document made before each such run, so that nothing carries over, as for every other run.
+
+## The settings behind a token's roles
+
+Asked of Keycloak 26.8.2 on 2026-11-09 for the server notes of #183, each by changing one setting and nothing else.
+
+- **Full scope allowed**, on a client of its own with no role given: on, the access token had the realm's three default roles, the account service's roles and `aud: account`. Off, it had no `realm_access`, no `resource_access` and no `aud`. The console's help for the switch says it "is deprecated and will be removed in the future".
+- **Claim to Role** (`oidc-role-idp-mapper`) on the provider: the same first login through the other provider, whose ID token said `groups: ["sales"]`, gave no reads-orders without the mapper and reads-orders with it.
+- **Admin Permissions** on the realm: off, the app with no user got 403 looking the user up at the admin API, with a token that had `kc-admin-api`. On, with its permissions, 200.
+- **`kc-admin-api`** on the app's client: without it, the token had neither the scope nor the admin API's address in `aud`, and the same lookup got 401.
+
+The recorder's own admin permissions outlived turning them off: turning them on again failed with "Policy with name [the-app-with-no-user] already exists". So it now removes its policy and permissions when it turns them off.

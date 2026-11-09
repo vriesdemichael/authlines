@@ -494,7 +494,7 @@ export async function setUpRealms(admin: Admin) {
  * The other provider says which groups the user is in, in its ID token, and a mapper here turns one
  * of them into a role (#183). Both are taken off again for every other run.
  */
-async function groupsBecomeRoles(admin: Admin, onProvider: string, on: boolean) {
+export async function groupsBecomeRoles(admin: Admin, onProvider: string, on: boolean) {
 	const [broker] = await admin.call<{ id: string }[]>(
 		'GET',
 		`/realms/${UPSTREAM_REALM}/clients?clientId=${BROKER_CLIENT}`
@@ -536,6 +536,17 @@ async function groupsBecomeRoles(admin: Admin, onProvider: string, on: boolean) 
 	});
 }
 
+/** Takes off the mapper that turns the group into a role, and leaves the groups claim (#183). */
+export async function withoutClaimToRole(admin: Admin, onProvider: string) {
+	for (const mapper of await admin.call<{ id: string; name: string }[]>(
+		'GET',
+		`${onProvider}/mappers`
+	)) {
+		if (mapper.name === GROUP_TO_ROLE)
+			await admin.call('DELETE', `${onProvider}/mappers/${mapper.id}`);
+	}
+}
+
 /**
  * Gives the realm a new key to sign with, above the one it was made with, which stays listed. Or
  * takes it away again, so that no other recording changes (2026-11-08).
@@ -565,6 +576,31 @@ export async function newSigningKey(admin: Admin, realm: string, on: boolean) {
 			algorithm: ['RS256']
 		}
 	});
+}
+
+/** Where a realm's admin permissions are kept, while they are on. */
+async function permissionsServer(admin: Admin, realmPath: string) {
+	const [permissions] = await admin.call<{ id: string }[]>(
+		'GET',
+		`${realmPath}/clients?clientId=admin-permissions`
+	);
+	return permissions && `${realmPath}/clients/${permissions.id}/authz/resource-server`;
+}
+
+/** The policy and permissions below, which outlive turning admin permissions off and on again. */
+async function forgetTheAppsPermissions(admin: Admin, realmPath: string) {
+	const server = await permissionsServer(admin, realmPath);
+	if (!server) return;
+	// The permissions first, because they name the policy.
+	for (const name of ['look-up-and-map-users', 'give-reads-orders', 'the-app-with-no-user']) {
+		const all = await admin.call<{ id: string; name: string }[]>(
+			'GET',
+			`${server}/policy?max=1000`
+		);
+		for (const { id } of all.filter((policy) => policy.name === name)) {
+			await admin.call('DELETE', `${server}/policy/${id}`);
+		}
+	}
 }
 
 /** The built-in scope a token for the admin API has to have, from Keycloak 26.8.2. */
@@ -612,15 +648,14 @@ export async function letTheServiceGiveOneRole(
 		if (back.length) {
 			await admin.call('DELETE', `${realmPath}/users/${them.id}/role-mappings/realm`, back);
 		}
+		await forgetTheAppsPermissions(admin, realmPath);
 		await admin.call('PUT', realmPath, { ...realm, adminPermissionsEnabled: false });
 		return null;
 	}
 	await admin.call('PUT', realmPath, { ...realm, adminPermissionsEnabled: true });
-	const [permissions] = await admin.call<{ id: string }[]>(
-		'GET',
-		`${realmPath}/clients?clientId=admin-permissions`
-	);
-	const server = `${realmPath}/clients/${permissions.id}/authz/resource-server`;
+	await forgetTheAppsPermissions(admin, realmPath);
+	const server = await permissionsServer(admin, realmPath);
+	if (!server) throw new Error('Admin permissions are on, and there is no client for them');
 	const policy = await admin.call<{ id: string }>('POST', `${server}/policy/client`, {
 		name: 'the-app-with-no-user',
 		clients: [service.id],

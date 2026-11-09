@@ -62,6 +62,7 @@ export async function lookInConsole(
 		'api-client-advanced': `${onTheApi}/advanced`,
 		'api-client-scopes': `${onTheApi}/clientScopes`,
 		'provider-settings': `${root}/${BROKERED_REALM}/identity-providers/oidc/${UPSTREAM_REALM}/settings`,
+		'provider-mappers': `${root}/${BROKERED_REALM}/identity-providers/oidc/${UPSTREAM_REALM}/mappers`,
 		'realm-settings': `${root}/${LOCAL_REALM}/realm-settings`,
 		'realm-sessions': `${root}/${LOCAL_REALM}/realm-settings/sessions`,
 		'realm-tokens': `${root}/${LOCAL_REALM}/realm-settings/tokens`,
