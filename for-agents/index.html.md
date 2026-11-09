@@ -12,7 +12,7 @@ Leave out a setting to keep its default. The flow, its settings and the step are
 
 ## What is not drawn here
 
-Authlines does not draw apps on a phone, a PKCE downgrade, Kerberos, NTLM, or client certificates.
+Authlines does not draw apps on a phone, a PKCE downgrade, NTLM, or client certificates.
 
 A login the other provider hands on again, to a provider behind it, is drawn as one hop, and `broker=1&step=upstream-authorize` says why.
 
@@ -51,11 +51,11 @@ An app gets access on behalf of a user, without ever seeing their password.
 
 Each value says what it needs with it, and what it can share a link with, worked out from the rules the screen uses, two settings at a time. A link that names two that do not go together loses one of them.
 
-- `oidc=1`: OpenID Connect, off by default. Adds proof of who logged in on top of the access OAuth grants. `oidc=1` does not go with `register=dcr`, `thief=1`, `checks=bearer`, `directory=1`, `companies=1`, `speaks=saml`, `leaves=1`, `send=none`, `send=expired`, `send=changed`, `send=elsewhere`, `send=noscope`, `groups=1`, `reach=given`, `link=1`, `linkends=cancelled`, or `runs=bff`.
+- `oidc=1`: OpenID Connect, off by default. Adds proof of who logged in on top of the access OAuth grants. `oidc=1` does not go with `register=dcr`, `thief=1`, `checks=bearer`, `directory=1`, `kerberos=1`, `ticket=not-sent`, `companies=1`, `speaks=saml`, `leaves=1`, `send=none`, `send=expired`, `send=changed`, `send=elsewhere`, `send=noscope`, `groups=1`, `reach=given`, `link=1`, `linkends=cancelled`, or `runs=bff`.
 - `consent=1`: Ask for consent, off by default. The identity provider asks the user whether the app may have this access. `consent=1` goes only with `oidc=1`, `client=public`, `register=cimd`, `pkce=1`, `par=1`, `attacker=1`, `uses=real-app`, `binding=dpop`, `nonce=1`, `broker=1`, `upstream=v1`, `upstream=v2`, `reads=api`, `reads=refused`, `exchange=1`, `trade=refresh`, `refresh=1`, and `reuse=ends` among the other settings, so leave the rest out.
-- `client=confidential | public`: Client type, confidential by default. Whether the app can keep a secret. One that cannot, such as an app in a browser, has to rely on PKCE. `client=public` does not go with `register=dcr`, `thief=1`, `checks=bearer`, `uses=real-app`, `directory=1`, `companies=1`, `speaks=saml`, `leaves=1`, `groups=1`, `reach=given`, `link=1`, `linkends=cancelled`, or `runs=bff`. `client=public` goes with `upstream=v2` only with `reads=api` or `reads=refused` as well.
+- `client=confidential | public`: Client type, confidential by default. Whether the app can keep a secret. One that cannot, such as an app in a browser, has to rely on PKCE. `client=public` does not go with `register=dcr`, `thief=1`, `checks=bearer`, `uses=real-app`, `directory=1`, `kerberos=1`, `ticket=not-sent`, `companies=1`, `speaks=saml`, `leaves=1`, `groups=1`, `reach=given`, `link=1`, `linkends=cancelled`, or `runs=bff`. `client=public` goes with `upstream=v2` only with `reads=api` or `reads=refused` as well.
 - `register=manual | dcr | cimd`: How the provider learns about the app, manual by default. Someone registers it by hand, it registers itself, or it points at a document about itself. It changes the setup, and with a document the login too. `register=cimd` needs `consent=1&client=public&pkce=1` with it. `register=dcr` goes with none of the other settings yet, so leave them out. `register=cimd` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, and `broker=1` among the other settings, so leave the rest out.
-- `pkce=1`: PKCE, off by default. The app proves it started this login, so a stolen code is no use alone. Current advice is to have it on, and a public client must. `pkce=1` does not go with `register=dcr`, `thief=1`, `checks=bearer`, `directory=1`, `companies=1`, `speaks=saml`, `leaves=1`, `groups=1`, `reach=given`, `link=1`, or `linkends=cancelled`.
+- `pkce=1`: PKCE, off by default. The app proves it started this login, so a stolen code is no use alone. Current advice is to have it on, and a public client must. `pkce=1` does not go with `register=dcr`, `thief=1`, `checks=bearer`, `directory=1`, `kerberos=1`, `ticket=not-sent`, `companies=1`, `speaks=saml`, `leaves=1`, `groups=1`, `reach=given`, `link=1`, or `linkends=cancelled`.
 - `par=1`: PAR, off by default. The app sends its request straight to the identity provider, and the browser carries only the client ID and a reference. Drawn so far with nothing else on but OpenID Connect, consent and PKCE, with either kind of client and the app on a server. `par=1` goes only with `oidc=1`, `consent=1`, `client=public`, and `pkce=1` among the other settings, so leave the rest out.
 - `attacker=1`: An attacker, off by default. Someone gets hold of the code and tries to use it. Flip PKCE, the client type or how they get it to see what changes. The attacker only shows the plain case, with a Bearer token and no other provider. `attacker=1` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, `uses=real-app`, `gets=link`, and `registered=any` among the other settings, so leave the rest out.
 - `thief=1`: Show someone using a stolen token, off by default. Someone has the access token, and calls the API with it, without a proof. Only with a DPoP token, in the plain case so far. `thief=1` needs `binding=dpop` with it. `thief=1` goes only with `checks=bearer` and `binding=dpop` among the other settings, so leave the rest out.
@@ -66,7 +66,9 @@ Each value says what it needs with it, and what it can share a link with, worked
 - `binding=bearer | dpop`: Token type, bearer by default. Whether holding the token is enough, or the app must also prove it holds a key. `binding=dpop` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, `thief=1`, `checks=bearer`, `nonce=1`, `broker=1`, and `upstream=v1` among the other settings, so leave the rest out.
 - `nonce=1`: Server requires a nonce, off by default. The server rejects the first proof, to limit how long a proof can be used. A DPoP nonce only applies to DPoP tokens. `nonce=1` needs `binding=dpop` with it. `nonce=1` goes only with `oidc=1`, `consent=1`, `client=public`, `pkce=1`, `binding=dpop`, `broker=1`, and `upstream=v1` among the other settings, so leave the rest out.
 - `broker=1`: External IdP, off by default. The IdP hands the login to another IdP. The app does not notice. `broker=1` goes only with `oidc=1`, `consent=1`, `client=public`, `register=cimd`, `pkce=1`, `binding=dpop`, `nonce=1`, `companies=1`, `speaks=saml`, `leaves=1`, `upstream=v1`, `upstream=v2`, `reads=api`, `reads=refused`, `exchange=1`, `groups=1`, `reach=given`, `refresh=1`, and `sso=1` among the other settings, so leave the rest out.
-- `directory=1`: Users in a directory, off by default. The identity provider checks users in LDAP or Active Directory. Only drawn in the plain case so far. `directory=1` goes with none of the other settings yet, so leave them out.
+- `directory=1`: Users in a directory, off by default. The identity provider checks users in LDAP or Active Directory. Only drawn in the plain case so far. `directory=1` goes only with `kerberos=1` and `ticket=not-sent` among the other settings, so leave the rest out.
+- `kerberos=1`: Logged in on the company network, off by default. The computer got a Kerberos ticket when the user logged in to it, and the browser shows the identity provider a ticket in place of a password. Drawn with the users in a directory, as a company network has them. `kerberos=1` needs `directory=1` with it. `kerberos=1` goes only with `directory=1` and `ticket=not-sent` among the other settings, so leave the rest out.
+- `ticket=sent | not-sent`: Does the browser send a ticket?, sent by default. A browser sends one only to a site it was told to. Otherwise the identity provider’s login page follows, after a password dialog of the browser’s own on Windows. There is no ticket to send until the computer is on a company network. `ticket=not-sent` needs `directory=1&kerberos=1` with it. `ticket=not-sent` goes only with `directory=1` and `kerberos=1` among the other settings, so leave the rest out.
 - `companies=1`: Each customer has a provider, off by default. Users log in at their own company, which the identity provider finds from their email. Only with another provider, in the plain case so far. `companies=1` needs `broker=1` with it. `companies=1` goes only with `broker=1`, `speaks=saml`, and `leaves=1` among the other settings, so leave the rest out.
 - `speaks=oidc | saml`: What their provider speaks, oidc by default. OpenID Connect, as on the rest of this diagram, or SAML, which many companies still run. Only a customer's own provider is asked this. `speaks=saml` needs `broker=1&companies=1` with it. `speaks=saml` goes only with `broker=1`, `companies=1`, and `leaves=1` among the other settings, so leave the rest out.
 - `leaves=1`: Someone leaves the company, off by default. Their company turns their account off, and what still works here. Only someone at a customer with a provider of their own leaves it. `leaves=1` needs `broker=1&companies=1` with it. `leaves=1` goes only with `broker=1`, `companies=1`, and `speaks=saml` among the other settings, so leave the rest out.
@@ -92,6 +94,8 @@ Each value says what it needs with it, and what it can share a link with, worked
 
 Parties, for the names after #:
 
+- `kdc`: Ticket server, kerberos. Only with `directory=1&kerberos=1`.
+- `computer`: User’s computer, holds their tickets. Only with `directory=1&kerberos=1`.
 - `browser`: User's browser, where the user is. With `runs=page` it is drawn as Browser and app. With `runs=bff` it is drawn as Browser and page.
 - `app`: App, what the user uses. Not with `runs=page`. With `runs=bff` it is drawn as App’s server. With `runs=program` it is drawn as Program.
 - `second-app`: Second app, same provider. Only with `sso=1`.
@@ -107,8 +111,8 @@ Steps, for step=:
 - `open-app`: The user opens the app. Not with `gets=link` or `registered=any` or `runs=program`.
 - `redirect-to-idp`: The app sends them to log in. Not with `gets=link` or `registered=any` or `runs=page` or `runs=program`.
 - `authorize`: The browser asks to log in.
-- `login-page`: The login page. Not with `gets=link` or `broker=1` or `companies=1` or `speaks=saml` or `leaves=1` or `upstream=v1` or `upstream=v2` or `reads=api` or `reads=refused` or `groups=1` or `reach=given` or `address=other`.
-- `submit-credentials`: The user enters their password. Not with `gets=link` or `broker=1` or `companies=1` or `speaks=saml` or `leaves=1` or `upstream=v1` or `upstream=v2` or `reads=api` or `reads=refused` or `groups=1` or `reach=given` or `address=other`.
+- `login-page`: The login page. Not with `gets=link` or `broker=1` or `kerberos=1` or `companies=1` or `speaks=saml` or `leaves=1` or `upstream=v1` or `upstream=v2` or `reads=api` or `reads=refused` or `groups=1` or `reach=given` or `address=other`.
+- `submit-credentials`: The user enters their password. Not with `gets=link` or `broker=1` or `kerberos=1` or `companies=1` or `speaks=saml` or `leaves=1` or `upstream=v1` or `upstream=v2` or `reads=api` or `reads=refused` or `groups=1` or `reach=given` or `address=other`.
 - `redirect-with-code`: Sent back with a one-time code. Not with `gets=link` or `address=other`.
 - `callback`: The code reaches the app. Not with `gets=link` or `registered=any` or `address=other`.
 - `token-request`: The app trades the code for tokens. Not with `gets=link` or `registered=any` or `address=other`.
@@ -224,6 +228,14 @@ Steps, for step=:
 - `retrieve-upstream-token`: The app asks for the other provider's token. Only with `broker=1&upstream=v1` or `broker=1&upstream=v2`.
 - `upstream-token`: The identity provider hands it over. Only with `broker=1&upstream=v1` or `broker=1&upstream=v2`.
 - `call-upstream`: The app calls the other provider. Only with `broker=1&upstream=v1` or `broker=1&upstream=v2`.
+- `computer-asks`: Their computer asks for a ticket-granting ticket. Only with `directory=1&kerberos=1`.
+- `kdc-wants-proof`: Prove you know the password first. Only with `directory=1&kerberos=1`.
+- `computer-proves`: The time, sealed with the password. Only with `directory=1&kerberos=1`.
+- `kdc-gives-tgt`: A ticket-granting ticket. Only with `directory=1&kerberos=1`.
+- `idp-negotiate`: Show a ticket, or log in here. Only with `directory=1&kerberos=1`.
+- `ask-for-service-ticket`: A ticket for the identity provider, please. Only with `directory=1&kerberos=1`.
+- `kdc-gives-service-ticket`: A ticket only the identity provider can open. Only with `directory=1&kerberos=1`.
+- `send-ticket`: The same request, with the ticket. Only with `directory=1&kerberos=1`.
 - `trade-runs-out`: Later, the token for the second API runs out. Only with `exchange=1&trade=refresh`.
 - `trade-refresh-request`: The API sends the refresh token from the trade. Only with `exchange=1&trade=refresh`.
 - `trade-refresh-response`: A new token for the second API. Only with `exchange=1&trade=refresh`.
@@ -250,6 +262,7 @@ Steps, for step=:
 - `api-upstream-token`: The identity provider hands it to the API. Only with `broker=1&upstream=v2&reads=api`.
 - `api-call-upstream`: The API calls the other provider. Only with `broker=1&upstream=v2&reads=api`.
 - `api-upstream-refused`: The identity provider refuses: this API is not allowed it. Only with `broker=1&upstream=v2&reads=refused`.
+- `no-ticket`: The page sends itself back, with no ticket. Only with `directory=1&kerberos=1&ticket=not-sent`.
 - `cimd-fetch`: The identity provider fetches the app’s document. Only with `consent=1&client=public&register=cimd&pkce=1`.
 - `cimd-document`: What the document says. Only with `consent=1&client=public&register=cimd&pkce=1`.
 
@@ -261,6 +274,9 @@ Parties, for the names after #:
 - `app`: App, the one being set up. With `runs=program` it is drawn as Program.
 - `idp`: Identity provider, will log users in.
 - `idp-admin`: Admin, runs the provider.
+- `kdc`: Ticket server, kerberos. Only with `directory=1&kerberos=1`.
+- `domain-admins`: Network admins, run the domain. Only with `directory=1&kerberos=1`.
+- `computers`: Their computers, set up by the admins. Only with `directory=1&kerberos=1`.
 - `upstream`: Other provider, the other account. Only with `broker=1` or `link=1`. With `companies=1` or `speaks=saml` or `leaves=1` it is drawn as Their company.
 - `customer-admins`: Their admins, at the customer. Only with `broker=1&companies=1`.
 - `api`: API, will check tokens.
@@ -293,6 +309,10 @@ Steps, for step=:
 - `enable-token-storage`: Allow keeping its tokens. Only with `broker=1&upstream=v1` or `broker=1&upstream=v2`.
 - `ask-for-groups`: Ask them to say which groups the user is in. Only with `broker=1&groups=1`.
 - `map-group-to-role`: Turn their group into a role here. Only with `broker=1&groups=1`.
+- `service-principal`: An account for the identity provider. Only with `directory=1&kerberos=1`.
+- `hand-over-keytab`: Hand over its key. Only with `directory=1&kerberos=1`.
+- `allow-kerberos`: Let users log in with a ticket. Only with `directory=1&kerberos=1`.
+- `tell-the-browsers`: Tell browsers they may send a ticket there. Only with `directory=1&kerberos=1`.
 - `give-the-app-its-roles`: Give the app only the role it needs. Only with `broker=1&groups=1&reach=given`.
 - `cimd-allow`: Allow apps to point at a document. Only with `consent=1&client=public&register=cimd&pkce=1`.
 - `cimd-host`: Host a document about the app. Only with `consent=1&client=public&register=cimd&pkce=1`.
