@@ -307,7 +307,7 @@ const list: readonly Term[] = [
 			'relationship-based access control'
 		],
 		explains:
-			'Three ways to decide whether someone may do something: by the roles they have, by a rule over what is known about them, the thing and the moment, or by how they are related to the thing. Neither OAuth nor OpenID Connect defines any of them, and they are often mixed.',
+			'Three ways to decide whether someone may do something: by the roles they have, by a rule over what is known about them, the thing and the moment, or by how they are related to the thing, or to whoever owns it. Neither OAuth nor OpenID Connect defines any of them, and one can be built on another.',
 		alsoCalled: ['authorization models', 'access control models', 'permissions model']
 	},
 	{

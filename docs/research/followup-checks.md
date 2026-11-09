@@ -523,3 +523,14 @@ Asked of Keycloak 26.8.2 on 2026-11-09 for the server notes of #183, each by cha
 - **`kc-admin-api`** on the app's client: without it, the token had neither the scope nor the admin API's address in `aud`, and the same lookup got 401.
 
 The recorder's own admin permissions outlived turning them off: turning them on again failed with "Policy with name [the-app-with-no-user] already exists". So it now removes its policy and permissions when it turns them off.
+
+## Three ways to decide: RBAC, ABAC and ReBAC
+
+Read on 2026-11-09 by a separate reader, for #200's gap 3. Nothing here is recorded beyond roles, so the picture rests on these and says so.
+
+- **RBAC:** Ferraiolo, Sandhu, Gavrila, Kuhn and Chandramouli, "Proposed NIST Standard for Role-Based Access Control", ACM TISSEC 4(3), August 2001. Users are assigned to roles, permissions to roles, and users get permissions only through roles (§2.1, Definition 1). The standard itself, ANSI/INCITS 359, is paywalled and was not read.
+- **ABAC:** NIST SP 800-162, January 2014, with updates of 2 August 2019. Access is decided by attributes of the subject and the object, environment conditions, and policy (§2.2). "A role may be viewed as a subject attribute", and RBAC is "in some ways" a special case of ABAC (§2). Attributes come through a policy information point when the decision is made (§2.4.3).
+- **ReBAC:** Fong, "Relationship-Based Access Control: Protection Model and Policy Language", CODASPY 2011, credits the term to Gates (2007, which could not be fetched). Access depends on how the accessor is related to the resource's owner (abstract), and roles are one-party relationships where relationships can be chained (§1.1, §2). Google's Zanzibar paper (USENIX ATC 2019) does not use the term: it stores relation tuples, `object#relation@user`, which its clients write, and checks them live at the time of a request (§2.1, §2.4).
+- **OAuth and OpenID Connect** define none of the three. RFC 9068 §2.2.3.1 names `roles`, `groups` and `entitlements` claims with no vocabulary, so a roles claim in a token carries who has which role and not what each allows.
+
+Overstated elsewhere, and not said on screen: that ABAC replaces RBAC (SP 800-162 says it can implement RBAC policies and costs more, §4), and that Google invented ReBAC.

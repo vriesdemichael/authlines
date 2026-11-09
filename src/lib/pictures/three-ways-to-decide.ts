@@ -18,7 +18,7 @@ export function threeWaysToDecide(say: Say, keep: Keep = keepAll): Picture {
 		8,
 		780,
 		say(
-			'Three ways to decide whether Alice may see order 42. OAuth and OpenID Connect define none of them. A token can carry what one needs, and the API still decides.'
+			'Three ways to decide whether Alice may see order 42. OAuth and OpenID Connect define none of them. A token can carry what is known about the user, such as their roles. The API still decides, and looks up the rest when it is asked.'
 		),
 		{ size: 'more' }
 	);
@@ -48,7 +48,7 @@ export function threeWaysToDecide(say: Say, keep: Keep = keepAll): Picture {
 		{
 			id: 'relationship',
 			title: 'By relationship (ReBAC)',
-			says: 'Who is related to what, kept as a graph the app writes to as things change. Alice may, because she manages the account order 42 belongs to.',
+			says: 'Who is related to what, kept as a graph by an authorization service, which the app updates as things change. Alice may, because she manages the account order 42 belongs to, and a rule lets an account’s managers see its orders.',
 			rows: []
 		}
 	];
@@ -72,7 +72,7 @@ export function threeWaysToDecide(say: Say, keep: Keep = keepAll): Picture {
 		top + tallest + 14,
 		780,
 		say(
-			'They are often mixed: to NIST a role is one attribute among others, and to Fong a relationship is a role with a second party. Only roles are recorded here. The other two rest on NIST’s guide to attribute-based access control, Special Publication 800-162, and for relationships on Fong’s paper of 2011 and Google’s Zanzibar paper of 2019.'
+			'One can be built on another: to NIST a role may be seen as one attribute among others, and to Fong a role is a relationship with only one party, where relationships can be chained. Only roles are recorded here. The other two rest on NIST’s guide to attribute-based access control, Special Publication 800-162, and for relationships on Fong’s paper of 2011 and Google’s Zanzibar paper of 2019.'
 		),
 		{ size: 'more' }
 	);
