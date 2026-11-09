@@ -292,8 +292,23 @@ const list: readonly Term[] = [
 		name: 'Role',
 		words: ['role', 'roles'],
 		explains:
-			'A name an identity provider gives a user, such as reads-orders, for an app or an API to decide by. Neither OAuth nor OpenID Connect says what one is, so each server has its own, and what a role allows is up to whoever reads it.',
+			'A name an identity provider gives a user, such as reads-orders, for an app or an API to decide by. Neither OAuth nor OpenID Connect says what one is, so each server has its own, and what a role allows is up to whoever reads it. Deciding by role is called RBAC, one of several ways.',
 		at: flowAt('token-response', { broker: true, groupRoles: true })
+	},
+	{
+		id: 'access-control-models',
+		name: 'RBAC, ABAC and ReBAC',
+		words: [
+			'RBAC',
+			'ABAC',
+			'ReBAC',
+			'role-based access control',
+			'attribute-based access control',
+			'relationship-based access control'
+		],
+		explains:
+			'Three ways to decide whether someone may do something: by the roles they have, by a rule over what is known about them, the thing and the moment, or by how they are related to the thing, or to whoever owns it. Neither OAuth nor OpenID Connect defines any of them, and one can be built on another.',
+		alsoCalled: ['authorization models', 'access control models', 'permissions model']
 	},
 	{
 		id: 'group',

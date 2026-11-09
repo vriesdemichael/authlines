@@ -28,6 +28,7 @@ import { whichFlowFits } from './which-flow-fits.ts';
 import { whichTokenIsForWhom } from './which-token-is-for-whom.ts';
 import { whoKnowsWhom, type PartyNames } from './who-knows-whom.ts';
 import { whoOrWhat } from './who-or-what.ts';
+import { threeWaysToDecide } from './three-ways-to-decide.ts';
 
 export type { Opens, Picture, PictureId, PicturePart, PictureRow } from './model.ts';
 
@@ -126,6 +127,8 @@ export const PICTURE_OF: Readonly<Record<string, PictureId>> = {
 	'term.openid-connect': 'what-each-spec-adds',
 	// Who someone is, or what they may do, and where each is answered (#200, gaps 1 and 2).
 	'term.authn-authz': 'who-or-what',
+	// Three ways to decide, on one question, from the sources (#200, gap 3).
+	'term.access-control-models': 'three-ways-to-decide',
 	'setting.oidc': 'what-each-spec-adds',
 	'term.realm': 'what-is-in-a-token-here',
 	'term.mfa': 'what-each-factor-proves',
@@ -205,6 +208,8 @@ export function draw(id: PictureId, state: AppState, wording: Wording, say: Say)
 			return anAccountsLife(say, keep);
 		case 'who-or-what':
 			return whoOrWhat(say, keep);
+		case 'three-ways-to-decide':
+			return threeWaysToDecide(say, keep);
 		case 'what-the-api-does':
 			return whatTheApiDoes(say, keep);
 		case 'where-roles-come-from':

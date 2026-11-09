@@ -660,6 +660,24 @@ describe('what each scope asks for', () => {
 	});
 });
 
+describe('three ways to decide (#200)', () => {
+	it('opens only what is recorded, and names the sources for the rest', () => {
+		const found = picture('explain=term.access-control-models&mode=advanced');
+		expect(found.id).toBe('three-ways-to-decide');
+		const rowsOf = (id: string) => found.parts.find((part) => part.id === id)?.rows ?? [];
+		expect(rowsOf('role').map((row) => row.opens.preset)).toEqual(['broker-groups']);
+		expect(rowsOf('attributes')).toEqual([]);
+		expect(rowsOf('relationship')).toEqual([]);
+		const note = found.parts.find((part) => part.id === 'note')!.says.join(' ');
+		for (const source of ['800-162', 'Fong', 'Zanzibar']) expect(note).toContain(source);
+	});
+
+	it('is reached from what explains a role', () => {
+		const role = terms.role;
+		expect(role.explains).toContain('RBAC');
+	});
+});
+
 describe('who you are, or what you may do (#200)', () => {
 	it('asks four questions, and says the last is the API’s own code', () => {
 		const found = picture('explain=term.authn-authz&mode=advanced');
