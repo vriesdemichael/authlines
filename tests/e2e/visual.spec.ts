@@ -44,6 +44,7 @@ const states: readonly [string, string, 'flow' | 'setup'][] = [
 	['which-flow-fits', 'mode=advanced&explain=term.authorization-code-flow', 'flow'],
 	['what-each-scope-asks-for', 'mode=advanced&explain=term.scope', 'flow'],
 	['cookies-jwts-oauth', 'mode=advanced&explain=term.cookie', 'flow'],
+	['who-or-what', 'mode=advanced&explain=term.authn-authz', 'flow'],
 	['passwords-keys-tokens', 'mode=simple&explain=term.api-key', 'flow'],
 	['oidc-or-saml', 'mode=advanced&explain=term.saml', 'flow'],
 	['an-accounts-life', 'mode=advanced&explain=term.account', 'flow'],
