@@ -2,12 +2,21 @@ import type { KeyCite, KeyWhy } from '#lib/recordings/key-why.ts';
 
 // What the names in HTTP traffic mean, for the raw view to say when someone points at one (the
 // maintainer, 2026-11-09: "The mouseover addition is amazing, can we do that in more places?").
+// A fresh reader checked each against the spec it cites, and against how the recordings use it.
 
 const rfc = (number: number, section: string): KeyCite => ({ rfc: number, section });
 const spec = (title: string, url: string): KeyCite => ({ title, url });
 const OIDC_CORE = spec(
 	'OpenID Connect Core 1.0',
 	'https://openid.net/specs/openid-connect-core-1_0.html'
+);
+const OIDC_REGISTRATION = spec(
+	'OpenID Connect Dynamic Client Registration 1.0',
+	'https://openid.net/specs/openid-connect-registration-1_0.html'
+);
+const OIDC_DISCOVERY = spec(
+	'OpenID Connect Discovery 1.0',
+	'https://openid.net/specs/openid-connect-discovery-1_0.html'
 );
 const OIDC_LOGOUT = spec(
 	'OpenID Connect RP-Initiated Logout 1.0',
@@ -26,10 +35,7 @@ const OIDC_SESSION = spec(
 	'https://openid.net/specs/openid-connect-session-1_0.html'
 );
 const WEBAUTHN = spec('Web Authentication, Level 3', 'https://www.w3.org/TR/webauthn-3/');
-const OIDC_DISCOVERY = spec(
-	'OpenID Connect Discovery 1.0',
-	'https://openid.net/specs/openid-connect-discovery-1_0.html'
-);
+const FETCH = spec('Fetch Standard', 'https://fetch.spec.whatwg.org/#http-cors-protocol');
 
 /** What a server keeps its own pages going with, which no spec says, said once for all of it. */
 const ITS_OWN: KeyWhy = {
@@ -55,11 +61,11 @@ export const HEADERS: Readonly<Record<string, KeyWhy>> = {
 		cite: rfc(9110, '8.3')
 	},
 	location: {
-		says: 'Where to go next. With a redirect, such as 302 or 303, the browser goes there by itself.',
+		says: 'Where to go next. With a redirect, such as 302 or 303, the browser goes there by itself. With 201, the address of what was just made.',
 		cite: rfc(9110, '10.2.2')
 	},
 	'set-cookie': {
-		says: 'A cookie for the browser to keep and send back to this site by itself, with how long and to which addresses.',
+		says: 'A cookie for the browser to keep and send back to this site by itself, with how long and to which addresses, or, with Max-Age=0, to forget.',
 		cite: rfc(6265, '4.1')
 	},
 	cookie: {
@@ -67,25 +73,25 @@ export const HEADERS: Readonly<Record<string, KeyWhy>> = {
 		cite: rfc(6265, '4.2')
 	},
 	authorization: {
-		says: 'What lets the one asking in: here a token, or an app’s ID and secret.',
+		says: 'How the one asking proves who it is: here a token, an app’s ID and secret, a user’s password, or a Kerberos ticket.',
 		cite: rfc(9110, '11.6.2')
 	},
 	'www-authenticate': {
-		says: 'Sent with a refusal: what the server wants instead, and with a token, why this one was not enough.',
-		cite: rfc(6750, '3')
+		says: 'Sent with a refusal: what the server wants instead, and with a token, why this one was not enough. With Kerberos it can come with a success too, carrying the server’s last word.',
+		cite: rfc(9110, '11.6.1')
 	},
 	accept: { says: 'What kinds of answer the one asking can read.', cite: rfc(9110, '12.5.1') },
 	origin: {
-		says: 'Which site the page that sent this came from. The browser adds it by itself.',
-		cite: rfc(6454, '7')
+		says: 'The origin of the page that sent this: its scheme, host and port. Browsers add it to a request like this one.',
+		cite: spec('Fetch Standard', 'https://fetch.spec.whatwg.org/#origin-header')
 	},
 	'access-control-allow-origin': {
-		says: 'Which site’s pages the browser may let read this answer, which is how a page on one site may call another.',
-		cite: spec('Fetch Standard', 'https://fetch.spec.whatwg.org/#http-cors-protocol')
+		says: 'Which origin’s pages the browser may let read this answer, which is how a page from one origin may call another.',
+		cite: FETCH
 	},
 	dpop: {
 		says: 'A proof signed with the app’s own key and made for this one request, so a token tied to that key is no use without it.',
-		cite: rfc(9449, '4')
+		cite: rfc(9449, '4.1')
 	}
 };
 
@@ -94,12 +100,12 @@ export const JOSE: Readonly<Record<string, KeyWhy>> = {
 	alg: { says: 'Which algorithm signed it, such as RS256.', cite: rfc(7515, '4.1.1') },
 	typ: { says: 'What kind of token it says it is.', cite: rfc(7515, '4.1.9') },
 	kid: {
-		says: 'Which of the signer’s keys signed it, to find among the keys it publishes.',
+		says: 'Which key signed it. For a token signed with a public key, the one to find among the keys its signer publishes.',
 		cite: rfc(7515, '4.1.4')
 	},
 	jwk: {
 		says: 'The public key itself, to check this proof with. In DPoP, the key the token gets tied to.',
-		cite: rfc(9449, '4.2')
+		cite: rfc(7515, '4.1.3')
 	}
 };
 
@@ -114,8 +120,12 @@ export const CLAIMS: Readonly<Record<string, KeyWhy>> = {
 		says: 'The key the token is tied to, as a thumbprint, so only whoever holds that key can use it.',
 		cite: rfc(9449, '6')
 	},
+	jkt: { says: 'The thumbprint of the key the token is tied to.', cite: rfc(9449, '6.1') },
 	htm: { says: 'The method of the one request this proof is for.', cite: rfc(9449, '4.2') },
-	htu: { says: 'The address of the one request this proof is for.', cite: rfc(9449, '4.2') },
+	htu: {
+		says: 'The address of the one request this proof is for, without the part after ?.',
+		cite: rfc(9449, '4.2')
+	},
 	ath: {
 		says: 'A hash of the access token sent with this proof, so the proof cannot go with another.',
 		cite: rfc(9449, '4.2')
@@ -128,19 +138,15 @@ export const CLAIMS: Readonly<Record<string, KeyWhy>> = {
 		says: 'The event this is: a logout, which says nothing more about itself.',
 		cite: OIDC_BACKCHANNEL
 	},
-	jkt: {
-		says: 'The thumbprint of the key the token is tied to.',
-		cite: rfc(9449, '6.1')
-	},
-	'kc-jkt-type': ITS_OWN_CLAIM,
-	broker: ITS_OWN_CLAIM,
 	organization: ITS_OWN_CLAIM,
 	state_checker: ITS_OWN_CLAIM,
 	aud_x: ITS_OWN_CLAIM,
 	prov: ITS_OWN_CLAIM,
 	reuse_id: ITS_OWN_CLAIM,
 	'req-aud': ITS_OWN_CLAIM,
-	registration_auth: ITS_OWN_CLAIM
+	registration_auth: ITS_OWN_CLAIM,
+	'kc-jkt-type': ITS_OWN_CLAIM,
+	broker: ITS_OWN_CLAIM
 };
 
 /** Names in a request or an answer that the site has no word on elsewhere. */
@@ -173,7 +179,10 @@ export const WIRE: Readonly<Record<string, KeyWhy>> = {
 		cite: rfc(7518, '6.2.1.2')
 	},
 	y: { says: 'The other part: the y of that point.', cite: rfc(7518, '6.2.1.3') },
-	x5c: { says: 'The certificate the key is in.', cite: rfc(7517, '4.7') },
+	x5c: {
+		says: 'The chain of certificates the key is in, its own certificate first.',
+		cite: rfc(7517, '4.7')
+	},
 	x5t: { says: 'A fingerprint of that certificate, by SHA-1.', cite: rfc(7517, '4.8') },
 	'x5t#S256': { says: 'A fingerprint of that certificate, by SHA-256.', cite: rfc(7517, '4.9') },
 	// Asking for a login, and logging out.
@@ -186,7 +195,7 @@ export const WIRE: Readonly<Record<string, KeyWhy>> = {
 		cite: rfc(7636, '4.5')
 	},
 	login_hint: {
-		says: 'Who is about to log in, so the form can be filled in for them.',
+		says: 'Who is about to log in, as a hint, so the form can be filled in for them.',
 		cite: OIDC_CORE
 	},
 	prompt: {
@@ -206,7 +215,7 @@ export const WIRE: Readonly<Record<string, KeyWhy>> = {
 		cite: OIDC_LOGOUT
 	},
 	session_state: {
-		says: 'An ID of the user’s session at the identity provider, for a page to check it is still there.',
+		says: 'A value for the user’s login state at the identity provider, which a page can check is unchanged. The server recorded puts its session’s ID here, in token answers too.',
 		cite: OIDC_SESSION
 	},
 	dpop_jkt: {
@@ -222,17 +231,20 @@ export const WIRE: Readonly<Record<string, KeyWhy>> = {
 		says: 'Which kind of token the trade should give back.',
 		cite: rfc(8693, '2.1')
 	},
-	token: { says: 'The token being asked about, or given up.', cite: rfc(7662, '2.1') },
+	token: { says: 'The token being asked about.', cite: rfc(7662, '2.1') },
 	active: {
 		says: 'Whether the token is still good, as the server sees it now.',
 		cite: rfc(7662, '2.2')
 	},
-	error: { says: 'What went wrong, as a code a spec defines.', cite: rfc(6749, '5.2') },
+	error: {
+		says: 'What went wrong: from the identity provider mostly a code a spec defines, such as invalid_grant, and from the demo API its own words.',
+		cite: rfc(6749, '5.2')
+	},
 	refresh_expires_in: {
-		says: 'How many seconds the refresh token lasts. The identity provider’s own, beside the ones OAuth defines.'
+		says: 'How many seconds the refresh token lasts, and 0 when none came with it. The identity provider’s own, beside the ones OAuth defines.'
 	},
 	'not-before-policy': {
-		says: 'The identity provider’s own: a time before which every token is refused. 0 means none is.'
+		says: 'The identity provider’s own: tokens issued before this time are refused. 0 means none is set.'
 	},
 	// The device flow.
 	device_code: {
@@ -249,19 +261,19 @@ export const WIRE: Readonly<Record<string, KeyWhy>> = {
 		cite: rfc(8628, '3.2')
 	},
 	interval: {
-		says: 'How many seconds the app should wait between asks.',
+		says: 'The fewest seconds the app should wait between asks.',
 		cite: rfc(8628, '3.2')
 	},
 	device_user_code: { says: 'The user code, as typed on the other device.' },
 	// What a person types, or their device signs.
-	username: { says: 'The user’s name, as typed in the form.' },
+	username: { says: 'The user’s login name.' },
 	otp: { says: 'The one-time code, as typed in.' },
 	clientDataJSON: {
-		says: 'What the browser says was asked for: the challenge and the address of the page, which the device signed.',
+		says: 'What the browser says was asked for: the challenge and the origin of the page that asked. The device signs a hash of it.',
 		cite: WEBAUTHN
 	},
 	authenticatorData: {
-		says: 'What the device says about itself and this login, which it signed too.',
+		says: 'What the device says about this login: a hash of the site it is for, whether the user was there and checked, and a counter. It signs that too.',
 		cite: WEBAUTHN
 	},
 	signature: { says: 'The passkey’s signature over all of that.', cite: WEBAUTHN },
@@ -278,19 +290,23 @@ export const WIRE: Readonly<Record<string, KeyWhy>> = {
 	},
 	registration_access_token: {
 		says: 'A token for changing or deleting this registration later.',
-		cite: rfc(7591, '3.2.1')
+		cite: rfc(7592, '3')
 	},
 	subject_type: {
 		says: 'Whether the user’s ID is the same for every app, public, or different for each, pairwise.',
-		cite: OIDC_CORE
+		cite: OIDC_REGISTRATION
+	},
+	request_uris: {
+		says: 'The addresses this app registered for the identity provider to fetch its login request from.',
+		cite: OIDC_REGISTRATION
 	},
 	dpop_bound_access_tokens: {
 		says: 'Whether this app’s tokens have to be tied to a key with DPoP.',
 		cite: rfc(9449, '5.2')
 	},
 	tls_client_certificate_bound_access_tokens: {
-		says: 'Whether tokens are tied to the app’s certificate, as mTLS does.',
-		cite: rfc(8705, '3.4')
+		says: 'Whether tokens get tied to a certificate with mTLS: in discovery, that the server can, and for an app, that it means to.',
+		cite: rfc(8705, '3.3')
 	},
 	backchannel_logout_session_required: {
 		says: 'Whether a logout message sent to this app has to name the session.',
@@ -301,13 +317,12 @@ export const WIRE: Readonly<Record<string, KeyWhy>> = {
 		cite: OIDC_FRONTCHANNEL
 	},
 	backchannel_logout_revoke_offline_tokens: ITS_OWN_SETTING,
-	request_uris: ITS_OWN_SETTING,
 	require_request_uri_registration: {
-		says: 'Whether an app has to register first the addresses it may send a request from.',
+		says: 'Whether an app has to register in advance each address the identity provider may fetch its login request from.',
 		cite: OIDC_DISCOVERY
 	},
 	require_pushed_authorization_requests: {
-		says: 'Whether every login has to be pushed first.',
+		says: 'Whether every login has to be pushed first: in discovery, for every app, and for one app, for that one.',
 		cite: rfc(9126, '5')
 	},
 	mtls_endpoint_aliases: {
@@ -353,19 +368,23 @@ export const WIRE: Readonly<Record<string, KeyWhy>> = {
 	accessTokenExpiration: THE_DEMO
 };
 
-/** What discovery says, by the shape of its name, for the many that follow one pattern. */
+/**
+ * What discovery says, by the shape of its name, for the many that follow one pattern. They come from
+ * OAuth's metadata and OpenID Connect's discovery and the specs that add to them, all of which the
+ * registry RFC 8414 keeps lists.
+ */
 export function discovered(key: string): KeyWhy | undefined {
-	const metadata = rfc(8414, '2');
+	const registry = rfc(8414, '7.1');
 	if (key.endsWith('_supported')) {
 		return {
-			says: 'Something the server says it supports, in what it tells an app at discovery, so the app need not guess.',
-			cite: metadata
+			says: 'Something the server says it supports, in what it tells an app at OAuth or OpenID Connect discovery, so the app need not guess.',
+			cite: registry
 		};
 	}
 	if (key.endsWith('_endpoint')) {
 		return {
 			says: 'Where to send one kind of request, as discovery tells an app.',
-			cite: metadata
+			cite: registry
 		};
 	}
 	return undefined;
