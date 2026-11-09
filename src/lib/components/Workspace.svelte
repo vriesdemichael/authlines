@@ -5,6 +5,7 @@
 	import DiagramSwitch from '#lib/components/DiagramSwitch.svelte';
 	import ExplainDialog from '#lib/components/ExplainDialog.svelte';
 	import PanelDivider from '#lib/components/PanelDivider.svelte';
+	import { firstSentence, hint } from '#lib/hint.svelte.ts';
 	import type { Opens } from '#lib/pictures/index.ts';
 	import { landingSettings } from '#lib/pictures/build.ts';
 	import Explanation from '#lib/components/Explanation.svelte';
@@ -193,6 +194,11 @@
 	// The names a link gave go on the heads, and nowhere else (#168, ADR-017).
 	const fromLink = $derived(parseNames(linkNames, base));
 	const view = $derived(withNames(unnamed, fromLink.names));
+	/** What a party is, in a sentence and the words chosen, for when the pointer rests on its head. */
+	const laneSays = (id: string) => {
+		const line = view.lifelines.find((candidate) => candidate.id === id);
+		return line ? say(firstSentence(line.concept)) : undefined;
+	};
 	const namedHere = $derived(view.lifelines.filter((line) => line.given));
 	const mode = $derived(appState.mode);
 	const steps = $derived(view.steps);
@@ -909,7 +915,7 @@
 				type="button"
 				class="quiet"
 				data-testid="open-search"
-				title="Press / from anywhere"
+				use:hint={'Or press / from anywhere.'}
 				onclick={() => (searchState.open = true)}
 			>
 				Search
@@ -1043,6 +1049,7 @@
 						renaming = null;
 						explain({ kind: 'lifeline', id });
 					}}
+					{laneSays}
 					onrenamelifeline={canRename ? renameLifeline : null}
 					onexplainartifact={(id: ArtifactId) => explain({ kind: 'artifact', id })}
 					onselect={goToStep}
