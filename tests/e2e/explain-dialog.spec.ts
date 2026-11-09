@@ -244,6 +244,12 @@ test.describe('a picture in an explanation', () => {
 		['explain=term.scope', 'what-each-scope-asks-for', 'openid.oidc', 'oidc=1'],
 		['explain=term.cookie', 'cookies-jwts-oauth', 'jwt.id', 'step=validate-id-token'],
 		['mode=advanced&explain=term.authn-authz', 'who-or-what', 'user.role', 'groups=1'],
+		[
+			'mode=advanced&explain=term.access-control-models',
+			'three-ways-to-decide',
+			'role.in-token',
+			'groups=1'
+		],
 		['explain=term.api-key', 'passwords-keys-tokens', 'password.to-the-api', 'oldway=1'],
 		['mode=advanced&explain=term.saml', 'oidc-or-saml', 'browser.saml', 'speaks=saml'],
 		['mode=advanced&explain=term.account', 'an-accounts-life', 'stays-on', 'leaves=1'],

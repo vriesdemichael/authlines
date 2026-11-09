@@ -40,7 +40,8 @@ export type PictureId =
 	| 'an-accounts-life'
 	| 'what-the-api-does'
 	| 'where-roles-come-from'
-	| 'who-or-what';
+	| 'who-or-what'
+	| 'three-ways-to-decide';
 
 /**
  * Where something starts or ends, a step, or a question with more than one way on: those make a
