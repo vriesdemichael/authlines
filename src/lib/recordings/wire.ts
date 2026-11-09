@@ -9,6 +9,8 @@ export interface Line {
 	after?: string;
 	/** What the message calls the value. */
 	name?: string;
+	/** The key a line of JSON starts with, whatever its value is, which can explain itself. */
+	key?: string;
 	/** The value itself, where the message has it encoded. */
 	decoded?: string;
 	/** How long a value someone was not sent is, which is all they get of it. */
@@ -108,10 +110,11 @@ function jsonLines(body: unknown): Line[] {
 	return JSON.stringify(body, null, 2)
 		.split('\n')
 		.map((text): Line => {
+			const key = text.match(/^\s*"([^"]+)":/)?.[1];
 			const found = text.match(/^(\s*"([^"]+)": ")(.*)("(,?))$/);
-			if (!found) return { before: text };
+			if (!found) return key ? { before: text, key } : { before: text };
 			const [, before, name, value, after] = found;
-			return { before, value, after, name, decoded: JSON.parse(`"${value}"`) as string };
+			return { before, value, after, name, key, decoded: JSON.parse(`"${value}"`) as string };
 		});
 }
 
@@ -163,13 +166,13 @@ export function rawLines(
 export function redactedLines(lines: readonly Line[]): Line[] {
 	return lines.map((line, i) => {
 		if (line.value !== undefined) {
-			return { before: line.before, hidden: line.value.length, after: line.after };
+			return { before: line.before, hidden: line.value.length, after: line.after, key: line.key };
 		}
 		// How it starts, such as POST and a path, which is what the arrow and the number say anyway.
 		if (i === 0 || !line.before.trim() || /^\s*[{}[\]],?$/.test(line.before)) return line;
 		const named = line.before.match(/^(\s*"?[\w-]+"?: ?)(.*?)(,?)$/);
 		return named
-			? { before: named[1], hidden: named[2].length, after: named[3] }
+			? { before: named[1], hidden: named[2].length, after: named[3], key: line.key }
 			: { before: '', hidden: line.before.length };
 	});
 }

@@ -15,6 +15,7 @@
 		type Line,
 		type RunValue
 	} from '#lib/recordings/wire.ts';
+	import { citeUrl, keyWhy } from '#lib/recordings/key-why.ts';
 
 	interface Props {
 		step: Step;
@@ -75,6 +76,20 @@
 	const origin = (line: Line) => originOf(line, step.id, trace);
 	let opened = $state<Record<string, boolean>>({});
 
+	// What a key means, for someone who does not know it (the maintainer, 2026-11-09): shown while the
+	// pointer or the focus is on it, and kept by a click until another click or Escape.
+	const kerberos = $derived(message.protocol === 'kerberos');
+	const whyAt = (line: Line) =>
+		line.key ? keyWhy(line.key, { kerberos, value: line.value }) : undefined;
+	let keyShown = $state<number | null>(null);
+	let keyKept = $state<number | null>(null);
+	const keyOpen = (i: number) => keyKept === i || keyShown === i;
+	function keyKey(event: KeyboardEvent) {
+		if (event.key !== 'Escape' || keyKept === null) return;
+		event.stopPropagation();
+		keyKept = null;
+	}
+
 	/** Which setting put what in this token: the part of it that surprises people. */
 	function settingsBehind(jwt: DecodedJwt) {
 		if (jwt.name !== 'access_token') return [];
@@ -126,6 +141,24 @@
 	{/if}
 {/snippet}
 
+<!-- A key that has an explanation is a button, on one line, because the raw view keeps whitespace. -->
+{#snippet beforeOf(line: Line, i: number)}{@const at =
+		line.key && whyAt(line)
+			? line.before.indexOf(`"${line.key}"`)
+			: -1}{#if line.key && at >= 0}{line.before.slice(0, at)}<button
+			type="button"
+			class="key"
+			data-key={line.key}
+			aria-expanded={keyOpen(i)}
+			aria-controls={`key-why-${i}`}
+			onmouseenter={() => (keyShown = i)}
+			onmouseleave={() => (keyShown = null)}
+			onfocus={() => (keyShown = i)}
+			onblur={() => (keyShown = null)}
+			onkeydown={keyKey}
+			onclick={() => (keyKept = keyKept === i ? null : i)}>"{line.key}"</button
+		>{line.before.slice(at + line.key.length + 2)}{:else}{line.before}{/if}{/snippet}
+
 {#if decodable && ondecode && !redacted}
 	<div class="as" role="group" aria-label="How the traffic is shown">
 		<button
@@ -151,7 +184,7 @@
 		{@const shown = shownAs(line)}
 		<div class="line">
 			<span data-line
-				>{line.before}{#if line.hidden !== undefined}<span
+				>{@render beforeOf(line, i)}{#if line.hidden !== undefined}<span
 						class="blacked"
 						data-hidden={line.hidden}
 						role="img"
@@ -179,6 +212,20 @@
 				>
 					from step {numberOf(from.from)}
 				</button>
+			{/if}
+			{#if line.key && keyOpen(i)}
+				{@const why = whyAt(line)}
+				{#if why}
+					<p class="key-why" id={`key-why-${i}`} role="note" data-testid="key-why">
+						{why.says}
+						{#if why.cite}
+							<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- another site -->
+							<a href={citeUrl(why.cite)} target="_blank" rel="noreferrer"
+								>RFC {why.cite.rfc}, section {why.cite.section}</a
+							>
+						{/if}
+					</p>
+				{/if}
 			{/if}
 		</div>
 		{#if token}
@@ -266,9 +313,48 @@
 	}
 
 	.line {
+		position: relative;
 		min-height: 1.5em;
 		white-space: pre-wrap;
 		word-break: break-all;
+	}
+
+	/* A key that explains itself, marked as one, and the same text as the rest when it is not asked. */
+	.key {
+		padding: 0;
+		border: 0;
+		color: inherit;
+		background: none;
+		font: inherit;
+		text-decoration: underline dotted;
+		text-underline-offset: 3px;
+		cursor: help;
+	}
+
+	.key:hover,
+	.key:focus-visible,
+	.key[aria-expanded='true'] {
+		color: var(--accent);
+	}
+
+	/* Over the lines under it, so nothing moves while the pointer is on a key. */
+	.key-why {
+		position: absolute;
+		top: 100%;
+		right: 0;
+		left: 0;
+		z-index: 2;
+		margin: 2px 0 0;
+		padding: 6px 8px;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: var(--bg);
+		box-shadow: 0 6px 16px rgb(0 0 0 / 0.18);
+		font-family: var(--sans, inherit);
+		font-size: 12px;
+		line-height: 1.45;
+		white-space: normal;
+		word-break: normal;
 	}
 
 	.blacked {
