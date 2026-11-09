@@ -1479,5 +1479,17 @@
 				"missing": []
 			}
 		}
+	},
+	"askedOn": {
+		"upstreamPrompt": "2026-11-09",
+		"upstreamScope": "2026-11-09",
+		"upstreamPkce": "2026-11-09",
+		"upstreamSync": "2026-11-09",
+		"upstreamTrustEmail": "2026-11-09",
+		"console.upstream-scopes": "2026-11-09",
+		"console.upstream-prompt": "2026-11-09",
+		"console.upstream-pkce": "2026-11-09",
+		"console.upstream-sync": "2026-11-09",
+		"console.upstream-trust-email": "2026-11-09"
 	}
 }
