@@ -1,1 +1,0 @@
-import{Et as e}from"./Bez3SSco.js";e();
