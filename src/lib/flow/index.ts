@@ -325,6 +325,11 @@ const presets: readonly Preset[] = [
 		settings: { secondFactor: 'passkey' }
 	},
 	{
+		id: 'broker-pkce-upstream',
+		title: 'PKCE on the way to the other provider',
+		settings: { broker: true, upstreamPkce: true }
+	},
+	{
 		id: 'broker-groups',
 		title: 'A group at the other provider becomes a role here',
 		settings: { broker: true, groupRoles: true }

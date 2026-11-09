@@ -76,6 +76,7 @@
 				"one-time-code",
 				"new-key",
 				"passkey",
+				"broker-pkce-upstream",
 				"broker-groups",
 				"broker-groups-given",
 				"link-account",
@@ -332,5 +333,8 @@
 			"type": "DEFAULT",
 			"enabled": true
 		}
+	},
+	"recordedOn": {
+		"broker-pkce-upstream": "2026-11-09"
 	}
 }

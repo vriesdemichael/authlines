@@ -462,7 +462,9 @@ Asked of Keycloak 26.8.1 on 2026-11-05, for [#182](https://github.com/vriesdemic
 - **Sync mode.** The recorder sets it to Import. The first login made the user from the other provider's details. After the user's last name changed there, a later login kept the old one, and with Force it copied the new one.
 - **Trust Email.** Off on a new provider and on in the recorder's setup. With it on, the user made at the first login had a verified email. With it off, a user made at a new first login had an email that was not verified, though the other provider had it verified (the recorder's user is verified there). A user who was there already was not tried.
 
-Not tried: an upstream that is not Keycloak, a prompt the upstream refuses, and what a token request upstream carries with PKCE on, which a login that got tokens only implies.
+Not tried: an upstream that is not Keycloak, and a prompt the upstream refuses.
+
+**PKCE on that leg, recorded on 2026-11-09** on Keycloak 26.8.2 with Use PKCE on and S256: the request to the other provider carried `code_challenge` and `code_challenge_method=S256`, the trade there carried `code_verifier`, and the challenge is the verifier's SHA-256 in base64url, which a test holds. The app sent no challenge of its own in that run, so it is the identity provider's own and not the app's passed on.
 
 ## What each way of logging in proves
 

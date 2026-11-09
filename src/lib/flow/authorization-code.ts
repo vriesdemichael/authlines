@@ -76,6 +76,8 @@ const newKey = is('keysChange', true);
 // A group at the other provider becomes a role here, and maybe the only one the app is given (#183).
 const groupRoles = is('groupRoles', true);
 const onlyGiven = all(groupRoles, is('rolesReach', 'given'));
+// The identity provider's own PKCE, on the leg to the other provider (#182).
+const upstreamPkce = is('upstreamPkce', true);
 const linked = all(links, not(is('linkEnds', 'cancelled')));
 const linkCancelled = all(links, is('linkEnds', 'cancelled'));
 // With API V2, an API can read the stored token with a client of its own, or be refused (#180).
@@ -1804,6 +1806,10 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					text: 'The browser posts the request to their company. It names the identity provider by the ID their company was given at setup.'
 				},
 				{
+					when: upstreamPkce,
+					text: 'A request like the one the app made, but now the identity provider is the client asking for a login, with a scope of its own and a PKCE challenge of its own. It keeps the verifier, and only it can trade the code that comes back.'
+				},
+				{
 					when: pkce,
 					text: 'A request like the one the app made, but now the identity provider is the client asking for a login, with a scope of its own. The app’s PKCE is only between the app and the identity provider: a challenge here would be the identity provider’s own setting, and the server recorded sent none.'
 				},
@@ -1841,7 +1847,19 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					note: 'What the identity provider is set up to ask this provider for. Here the app’s own scope did not go on',
 					when: not(saml)
 				},
-				{ name: 'nonce', place: 'query', when: not(saml) }
+				{ name: 'nonce', place: 'query', when: not(saml) },
+				{
+					name: 'code_challenge',
+					place: 'query',
+					note: 'The identity provider’s own, for this leg',
+					when: upstreamPkce
+				},
+				{
+					name: 'code_challenge_method=S256',
+					place: 'query',
+					note: 'How it was made: a one-way hash',
+					when: upstreamPkce
+				}
 			]
 		},
 		{
@@ -1940,8 +1958,15 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			kind: 'request',
 			plain: 'It trades the code for tokens',
 			label: 'POST /token',
-			concept:
-				'The identity provider trades the code for tokens, on a connection the browser never sees.',
+			concept: [
+				{
+					when: upstreamPkce,
+					text: 'The identity provider trades the code for tokens, on a connection the browser never sees, with the verifier only it has. Someone who took the code on its way through the browser could not trade it without that.'
+				},
+				{
+					text: 'The identity provider trades the code for tokens, on a connection the browser never sees.'
+				}
+			],
 			when: all(broker, not(saml)),
 			// Only where a later step uses the upstream token, which an API that is refused never does.
 			execute: { answer: 'upstream-token-response', when: all(storedTokens, not(apiReadRefused)) },
@@ -1950,7 +1975,13 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 				{ name: 'code', place: 'body' },
 				{ name: 'redirect_uri', place: 'body' },
 				{ name: 'client_id', place: 'body' },
-				{ name: 'client_secret', place: 'body' }
+				{ name: 'client_secret', place: 'body' },
+				{
+					name: 'code_verifier',
+					place: 'body',
+					note: 'What the challenge was made from',
+					when: upstreamPkce
+				}
 			]
 		},
 		{

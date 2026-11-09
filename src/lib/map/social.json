@@ -67,6 +67,7 @@
 	"second-factor": "What does a second factor change in the login?|One more page and one more form, and the same token after.|14|4",
 	"gives-a-role": "Can an app give a user a role, and only that one?|With its own token, at the admin API, allowed one role.|8|3",
 	"device-someone-reads-it": "What if someone else can see the user code on the screen?|They can get there first, and the device ends up logged in as them.|18|5",
+	"pkce-to-the-other-provider": "Does the identity provider use PKCE with the other provider?|Its own setting, whatever the app does.|18|5",
 	"one-site-asks-for-the-password": "Why does this one site ask for my password?|The browser was not told it may send a ticket there.|22|7",
 	"new-signing-key": "What happens when the identity provider changes its key?|The API fetches the keys again, for a key it does not know.|15|4",
 	"passkey-login": "What does logging in with a passkey look like?|A signed challenge in place of a password, for this site only.|12|4",
