@@ -318,7 +318,8 @@ describe('what a real server said', () => {
 	});
 
 	it('finds what only some settings bring', () => {
-		expect(search('S256').results.length).toBeGreaterThan(0);
+		// On a step, and not only in a server note that happens to name it too.
+		expect(search('S256').results.some(({ kind }) => kind === 'step')).toBe(true);
 	});
 
 	it('finds what people call it', () => {
