@@ -1,0 +1,813 @@
+{
+	"preset": "companies-oidc-leaves",
+	"keycloak": "26.8.2",
+	"recordedAt": "2026-11-09",
+	"settings": {
+		"oidc": false,
+		"consent": false,
+		"clientType": "confidential",
+		"registration": "manual",
+		"pkce": false,
+		"par": false,
+		"attacker": false,
+		"tokenThief": false,
+		"apiChecks": "proof",
+		"attackerUses": "themselves",
+		"attackerGets": "copy",
+		"registered": "exact",
+		"binding": "bearer",
+		"dpopNonce": false,
+		"broker": true,
+		"federation": false,
+		"kerberos": false,
+		"ticket": "sent",
+		"companies": true,
+		"customerSpeaks": "oidc",
+		"leaves": true,
+		"upstreamTokens": "off",
+		"upstreamReader": "app",
+		"apiToken": "good",
+		"exchange": false,
+		"exchangeGives": "token",
+		"groupRoles": false,
+		"rolesReach": "all",
+		"linkAccount": false,
+		"linkEnds": "linked",
+		"refresh": false,
+		"reuse": "keeps",
+		"sso": false,
+		"ssoAsks": "remembered",
+		"logout": false,
+		"logoutKeeps": "refresh",
+		"appRuns": "server",
+		"oldWay": false,
+		"implicit": false,
+		"secondFactor": "none",
+		"givesRole": false,
+		"keysChange": false,
+		"address": "registered",
+		"deviceEnds": "agrees",
+		"deviceAttack": "nobody"
+	},
+	"messages": [
+		{
+			"step": "discover",
+			"direction": "request",
+			"method": "GET",
+			"url": "http://localhost:18080/realms/demo-companies/.well-known/oauth-authorization-server",
+			"headers": {}
+		},
+		{
+			"step": "discovery-document",
+			"direction": "response",
+			"status": 200,
+			"headers": {
+				"content-type": "application/json"
+			},
+			"body": {
+				"issuer": "http://localhost:18080/realms/demo-companies",
+				"authorization_endpoint": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/auth",
+				"token_endpoint": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/token",
+				"introspection_endpoint": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/token/introspect",
+				"userinfo_endpoint": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/userinfo",
+				"end_session_endpoint": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/logout",
+				"frontchannel_logout_session_supported": true,
+				"frontchannel_logout_supported": true,
+				"jwks_uri": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/certs",
+				"check_session_iframe": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/login-status-iframe.html",
+				"grant_types_supported": [
+					"authorization_code",
+					"client_credentials",
+					"implicit",
+					"password",
+					"refresh_token",
+					"urn:ietf:params:oauth:grant-type:device_code",
+					"urn:ietf:params:oauth:grant-type:jwt-bearer",
+					"urn:ietf:params:oauth:grant-type:token-exchange",
+					"urn:ietf:params:oauth:grant-type:uma-ticket",
+					"urn:openid:params:grant-type:ciba"
+				],
+				"acr_values_supported": [
+					"0",
+					"1"
+				],
+				"response_types_supported": [
+					"code",
+					"none",
+					"id_token",
+					"token",
+					"id_token token",
+					"code id_token",
+					"code token",
+					"code id_token token"
+				],
+				"subject_types_supported": [
+					"public",
+					"pairwise"
+				],
+				"prompt_values_supported": [
+					"none",
+					"login",
+					"consent"
+				],
+				"id_token_signing_alg_values_supported": [
+					"PS384",
+					"RS384",
+					"EdDSA",
+					"ES384",
+					"HS256",
+					"HS512",
+					"ES256",
+					"RS256",
+					"HS384",
+					"ES512",
+					"PS256",
+					"PS512",
+					"RS512"
+				],
+				"id_token_encryption_alg_values_supported": [
+					"ECDH-ES+A256KW",
+					"ECDH-ES+A192KW",
+					"ECDH-ES+A128KW",
+					"RSA-OAEP",
+					"RSA-OAEP-256",
+					"RSA1_5",
+					"ECDH-ES"
+				],
+				"id_token_encryption_enc_values_supported": [
+					"A256GCM",
+					"A192GCM",
+					"A128GCM",
+					"A128CBC-HS256",
+					"A192CBC-HS384",
+					"A256CBC-HS512"
+				],
+				"userinfo_signing_alg_values_supported": [
+					"PS384",
+					"RS384",
+					"EdDSA",
+					"ES384",
+					"HS256",
+					"HS512",
+					"ES256",
+					"RS256",
+					"HS384",
+					"ES512",
+					"PS256",
+					"PS512",
+					"RS512",
+					"none"
+				],
+				"userinfo_encryption_alg_values_supported": [
+					"ECDH-ES+A256KW",
+					"ECDH-ES+A192KW",
+					"ECDH-ES+A128KW",
+					"RSA-OAEP",
+					"RSA-OAEP-256",
+					"RSA1_5",
+					"ECDH-ES"
+				],
+				"userinfo_encryption_enc_values_supported": [
+					"A256GCM",
+					"A192GCM",
+					"A128GCM",
+					"A128CBC-HS256",
+					"A192CBC-HS384",
+					"A256CBC-HS512"
+				],
+				"request_object_signing_alg_values_supported": [
+					"PS384",
+					"RS384",
+					"EdDSA",
+					"ES384",
+					"HS256",
+					"HS512",
+					"ES256",
+					"RS256",
+					"HS384",
+					"ES512",
+					"PS256",
+					"PS512",
+					"RS512",
+					"none"
+				],
+				"request_object_encryption_alg_values_supported": [
+					"ECDH-ES+A256KW",
+					"ECDH-ES+A192KW",
+					"ECDH-ES+A128KW",
+					"RSA-OAEP",
+					"RSA-OAEP-256",
+					"RSA1_5",
+					"ECDH-ES"
+				],
+				"request_object_encryption_enc_values_supported": [
+					"A256GCM",
+					"A192GCM",
+					"A128GCM",
+					"A128CBC-HS256",
+					"A192CBC-HS384",
+					"A256CBC-HS512"
+				],
+				"response_modes_supported": [
+					"query",
+					"fragment",
+					"form_post",
+					"query.jwt",
+					"fragment.jwt",
+					"form_post.jwt",
+					"jwt"
+				],
+				"registration_endpoint": "http://localhost:18080/realms/demo-companies/clients-registrations/openid-connect",
+				"token_endpoint_auth_methods_supported": [
+					"private_key_jwt",
+					"client_secret_basic",
+					"client_secret_post",
+					"tls_client_auth",
+					"client_secret_jwt"
+				],
+				"token_endpoint_auth_signing_alg_values_supported": [
+					"PS384",
+					"RS384",
+					"EdDSA",
+					"ES384",
+					"HS256",
+					"HS512",
+					"ES256",
+					"RS256",
+					"HS384",
+					"ES512",
+					"PS256",
+					"PS512",
+					"RS512"
+				],
+				"introspection_endpoint_auth_methods_supported": [
+					"private_key_jwt",
+					"client_secret_basic",
+					"client_secret_post",
+					"tls_client_auth",
+					"client_secret_jwt"
+				],
+				"introspection_endpoint_auth_signing_alg_values_supported": [
+					"PS384",
+					"RS384",
+					"EdDSA",
+					"ES384",
+					"HS256",
+					"HS512",
+					"ES256",
+					"RS256",
+					"HS384",
+					"ES512",
+					"PS256",
+					"PS512",
+					"RS512"
+				],
+				"authorization_signing_alg_values_supported": [
+					"PS384",
+					"RS384",
+					"EdDSA",
+					"ES384",
+					"HS256",
+					"HS512",
+					"ES256",
+					"RS256",
+					"HS384",
+					"ES512",
+					"PS256",
+					"PS512",
+					"RS512"
+				],
+				"authorization_encryption_alg_values_supported": [
+					"ECDH-ES+A256KW",
+					"ECDH-ES+A192KW",
+					"ECDH-ES+A128KW",
+					"RSA-OAEP",
+					"RSA-OAEP-256",
+					"RSA1_5",
+					"ECDH-ES"
+				],
+				"authorization_encryption_enc_values_supported": [
+					"A256GCM",
+					"A192GCM",
+					"A128GCM",
+					"A128CBC-HS256",
+					"A192CBC-HS384",
+					"A256CBC-HS512"
+				],
+				"claims_supported": [
+					"iss",
+					"sub",
+					"aud",
+					"exp",
+					"iat",
+					"auth_time",
+					"name",
+					"given_name",
+					"family_name",
+					"preferred_username",
+					"email",
+					"acr",
+					"azp",
+					"nonce"
+				],
+				"claim_types_supported": [
+					"normal"
+				],
+				"claims_parameter_supported": true,
+				"scopes_supported": [
+					"openid",
+					"profile",
+					"acr",
+					"service_account",
+					"organization",
+					"roles",
+					"email",
+					"kc-admin-api",
+					"basic",
+					"offline_access",
+					"address",
+					"web-origins",
+					"microprofile-jwt",
+					"phone"
+				],
+				"request_parameter_supported": true,
+				"request_uri_parameter_supported": true,
+				"require_request_uri_registration": true,
+				"code_challenge_methods_supported": [
+					"plain",
+					"S256"
+				],
+				"tls_client_certificate_bound_access_tokens": true,
+				"dpop_signing_alg_values_supported": [
+					"PS384",
+					"RS384",
+					"EdDSA",
+					"ES384",
+					"ES256",
+					"RS256",
+					"ES512",
+					"PS256",
+					"PS512",
+					"RS512"
+				],
+				"revocation_endpoint": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/revoke",
+				"revocation_endpoint_auth_methods_supported": [
+					"private_key_jwt",
+					"client_secret_basic",
+					"client_secret_post",
+					"tls_client_auth",
+					"client_secret_jwt"
+				],
+				"revocation_endpoint_auth_signing_alg_values_supported": [
+					"PS384",
+					"RS384",
+					"EdDSA",
+					"ES384",
+					"HS256",
+					"HS512",
+					"ES256",
+					"RS256",
+					"HS384",
+					"ES512",
+					"PS256",
+					"PS512",
+					"RS512"
+				],
+				"backchannel_logout_supported": true,
+				"backchannel_logout_session_supported": true,
+				"device_authorization_endpoint": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/auth/device",
+				"backchannel_token_delivery_modes_supported": [
+					"poll",
+					"ping"
+				],
+				"backchannel_authentication_endpoint": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/ext/ciba/auth",
+				"backchannel_authentication_request_signing_alg_values_supported": [
+					"PS384",
+					"RS384",
+					"EdDSA",
+					"ES384",
+					"ES256",
+					"RS256",
+					"ES512",
+					"PS256",
+					"PS512",
+					"RS512"
+				],
+				"require_pushed_authorization_requests": false,
+				"pushed_authorization_request_endpoint": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/ext/par/request",
+				"mtls_endpoint_aliases": {
+					"token_endpoint": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/token",
+					"revocation_endpoint": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/revoke",
+					"introspection_endpoint": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/token/introspect",
+					"device_authorization_endpoint": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/auth/device",
+					"registration_endpoint": "http://localhost:18080/realms/demo-companies/clients-registrations/openid-connect",
+					"userinfo_endpoint": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/userinfo",
+					"pushed_authorization_request_endpoint": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/ext/par/request",
+					"backchannel_authentication_endpoint": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/ext/ciba/auth"
+				},
+				"authorization_response_iss_parameter_supported": true
+			}
+		},
+		{
+			"step": "fetch-keys",
+			"direction": "request",
+			"method": "GET",
+			"url": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/certs",
+			"headers": {}
+		},
+		{
+			"step": "keys",
+			"direction": "response",
+			"status": 200,
+			"headers": {
+				"content-type": "application/json"
+			},
+			"body": {
+				"keys": [
+					{
+						"kid": "g8zXxoNnD5gY_vh6W3CfaINOdORGlrQAxwow8kGvceM",
+						"kty": "RSA",
+						"alg": "RS256",
+						"use": "sig",
+						"x5c": [
+							"MIICqzCCAZMCBgGhvy/ALTANBgkqhkiG9w0BAQsFADAZMRcwFQYDVQQDDA5kZW1vLWNvbXBhbmllczAeFw0yNjExMDkwNzIwNDBaFw0zNjExMDkwNzIyMjBaMBkxFzAVBgNVBAMMDmRlbW8tY29tcGFuaWVzMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlmOdeOzheOZj4huSR4DSP/vm5VJ0mufD6exhCmC1s33SxKu8dKqnazyWJ38wf9Cp3Vdko7+2AiiJV4LtODyATRvcwb/pQLzOJHNQqk96PsdwuElK7G+Ej9oIJj6RLD/LSwar+Bvt5419c0w60e1SLCYEDGqdMgWEzX/BrF6IUZ0faS7312xGnQnPO874NJ/iU9Fsv3NmiK6cnqbvZEQ33fif+QHxSYXZ1F9ZdS6UrM6LETijFzo2ek70Vz4lBcJ26kL4joE3hvOzbcefVTp8FM+vVfbx0HR5s2ljpI3YQG0lJ4v62eCyBM4XBAvqw9/+6bxice6+wapzTfWloYqgrQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQBqtOUI2m9bykgBbC/AZldB1mQeWVaXKVT1gfrjrKnbqSke2k99SgScgu0UoRnqvPVRDg83F/XtCZ5/4EHDzfvMrbeXrdAhu/EfCMhxwqWH/CK9MpMX6KVU12zeIhELcCM8Zb9uC97jqkDvvbCk34M7hfriG8Kg0iEg41eYUZp4S4KymhzR3k7oipWa0/Or8chiAS8bMEjLsD8GW7s4b+TBGiuz79QLKWP6Z0adVYngIS1tE9mojoQUwdbjzv0Sp95349XSylqAdtGMUmTyOBW9MdTdl6JYXNDBjMK/EH/ZYR0TkVZWzHV4zD4gpuxWlksmsYHkF4OyfVyjZt+jLXxx"
+						],
+						"x5t": "3PG8JKWqJ9dlzh6udWa0Z1JEsQk",
+						"x5t#S256": "C2v_y_MEgRxQRs4exm2AjUQSHI8qbDFuncVY5c5PXo4",
+						"n": "lmOdeOzheOZj4huSR4DSP_vm5VJ0mufD6exhCmC1s33SxKu8dKqnazyWJ38wf9Cp3Vdko7-2AiiJV4LtODyATRvcwb_pQLzOJHNQqk96PsdwuElK7G-Ej9oIJj6RLD_LSwar-Bvt5419c0w60e1SLCYEDGqdMgWEzX_BrF6IUZ0faS7312xGnQnPO874NJ_iU9Fsv3NmiK6cnqbvZEQ33fif-QHxSYXZ1F9ZdS6UrM6LETijFzo2ek70Vz4lBcJ26kL4joE3hvOzbcefVTp8FM-vVfbx0HR5s2ljpI3YQG0lJ4v62eCyBM4XBAvqw9_-6bxice6-wapzTfWloYqgrQ",
+						"e": "AQAB"
+					},
+					{
+						"kid": "JyLBtactF4S_n357INBss2IQ3JpGbXjkLc_mCwbjdUI",
+						"kty": "RSA",
+						"alg": "RSA-OAEP",
+						"use": "enc",
+						"x5c": [
+							"MIICqzCCAZMCBgGhvy/APzANBgkqhkiG9w0BAQsFADAZMRcwFQYDVQQDDA5kZW1vLWNvbXBhbmllczAeFw0yNjExMDkwNzIwNDBaFw0zNjExMDkwNzIyMjBaMBkxFzAVBgNVBAMMDmRlbW8tY29tcGFuaWVzMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArIZi15Ua1MZJe/ToQDSTvQTmF+1qh0x/Ez3TNECNEFPm1pb+qHhVRRR4/S2s6i5adVwl5YTETR5GruyDbvZdyAB1wVI3GOUfMz7EU7t6wchvJwDqwaWNrdT4cEPlxNeCSSHAgJu0wHq7aTNHXUUHdmwK92BP6tKUtXj9SHXUdbaYv7dVHxfJiVEaNXp8Vd8NKXy5XLiJYTGnbeyo/UtixMg1MVHdaWEYfQh3g70OZODbVZMnypZAnFBb993vjzmLv+iH8UEf+5Jn+PkfRXq6UCpV3n8c3gP4umHrXZBvMpEVID3m8x/j+M6kfNUHWcomWvENQrF9mYRGLGiFaKF3vwIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQBDu0XTeHcAOZogeKjpr1Q6LpLMGn9zDV9mv5EXJvLLMgoBc5/70vNhl+S/lWi1rVorGDG6cPZz6gj/ifslmvgGEvJ9VMQOAb/f4yPfTtRtD0XwXZba/DhFOf5ep596sbkCYfHs8ucUEgbT8ZrMF0F3B9vV1dMJtDGX6j4KBniYmwHNh3ZkNAVo8iftmLJ8caxwJGQO5EKstQJJ5CF/i8tqp2wVToTSfxfo2RquYCbre2ECtb5vvt077CV0gnFVUTdw24A8l8eNd2Umv1f1NPHFbgf4aqxxs8zuley9JlKAwyhVIpCfyT+mtE+febAKPXCX1XO9BPio79dKh0/53xBN"
+						],
+						"x5t": "KHbLol3IMge8LeACuCMUbKz6zrY",
+						"x5t#S256": "e-y66ejPlRQpOb6ivxT9the1wOOS1FvKA__ftMSZZKI",
+						"n": "rIZi15Ua1MZJe_ToQDSTvQTmF-1qh0x_Ez3TNECNEFPm1pb-qHhVRRR4_S2s6i5adVwl5YTETR5GruyDbvZdyAB1wVI3GOUfMz7EU7t6wchvJwDqwaWNrdT4cEPlxNeCSSHAgJu0wHq7aTNHXUUHdmwK92BP6tKUtXj9SHXUdbaYv7dVHxfJiVEaNXp8Vd8NKXy5XLiJYTGnbeyo_UtixMg1MVHdaWEYfQh3g70OZODbVZMnypZAnFBb993vjzmLv-iH8UEf-5Jn-PkfRXq6UCpV3n8c3gP4umHrXZBvMpEVID3m8x_j-M6kfNUHWcomWvENQrF9mYRGLGiFaKF3vw",
+						"e": "AQAB"
+					}
+				]
+			}
+		},
+		{
+			"step": "open-app",
+			"direction": "request",
+			"method": "GET",
+			"url": "http://localhost:9100/",
+			"headers": {}
+		},
+		{
+			"step": "redirect-to-idp",
+			"direction": "response",
+			"status": 302,
+			"headers": {
+				"location": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/auth?response_type=code&client_id=demo-app&redirect_uri=http%3A%2F%2Flocalhost%3A9100%2Fcallback&state=oC7tQgd2ocgeMKedNg9Nwg&scope=organization"
+			}
+		},
+		{
+			"step": "authorize",
+			"direction": "request",
+			"method": "GET",
+			"url": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/auth?response_type=code&client_id=demo-app&redirect_uri=http%3A%2F%2Flocalhost%3A9100%2Fcallback&state=oC7tQgd2ocgeMKedNg9Nwg&scope=organization",
+			"headers": {}
+		},
+		{
+			"step": "email-page",
+			"direction": "response",
+			"status": 200,
+			"headers": {
+				"content-type": "text/html;charset=utf-8"
+			},
+			"bodyNote": "An HTML page"
+		},
+		{
+			"step": "submit-email",
+			"direction": "request",
+			"method": "POST",
+			"url": "http://localhost:18080/realms/demo-companies/login-actions/authenticate?session_code=h-s1_TnUbEdODd0Ac9yH-KjH3oq7jOY6PdU7qb-rlQ4&execution=011d60ef-7c6d-4f31-8e97-1b32ae11a6fe&client_id=demo-app&tab_id=qxCjg3HEHFg&client_data=eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTEwMC9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0Ijoib0M3dFFnZDJvY2dlTUtlZE5nOU53ZyJ9",
+			"headers": {
+				"content-type": "application/x-www-form-urlencoded"
+			},
+			"body": {
+				"username": "gil@globex.test"
+			}
+		},
+		{
+			"step": null,
+			"direction": "response",
+			"status": 303,
+			"headers": {
+				"location": "http://localhost:18080/realms/demo-companies/broker/globex/login?session_code=yVg1HwTLDR9iCzVwJRuuQSDOIMmC1NbsVFlnHWhCJe0&client_id=demo-app&tab_id=qxCjg3HEHFg&client_data=eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTEwMC9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0Ijoib0M3dFFnZDJvY2dlTUtlZE5nOU53ZyJ9&login_hint=gil%40globex.test"
+			}
+		},
+		{
+			"step": null,
+			"direction": "request",
+			"method": "GET",
+			"url": "http://localhost:18080/realms/demo-companies/broker/globex/login?session_code=yVg1HwTLDR9iCzVwJRuuQSDOIMmC1NbsVFlnHWhCJe0&client_id=demo-app&tab_id=qxCjg3HEHFg&client_data=eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTEwMC9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0Ijoib0M3dFFnZDJvY2dlTUtlZE5nOU53ZyJ9&login_hint=gil%40globex.test",
+			"headers": {}
+		},
+		{
+			"step": "redirect-to-upstream",
+			"direction": "response",
+			"status": 303,
+			"headers": {
+				"location": "http://localhost:18080/realms/globex/protocol/openid-connect/auth?scope=openid&state=Kf_CDHmJHtvN7iCwFv4CLgeNXU8ORo9NeS_Y-DCJ8LE.qxCjg3HEHFg.ceddaKeOT3mBfxcLMQZb7w.eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTEwMC9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0Ijoib0M3dFFnZDJvY2dlTUtlZE5nOU53ZyJ9&response_type=code&client_id=our-provider&redirect_uri=http%3A%2F%2Flocalhost%3A18080%2Frealms%2Fdemo-companies%2Fbroker%2Fglobex%2Fendpoint&nonce=pvdAYs06rhqJCoahxqFbNQ"
+			}
+		},
+		{
+			"step": "upstream-authorize",
+			"direction": "request",
+			"method": "GET",
+			"url": "http://localhost:18080/realms/globex/protocol/openid-connect/auth?scope=openid&state=Kf_CDHmJHtvN7iCwFv4CLgeNXU8ORo9NeS_Y-DCJ8LE.qxCjg3HEHFg.ceddaKeOT3mBfxcLMQZb7w.eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTEwMC9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0Ijoib0M3dFFnZDJvY2dlTUtlZE5nOU53ZyJ9&response_type=code&client_id=our-provider&redirect_uri=http%3A%2F%2Flocalhost%3A18080%2Frealms%2Fdemo-companies%2Fbroker%2Fglobex%2Fendpoint&nonce=pvdAYs06rhqJCoahxqFbNQ",
+			"headers": {}
+		},
+		{
+			"step": null,
+			"direction": "response",
+			"status": 200,
+			"headers": {
+				"content-type": "text/html;charset=utf-8"
+			},
+			"bodyNote": "An HTML page"
+		},
+		{
+			"step": "upstream-sign-in",
+			"direction": "request",
+			"method": "POST",
+			"url": "http://localhost:18080/realms/globex/login-actions/authenticate?session_code=K78DV2K2cYclB3SJqDzuVNXh_EKj2egKt9pRoN3cuck&execution=68c8fc9f-b8a9-4c76-845d-8ecadee7635f&client_id=our-provider&tab_id=V-zMsrjY80A&client_data=eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6MTgwODAvcmVhbG1zL2RlbW8tY29tcGFuaWVzL2Jyb2tlci9nbG9iZXgvZW5kcG9pbnQiLCJydCI6ImNvZGUiLCJzdCI6IktmX0NESG1KSHR2TjdpQ3dGdjRDTGdlTlhVOE9SbzlOZVNfWS1EQ0o4TEUucXhDamczSEVIRmcuY2VkZGFLZU9UM21CZnhjTE1RWmI3dy5leUp5ZFNJNkltaDBkSEE2THk5c2IyTmhiR2h2YzNRNk9URXdNQzlqWVd4c1ltRmpheUlzSW5KMElqb2lZMjlrWlNJc0luTjBJam9pYjBNM2RGRm5aREp2WTJkbFRVdGxaRTVuT1U1M1p5SjkifQ",
+			"headers": {
+				"content-type": "application/x-www-form-urlencoded"
+			},
+			"body": {
+				"username": "gil@globex.test",
+				"password": "throwaway-password",
+				"credentialId": ""
+			}
+		},
+		{
+			"step": "upstream-redirect-back",
+			"direction": "response",
+			"status": 302,
+			"headers": {
+				"location": "http://localhost:18080/realms/demo-companies/broker/globex/endpoint?state=Kf_CDHmJHtvN7iCwFv4CLgeNXU8ORo9NeS_Y-DCJ8LE.qxCjg3HEHFg.ceddaKeOT3mBfxcLMQZb7w.eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTEwMC9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0Ijoib0M3dFFnZDJvY2dlTUtlZE5nOU53ZyJ9&session_state=p5cpGNdizqDy6_w3bzkBGWA-&iss=http%3A%2F%2Flocalhost%3A18080%2Frealms%2Fglobex&code=191cb7ed-610c-2d92-7624-34e52e85bc2c.p5cpGNdizqDy6_w3bzkBGWA-.193c3497-2937-440f-a340-6440f0c87cc3",
+				"set-cookie": "KEYCLOAK_IDENTITY=eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI1Y2UwYTRhYi00NjViLTRiM2QtOTA0MS0wNjQxNDQxMDlhMDAifQ.eyJleHAiOjE3OTQyNDUwNjIsImlhdCI6MTc5NDIwOTA2MiwianRpIjoiMzBhZDNlYzUtOGY5NC1lOGY1LTJmMmUtYTliZjFlMzZjMGNiIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDoxODA4MC9yZWFsbXMvZ2xvYmV4Iiwic3ViIjoiNGNjYzA0YjAtYzQ2Yi00YTc3LTgyYjEtNWQzNWRlYjI3OTQ2IiwidHlwIjoiU2VyaWFsaXplZC1JRCIsInNpZCI6InA1Y3BHTmRpenFEeTZfdzNiemtCR1dBLSIsInN0YXRlX2NoZWNrZXIiOiJYaFRFSmtvdkNGQnRYQ0xRZ2pSOFM3bC1JMXlrMEVjRzRiUGIxNms4ZGlNIn0.drebU05-obBOZV5QrhzOKluHwxNmSczlngN6NIBjXy3jUjdeIhbctJdYvbWOvq5cy_8StRxRcbAzpamyOdw5dw;Version=1;Path=/realms/globex/;Secure;HttpOnly;SameSite=None"
+			}
+		},
+		{
+			"step": "upstream-callback",
+			"direction": "request",
+			"method": "GET",
+			"url": "http://localhost:18080/realms/demo-companies/broker/globex/endpoint?state=Kf_CDHmJHtvN7iCwFv4CLgeNXU8ORo9NeS_Y-DCJ8LE.qxCjg3HEHFg.ceddaKeOT3mBfxcLMQZb7w.eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTEwMC9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0Ijoib0M3dFFnZDJvY2dlTUtlZE5nOU53ZyJ9&session_state=p5cpGNdizqDy6_w3bzkBGWA-&iss=http%3A%2F%2Flocalhost%3A18080%2Frealms%2Fglobex&code=191cb7ed-610c-2d92-7624-34e52e85bc2c.p5cpGNdizqDy6_w3bzkBGWA-.193c3497-2937-440f-a340-6440f0c87cc3",
+			"headers": {}
+		},
+		{
+			"step": "upstream-token-request",
+			"direction": "request",
+			"method": "POST",
+			"url": "http://localhost:18080/realms/globex/protocol/openid-connect/token",
+			"headers": {
+				"content-type": "application/x-www-form-urlencoded; charset=UTF-8"
+			},
+			"body": {
+				"code": "191cb7ed-610c-2d92-7624-34e52e85bc2c.p5cpGNdizqDy6_w3bzkBGWA-.193c3497-2937-440f-a340-6440f0c87cc3",
+				"grant_type": "authorization_code",
+				"redirect_uri": "http://localhost:18080/realms/demo-companies/broker/globex/endpoint",
+				"client_secret": "throwaway-customer-secret",
+				"client_id": "our-provider"
+			}
+		},
+		{
+			"step": "upstream-token-response",
+			"direction": "response",
+			"status": 200,
+			"headers": {
+				"content-type": "application/json"
+			},
+			"body": {
+				"access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJNQWVHTzlscjhiTmlsM19TaUJ0b1liYjhmSjBTVnZJcmVfVVkya1pOVUNjIn0.eyJleHAiOjE3OTQyMDkzNjMsImlhdCI6MTc5NDIwOTA2MywiYXV0aF90aW1lIjoxNzk0MjA5MDYyLCJqdGkiOiJvbnJ0YWM6MzMwZTU1ZDMtNGEwZC02OGMwLTA1YTctNDkyODdiOWMwNjdiIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDoxODA4MC9yZWFsbXMvZ2xvYmV4IiwiYXVkIjoiYWNjb3VudCIsInN1YiI6IjRjY2MwNGIwLWM0NmItNGE3Ny04MmIxLTVkMzVkZWIyNzk0NiIsInR5cCI6IkJlYXJlciIsImF6cCI6Im91ci1wcm92aWRlciIsInNpZCI6InA1Y3BHTmRpenFEeTZfdzNiemtCR1dBLSIsImFjciI6IjEiLCJhbGxvd2VkLW9yaWdpbnMiOlsiaHR0cDovL2xvY2FsaG9zdDoxODA4MCJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsImRlZmF1bHQtcm9sZXMtZ2xvYmV4Il19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJvcGVuaWQgZW1haWwgcHJvZmlsZSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYW1lIjoiR2lsIEdsb2JleCIsInByZWZlcnJlZF91c2VybmFtZSI6ImdpbEBnbG9iZXgudGVzdCIsImdpdmVuX25hbWUiOiJHaWwiLCJmYW1pbHlfbmFtZSI6Ikdsb2JleCIsImVtYWlsIjoiZ2lsQGdsb2JleC50ZXN0In0.T1CuG92hMFTWB2C-U3S4_oeJ1pUuxQ2q5V_vELf_bkEn82Fe3Kx_4NfGDW0qyHIIHcZSZQ7d-y6K92j44Adbo5aVsAh4TzSf2GAjFZxJn-02Ev0UAy_LW4D2XX_623NnT_4q38U2qfJGucIVhefgBiiLywngCz7uePbV16P8sJoE6_MIKRJkJ2WbwSikQFOJzy4fukMrXSLACyMlSMqp_qyIwqnH7heYly5IwwUWUbsMtfoio0ZkvvC08HVYLat9lJvATlYSvJrXZi4IZYN4HKA-RoUl64IBePVcp5_VMYPp72UYdTAXpajtNBxt1yrxhd2snE8FTzEKxpVKLct_hg",
+				"expires_in": 300,
+				"refresh_expires_in": 1800,
+				"refresh_token": "eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI1Y2UwYTRhYi00NjViLTRiM2QtOTA0MS0wNjQxNDQxMDlhMDAifQ.eyJleHAiOjE3OTQyMTA4NjMsImlhdCI6MTc5NDIwOTA2MywianRpIjoiZjdlODE2NWMtMjc4ZS1jZGU0LTk4ZTYtZTNjNTNkYzA3MDM1IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDoxODA4MC9yZWFsbXMvZ2xvYmV4IiwiYXVkIjoiaHR0cDovL2xvY2FsaG9zdDoxODA4MC9yZWFsbXMvZ2xvYmV4Iiwic3ViIjoiNGNjYzA0YjAtYzQ2Yi00YTc3LTgyYjEtNWQzNWRlYjI3OTQ2IiwidHlwIjoiUmVmcmVzaCIsImF6cCI6Im91ci1wcm92aWRlciIsInNpZCI6InA1Y3BHTmRpenFEeTZfdzNiemtCR1dBLSIsInNjb3BlIjoib3BlbmlkIGFjciByb2xlcyB3ZWItb3JpZ2lucyBlbWFpbCBiYXNpYyBwcm9maWxlIiwiYXVkX3giOiJhY2NvdW50IiwicHJvdiI6ImRlZmF1bHQifQ.TIAuXKq_7OP6k8y0vIQrGV2IR8LqtKl5NPi1alRvL1Qle4A4QRbtdLcK-IArvtBrnYNdRrT9vqsbKuUPK8sWWA",
+				"token_type": "Bearer",
+				"id_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJNQWVHTzlscjhiTmlsM19TaUJ0b1liYjhmSjBTVnZJcmVfVVkya1pOVUNjIn0.eyJleHAiOjE3OTQyMDkzNjMsImlhdCI6MTc5NDIwOTA2MywiYXV0aF90aW1lIjoxNzk0MjA5MDYyLCJqdGkiOiJkYjU1YTJmOS1iNDg1LTljOWMtYjMzYS01YWU0ZjVkODE2YTkiLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjE4MDgwL3JlYWxtcy9nbG9iZXgiLCJhdWQiOiJvdXItcHJvdmlkZXIiLCJzdWIiOiI0Y2NjMDRiMC1jNDZiLTRhNzctODJiMS01ZDM1ZGViMjc5NDYiLCJ0eXAiOiJJRCIsImF6cCI6Im91ci1wcm92aWRlciIsIm5vbmNlIjoicHZkQVlzMDZyaHFKQ29haHhxRmJOUSIsInNpZCI6InA1Y3BHTmRpenFEeTZfdzNiemtCR1dBLSIsImF0X2hhc2giOiJ3Skg2QjU4WHp6d0NZdzgydmUyaE93IiwiYWNyIjoiMSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYW1lIjoiR2lsIEdsb2JleCIsInByZWZlcnJlZF91c2VybmFtZSI6ImdpbEBnbG9iZXgudGVzdCIsImdpdmVuX25hbWUiOiJHaWwiLCJmYW1pbHlfbmFtZSI6Ikdsb2JleCIsImVtYWlsIjoiZ2lsQGdsb2JleC50ZXN0In0.KiUv9wrnToJ4Pw3Cnzbm4Jxjc7F6omJ_TH0b2ae8GSOMizm_RxhPSNR5SDCu93FhNlmk83RDZbFgI_Bn8rQAtjjzYO9UsogU1kRaGq1jFalaE1t5-EF05FhAAwZTnctVO6AebS5T15ik4lkMEgTSPNdmQq2YIXMOeNrnlfZK-IC8vi79Q9APtT7hUmNVL04_xh1L4cAyG1_74IcitYceKQa5xMgnCLNBqNLuC2wHJDQaTJBnI-25MKusJ3Fx-ziQVdRi6NqJWGsDlmPVT1pP_lDxhxNZTxki7j73do-5qHPAG4Ua4R7hHSbU1OcrxGY0uhY8cuXkyLWSEDdHfvr6ag",
+				"not-before-policy": 0,
+				"session_state": "p5cpGNdizqDy6_w3bzkBGWA-",
+				"scope": "openid email profile"
+			}
+		},
+		{
+			"step": null,
+			"direction": "response",
+			"status": 302,
+			"headers": {
+				"location": "http://localhost:18080/realms/demo-companies/login-actions/first-broker-login?client_id=demo-app&tab_id=qxCjg3HEHFg&client_data=eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTEwMC9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0Ijoib0M3dFFnZDJvY2dlTUtlZE5nOU53ZyJ9"
+			}
+		},
+		{
+			"step": null,
+			"direction": "request",
+			"method": "GET",
+			"url": "http://localhost:18080/realms/demo-companies/login-actions/first-broker-login?client_id=demo-app&tab_id=qxCjg3HEHFg&client_data=eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTEwMC9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0Ijoib0M3dFFnZDJvY2dlTUtlZE5nOU53ZyJ9",
+			"headers": {}
+		},
+		{
+			"step": null,
+			"direction": "response",
+			"status": 302,
+			"headers": {
+				"location": "http://localhost:18080/realms/demo-companies/broker/after-first-broker-login?session_code=_GeewDTlTOchPb_wOYSVB3BU_Yjg6RiAX1cfitxEmf0&client_id=demo-app&tab_id=qxCjg3HEHFg&client_data=eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTEwMC9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0Ijoib0M3dFFnZDJvY2dlTUtlZE5nOU53ZyJ9"
+			}
+		},
+		{
+			"step": null,
+			"direction": "request",
+			"method": "GET",
+			"url": "http://localhost:18080/realms/demo-companies/broker/after-first-broker-login?session_code=_GeewDTlTOchPb_wOYSVB3BU_Yjg6RiAX1cfitxEmf0&client_id=demo-app&tab_id=qxCjg3HEHFg&client_data=eyJydSI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTEwMC9jYWxsYmFjayIsInJ0IjoiY29kZSIsInN0Ijoib0M3dFFnZDJvY2dlTUtlZE5nOU53ZyJ9",
+			"headers": {}
+		},
+		{
+			"step": "redirect-with-code",
+			"direction": "response",
+			"status": 302,
+			"headers": {
+				"location": "http://localhost:9100/callback?state=oC7tQgd2ocgeMKedNg9Nwg&session_state=RKf7ujNrMJ80Dygv1krikIix&iss=http%3A%2F%2Flocalhost%3A18080%2Frealms%2Fdemo-companies&code=d98e5653-d6ba-61ca-7be0-b5653d84b11c.RKf7ujNrMJ80Dygv1krikIix.71e75d68-a78e-4f79-817f-170b31065bef",
+				"set-cookie": "KEYCLOAK_IDENTITY=eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJkYTMwYjIyMi05MjgzLTQ5NGMtOTFiYi1kOTFmODUxOWE3ZDIifQ.eyJleHAiOjE3OTQyNDUwNjMsImlhdCI6MTc5NDIwOTA2MywianRpIjoiZGE2YjQ2MTItM2Y5Zi01MTU5LTFmZjgtNmUyMDJhNjE5ZDk3IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDoxODA4MC9yZWFsbXMvZGVtby1jb21wYW5pZXMiLCJzdWIiOiI4NWIyOGI4Ny1jZjc3LTQ4OWQtODFmNC04ZGJmYTE5NjIzODMiLCJ0eXAiOiJTZXJpYWxpemVkLUlEIiwic2lkIjoiUktmN3VqTnJNSjgwRHlndjFrcmlrSWl4Iiwic3RhdGVfY2hlY2tlciI6ImxnaEFObVZRcENrZmJNRmhTYUdadFoycGprUHFMSFNuUENUSktLdEF3N3cifQ.-0Xc7sD6gnlTkH-GqS2dt0-nyslDOWivCZsiZTurC3N0Y9LB0k4UyV-TqXg6Tb34RZMgKWZYzf0wzLR0k184BQ;Version=1;Path=/realms/demo-companies/;Secure;HttpOnly;SameSite=None"
+			}
+		},
+		{
+			"step": "callback",
+			"direction": "request",
+			"method": "GET",
+			"url": "http://localhost:9100/callback?state=oC7tQgd2ocgeMKedNg9Nwg&session_state=RKf7ujNrMJ80Dygv1krikIix&iss=http%3A%2F%2Flocalhost%3A18080%2Frealms%2Fdemo-companies&code=d98e5653-d6ba-61ca-7be0-b5653d84b11c.RKf7ujNrMJ80Dygv1krikIix.71e75d68-a78e-4f79-817f-170b31065bef",
+			"headers": {}
+		},
+		{
+			"step": "token-request",
+			"direction": "request",
+			"method": "POST",
+			"url": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/token",
+			"headers": {
+				"authorization": "Basic ZGVtby1hcHA6dGhyb3dhd2F5LWNsaWVudC1zZWNyZXQ=",
+				"content-type": "application/x-www-form-urlencoded"
+			},
+			"body": {
+				"grant_type": "authorization_code",
+				"code": "d98e5653-d6ba-61ca-7be0-b5653d84b11c.RKf7ujNrMJ80Dygv1krikIix.71e75d68-a78e-4f79-817f-170b31065bef",
+				"redirect_uri": "http://localhost:9100/callback"
+			}
+		},
+		{
+			"step": "token-response",
+			"direction": "response",
+			"status": 200,
+			"headers": {
+				"content-type": "application/json"
+			},
+			"body": {
+				"access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJnOHpYeG9ObkQ1Z1lfdmg2VzNDZmFJTk9kT1JHbHJRQXh3b3c4a0d2Y2VNIn0.eyJleHAiOjE3OTQyMDkzNjMsImlhdCI6MTc5NDIwOTA2MywiYXV0aF90aW1lIjoxNzk0MjA5MDYzLCJqdGkiOiJvbnJ0YWM6Y2VkM2IxOGItODRmZS05MGYxLTk0ZGYtNWVlZmZiYjcwMTIzIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDoxODA4MC9yZWFsbXMvZGVtby1jb21wYW5pZXMiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiODViMjhiODctY2Y3Ny00ODlkLTgxZjQtOGRiZmExOTYyMzgzIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiZGVtby1hcHAiLCJzaWQiOiJSS2Y3dWpOck1KODBEeWd2MWtyaWtJaXgiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6OTEwMCJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsImRlZmF1bHQtcm9sZXMtZGVtby1jb21wYW5pZXMiXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6InByb2ZpbGUgb3JnYW5pemF0aW9uIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm9yZ2FuaXphdGlvbiI6WyJnbG9iZXgiXSwibmFtZSI6IkdpbCBHbG9iZXgiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJnaWxAZ2xvYmV4LnRlc3QiLCJnaXZlbl9uYW1lIjoiR2lsIiwiZmFtaWx5X25hbWUiOiJHbG9iZXgiLCJlbWFpbCI6ImdpbEBnbG9iZXgudGVzdCJ9.GkPsd1dflHKAeCyo0M7Ml2jDS90CnpqEIDmhKbJ4kHx51WAhim_zc3Md3B4PDyuvdjHhMTQJTwl_uer3tGtr1G3ky9GYhz07H9ElDHDhE7e0GKza79vJ9fEjEMle0QifzJ-nKH9XvqXe84zv5JMu72ho6p0Es9lPHgrYj_b5dVIM5rPgd_RDlVKtysCPTdFhbTAYTXeZLBCVqaG-toiJhBCUQF8Ixgf0rdc1BwPb8WEBxrP16F_O_HO8gURDr0axMKR5gEXbPn_xLSL8PjgBHSySVT7VoCeqT3Rh9KcYQOALq0LpRT17xAuyB5g4rygXPo9zXPAdCBNL_ZstWpkgaw",
+				"expires_in": 300,
+				"refresh_expires_in": 1800,
+				"refresh_token": "eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJkYTMwYjIyMi05MjgzLTQ5NGMtOTFiYi1kOTFmODUxOWE3ZDIifQ.eyJleHAiOjE3OTQyMTA4NjMsImlhdCI6MTc5NDIwOTA2MywianRpIjoiMTM4NTM4MTQtMzFmNS05MzVkLWUxNTAtMzEwMTJkYzIwODM3IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDoxODA4MC9yZWFsbXMvZGVtby1jb21wYW5pZXMiLCJhdWQiOiJodHRwOi8vbG9jYWxob3N0OjE4MDgwL3JlYWxtcy9kZW1vLWNvbXBhbmllcyIsInN1YiI6Ijg1YjI4Yjg3LWNmNzctNDg5ZC04MWY0LThkYmZhMTk2MjM4MyIsInR5cCI6IlJlZnJlc2giLCJhenAiOiJkZW1vLWFwcCIsInNpZCI6IlJLZjd1ak5yTUo4MER5Z3Yxa3Jpa0lpeCIsInNjb3BlIjoiYWNyIHByb2ZpbGUgb3JnYW5pemF0aW9uIHdlYi1vcmlnaW5zIHJvbGVzIGVtYWlsIGJhc2ljIiwiYXVkX3giOiJhY2NvdW50IiwicHJvdiI6ImRlZmF1bHQiLCJvcmdhbml6YXRpb24iOiJnbG9iZXgifQ.oxUSDIxlKk2Onf7-nvNVFwD5W0OTI5jlG3W67vAMnkh1nBBNeO8ZCry7fQnGo-blnbY3K4sZtcG4-6T8c7-q2Q",
+				"token_type": "Bearer",
+				"not-before-policy": 0,
+				"session_state": "RKf7ujNrMJ80Dygv1krikIix",
+				"scope": "profile organization email"
+			}
+		},
+		{
+			"step": "api-request",
+			"direction": "request",
+			"method": "GET",
+			"url": "http://localhost:9101/resource",
+			"headers": {
+				"authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJnOHpYeG9ObkQ1Z1lfdmg2VzNDZmFJTk9kT1JHbHJRQXh3b3c4a0d2Y2VNIn0.eyJleHAiOjE3OTQyMDkzNjMsImlhdCI6MTc5NDIwOTA2MywiYXV0aF90aW1lIjoxNzk0MjA5MDYzLCJqdGkiOiJvbnJ0YWM6Y2VkM2IxOGItODRmZS05MGYxLTk0ZGYtNWVlZmZiYjcwMTIzIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDoxODA4MC9yZWFsbXMvZGVtby1jb21wYW5pZXMiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiODViMjhiODctY2Y3Ny00ODlkLTgxZjQtOGRiZmExOTYyMzgzIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiZGVtby1hcHAiLCJzaWQiOiJSS2Y3dWpOck1KODBEeWd2MWtyaWtJaXgiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6OTEwMCJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsImRlZmF1bHQtcm9sZXMtZGVtby1jb21wYW5pZXMiXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6InByb2ZpbGUgb3JnYW5pemF0aW9uIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm9yZ2FuaXphdGlvbiI6WyJnbG9iZXgiXSwibmFtZSI6IkdpbCBHbG9iZXgiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJnaWxAZ2xvYmV4LnRlc3QiLCJnaXZlbl9uYW1lIjoiR2lsIiwiZmFtaWx5X25hbWUiOiJHbG9iZXgiLCJlbWFpbCI6ImdpbEBnbG9iZXgudGVzdCJ9.GkPsd1dflHKAeCyo0M7Ml2jDS90CnpqEIDmhKbJ4kHx51WAhim_zc3Md3B4PDyuvdjHhMTQJTwl_uer3tGtr1G3ky9GYhz07H9ElDHDhE7e0GKza79vJ9fEjEMle0QifzJ-nKH9XvqXe84zv5JMu72ho6p0Es9lPHgrYj_b5dVIM5rPgd_RDlVKtysCPTdFhbTAYTXeZLBCVqaG-toiJhBCUQF8Ixgf0rdc1BwPb8WEBxrP16F_O_HO8gURDr0axMKR5gEXbPn_xLSL8PjgBHSySVT7VoCeqT3Rh9KcYQOALq0LpRT17xAuyB5g4rygXPo9zXPAdCBNL_ZstWpkgaw"
+			}
+		},
+		{
+			"step": "api-response",
+			"direction": "response",
+			"status": 200,
+			"headers": {
+				"content-type": "application/json"
+			},
+			"body": {
+				"resource": "something only this user may see"
+			}
+		},
+		{
+			"step": "left-api-request",
+			"direction": "request",
+			"method": "GET",
+			"url": "http://localhost:9101/resource",
+			"headers": {
+				"authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJnOHpYeG9ObkQ1Z1lfdmg2VzNDZmFJTk9kT1JHbHJRQXh3b3c4a0d2Y2VNIn0.eyJleHAiOjE3OTQyMDkzNjMsImlhdCI6MTc5NDIwOTA2MywiYXV0aF90aW1lIjoxNzk0MjA5MDYzLCJqdGkiOiJvbnJ0YWM6Y2VkM2IxOGItODRmZS05MGYxLTk0ZGYtNWVlZmZiYjcwMTIzIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDoxODA4MC9yZWFsbXMvZGVtby1jb21wYW5pZXMiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiODViMjhiODctY2Y3Ny00ODlkLTgxZjQtOGRiZmExOTYyMzgzIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiZGVtby1hcHAiLCJzaWQiOiJSS2Y3dWpOck1KODBEeWd2MWtyaWtJaXgiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6OTEwMCJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsImRlZmF1bHQtcm9sZXMtZGVtby1jb21wYW5pZXMiXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6InByb2ZpbGUgb3JnYW5pemF0aW9uIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm9yZ2FuaXphdGlvbiI6WyJnbG9iZXgiXSwibmFtZSI6IkdpbCBHbG9iZXgiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJnaWxAZ2xvYmV4LnRlc3QiLCJnaXZlbl9uYW1lIjoiR2lsIiwiZmFtaWx5X25hbWUiOiJHbG9iZXgiLCJlbWFpbCI6ImdpbEBnbG9iZXgudGVzdCJ9.GkPsd1dflHKAeCyo0M7Ml2jDS90CnpqEIDmhKbJ4kHx51WAhim_zc3Md3B4PDyuvdjHhMTQJTwl_uer3tGtr1G3ky9GYhz07H9ElDHDhE7e0GKza79vJ9fEjEMle0QifzJ-nKH9XvqXe84zv5JMu72ho6p0Es9lPHgrYj_b5dVIM5rPgd_RDlVKtysCPTdFhbTAYTXeZLBCVqaG-toiJhBCUQF8Ixgf0rdc1BwPb8WEBxrP16F_O_HO8gURDr0axMKR5gEXbPn_xLSL8PjgBHSySVT7VoCeqT3Rh9KcYQOALq0LpRT17xAuyB5g4rygXPo9zXPAdCBNL_ZstWpkgaw"
+			}
+		},
+		{
+			"step": "left-api-response",
+			"direction": "response",
+			"status": 200,
+			"headers": {
+				"content-type": "application/json"
+			},
+			"body": {
+				"resource": "something only this user may see"
+			}
+		},
+		{
+			"step": "left-refresh",
+			"direction": "request",
+			"method": "POST",
+			"url": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/token",
+			"headers": {
+				"authorization": "Basic ZGVtby1hcHA6dGhyb3dhd2F5LWNsaWVudC1zZWNyZXQ=",
+				"content-type": "application/x-www-form-urlencoded"
+			},
+			"body": {
+				"grant_type": "refresh_token",
+				"refresh_token": "eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJkYTMwYjIyMi05MjgzLTQ5NGMtOTFiYi1kOTFmODUxOWE3ZDIifQ.eyJleHAiOjE3OTQyMTA4NjMsImlhdCI6MTc5NDIwOTA2MywianRpIjoiMTM4NTM4MTQtMzFmNS05MzVkLWUxNTAtMzEwMTJkYzIwODM3IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDoxODA4MC9yZWFsbXMvZGVtby1jb21wYW5pZXMiLCJhdWQiOiJodHRwOi8vbG9jYWxob3N0OjE4MDgwL3JlYWxtcy9kZW1vLWNvbXBhbmllcyIsInN1YiI6Ijg1YjI4Yjg3LWNmNzctNDg5ZC04MWY0LThkYmZhMTk2MjM4MyIsInR5cCI6IlJlZnJlc2giLCJhenAiOiJkZW1vLWFwcCIsInNpZCI6IlJLZjd1ak5yTUo4MER5Z3Yxa3Jpa0lpeCIsInNjb3BlIjoiYWNyIHByb2ZpbGUgb3JnYW5pemF0aW9uIHdlYi1vcmlnaW5zIHJvbGVzIGVtYWlsIGJhc2ljIiwiYXVkX3giOiJhY2NvdW50IiwicHJvdiI6ImRlZmF1bHQiLCJvcmdhbml6YXRpb24iOiJnbG9iZXgifQ.oxUSDIxlKk2Onf7-nvNVFwD5W0OTI5jlG3W67vAMnkh1nBBNeO8ZCry7fQnGo-blnbY3K4sZtcG4-6T8c7-q2Q"
+			}
+		},
+		{
+			"step": "left-refresh-response",
+			"direction": "response",
+			"status": 200,
+			"headers": {
+				"content-type": "application/json"
+			},
+			"body": {
+				"access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJnOHpYeG9ObkQ1Z1lfdmg2VzNDZmFJTk9kT1JHbHJRQXh3b3c4a0d2Y2VNIn0.eyJleHAiOjE3OTQyMDkzNjMsImlhdCI6MTc5NDIwOTA2MywiYXV0aF90aW1lIjoxNzk0MjA5MDYzLCJqdGkiOiJvbnJ0cnQ6ZGY0MzdjZDEtYWRkYS00MDZmLTJjZjEtZjZjODIyZjQ4MjZmIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDoxODA4MC9yZWFsbXMvZGVtby1jb21wYW5pZXMiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiODViMjhiODctY2Y3Ny00ODlkLTgxZjQtOGRiZmExOTYyMzgzIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiZGVtby1hcHAiLCJzaWQiOiJSS2Y3dWpOck1KODBEeWd2MWtyaWtJaXgiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6OTEwMCJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsImRlZmF1bHQtcm9sZXMtZGVtby1jb21wYW5pZXMiXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6InByb2ZpbGUgb3JnYW5pemF0aW9uIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm9yZ2FuaXphdGlvbiI6WyJnbG9iZXgiXSwibmFtZSI6IkdpbCBHbG9iZXgiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJnaWxAZ2xvYmV4LnRlc3QiLCJnaXZlbl9uYW1lIjoiR2lsIiwiZmFtaWx5X25hbWUiOiJHbG9iZXgiLCJlbWFpbCI6ImdpbEBnbG9iZXgudGVzdCJ9.PHqbk_bx9tRDohx8fwzCaiLw25zcocmjvvN1JEh2R-h31YAxqWZPILD0YVs-W1o2DBjHcR5HrN-dBRqjkzUw-W5P9bdJPUkB_bsldoKkxEU1cM9QaV9KyYPbTMP582h8qXnLzl6gjkZHpgjA16NDXqhLlL2Q2769DPYCNw5XnYz2qQHBOIDco0XlTnVnjRzSCjUIzURpq-ai85kZ-OHhH0IxtRJfGEII8pQgEilQZxhjFk3U28MhD_BQuUsIPqXq4PMEEhByBNEgz6NmYt9N5G9hts9d2yz6R31wtJ1a77cSCZAi1BnxqbDNrWrV4--IbHABKhbkHn8PVhUuLvcKUg",
+				"expires_in": 300,
+				"refresh_expires_in": 1800,
+				"refresh_token": "eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJkYTMwYjIyMi05MjgzLTQ5NGMtOTFiYi1kOTFmODUxOWE3ZDIifQ.eyJleHAiOjE3OTQyMTA4NjMsImlhdCI6MTc5NDIwOTA2MywianRpIjoiYjJhZmQ2MTgtZWFjNC1hNzhkLWFlNTQtOTQ2MDQ3MDE1NTdjIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDoxODA4MC9yZWFsbXMvZGVtby1jb21wYW5pZXMiLCJhdWQiOiJodHRwOi8vbG9jYWxob3N0OjE4MDgwL3JlYWxtcy9kZW1vLWNvbXBhbmllcyIsInN1YiI6Ijg1YjI4Yjg3LWNmNzctNDg5ZC04MWY0LThkYmZhMTk2MjM4MyIsInR5cCI6IlJlZnJlc2giLCJhenAiOiJkZW1vLWFwcCIsInNpZCI6IlJLZjd1ak5yTUo4MER5Z3Yxa3Jpa0lpeCIsInNjb3BlIjoiYWNyIHByb2ZpbGUgb3JnYW5pemF0aW9uIHdlYi1vcmlnaW5zIHJvbGVzIGVtYWlsIGJhc2ljIiwiYXVkX3giOiJhY2NvdW50IiwicHJvdiI6ImRlZmF1bHQiLCJvcmdhbml6YXRpb24iOiJnbG9iZXgifQ.TwTIiJgUcANZTJJtbgxVVzJhHThhtN7rYT-oV1WB57rNmiOuoQClGaMgdOkjbIR1QSLcnIuxLp7uzbBUUaPZJQ",
+				"token_type": "Bearer",
+				"not-before-policy": 0,
+				"session_state": "RKf7ujNrMJ80Dygv1krikIix",
+				"scope": "profile organization email"
+			}
+		},
+		{
+			"step": null,
+			"direction": "response",
+			"status": 200,
+			"headers": {
+				"content-type": "text/html"
+			},
+			"bodyNote": "An HTML page"
+		},
+		{
+			"step": null,
+			"direction": "request",
+			"method": "GET",
+			"url": "http://localhost:9100/",
+			"headers": {}
+		},
+		{
+			"step": null,
+			"direction": "response",
+			"status": 302,
+			"headers": {
+				"location": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/auth?response_type=code&client_id=demo-app&redirect_uri=http%3A%2F%2Flocalhost%3A9100%2Fcallback&state=0fXkfGXB1sEmEn0KuwOmbQ&scope=organization"
+			}
+		},
+		{
+			"step": "login-again",
+			"direction": "request",
+			"method": "GET",
+			"url": "http://localhost:18080/realms/demo-companies/protocol/openid-connect/auth?response_type=code&client_id=demo-app&redirect_uri=http%3A%2F%2Flocalhost%3A9100%2Fcallback&state=0fXkfGXB1sEmEn0KuwOmbQ&scope=organization",
+			"headers": {
+				"cookie": "KEYCLOAK_IDENTITY=eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJkYTMwYjIyMi05MjgzLTQ5NGMtOTFiYi1kOTFmODUxOWE3ZDIifQ.eyJleHAiOjE3OTQyNDUwNjMsImlhdCI6MTc5NDIwOTA2MywianRpIjoiZGE2YjQ2MTItM2Y5Zi01MTU5LTFmZjgtNmUyMDJhNjE5ZDk3IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDoxODA4MC9yZWFsbXMvZGVtby1jb21wYW5pZXMiLCJzdWIiOiI4NWIyOGI4Ny1jZjc3LTQ4OWQtODFmNC04ZGJmYTE5NjIzODMiLCJ0eXAiOiJTZXJpYWxpemVkLUlEIiwic2lkIjoiUktmN3VqTnJNSjgwRHlndjFrcmlrSWl4Iiwic3RhdGVfY2hlY2tlciI6ImxnaEFObVZRcENrZmJNRmhTYUdadFoycGprUHFMSFNuUENUSktLdEF3N3cifQ.-0Xc7sD6gnlTkH-GqS2dt0-nyslDOWivCZsiZTurC3N0Y9LB0k4UyV-TqXg6Tb34RZMgKWZYzf0wzLR0k184BQ"
+			}
+		},
+		{
+			"step": "code-again",
+			"direction": "response",
+			"status": 302,
+			"headers": {
+				"location": "http://localhost:9100/callback?state=0fXkfGXB1sEmEn0KuwOmbQ&session_state=RKf7ujNrMJ80Dygv1krikIix&iss=http%3A%2F%2Flocalhost%3A18080%2Frealms%2Fdemo-companies&code=79c5e49e-e18e-28af-c0c5-c9ec9a6c5058.RKf7ujNrMJ80Dygv1krikIix.71e75d68-a78e-4f79-817f-170b31065bef",
+				"set-cookie": "KEYCLOAK_IDENTITY=eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJkYTMwYjIyMi05MjgzLTQ5NGMtOTFiYi1kOTFmODUxOWE3ZDIifQ.eyJleHAiOjE3OTQyNDUwNjMsImlhdCI6MTc5NDIwOTA2MywianRpIjoiMjAyYzAxYmQtNDcxYi03NjdhLTM3ZmItM2RiYWQ2YzE5YTZhIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDoxODA4MC9yZWFsbXMvZGVtby1jb21wYW5pZXMiLCJzdWIiOiI4NWIyOGI4Ny1jZjc3LTQ4OWQtODFmNC04ZGJmYTE5NjIzODMiLCJ0eXAiOiJTZXJpYWxpemVkLUlEIiwic2lkIjoiUktmN3VqTnJNSjgwRHlndjFrcmlrSWl4Iiwic3RhdGVfY2hlY2tlciI6ImxnaEFObVZRcENrZmJNRmhTYUdadFoycGprUHFMSFNuUENUSktLdEF3N3cifQ.yNm3Dh-CA9HV3YYM732iSLxD4ibwsOPsgETQVI6JiptuR3tWgMvtibXIY8FW0DcgpxTjX1xcUWKGsnJwlOxA0A;Version=1;Path=/realms/demo-companies/;Secure;HttpOnly;SameSite=None"
+			}
+		},
+		{
+			"step": null,
+			"direction": "request",
+			"method": "GET",
+			"url": "http://localhost:9100/callback?state=0fXkfGXB1sEmEn0KuwOmbQ&session_state=RKf7ujNrMJ80Dygv1krikIix&iss=http%3A%2F%2Flocalhost%3A18080%2Frealms%2Fdemo-companies&code=79c5e49e-e18e-28af-c0c5-c9ec9a6c5058.RKf7ujNrMJ80Dygv1krikIix.71e75d68-a78e-4f79-817f-170b31065bef",
+			"headers": {}
+		},
+		{
+			"step": null,
+			"direction": "response",
+			"status": 200,
+			"headers": {
+				"content-type": "text/html"
+			},
+			"bodyNote": "An HTML page"
+		}
+	]
+}
