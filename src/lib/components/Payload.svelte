@@ -5,6 +5,7 @@
 	import {
 		artifactOf,
 		jwtOf,
+		keyedLines,
 		jwtsIn,
 		originOf,
 		rawLines,
@@ -15,6 +16,7 @@
 		type Line,
 		type RunValue
 	} from '#lib/recordings/wire.ts';
+	import { citeText, citeUrl, keyWhy, type KeyPlace } from '#lib/recordings/key-why.ts';
 
 	interface Props {
 		step: Step;
@@ -75,6 +77,28 @@
 	const origin = (line: Line) => originOf(line, step.id, trace);
 	let opened = $state<Record<string, boolean>>({});
 
+	// What a key means, for someone who does not know it (the maintainer, 2026-11-09): shown while the
+	// pointer or the focus is on it, and kept by a click until another click or Escape.
+	// It is everywhere a name is: in the traffic, and in a token opened from it.
+	const kerberos = $derived(message.protocol === 'kerberos');
+	const placeOf = (line: Line): KeyPlace =>
+		kerberos ? 'kerberos' : line.header ? 'header' : 'wire';
+	/** Where the name is in a line: quoted in JSON, as it is in a header or a parameter. */
+	function keyIn(text: string, key: string) {
+		const quoted = text.indexOf(`"${key}"`);
+		if (quoted >= 0) return { at: quoted, end: quoted + key.length + 2 };
+		const plain = text.indexOf(key);
+		return plain >= 0 ? { at: plain, end: plain + key.length } : null;
+	}
+	let keyShown = $state<string | null>(null);
+	let keyKept = $state<string | null>(null);
+	const keyOpen = (id: string) => keyKept === id || keyShown === id;
+	function keyKey(event: KeyboardEvent) {
+		if (event.key !== 'Escape' || keyKept === null) return;
+		event.stopPropagation();
+		keyKept = null;
+	}
+
 	/** Which setting put what in this token: the part of it that surprises people. */
 	function settingsBehind(jwt: DecodedJwt) {
 		if (jwt.name !== 'access_token') return [];
@@ -126,6 +150,56 @@
 	{/if}
 {/snippet}
 
+<!-- A name that has an explanation is a button. These are written with no space between their parts,
+     because the raw view and an opened token keep whitespace as it is. -->
+{#snippet keyed(
+	text: string,
+	key: string | undefined,
+	where: KeyPlace,
+	value: string | undefined,
+	id: string
+)}{@const found =
+		key && keyWhy(key, { where, value }) ? keyIn(text, key) : null}{#if found}{text.slice(
+			0,
+			found.at
+		)}<button
+			type="button"
+			class="key"
+			data-key={key}
+			aria-expanded={keyOpen(id)}
+			aria-controls={`key-why-${id}`}
+			onmouseenter={() => (keyShown = id)}
+			onmouseleave={() => (keyShown = null)}
+			onfocus={() => (keyShown = id)}
+			onblur={() => (keyShown = null)}
+			onkeydown={keyKey}
+			onclick={() => (keyKept = keyKept === id ? null : id)}
+			>{text.slice(found.at, found.end)}</button
+		>{text.slice(found.end)}{:else}{text}{/if}{/snippet}
+
+{#snippet keyNote(
+	key: string | undefined,
+	where: KeyPlace,
+	value: string | undefined,
+	id: string
+)}{#if key && keyOpen(id)}{@const why = keyWhy(key, { where, value })}{#if why}<span
+				class="key-why"
+				id={`key-why-${id}`}
+				role="note"
+				data-testid="key-why"
+				>{why.says}{#if why.cite}<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- another site --><a
+						href={citeUrl(why.cite)}
+						target="_blank"
+						rel="noreferrer">{citeText(why.cite)}</a
+					>{/if}</span
+			>{/if}{/if}{/snippet}
+
+<!-- A line of an opened token: a block of its own, so its explanation sits under it. -->
+{#snippet tokenLine(line: Line, where: KeyPlace, id: string)}<span class="jline"
+		>{@render keyed(line.before, line.key, where, undefined, id)}{line.value ?? ''}{line.after ??
+			''}{@render keyNote(line.key, where, undefined, id)}</span
+	>{/snippet}
+
 {#if decodable && ondecode && !redacted}
 	<div class="as" role="group" aria-label="How the traffic is shown">
 		<button
@@ -151,7 +225,13 @@
 		{@const shown = shownAs(line)}
 		<div class="line">
 			<span data-line
-				>{line.before}{#if line.hidden !== undefined}<span
+				>{@render keyed(
+					line.before,
+					line.key,
+					placeOf(line),
+					line.value,
+					`${i}`
+				)}{#if line.hidden !== undefined}<span
 						class="blacked"
 						data-hidden={line.hidden}
 						role="img"
@@ -180,6 +260,7 @@
 					from step {numberOf(from.from)}
 				</button>
 			{/if}
+			{@render keyNote(line.key, placeOf(line), line.value, `${i}`)}
 		</div>
 		{#if token}
 			<!-- Opened where it was sent, which is what the maintainer asked for on 2026-11-06. -->
@@ -187,18 +268,22 @@
 				<span class="part">header</span>
 				<!-- Long enough to scroll, which a keyboard can only do to something it can focus. -->
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-				<pre tabindex="0" aria-label={`Header of ${token.name}`}>{JSON.stringify(
-						token.header,
-						null,
-						2
-					)}</pre>
+				<pre
+					tabindex="0"
+					aria-label={`Header of ${token.name}`}>{#each keyedLines(token.header) as part, j (j)}{@render tokenLine(
+							part,
+							'jose',
+							`t${i}h${j}`
+						)}{/each}</pre>
 				{@render claimsHead()}
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-				<pre tabindex="0" aria-label={`Claims of ${token.name}`}>{JSON.stringify(
-						token.claims,
-						null,
-						2
-					)}</pre>
+				<pre
+					tabindex="0"
+					aria-label={`Claims of ${token.name}`}>{#each keyedLines(token.claims) as part, j (j)}{@render tokenLine(
+							part,
+							'claims',
+							`t${i}c${j}`
+						)}{/each}</pre>
 				<span class="part">signature, as sent</span>
 				<div class="line">
 					<button
@@ -236,17 +321,21 @@
 		<summary>Inside <code>{jwt.name}</code></summary>
 		<!-- Long enough to scroll, which a keyboard can only do to something it can focus. -->
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-		<pre tabindex="0" aria-label={`Header of ${jwt.name}`}>{JSON.stringify(
-				jwt.header,
-				null,
-				2
-			)}</pre>
+		<pre
+			tabindex="0"
+			aria-label={`Header of ${jwt.name}`}>{#each keyedLines(jwt.header) as part, j (j)}{@render tokenLine(
+					part,
+					'jose',
+					`${jwt.name}h${j}`
+				)}{/each}</pre>
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-		<pre tabindex="0" aria-label={`Claims of ${jwt.name}`}>{JSON.stringify(
-				jwt.claims,
-				null,
-				2
-			)}</pre>
+		<pre
+			tabindex="0"
+			aria-label={`Claims of ${jwt.name}`}>{#each keyedLines(jwt.claims) as part, j (j)}{@render tokenLine(
+					part,
+					'claims',
+					`${jwt.name}c${j}`
+				)}{/each}</pre>
 		{@render behind(jwt)}
 	</details>
 {/each}
@@ -266,9 +355,65 @@
 	}
 
 	.line {
+		position: relative;
 		min-height: 1.5em;
 		white-space: pre-wrap;
 		word-break: break-all;
+	}
+
+	/* A key that explains itself, marked as one, and the same text as the rest when it is not asked. */
+	.key {
+		padding: 0;
+		border: 0;
+		color: inherit;
+		background: none;
+		font: inherit;
+		text-decoration: underline dotted;
+		text-underline-offset: 3px;
+		cursor: help;
+	}
+
+	.key:hover,
+	.key:focus-visible,
+	.key[aria-expanded='true'] {
+		color: var(--accent);
+	}
+
+	/* Over the lines under it, so nothing moves while the pointer is on a key. */
+	/* A line of an opened token, on its own, like a line of the traffic. */
+	.jline {
+		display: block;
+	}
+
+	/* A token scrolls sideways, which would cut off what floats over it, so there it goes in between. */
+	/* Its source, a little apart from what it says. */
+	.key-why a {
+		margin-left: 0.3em;
+	}
+
+	.jline .key-why {
+		position: static;
+		margin: 2px 0 4px;
+	}
+
+	.key-why {
+		display: block;
+		position: absolute;
+		top: 100%;
+		right: 0;
+		left: 0;
+		z-index: 2;
+		margin: 2px 0 0;
+		padding: 6px 8px;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: var(--bg);
+		box-shadow: 0 6px 16px rgb(0 0 0 / 0.18);
+		font-family: var(--sans, inherit);
+		font-size: 12px;
+		line-height: 1.45;
+		white-space: normal;
+		word-break: normal;
 	}
 
 	.blacked {

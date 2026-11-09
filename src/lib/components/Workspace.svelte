@@ -4,6 +4,7 @@
 	import Diagram from '#lib/components/Diagram.svelte';
 	import DiagramSwitch from '#lib/components/DiagramSwitch.svelte';
 	import ExplainDialog from '#lib/components/ExplainDialog.svelte';
+	import PanelDivider from '#lib/components/PanelDivider.svelte';
 	import type { Opens } from '#lib/pictures/index.ts';
 	import { landingSettings } from '#lib/pictures/build.ts';
 	import Explanation from '#lib/components/Explanation.svelte';
@@ -238,6 +239,44 @@
 		return () => query.removeEventListener('change', check);
 	});
 	const settingsShown = $derived(settingsDoNotFit ? settingsOpen : !appState.settingsHidden);
+
+	// The step's width, which someone can drag when the step is beside the diagram, because raw
+	// traffic was too narrow to read (the maintainer, 2026-11-09). Kept in this browser only.
+	const DETAIL_WIDTH = 330;
+	const DETAIL_MIN = 280;
+	const WIDTH_KEY = 'authlines.step-width';
+	let detailWidth = $state(DETAIL_WIDTH);
+	let viewportWidth = $state(0);
+	let besideTheDiagram = $state(false);
+	$effect(() => {
+		try {
+			const kept = Number(localStorage.getItem(WIDTH_KEY));
+			if (kept >= DETAIL_MIN) detailWidth = kept;
+		} catch {
+			// No storage here, so it starts at its own width each time.
+		}
+		const query = window.matchMedia('(min-width: 1024px)');
+		const check = () => {
+			besideTheDiagram = query.matches;
+			viewportWidth = window.innerWidth;
+		};
+		check();
+		window.addEventListener('resize', check);
+		return () => window.removeEventListener('resize', check);
+	});
+	// Never so wide that the diagram beside it has no room left.
+	const detailMax = $derived(
+		Math.max(DETAIL_MIN, viewportWidth - (settingsShown && !settingsDoNotFit ? 240 : 33) - 420)
+	);
+	const shownDetailWidth = $derived(Math.min(detailWidth, detailMax));
+	function resizeDetail(width: number) {
+		detailWidth = width;
+		try {
+			localStorage.setItem(WIDTH_KEY, String(width));
+		} catch {
+			// It still changes, only not for next time.
+		}
+	}
 	function toggleSettings() {
 		if (settingsDoNotFit) settingsOpen = !settingsOpen;
 		else onnavigate(withSettingsHidden(appState, !appState.settingsHidden), 'replace');
@@ -782,6 +821,7 @@
 	class:settings-open={settingsOpen}
 	data-ready={animate}
 	data-diagram={appState.diagram}
+	style:--detail-width={besideTheDiagram ? `${shownDetailWidth}px` : undefined}
 >
 	{#snippet howToRead()}
 		<button
@@ -1019,6 +1059,18 @@
 		</div>
 	</main>
 
+	{#if besideTheDiagram && !whole}
+		<!-- A landmark of its own, because everything on a page belongs to one, and this is neither. -->
+		<section class="divider-at" aria-label="Step panel width">
+			<PanelDivider
+				width={shownDetailWidth}
+				min={DETAIL_MIN}
+				max={detailMax}
+				initial={DETAIL_WIDTH}
+				onresize={resizeDetail}
+			/>
+		</section>
+	{/if}
 	<aside class="detail" aria-label="The current step" bind:this={detailPanel}>
 		{#if dropped.length}
 			<!-- A link that asks for what does not go together loses some of it, and says so (#177). -->
@@ -1304,7 +1356,7 @@
 			'header header header' auto
 			'settings diagram detail' minmax(0, 1fr)
 			'settings controls detail' auto
-			/ 240px minmax(0, 1fr) 330px;
+			/ 240px minmax(0, 1fr) var(--detail-width, 330px);
 		height: 100dvh;
 	}
 
@@ -1495,7 +1547,7 @@
 	}
 
 	.settings-hidden {
-		grid-template-columns: 33px minmax(0, 1fr) 330px;
+		grid-template-columns: 33px minmax(0, 1fr) var(--detail-width, 330px);
 	}
 
 	.settings-hidden .settings {
@@ -1510,7 +1562,7 @@
 	}
 
 	.workspace.no-panel {
-		grid-template-columns: 0 minmax(0, 1fr) 330px;
+		grid-template-columns: 0 minmax(0, 1fr) var(--detail-width, 330px);
 	}
 
 	.no-panel .settings {
@@ -1528,6 +1580,13 @@
 	.canvas {
 		flex: 1;
 		min-height: 0;
+	}
+
+	/* On the step's left edge, over its border, the whole height of it. */
+	.divider-at {
+		grid-area: detail;
+		z-index: 3;
+		justify-self: start;
 	}
 
 	.detail {
@@ -1620,7 +1679,7 @@
 	@media (max-width: 1239px) {
 		.workspace,
 		.settings-hidden {
-			grid-template-columns: 33px minmax(0, 1fr) 330px;
+			grid-template-columns: 33px minmax(0, 1fr) var(--detail-width, 330px);
 		}
 
 		.settings,

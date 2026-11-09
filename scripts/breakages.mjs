@@ -1189,7 +1189,7 @@ export const breakages = [
 	{
 		name: 'eyes: a redacted message keeps its values',
 		file: 'src/lib/recordings/wire.ts',
-		from: 'return { before: line.before, hidden: line.value.length, after: line.after };',
+		from: 'return { before: line.before, hidden: line.value.length, after: line.after, key: line.key };',
 		to: 'return line;'
 	},
 	{
