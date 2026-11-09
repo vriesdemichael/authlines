@@ -19,6 +19,7 @@ export interface Settings {
 	exchange: boolean;
 	exchangeGives: 'token' | 'refresh';
 	groupRoles: boolean;
+	upstreamPkce: boolean;
 	rolesReach: 'all' | 'given';
 	linkAccount: boolean;
 	linkEnds: 'linked' | 'cancelled';
@@ -954,10 +955,58 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 				is('oidc', false),
 				is('consent', false),
 				is('pkce', false),
-				is('clientType', 'confidential')
+				is('clientType', 'confidential'),
+				is('upstreamPkce', false)
 			),
 			because:
 				'Drawn so far only with another provider and nothing else on, where the groups come from.'
+		}
+	},
+	// #182: the identity provider's own PKCE, on the leg to the other provider, recorded.
+	upstreamPkce: {
+		kind: 'toggle',
+		label: 'PKCE to the other provider',
+		param: 'uppkce',
+		default: false,
+		onlyOn: 'authorization-code',
+		sources: [
+			{
+				source: 'rfc7636',
+				section: '4.3',
+				why: 'Section 4.3 is the challenge in the authorization request, whoever the client is.'
+			},
+			{
+				source: 'rfc9700',
+				section: '2.1.1',
+				why: 'Section 2.1.1 recommends PKCE for every client, and the identity provider is one here.'
+			}
+		],
+		summary:
+			'The identity provider uses PKCE of its own when it sends the user on to the other provider.',
+		why: 'On the way to the other provider, the identity provider is a client like any other, and the code that comes back to it can be stolen like the app’s. PKCE there is its own setting, and has nothing to do with whether the app uses PKCE with it.',
+		requires: {
+			when: all(
+				is('broker', true),
+				is('companies', false),
+				is('upstreamTokens', 'off'),
+				is('attacker', false),
+				is('binding', 'bearer'),
+				is('apiToken', 'good'),
+				is('refresh', false),
+				is('sso', false),
+				is('logout', false),
+				is('address', 'registered'),
+				is('appRuns', 'server'),
+				is('registration', 'manual'),
+				is('par', false),
+				is('exchange', false),
+				is('oidc', false),
+				is('consent', false),
+				is('pkce', false),
+				is('clientType', 'confidential'),
+				is('groupRoles', false)
+			),
+			because: 'Drawn so far only with another provider and nothing else on.'
 		}
 	},
 	rolesReach: {

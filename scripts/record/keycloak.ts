@@ -888,6 +888,7 @@ export async function setUpFor(
 				| 'linkAccount'
 				| 'implicit'
 				| 'groupRoles'
+				| 'upstreamPkce'
 				| 'rolesReach'
 			>
 		>
@@ -1006,10 +1007,16 @@ export async function setUpFor(
 	}
 	const onProvider = `/realms/${BROKERED_REALM}/identity-provider/instances/${UPSTREAM_REALM}`;
 	await groupsBecomeRoles(admin, onProvider, Boolean(settings.groupRoles));
-	const provider = await admin.call<object>('GET', onProvider);
+	const provider = await admin.call<{ config: Record<string, string> }>('GET', onProvider);
 	await admin.call('PUT', onProvider, {
 		...provider,
 		storeToken: settings.upstreamTokens !== 'off',
-		addReadTokenRoleOnCreate: settings.upstreamTokens === 'v1'
+		addReadTokenRoleOnCreate: settings.upstreamTokens === 'v1',
+		// Use PKCE on the provider, off on a new one, so off for every other run (#182).
+		config: {
+			...provider.config,
+			pkceEnabled: String(Boolean(settings.upstreamPkce)),
+			...(settings.upstreamPkce ? { pkceMethod: 'S256' } : {})
+		}
 	});
 }

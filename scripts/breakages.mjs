@@ -44,8 +44,8 @@ export const breakages = [
 	{
 		name: 'companies: SAML trades a code out of sight after all',
 		file: AC,
-		from: "on a connection the browser never sees.',\n\t\t\twhen: all(broker, not(saml)),",
-		to: "on a connection the browser never sees.',\n\t\t\twhen: broker,"
+		from: "on a connection the browser never sees.'\n\t\t\t\t}\n\t\t\t],\n\t\t\twhen: all(broker, not(saml)),",
+		to: "on a connection the browser never sees.'\n\t\t\t\t}\n\t\t\t],\n\t\t\twhen: broker,"
 	},
 	{
 		name: 'companies: the assertion does not go through the browser',

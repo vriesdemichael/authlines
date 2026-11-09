@@ -970,7 +970,10 @@ async function behindTheBrokeringNotes(browser: Browser, demo: Demo, admin: Admi
  */
 export async function questionsOnTheWayUpstream(browser: Browser, demo: Demo, admin: Admin) {
 	const onProvider = `/realms/${BROKERED_REALM}/identity-provider/instances/${UPSTREAM_REALM}`;
-	const provider = await admin.call<{ config: Record<string, string> }>('GET', onProvider);
+	const asLeft = await admin.call<{ config: Record<string, string> }>('GET', onProvider);
+	// As set up, with PKCE off as on a new provider, whatever the last run turned on (#182).
+	const provider: typeof asLeft = { ...asLeft, config: { ...asLeft.config, pkceEnabled: 'false' } };
+	await admin.call('PUT', onProvider, provider);
 	const setProvider = (changes: Record<string, unknown>, config: Record<string, string> = {}) =>
 		admin.call('PUT', onProvider, {
 			...provider,
