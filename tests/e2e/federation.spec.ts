@@ -64,3 +64,53 @@ test.describe('users in a directory', () => {
 		await expect(page.getByText('Users in a directory')).toBeVisible();
 	});
 });
+
+// A Kerberos ticket on a company network, recorded with MIT Kerberos and Chromium on Linux (#148).
+test.describe('a ticket on a company network', () => {
+	test('takes the login page and the password away, and adds the KDC', async ({ page }) => {
+		await open(page, '&directory=1');
+		await expect(row(page, 'send-ticket')).toHaveCount(0);
+		await toggle(page, 'kerberos').check();
+		await expect(page).toHaveURL(/kerberos=1/);
+		for (const step of ['computer-asks', 'kdc-gives-tgt', 'idp-negotiate', 'send-ticket']) {
+			await expect(row(page, step)).toHaveCount(1);
+		}
+		for (const step of ['login-page', 'submit-credentials', 'directory-bind']) {
+			await expect(row(page, step)).toHaveCount(0);
+		}
+		await expect(row(page, 'directory-search')).toHaveCount(1);
+	});
+
+	test('falls back to the login page in a browser that was not told', async ({ page }) => {
+		await open(page, '&directory=1&kerberos=1&ticket=not-sent');
+		await expect(row(page, 'send-ticket')).toHaveCount(0);
+		await expect(row(page, 'ask-for-service-ticket')).toHaveCount(0);
+		for (const step of ['no-ticket', 'login-page', 'submit-credentials', 'directory-bind']) {
+			await expect(row(page, step)).toHaveCount(1);
+		}
+	});
+
+	test('reads the ticket off the wire, and offers no command for it', async ({ page }) => {
+		await open(page, '&directory=1&kerberos=1&step=kdc-gives-service-ticket');
+		const wire = page.getByTestId('on-the-wire');
+		await expect(wire).toContainText('Kerberos TGS-REP, over TCP');
+		await expect(wire).toContainText('HTTP/localhost');
+		await expect(wire).toContainText('read by RFC 4120');
+		// A request, where an HTTP one would have a command to copy.
+		await open(page, '&directory=1&kerberos=1&step=ask-for-service-ticket');
+		await expect(wire).toContainText('Kerberos TGS-REQ, over TCP');
+		await expect(page.getByTestId('copy-request')).toHaveCount(0);
+		await open(page, '&directory=1&kerberos=1&step=idp-negotiate');
+		await expect(wire).toContainText('Negotiate');
+	});
+
+	test('answers why there was no password, at the step that shows it', async ({ page }) => {
+		await page.goto(`${FLOW_PATH}no-password-on-the-network/`);
+		await page.locator('.workspace[data-ready="true"]').waitFor();
+		await expect(
+			page.locator(
+				'[data-step="send-ticket"] [aria-current="step"], [data-step="send-ticket"][aria-current="step"]'
+			)
+		).toHaveCount(1);
+	});
+});

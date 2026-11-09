@@ -966,13 +966,101 @@ const list: readonly Term[] = [
 		explains:
 			'A free identity provider you can run yourself. The messages on this site came from one. What the specs say is the same on other identity providers, and the wording of its errors, its token contents, defaults and console are its own.'
 	},
+	// Kerberos on a company network (#148), where realm means something else again.
+	{
+		id: 'kerberos',
+		name: 'Kerberos',
+		words: ['Kerberos'],
+		explains:
+			'How a company network logs people in once. Logging in to their computer gets the user a ticket, which the computer keeps for them, and with that a ticket for each service they reach, so a service that takes a ticket does not ask for the password. A Windows domain uses it.',
+		at: flowAt('computer-asks', { federation: true, kerberos: true })
+	},
+	{
+		id: 'kdc',
+		name: 'KDC',
+		words: ['KDC', 'KDCs', 'key distribution center', 'key distribution centers'],
+		alsoCalled: ['key distribution center', 'domain controller'],
+		explains:
+			'The Kerberos server that hands out tickets. It keeps a key for every user and service in its realm, so it can seal a ticket that only one service can open. On Windows it runs on the domain controllers.',
+		at: flowAt('kdc-gives-tgt', { federation: true, kerberos: true })
+	},
+	{
+		id: 'tgt',
+		name: 'Ticket-granting ticket',
+		words: ['ticket-granting ticket', 'ticket-granting tickets', 'TGT', 'ticket for tickets'],
+		alsoCalled: ['TGT'],
+		artifact: 'tgt',
+		explains:
+			'What the user gets when they log in to their computer, which keeps it for them, for asking the KDC for other tickets with no password, until it runs out.',
+		at: flowAt('kdc-gives-tgt', { federation: true, kerberos: true })
+	},
+	{
+		id: 'service-ticket',
+		name: 'Service ticket',
+		words: ['service ticket', 'service tickets'],
+		artifact: 'service-ticket',
+		explains:
+			'A Kerberos ticket for one service, which says who the user is and is sealed so that only that service can open it.',
+		at: flowAt('kdc-gives-service-ticket', { federation: true, kerberos: true })
+	},
+	// Longer than the words of a browser's session and a DPoP proof, so these win where they are used.
+	{
+		id: 'session-key',
+		name: 'Session key',
+		words: ['session key', 'session keys'],
+		explains:
+			'In Kerberos, a key the KDC makes for one ticket and hands to both sides: sealed inside the ticket for the service, and beside it for whoever asked. The time sealed with it shows the ticket is theirs. It has nothing to do with a session at a website.',
+		at: flowAt('kdc-gives-service-ticket', { federation: true, kerberos: true })
+	},
+	{
+		id: 'pre-authentication',
+		name: 'Pre-authentication',
+		words: ['pre-authentication', 'no proof yet', 'proof first'],
+		explains:
+			'In Kerberos, showing the KDC that the user knows the password before it answers, here with the time sealed with a key made from it. Without it anyone could ask for an answer sealed with that key, and try passwords against it at leisure. Someone watching the network can still try them against what is sent.',
+		at: flowAt('kdc-wants-proof', { federation: true, kerberos: true })
+	},
+	{
+		id: 'kerberos-realm',
+		name: 'Kerberos realm',
+		words: ['Kerberos realm', 'Kerberos realms'],
+		explains:
+			'The users and services one KDC looks after, named in capitals like a domain, EXAMPLE.TEST here. It is not the realm of an identity provider such as Keycloak, though both are called realms.',
+		at: flowAt('computer-asks', { federation: true, kerberos: true })
+	},
+	{
+		id: 'keytab',
+		name: 'Keytab',
+		words: ['keytab', 'keytabs'],
+		explains:
+			'A file with a service’s Kerberos key in it, from the KDC. With it the service opens the tickets meant for it without asking the KDC. Anyone else who has the file can do the same, pass as the service itself, and make tickets for it naming any user.',
+		at: setupAt('hand-over-keytab', { federation: true, kerberos: true })
+	},
+	{
+		id: 'service-principal',
+		name: 'Service principal',
+		words: ['service principal', 'service principals', 'SPN', 'SPNs'],
+		alsoCalled: ['SPN', 'server principal'],
+		explains:
+			'A service’s name in a Kerberos realm. For a website it is HTTP and its host name, also for a site on HTTPS. Chromium by default asks for a ticket by the host name behind any alias in DNS, so the two have to match.',
+		at: setupAt('service-principal', { federation: true, kerberos: true })
+	},
+	{
+		id: 'negotiate',
+		name: 'Negotiate',
+		words: ['Negotiate', 'SPNEGO'],
+		alsoCalled: ['SPNEGO', 'integrated Windows authentication'],
+		explains:
+			'How a website asks for a Kerberos ticket over HTTP. It answers 401 with WWW-Authenticate: Negotiate, and a browser that may send one gets a ticket and sends the request again with it, wrapped in SPNEGO. SPNEGO can carry an older Windows login in place of Kerberos, and a Windows browser may fall back to it. The identity provider recorded does not take that, its guide says, so there the user gets a dialog to cancel, and then its login page.',
+		at: flowAt('idp-negotiate', { federation: true, kerberos: true })
+	},
 	{
 		id: 'realm',
 		name: 'Realm',
 		words: ['realm', 'realms'],
 		vendor: true,
 		explains:
-			'What Keycloak calls one separate set of users and apps. Each realm has its own issuer, so to an app each one is an identity provider of its own.',
+			'What Keycloak calls one separate set of users and apps. Each realm has its own issuer, so to an app each one is an identity provider of its own. A Kerberos realm is another thing with the same name.',
 		at: { diagram: 'setup', step: 'configure-app' }
 	}
 ];

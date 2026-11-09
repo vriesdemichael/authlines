@@ -65,7 +65,10 @@ function parsed(command: string) {
 const requests = recordings
 	.flatMap(({ messages }) => messages)
 	.filter(({ direction }) => direction === 'request');
-const sendable = requests.filter((message) => !message.bodyNote && !message.log);
+// Kerberos is not HTTP, so curl cannot send it either.
+const sendable = requests.filter(
+	(message) => !message.bodyNote && !message.log && !message.protocol
+);
 
 describe('a request as a command', () => {
 	it('exists for a good many requests, in every recording', () => {

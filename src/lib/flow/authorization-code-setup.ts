@@ -1,7 +1,14 @@
 import { withTheOldWayInTheSetup } from '#lib/flow/old-way.ts';
 import type { DiagramDef } from '#lib/flow/model.ts';
 import { example } from '#lib/flow/libraries.ts';
-import { apiWords, appWords, idpWords, secondApiWords, upstreamWords } from '#lib/flow/parties.ts';
+import {
+	apiWords,
+	appWords,
+	idpWords,
+	kdcWords,
+	secondApiWords,
+	upstreamWords
+} from '#lib/flow/parties.ts';
 import { all, any, is, not } from '#lib/flow/settings.ts';
 
 const oidc = is('oidc', true);
@@ -28,6 +35,9 @@ const byHand = is('registration', 'manual');
 const itself = is('registration', 'dcr');
 const document = is('registration', 'cimd');
 const inADirectory = is('federation', true);
+// On a company network, with a Kerberos ticket from logging in to the computer (#148).
+const kerberos = is('kerberos', true);
+const withATicket = all(kerberos, is('ticket', 'sent'));
 const companies = is('companies', true);
 const saml = all(companies, is('customerSpeaks', 'saml'));
 const exchange = is('exchange', true);
@@ -96,6 +106,39 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			icon: 'people',
 			concept:
 				'The people who run the identity provider. They register apps in its admin console. On a small team, or a provider you pay for, this may be you as well.'
+		},
+		{
+			id: 'kdc',
+			plainName: 'Ticket server',
+			plainRole: 'Kerberos',
+			...kdcWords,
+			icon: 'api',
+			concept:
+				'The key distribution center of the company’s network, which keeps a key for every user and service on it. On a Windows network it runs on every domain controller.',
+			when: kerberos
+		},
+		{
+			id: 'domain-admins',
+			plainName: 'Network admins',
+			plainRole: 'Run the domain',
+			name: 'Domain admins',
+			role: 'People',
+			icon: 'people',
+			concept:
+				'The people who look after the company’s network: its accounts, the KDC, and how its computers and their browsers are set up. Often not the people who run the identity provider.',
+			when: kerberos
+		},
+		// Not the user's browser: the company's computers, which the admins set up, and no user is here.
+		{
+			id: 'computers',
+			plainName: 'Their computers',
+			plainRole: 'Set up by the admins',
+			name: 'Company computers',
+			role: 'And their browsers',
+			icon: 'browser',
+			concept:
+				'The company’s own computers and the browsers on them, which the network admins set up before anyone logs in. A browser sends a ticket only to sites it was told to: Chromium by a list in its settings, or on Windows with no list, by the sites Windows counts as local, and Firefox by a list of its own.',
+			when: withATicket
 		},
 		{
 			id: 'upstream',
@@ -371,6 +414,88 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 				{ name: 'users DN', place: 'setting', note: 'Where in the directory the users are' },
 				{ name: 'bind DN', place: 'setting', note: 'The account it searches with' }
 			]
+		},
+		{
+			id: 'service-principal',
+			when: kerberos,
+			from: 'domain-admins',
+			to: 'kdc',
+			kind: 'human',
+			plain: 'An account for the identity provider',
+			label: 'Add a service principal',
+			concept:
+				'The network admins make an account in the Kerberos realm for the identity provider, a service principal: HTTP and its host name, HTTP/localhost here. The KDC keeps a key for it, and tickets for the identity provider will be sealed with that key. The KDC recorded made one at random. In Active Directory it comes from the password of an account for the service.',
+			cites: [
+				{
+					source: 'windows-ktpass',
+					why: 'In Active Directory the principal is mapped to an account, and its key comes from that account’s password.'
+				}
+			],
+			fields: [
+				{
+					name: 'service principal',
+					place: 'setting',
+					note: 'HTTP, and its host name'
+				}
+			]
+		},
+		{
+			id: 'hand-over-keytab',
+			when: kerberos,
+			from: 'domain-admins',
+			to: 'idp-admin',
+			kind: 'human',
+			plain: 'Hand over its key',
+			label: 'A keytab',
+			concept:
+				'They write its key to a file, a keytab, and hand it to whoever runs the identity provider. With it the identity provider can open tickets meant for it without asking the KDC. So can anyone who has the file. They can also pass as the identity provider’s own account, and make tickets of their own that it takes, naming any user, because a ticket that opens with its key is all it checks. So the file is kept like a password.',
+			cites: [
+				{
+					source: 'rfc4120',
+					why: 'Section 3.2.3 is how a service checks a ticket: it opens it with its own key, and the time with the session key inside. Section 10 says whoever steals a key can pass as its owner.'
+				}
+			]
+		},
+		{
+			id: 'allow-kerberos',
+			when: kerberos,
+			from: 'idp-admin',
+			to: 'idp',
+			kind: 'human',
+			plain: 'Let users log in with a ticket',
+			label: 'Allow Kerberos authentication',
+			concept:
+				'In the directory’s settings the admin turns Kerberos on, and says which Kerberos realm, which service principal, and where the keytab is. On the server recorded that also turned on the Kerberos step of its login.',
+			inPractice:
+				'Nothing for your app, which sees the same provider and the same tokens however the user got in.',
+			fields: [
+				{ name: 'Kerberos realm', place: 'setting', note: 'Its name, in capitals' },
+				{ name: 'server principal', place: 'setting', note: 'The account the admins made for it' },
+				{ name: 'keytab', place: 'setting', note: 'Where the file is, on its own disk' },
+				{
+					name: 'Kerberos principal attribute',
+					place: 'setting',
+					note: 'Empty, so the name before the @ is the username'
+				}
+			]
+		},
+		{
+			id: 'tell-the-browsers',
+			when: withATicket,
+			from: 'domain-admins',
+			to: 'computers',
+			kind: 'human',
+			plain: 'Tell browsers they may send a ticket there',
+			label: 'Allow the site',
+			concept:
+				'A ticket says who the user is, so Chromium sends one only to a site on its list, which on Windows, with no list set, Windows decides by its security zones. On a company’s computers the admins set that list. The Chromium recorded was told with --auth-server-allowlist.',
+			cites: [
+				{
+					source: 'chromium-http-auth',
+					why: 'Chromium’s own account of when it sends a ticket: only to a server on its list.'
+				}
+			],
+			fields: [{ name: 'the site', place: 'setting', note: 'localhost here' }]
 		},
 		{
 			id: 'register-with-upstream',

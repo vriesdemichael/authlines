@@ -122,6 +122,8 @@ const SIGN_IN = new Set([
 	'submit-otp',
 	'submit-passkey',
 	'submit-credentials',
+	// The page sent back with no ticket, to the same form address (#148).
+	'no-ticket',
 	'second-submit-credentials',
 	'upstream-sign-in',
 	'submit-email',

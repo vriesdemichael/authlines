@@ -1,6 +1,8 @@
 // A throwaway Keycloak in a container, set up the way someone would through its admin API. Nothing
 // here is a real credential: the realms, users and secrets exist only for this run.
 import { execFileSync } from 'node:child_process';
+import { writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import type { Settings } from '#lib/flow/settings.ts';
 import {
 	APP,
@@ -279,6 +281,71 @@ export async function connectDirectory(
 	const provider = await providerOfTheDirectory(admin);
 	if (!provider) throw new Error('The directory did not connect.');
 	return provider;
+}
+
+/** Where the identity provider keeps the key it opens tickets with, in its own container. */
+const KEYTAB_IN_THE_CONTAINER = '/opt/keycloak/data/service.keytab';
+
+/**
+ * The directory's users may also log in with a Kerberos ticket, which the identity provider opens with
+ * a key of its own from the KDC, a keytab. Off again, the login page is as it was.
+ */
+/** The directory's settings before a ticket was allowed, to put back after. */
+let configBeforeKerberos: Record<string, string[]> | undefined;
+
+export async function kerberosOn(
+	admin: Admin,
+	on: { keytab: Buffer; realm: string; principal: string } | null
+) {
+	const id = await providerOfTheDirectory(admin);
+	if (!id) throw new Error('There is no directory to log in to with a ticket.');
+	if (on) {
+		const file = `${tmpdir()}/authlines-service.keytab`;
+		writeFileSync(file, on.keytab);
+		docker('cp', file, `${CONTAINER}:${KEYTAB_IN_THE_CONTAINER}`);
+		docker('exec', '-u', '0', CONTAINER, 'chmod', '644', KEYTAB_IN_THE_CONTAINER);
+	}
+	const path = `/realms/${DIRECTORY_REALM}/components/${id}`;
+	const component = await admin.call<{ config: Record<string, string[]> }>('GET', path);
+	if (on) {
+		configBeforeKerberos ??= component.config;
+		component.config = {
+			...component.config,
+			allowKerberosAuthentication: ['true'],
+			kerberosRealm: [on.realm],
+			serverPrincipal: [on.principal],
+			keyTab: [KEYTAB_IN_THE_CONTAINER],
+			useKerberosForPasswordAuthentication: ['false'],
+			// For this kind of directory it looks for krb5PrincipalName, which these people do not
+			// have, and shows the login page. Empty, it looks them up by the name before the @.
+			krbPrincipalAttribute: [''],
+			// So that a run that goes wrong says why, in the identity provider's log.
+			debug: ['true']
+		};
+	} else {
+		// Back as it was, since what it asks the directory for changes with these: the recordings
+		// with no ticket ask for krb5PrincipalName, and those made with one do not.
+		// An update keeps a setting it is not sent, and drops one sent empty, by updateComponent in
+		// RepresentationToModel at 26.8.1. A secret it masked and is sent back is kept too.
+		const before = configBeforeKerberos ?? component.config;
+		const added = Object.keys(component.config).filter((key) => !(key in before));
+		component.config = {
+			...before,
+			...Object.fromEntries(added.map((key) => [key, []])),
+			allowKerberosAuthentication: ['false']
+		};
+	}
+	await admin.call('PUT', path, component);
+	if (!on) configBeforeKerberos = undefined;
+	// Allowing it turns the Kerberos step of the browser flow on, and turning it off turns it off.
+	const steps = await admin.call<{ displayName: string; requirement: string }[]>(
+		'GET',
+		`/realms/${DIRECTORY_REALM}/authentication/flows/browser/executions`
+	);
+	const kerberos = steps.find(({ displayName }) => displayName === 'Kerberos')?.requirement;
+	if (kerberos !== (on ? 'ALTERNATIVE' : 'DISABLED')) {
+		throw new Error(`The browser flow's Kerberos step is ${kerberos}`);
+	}
 }
 
 export async function setUpRealms(admin: Admin) {

@@ -11,6 +11,16 @@ const presets: readonly Preset[] = [
 	{ id: 'oauth', title: 'OAuth', settings: {} },
 	{ id: 'in-a-directory', title: 'Users in a directory', settings: { federation: true } },
 	{
+		id: 'kerberos',
+		title: 'Logged in on the company network',
+		settings: { federation: true, kerberos: true }
+	},
+	{
+		id: 'kerberos-no-ticket',
+		title: 'A browser that sends no ticket',
+		settings: { federation: true, kerberos: true, ticket: 'not-sent' }
+	},
+	{
 		id: 'registers-itself',
 		title: 'An app that registers itself',
 		settings: { registration: 'dcr' }

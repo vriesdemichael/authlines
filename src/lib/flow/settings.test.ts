@@ -87,6 +87,8 @@ describe('constraints', () => {
 		// Each brings a different client. A document can have OpenID Connect and another provider (#186).
 		const howItRegisters = 1 + 2 * 2;
 		const inADirectory = 1;
+		// The same directory on a company network, with the browser sending a ticket or not (#148).
+		const onACompanyNetwork = 2;
 		const withAServerBehindThePage = 1;
 		// Through another provider in the plain case: what their provider speaks, and whether they leave.
 		const eachCustomerHasAProvider = 2 * 2;
@@ -126,6 +128,7 @@ describe('constraints', () => {
 				theOldWay +
 				howItRegisters +
 				inADirectory +
+				onACompanyNetwork +
 				withAServerBehindThePage +
 				eachCustomerHasAProvider +
 				aStolenToken +

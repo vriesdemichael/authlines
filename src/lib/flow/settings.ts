@@ -39,6 +39,8 @@ export interface Settings {
 	givesRole: boolean;
 	registration: 'manual' | 'dcr' | 'cimd';
 	federation: boolean;
+	kerberos: boolean;
+	ticket: 'sent' | 'not-sent';
 	companies: boolean;
 	customerSpeaks: 'oidc' | 'saml';
 	leaves: boolean;
@@ -605,6 +607,62 @@ export const settingDefs: { [K in SettingId]: DefFor<Settings[K]> } = {
 			because: 'Only drawn in the plain case so far.',
 			sayWhenBlocked: true
 		}
+	},
+	kerberos: {
+		kind: 'toggle',
+		label: 'Logged in on the company network',
+		param: 'kerberos',
+		default: false,
+		onlyOn: 'authorization-code',
+		summary:
+			'The computer got a Kerberos ticket when the user logged in to it, and the browser shows the identity provider a ticket in place of a password.',
+		why: 'On a company network people log in once, to their computer, and expect not to again. Kerberos is how a Windows domain does that: the computer gets a ticket that morning, and gets a ticket from it for each service, which proves who the user is with no password sent.',
+		sources: [
+			{
+				source: 'rfc4120',
+				why: 'Kerberos itself: a ticket for getting tickets, and a ticket for each service, sealed so that only that service can read it.'
+			},
+			{
+				source: 'rfc4559',
+				why: 'How a browser hands a Kerberos ticket to a website, in the Authorization header after a 401 that says Negotiate.'
+			},
+			{
+				source: 'keycloak-kerberos',
+				why: 'How Keycloak takes a ticket: a key of its own from the KDC, and the users in a directory it already has.'
+			}
+		],
+		requires: {
+			when: is('federation', true),
+			because: 'Drawn with the users in a directory, as a company network has them.'
+		}
+	},
+	ticket: {
+		kind: 'choice',
+		label: 'Does the browser send a ticket?',
+		param: 'ticket',
+		default: 'sent',
+		onlyOn: 'authorization-code',
+		summary:
+			'A browser sends one only to a site it was told to. Otherwise the identity provider’s login page follows, after a password dialog of the browser’s own on Windows.',
+		why: 'A ticket says who someone is, so a browser does not hand one to any site that asks. Chromium is told by a list in its settings, which the admins of a company’s computers set, or on Windows with no list, by the sites Windows counts as local, on the intranet or the computer itself. Firefox goes by a list of its own. Someone on a company network who sees a password prompt on just one site can be seeing a browser that was not told about it.',
+		sources: [
+			{
+				source: 'chromium-http-auth',
+				why: 'Chromium’s own account of when it sends a ticket: to a server on its list, or on Windows with no list, by the security zones. A server off the list gets a username and password instead.'
+			},
+			{
+				source: 'keycloak-kerberos',
+				why: 'Keycloak’s guide says how Firefox is told, and that Internet Explorer and Edge on a Windows domain need nothing changed, which by Chromium’s page holds for sites in the local intranet or local machine zones. Off the list, it says, a Windows browser may show a dialog the user has to cancel.'
+			}
+		],
+		requires: {
+			when: is('kerberos', true),
+			because: 'There is no ticket to send until the computer is on a company network.'
+		},
+		options: [
+			{ value: 'sent', label: 'Yes, it was told to' },
+			{ value: 'not-sent', label: 'No, so the login page' }
+		]
 	},
 	companies: {
 		kind: 'toggle',

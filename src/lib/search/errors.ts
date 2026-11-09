@@ -337,8 +337,7 @@ export const notHereYet: readonly string[] = [
 	// What #147 lists, which has no flow yet. Nothing here may have a result, or it would hide it.
 	// A passkey and a one-time password are explained, with what each proves, and a login with one
 	// is drawn since 2026-11-08. So is an API key, against tokens, and calling an API with one is not.
-	'kerberos',
-	'spnego',
+	// Kerberos is drawn since 2026-11-08 too, on a company network (#148).
 	'ntlm',
 	'fido2',
 	'magic link',
