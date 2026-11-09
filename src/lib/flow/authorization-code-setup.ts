@@ -322,7 +322,7 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plain: 'Create a token for registering',
 			label: 'Create an initial access token',
 			concept:
-				'An admin creates a token that lets an app register itself, and sets how long it lasts and how many uses it has. This one had one. The server recorded refused an app that came without any.',
+				'An admin creates a token that lets an app register itself, and sets how long it lasts and how many uses it has. This one had one. The server recorded refused an app that came without any. An app registered with one got none of the user’s roles there, and so tokens with no audience, which an API that checks refuses. So the admin also put the audience in a scope every client gets.',
 			cites: [
 				{
 					source: 'rfc7591',
@@ -339,7 +339,8 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 					name: 'initial access token',
 					place: 'setting',
 					note: 'Good for one registration here, and then refused'
-				}
+				},
+				{ name: 'audience', place: 'setting', note: 'In a scope every client gets' }
 			]
 		},
 		{

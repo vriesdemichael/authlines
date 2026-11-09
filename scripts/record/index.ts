@@ -59,6 +59,7 @@ import {
 	QUICK_DEVICE_CLIENT,
 	SOMEONE_ELSE,
 	allowClientDocuments,
+	audienceInEveryToken,
 	connectDirectory,
 	DIRECTORY_REALM,
 	kerberosOn,
@@ -135,7 +136,7 @@ const UPSTREAM_NOTES = [
 
 const { presets } = base;
 
-export const PINNED_KEYCLOAK = '26.8.1';
+export const PINNED_KEYCLOAK = '26.8.2';
 const CIMD_FLAG = 'cimd';
 const FOLDER = 'static/recordings/authorization-code';
 const INDEX = 'src/lib/recordings/recorded.json';
@@ -327,8 +328,9 @@ const coming = (run: Run, step: string | null) =>
 
 /** A page with a server behind it: the app's addresses mean something else, and the rest is as ever. */
 const behindThePage = {
-	request(url: URL) {
-		if (url.origin !== APP) return classifyRequest(url);
+	request(url: URL, method: string) {
+		// With the method, because the form being sent is a POST to an address a redirect also reaches.
+		if (url.origin !== APP) return classifyRequest(url, method);
 		return (
 			{ '/': 'open-app', '/login': 'bff-login', '/callback': 'callback' }[url.pathname] ?? null
 		);
@@ -414,7 +416,7 @@ function watch(page: Page, run: Run, cookies: Promise<void>[], device = false) {
 							run.settings.deviceEnds === 'says-no'
 						)
 					: behind
-						? once(behindThePage.request(new URL(request.url())), 'request')
+						? once(behindThePage.request(new URL(request.url()), request.method()), 'request')
 						: run.settings.secondFactor === 'passkey' &&
 							  request.method() === 'POST' &&
 							  isLoginForm(new URL(request.url())) &&
@@ -626,7 +628,13 @@ async function login(browser: Browser, run: Run, demo?: Demo) {
 	}
 	if (run.settings.consent) {
 		// The same button id, on the page that asks.
-		await page.locator('[name="accept"]').click();
+		await page
+			.locator('[name="accept"]')
+			.click()
+			.catch(async (error) => {
+				const shown = (await page.locator('body').innerText()).slice(0, 400);
+				throw new Error(`Not asked, at ${page.url()}, showing: ${shown}`, { cause: error });
+			});
 	}
 	await page
 		.getByRole('heading', { name: /Logged in|Refused|Failed|Got it/ })
@@ -769,7 +777,20 @@ async function record(
 		return run;
 	}
 	await setUpFor(admin, run.realm, settings);
+	await audienceInEveryToken(
+		admin,
+		run.realm,
+		settings.registration === 'cimd' || settings.registration === 'dcr'
+	);
 	if (settings.registration === 'cimd') {
+		// The client a document made in an earlier run, and the user's answer to it, would carry over:
+		// on 26.8.2 a second run was not asked, where 26.8.1 fetched the document again and asked.
+		const onClients = `/realms/${run.realm}/clients`;
+		const made = await admin.call<{ id: string }[]>(
+			'GET',
+			`${onClients}?clientId=${encodeURIComponent(CLIENT_DOCUMENT)}`
+		);
+		for (const { id } of made) await admin.call('DELETE', `${onClients}/${id}`);
 		await allowClientDocuments(admin, run.realm);
 		run.clientId = CLIENT_DOCUMENT;
 		run.clientSecret = null;
@@ -1610,6 +1631,11 @@ async function main() {
 		stopKeycloak();
 	}
 	process.exit(failed ? 2 : 0);
+}
+
+// Only the whole run compares, and the others write what they record, which a check must not.
+if (checking && (onlyPages || onlyNoUser || onlyOnADevice || onlyPresets)) {
+	throw new Error('--check records everything, so it goes on its own');
 }
 
 await (onlyPages

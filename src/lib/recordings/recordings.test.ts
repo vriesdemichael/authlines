@@ -77,6 +77,8 @@ const KEYCLOAK_ONLY = new Set([
 	'dpop_bound_access_tokens',
 	'post_logout_redirect_uris',
 	'backchannel_logout_session_required',
+	// New in Keycloak 26.8.2's answer.
+	'backchannel_logout_revoke_offline_tokens',
 	'frontchannel_logout_session_required',
 	'require_pushed_authorization_requests',
 	'session_state',

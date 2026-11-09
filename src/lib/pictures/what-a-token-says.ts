@@ -12,7 +12,7 @@ import {
 
 /**
  * What the access token and the ID token said in one recorded run with OpenID Connect on, the
- * `oidc` preset on Keycloak 26.8.1. A test holds these to the recording, so a re-recording that
+ * `oidc` preset, last recorded on Keycloak 26.8.2. A test holds these to the recording, so a re-recording that
  * changes them shows here.
  */
 export const RECORDED = {
@@ -78,7 +78,7 @@ export const RECORDED = {
 		resource_access: {
 			account: { roles: ['manage-account', 'manage-account-links', 'view-profile'] }
 		},
-		scope: 'email profile',
+		scope: 'profile email',
 		clientHost: '172.16.0.1',
 		email_verified: false,
 		preferred_username: 'service-account-demo-service',

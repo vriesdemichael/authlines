@@ -137,11 +137,16 @@ export const clientCredentialsSetup: DiagramDef = {
 			plain: 'Let it give one role, and nothing else',
 			label: 'One role it may give',
 			concept:
-				'An admin turns on permissions for the admin API, and lets this app’s service account look users up and give them reads-orders. Nothing else is allowed, so it cannot give other roles. It may not look roles up either, so the admin hands it reads-orders as the admin API wants it, with its name and ID.',
+				'An admin turns on permissions for the admin API, and lets this app’s service account look users up and give them reads-orders. Nothing else is allowed, so it cannot give other roles. It may not look roles up either, so the admin hands it reads-orders as the admin API wants it, with its name and ID. The admin API recorded takes only a token meant for it, so the admin also gives the app’s client a scope, kc-admin-api, that puts the admin API in its tokens’ audience. Before Keycloak 26.8.2 it did not check who a token was for.',
 			fields: [
 				{ name: 'Users: view, map-roles', place: 'setting', note: 'For any user' },
 				{ name: 'Roles: map-role', place: 'setting', note: 'For reads-orders only' },
-				{ name: 'reads-orders, with its ID', place: 'setting', note: 'For the app’s configuration' }
+				{
+					name: 'reads-orders, with its ID',
+					place: 'setting',
+					note: 'For the app’s configuration'
+				},
+				{ name: 'kc-admin-api', place: 'setting', note: 'A scope that names the admin API' }
 			]
 		},
 		{

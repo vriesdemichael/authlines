@@ -567,6 +567,9 @@ export async function newSigningKey(admin: Admin, realm: string, on: boolean) {
 	});
 }
 
+/** The built-in scope a token for the admin API has to have, from Keycloak 26.8.2. */
+export const ADMIN_API_SCOPE = 'kc-admin-api';
+
 /**
  * Lets the app with no user look users up and give them one role, and nothing else, with the realm's
  * admin permissions (#183). Turned off again after, with the role it gave taken back, so that no other
@@ -578,6 +581,24 @@ export async function letTheServiceGiveOneRole(
 ): Promise<{ allowed: object; other: object } | null> {
 	const realmPath = `/realms/${LOCAL_REALM}`;
 	const realm = await admin.call<object>('GET', realmPath);
+	const [service] = await admin.call<{ id: string }[]>(
+		'GET',
+		`${realmPath}/clients?clientId=${SERVICE_CLIENT}`
+	);
+	// From 26.8.2 the admin API takes only a token with this scope, which also names it in the audience
+	// (CVE-2026-19688). Not there before, so on 26.8.1 there is nothing to give.
+	const scopes = await admin.call<{ id: string; name: string }[]>(
+		'GET',
+		`${realmPath}/client-scopes`
+	);
+	const forTheAdminApi = scopes.find(({ name }) => name === ADMIN_API_SCOPE);
+	if (forTheAdminApi) {
+		const defaults = `${realmPath}/clients/${service.id}/default-client-scopes`;
+		const has = (await admin.call<{ id: string }[]>('GET', defaults)).some(
+			({ id }) => id === forTheAdminApi.id
+		);
+		if (on !== has) await admin.call(on ? 'PUT' : 'DELETE', `${defaults}/${forTheAdminApi.id}`);
+	}
 	if (!on) {
 		const [them] = await admin.call<{ id: string }[]>(
 			'GET',
@@ -598,10 +619,6 @@ export async function letTheServiceGiveOneRole(
 	const [permissions] = await admin.call<{ id: string }[]>(
 		'GET',
 		`${realmPath}/clients?clientId=admin-permissions`
-	);
-	const [service] = await admin.call<{ id: string }[]>(
-		'GET',
-		`${realmPath}/clients?clientId=${SERVICE_CLIENT}`
 	);
 	const server = `${realmPath}/clients/${permissions.id}/authz/resource-server`;
 	const policy = await admin.call<{ id: string }>('POST', `${server}/policy/client`, {
@@ -706,19 +723,36 @@ export async function allowClientDocuments(admin: Admin, realm: string) {
 			}
 		]
 	});
-	// Its token has no roles, and so no audience, and an API that checks says "not for this API". There
-	// is no client to set it on, so an admin has to put it in a scope every client gets.
+}
+
+const EVERY_CLIENT_AUDIENCE = 'audience of the API';
+
+/**
+ * An app that points at a document gets a token with no roles, and so no audience, and an API that
+ * checks says "not for this API". From Keycloak 26.8.2 so does one that registers itself with an
+ * initial access token, which now gets Full Scope Disabled. There is no client to set it on before
+ * the app first asks, so an admin puts it in a scope every client gets. Off, it is taken out again,
+ * so every other run is on the realm's defaults.
+ */
+export async function audienceInEveryToken(admin: Admin, realm: string, on: boolean) {
 	const scopes = await admin.call<{ id: string; name: string }[]>(
 		'GET',
 		`/realms/${realm}/client-scopes`
 	);
 	const basic = scopes.find(({ name }) => name === 'basic');
-	await admin.call('POST', `/realms/${realm}/client-scopes/${basic?.id}/protocol-mappers/models`, {
-		name: 'audience of the API',
-		protocol: 'openid-connect',
-		protocolMapper: 'oidc-audience-mapper',
-		config: { 'included.custom.audience': API_AUDIENCE, 'access.token.claim': 'true' }
-	});
+	const models = `/realms/${realm}/client-scopes/${basic?.id}/protocol-mappers/models`;
+	const there = (await admin.call<{ id: string; name: string }[]>('GET', models)).find(
+		({ name }) => name === EVERY_CLIENT_AUDIENCE
+	);
+	if (there && !on) await admin.call('DELETE', `${models}/${there.id}`);
+	if (!there && on) {
+		await admin.call('POST', models, {
+			name: EVERY_CLIENT_AUDIENCE,
+			protocol: 'openid-connect',
+			protocolMapper: 'oidc-audience-mapper',
+			config: { 'included.custom.audience': API_AUDIENCE, 'access.token.claim': 'true' }
+		});
+	}
 }
 
 /**
@@ -883,6 +917,13 @@ export async function setUpFor(
 	}
 	await admin.call('PUT', `/realms/${realm}`, { revokeRefreshToken: settings.reuse === 'ends' });
 	if (realm === LOCAL_REALM) {
+		// The other provider's groups claim is on its client for every provider that uses it, linking
+		// included, so it goes for a run here too, not only for one with another provider.
+		await groupsBecomeRoles(
+			admin,
+			`/realms/${BROKERED_REALM}/identity-provider/instances/${UPSTREAM_REALM}`,
+			false
+		);
 		await linkingWith(admin, Boolean(settings.linkAccount));
 		await letTheApiExchange(
 			admin,
