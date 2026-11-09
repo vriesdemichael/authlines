@@ -58,9 +58,47 @@ describe('reading Kerberos off the wire', () => {
 		expect(body('ask-for-service-ticket')).toMatchObject({
 			'msg-type': 'TGS-REQ (12)',
 			// 00 01 00 00: bit 15 alone.
-			'kdc-options': ['canonicalize'],
-			// 0x769C7686, re-read with openssl after recording on 26.8.2
-			nonce: 1989965446
+			'kdc-options': ['canonicalize']
+		});
+	});
+
+	// One AS-REQ as recorded on 2026-11-09, kept here because a new run has a new nonce and time.
+	// Every value below is what openssl asn1parse read in these bytes.
+	it('reads what openssl reads in one AS-REQ, value for value', () => {
+		const asReq = Buffer.from(
+			'aoG2MIGzoQMCAQWiAwIBCqMaMBgwCqEEAgIAlqICBAAwCqEEAgIAlaICBACkgYowgYegBwMFAAAAABChEjAQoAMCAQGhCTAHGwVhbGljZaIOGwxFWEFNUExFLlRFU1SjITAfoAMCAQKhGDAWGwZrcmJ0Z3QbDEVYQU1QTEUuVEVTVKURGA8yMDI2MTExMDA3MjI0M1qnBgIEfsCJfagaMBgCARICARECARQCARMCARACARcCARkCARo=',
+			'base64'
+		);
+		expect(decodeKerberos(asReq)).toEqual({
+			// appl [10], pvno 05, msg-type 0A
+			'msg-type': 'AS-REQ (10)',
+			// INTEGER 96 and 95, each with an empty OCTET STRING
+			padata: [
+				{ 'padata-type': 'PA-AS-FRESHNESS (150)' },
+				{ 'padata-type': 'PA-REQ-ENC-PA-REP (149)' }
+			],
+			// 00 00 00 00 10: no unused bits, and bit 27 alone
+			'kdc-options': ['renewable-ok'],
+			// name-type 01 and one GENERALSTRING
+			cname: 'alice',
+			realm: 'EXAMPLE.TEST',
+			// name-type 02 and two GENERALSTRINGs
+			sname: 'krbtgt/EXAMPLE.TEST',
+			// GENERALIZEDTIME 20261110072243Z
+			till: '2026-11-10T07:22:43Z',
+			// INTEGER 7EC0897D
+			nonce: 2126547325,
+			// INTEGERs 12, 11, 14, 13, 10, 17, 19, 1A
+			etype: [
+				'aes256-cts-hmac-sha1-96 (18)',
+				'aes128-cts-hmac-sha1-96 (17)',
+				'aes256-cts-hmac-sha384-192 (20)',
+				'aes128-cts-hmac-sha256-128 (19)',
+				'des3-cbc-sha1 (16)',
+				'arcfour-hmac (23)',
+				'camellia128-cts-cmac (25)',
+				'camellia256-cts-cmac (26)'
+			]
 		});
 	});
 

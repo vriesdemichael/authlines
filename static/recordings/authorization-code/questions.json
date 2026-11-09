@@ -59,9 +59,9 @@
 			"after": {
 				"asked": true,
 				"lists": [
-					"User profile",
+					"Email address",
 					"User roles",
-					"Email address"
+					"User profile"
 				],
 				"audience": "account",
 				"hasRoles": true,
@@ -73,9 +73,9 @@
 				"first": {
 					"asked": true,
 					"lists": [
-						"User profile",
+						"Email address",
 						"User roles",
-						"Email address"
+						"User profile"
 					]
 				},
 				"second": {
@@ -121,7 +121,7 @@
 			"before": {
 				"hasName": true,
 				"hasEmail": true,
-				"scope": "profile email"
+				"scope": "email profile"
 			},
 			"after": {
 				"hasName": false,
@@ -143,6 +143,20 @@
 				"namesTheApi": true
 			},
 			"withoutTheRolesScope": {
+				"aud": null
+			}
+		},
+		"fullScopeAllowed": {
+			"before": {
+				"realmRoles": 3,
+				"serviceRoles": [
+					"account"
+				],
+				"aud": "account"
+			},
+			"after": {
+				"realmRoles": 0,
+				"serviceRoles": [],
 				"aud": null
 			}
 		},
@@ -643,6 +657,14 @@
 			"withHint": {
 				"status": 303,
 				"redirects": true
+			}
+		},
+		"claimToRole": {
+			"before": {
+				"hasRole": false
+			},
+			"after": {
+				"hasRole": true
 			}
 		},
 		"trustEmail": {
@@ -1270,6 +1292,18 @@
 				],
 				"missing": []
 			},
+			"full-scope-allowed": {
+				"found": [
+					"Full scope allowed"
+				],
+				"missing": []
+			},
+			"claim-to-role": {
+				"found": [
+					"Mapper type"
+				],
+				"missing": []
+			},
 			"audience": {
 				"found": [
 					"Audience"
@@ -1445,9 +1479,5 @@
 				"missing": []
 			}
 		}
-	},
-	"askedOn": {
-		"linkedTokens": "2026-11-09",
-		"scriptBehindThePage": "2026-11-09"
 	}
 }

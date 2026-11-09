@@ -32,6 +32,11 @@ import {
 	SECOND_API,
 	SECOND_API_CLIENT,
 	namesTheApi,
+	ADMIN_API_SCOPE,
+	groupsBecomeRoles,
+	letTheServiceGiveOneRole,
+	ROLE_FROM_GROUP,
+	withoutClaimToRole,
 	TRADE_REFRESH,
 	TRADE_REFRESH_ON,
 	setUpFor
@@ -513,6 +518,25 @@ async function behindTheNotes(browser: Browser, demo: Demo, admin: Admin) {
 	}
 
 	{
+		// What Full scope allowed takes out of a token, on a client of its own with no role given (#183).
+		const client = await freshClient(admin, 'note-full-scope');
+		const said = async () => {
+			const claims = claimsOf(
+				(await tokensFor(browser, demo, 'note-full-scope')).json.access_token
+			);
+			const realmAccess = claims.realm_access as { roles?: string[] } | undefined;
+			return {
+				realmRoles: realmAccess?.roles?.length ?? 0,
+				serviceRoles: Object.keys((claims.resource_access as object | undefined) ?? {}),
+				aud: claims.aud ?? null
+			};
+		};
+		const before = await said();
+		await change(client, { fullScopeAllowed: false });
+		answers.fullScopeAllowed = { before, after: await said() };
+	}
+
+	{
 		const client = await freshClient(admin, 'note-dpop');
 		const before = await tokensFor(browser, demo, 'note-dpop');
 		await change(client, { attributes: { 'dpop.bound.access.tokens': 'true' } });
@@ -848,6 +872,26 @@ async function storedTokenStatus(browser: Browser, demo: Demo, admin: Admin) {
 
 async function behindTheBrokeringNotes(browser: Browser, demo: Demo, admin: Admin) {
 	const onProvider = `/realms/${BROKERED_REALM}/identity-provider/instances/${UPSTREAM_REALM}`;
+
+	// What the Claim to Role mapper does: the same first login through the other provider, which says
+	// the user is in sales, without it and with it (#183). Before the redirect to it is taken off below.
+	const roleFromGroup = async () => {
+		await admin.forgetBrokeredUsers();
+		const { code } = await codeFor(browser, demo, BROKERED_REALM, CONFIDENTIAL_CLIENT);
+		const claims = claimsOf(
+			(await token(BROKERED_REALM, confidentialBody(code))).json.access_token
+		);
+		const roles = (claims.realm_access as { roles?: string[] } | undefined)?.roles ?? [];
+		return { hasRole: roles.includes(ROLE_FROM_GROUP) };
+	};
+	await groupsBecomeRoles(admin, onProvider, true);
+	await withoutClaimToRole(admin, onProvider);
+	const claimToRoleOff = await roleFromGroup();
+	await groupsBecomeRoles(admin, onProvider, true);
+	const claimToRoleOn = await roleFromGroup();
+	await groupsBecomeRoles(admin, onProvider, false);
+	await admin.forgetBrokeredUsers();
+
 	const provider = await admin.call<object>('GET', onProvider);
 	const setProvider = (changes: object) =>
 		admin.call('PUT', onProvider, { ...provider, ...changes });
@@ -915,7 +959,8 @@ async function behindTheBrokeringNotes(browser: Browser, demo: Demo, admin: Admi
 			before,
 			after: readableOff
 		},
-		brokerRedirector: { before: redirecting, after: notRedirecting, withHint }
+		brokerRedirector: { before: redirecting, after: notRedirecting, withHint },
+		claimToRole: { before: claimToRoleOff, after: claimToRoleOn }
 	};
 }
 
@@ -1302,8 +1347,59 @@ export async function questionsWithNoUser(admin: Admin) {
 		refreshForClientCredentials: {
 			before: { gotRefreshToken: Boolean(on.json.refresh_token) },
 			after: { gotRefreshToken: Boolean(withRefresh.json.refresh_token) }
-		}
+		},
+		...(await whenTheAppGivesARole(admin, ask))
 	};
+}
+
+/**
+ * What the admin API needs before the app with no user may look a user up there (#183): the realm's
+ * admin permissions, and from 26.8.2 a token with the kc-admin-api scope. Each taken away in turn.
+ */
+async function whenTheAppGivesARole(
+	admin: Admin,
+	ask: (clientId: string) => Promise<{ json: Record<string, string> }>
+) {
+	const realmPath = `/realms/${LOCAL_REALM}`;
+	const lookUp = async () => {
+		const { access_token } = (await ask(SERVICE_CLIENT)).json;
+		const found = await fetch(
+			`${KEYCLOAK}/admin${realmPath}/users?username=${USERNAME}&exact=true`,
+			{ headers: { authorization: `Bearer ${access_token}` } }
+		);
+		const claims = claimsOf(access_token);
+		return {
+			status: found.status,
+			scope: String(claims.scope).split(' ').includes(ADMIN_API_SCOPE),
+			namesTheAdminApi: [claims.aud].flat().includes(`${KEYCLOAK}/admin${realmPath}`)
+		};
+	};
+	await letTheServiceGiveOneRole(admin, true);
+	try {
+		const allowed = await lookUp();
+		const [service] = await admin.call<{ id: string }[]>(
+			'GET',
+			`${realmPath}/clients?clientId=${SERVICE_CLIENT}`
+		);
+		const scopes = await admin.call<{ id: string; name: string }[]>(
+			'GET',
+			`${realmPath}/client-scopes`
+		);
+		const forTheAdminApi = scopes.find(({ name }) => name === ADMIN_API_SCOPE);
+		const onTheClient = `${realmPath}/clients/${service.id}/default-client-scopes/${forTheAdminApi?.id}`;
+		await admin.call('DELETE', onTheClient);
+		const withoutTheScope = await lookUp();
+		await admin.call('PUT', onTheClient);
+		const realm = await admin.call<object>('GET', realmPath);
+		await admin.call('PUT', realmPath, { ...realm, adminPermissionsEnabled: false });
+		const withoutPermissions = await lookUp();
+		return {
+			adminApiScope: { before: withoutTheScope, after: allowed },
+			adminPermissions: { before: withoutPermissions, after: allowed }
+		};
+	} finally {
+		await letTheServiceGiveOneRole(admin, false);
+	}
 }
 
 /** What a server does in the device flow, including what is not on the way a run goes. */
