@@ -114,6 +114,8 @@ describe('constraints', () => {
 		const aSecondFactor = 2;
 		// The identity provider signs with a key the API has not fetched, on the plain flow (2026-11-08).
 		const aNewKey = 1;
+		// The identity provider's own PKCE to the other provider, with nothing else on (#182).
+		const pkceUpstream = 1;
 		expect(allValidSettings()).toBe(allValidSettings());
 		expect(Object.isFrozen(allValidSettings())).toBe(true);
 		expect(allValidSettings().every((settings) => Object.isFrozen(settings))).toBe(true);
@@ -140,7 +142,8 @@ describe('constraints', () => {
 				theImplicitFlow +
 				rolesFromGroups +
 				aSecondFactor +
-				aNewKey
+				aNewKey +
+				pkceUpstream
 		);
 	});
 

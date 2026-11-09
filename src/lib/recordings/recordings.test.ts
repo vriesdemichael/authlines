@@ -924,3 +924,20 @@ describe('every recording, made before a later setting existed', () => {
 		}
 	);
 });
+
+describe('PKCE on the leg to the other provider (#182)', () => {
+	it('is the identity provider’s own: a challenge made from the verifier it trades with', () => {
+		const recording = JSON.parse(
+			readFileSync('static/recordings/authorization-code/broker-pkce-upstream.json', 'utf8')
+		) as Recording;
+		const on = (step: string) => recording.messages.find((message) => message.step === step)!;
+		const asked = new URL(on('upstream-authorize').url!).searchParams;
+		const verifier = (on('upstream-token-request').body as Record<string, string>).code_verifier;
+		expect(asked.get('code_challenge_method')).toBe('S256');
+		expect(createHash('sha256').update(verifier).digest('base64url')).toBe(
+			asked.get('code_challenge')
+		);
+		// The app sent none of its own, so it is not the app's PKCE passed on.
+		expect(new URL(on('authorize').url!).searchParams.has('code_challenge')).toBe(false);
+	});
+});

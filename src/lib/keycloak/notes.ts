@@ -1038,7 +1038,15 @@ export const noteDefs: readonly NoteDef[] = [
 		id: 'upstream-pkce',
 		steps: ['upstream-authorize', 'upstream-token-request'],
 		title: 'Use PKCE',
-		text: 'Off on a new provider, and here: the request here had no code_challenge, and none in any recording here where the app sent one. Turned on with S256, it had one, and the app still got its tokens after a login through it.',
+		text: [
+			{
+				when: is('upstreamPkce', true),
+				text: 'Off on a new provider, and on here, with S256. The request here has a code_challenge the identity provider made, and the trade a code_verifier, whether or not the app uses PKCE with it.'
+			},
+			{
+				text: 'Off on a new provider, and here: the request here had no code_challenge, and none in any recording here where the app sent one. Turned on with S256, it had one, and the app still got its tokens after a login through it.'
+			}
+		],
 		when: plainBroker,
 		place: {
 			path: [

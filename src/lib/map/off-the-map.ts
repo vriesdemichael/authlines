@@ -175,6 +175,17 @@ export const offTheMap: readonly MapNode[] = [
 			'They can enter it first, with an account of their own. They get no token for themselves, but the device ends up logged in as them, and the user is told the user code is not valid. So it matters who can see the screen.'
 	}),
 	node({
+		id: 'pkce-to-the-other-provider',
+		alsoAskedAs: ['pkce upstream', 'pkce with the other provider', 'broker pkce'],
+		answer:
+			'Only if it is set up to. On the way there it is a client like any other, and its PKCE is its own setting, whatever the app does. The server recorded has it off on a new provider, and here it is on, with the challenge and the verifier on that leg.',
+		title: 'Does the identity provider use PKCE with the other provider?',
+		summary: 'Its own setting, whatever the app does.',
+		mode: 'advanced',
+		preset: 'broker-pkce-upstream',
+		step: 'upstream-authorize'
+	}),
+	node({
 		id: 'one-site-asks-for-the-password',
 		alsoAskedAs: [
 			'kerberos not working',
