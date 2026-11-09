@@ -1,24 +1,51 @@
 {
 	"preset": "on-a-device-says-no",
-	"keycloak": "26.8.1",
-	"recordedAt": "2026-11-02",
+	"keycloak": "26.8.2",
+	"recordedAt": "2026-11-09",
 	"settings": {
 		"oidc": false,
 		"consent": false,
 		"clientType": "public",
+		"registration": "manual",
 		"pkce": false,
+		"par": false,
 		"attacker": false,
+		"tokenThief": false,
+		"apiChecks": "proof",
 		"attackerUses": "themselves",
+		"attackerGets": "copy",
+		"registered": "exact",
 		"binding": "bearer",
 		"dpopNonce": false,
 		"broker": false,
+		"federation": false,
+		"kerberos": false,
+		"ticket": "sent",
+		"companies": false,
+		"customerSpeaks": "oidc",
+		"leaves": false,
 		"upstreamTokens": "off",
+		"upstreamReader": "app",
 		"apiToken": "good",
+		"exchange": false,
+		"exchangeGives": "token",
+		"groupRoles": false,
+		"rolesReach": "all",
+		"linkAccount": false,
+		"linkEnds": "linked",
 		"refresh": false,
 		"reuse": "keeps",
 		"sso": false,
 		"ssoAsks": "remembered",
 		"logout": false,
+		"logoutKeeps": "refresh",
+		"appRuns": "server",
+		"oldWay": false,
+		"implicit": false,
+		"secondFactor": "none",
+		"givesRole": false,
+		"keysChange": false,
+		"address": "registered",
 		"deviceEnds": "says-no",
 		"deviceAttack": "nobody"
 	},
@@ -289,18 +316,20 @@
 				"claims_parameter_supported": true,
 				"scopes_supported": [
 					"openid",
-					"organization",
-					"service_account",
 					"web-origins",
-					"roles",
-					"acr",
 					"offline_access",
+					"kc-admin-api",
+					"address",
+					"service_account",
 					"phone",
 					"profile",
-					"email",
-					"address",
 					"microprofile-jwt",
-					"basic"
+					"basic",
+					"email",
+					"roles",
+					"organization",
+					"acr",
+					"names-the-second-api"
 				],
 				"request_parameter_supported": true,
 				"request_uri_parameter_supported": true,
@@ -397,29 +426,29 @@
 			"body": {
 				"keys": [
 					{
-						"kid": "8tXH5F7nwgGQI8Oe-tcFX_G7xkvg5J6MIvXGl74qSGk",
-						"kty": "RSA",
-						"alg": "RSA-OAEP",
-						"use": "enc",
-						"x5c": [
-							"MIIClzCCAX8CBgGhm9ro/jANBgkqhkiG9w0BAQsFADAPMQ0wCwYDVQQDDARkZW1vMB4XDTI2MTEwMjEwNDExN1oXDTM2MTEwMjEwNDI1N1owDzENMAsGA1UEAwwEZGVtbzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAO2XOObLbz7j6dAftQ1Ytzp2VXumMSglobGC3eGqG/NBhpCrvC/QJNQIWYnrAAw69AFvOets8pDPhPPWcIz3+VujxxRcjLPrtedLaYkehW/37nKq81zsZGeiNa0EBuNsSCInQQotSvpE9GnovLaKtnu6bVHRM/Gh0MTtCFIjSZvxh1DTpO353chwpW9sJ5W35lR987lLfMO1Dde4lY7IXWAouPD8quMRe/udI+unldSwNBZ6sds6zYI6MtrVd2Cd27VAFcM6dzwbqQawHg7Vl+9G+DS8X/nxBIyH46kQVR9u9sI9ySVwLFilQnIpbvf51L2GMnUwbjBv2V016Q+XerECAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAEXCxeSVxK9RUdCE6jITztjb/MjstDJ3D+vayhW/+f7bVFfUjYpACqvanOnFmVkxeHhfpTjMx3wmj5FaYTElXUp0e8C9MRbNi7rChz49gJnF0s+QwpOPjopJS+48DFIlYcZSbDvaoj37aTN7POY4Dx1ztLP1D1cJ3M5ddsmzXpq6Gd3qXekrJs8NCxePgVV3bPgYkn8JpXSXWLtYeIWH9HdJj29upvwKyIv3gaYVUNmYpkVVl+/8snK2ula0wSYnyvIquY6n2NjtFOt3YFZhEKaP3DNzYl7pX5GEWsg5OOCStjPmyHv0F3yCd/ndiZwlseFZo+wpUoDvdULBbVKO+dA=="
-						],
-						"x5t": "ltPh3WGQXaTNA-CgoVK4qFErH1o",
-						"x5t#S256": "PDG2c3F_0J1QvHkj-0XyImDUy8eQhFQptHvBQ6cGwF4",
-						"n": "7Zc45stvPuPp0B-1DVi3OnZVe6YxKCWhsYLd4aob80GGkKu8L9Ak1AhZiesADDr0AW8562zykM-E89ZwjPf5W6PHFFyMs-u150tpiR6Fb_fucqrzXOxkZ6I1rQQG42xIIidBCi1K-kT0aei8toq2e7ptUdEz8aHQxO0IUiNJm_GHUNOk7fndyHClb2wnlbfmVH3zuUt8w7UN17iVjshdYCi48Pyq4xF7-50j66eV1LA0Fnqx2zrNgjoy2tV3YJ3btUAVwzp3PBupBrAeDtWX70b4NLxf-fEEjIfjqRBVH272wj3JJXAsWKVCcilu9_nUvYYydTBuMG_ZXTXpD5d6sQ",
-						"e": "AQAB"
-					},
-					{
-						"kid": "eAbxcddl9fwlNmgsyW9S_pFwSbJ9PYxe_aA0LPp2P-A",
+						"kid": "DZGRTqf5Y7P3duVi-ZErHwM7ppNeMNT_4L46QFajKjk",
 						"kty": "RSA",
 						"alg": "RS256",
 						"use": "sig",
 						"x5c": [
-							"MIIClzCCAX8CBgGhm9rnvjANBgkqhkiG9w0BAQsFADAPMQ0wCwYDVQQDDARkZW1vMB4XDTI2MTEwMjEwNDExN1oXDTM2MTEwMjEwNDI1N1owDzENMAsGA1UEAwwEZGVtbzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKov0WWLq1M7hSXOAbGyhK/xoWevjy4OOamSNeKLk84WPDVykzNNj7OEdBPw+1yB7ANNZRzGK0xmrwW/Te1CqKRi6V+bW0wmM3ctNHvfVcVgJgvZKc58RJChqBUEj9Xr3zK0JARItJzz7BBXHP4uyjJK2exIfEZF31m/H2vKNdoEHKTJWvWCWH8oNX8NBohrwuu2rPXc1V/kaWmHib9633RKWW721StKi5q4TSQAwqIreu6lIpfl/erxew9t9JAoK4CGSriw6Ad85rwIXyeI3cOKATisLCnFH+4Xgeb7cKnLpstYBvJRNJ2SbcaOAUuATu7jOcuK9qHg8wKF9YGPOdkCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAP5KRiRKr7B+xyFxfWODNOIsOYJt8wiQ1JrEg1E9ORohEUWObjL6wCyt338HGYzCCq69kKvhqSD3zdgvgPfT4RZyMUC6qXNiYyzi2tULyAt7rv1Qc/zDCIBQCR2NHY18z7WTqcV+k+4Isqgr6xCWK8D9pTCOZQdow2ASECrrr51jpq63bsrTGWgHCrm5ws9Kj48ziDN1eGobKvVPrOnzSq2ESu7ELvZBmlvSFH05HabFX+fYxqDtXQhmXeRbKlZuh/zQLcqsh6GlzD3b0tQcrfIvID18zTzlgBWzcPhKETKRb1HVkljhMXInAOieamZeesSf8zJ0zwWwparsaMDlxQA=="
+							"MIIClzCCAX8CBgGhvxkdPzANBgkqhkiG9w0BAQsFADAPMQ0wCwYDVQQDDARkZW1vMB4XDTI2MTEwOTA2NTU1NloXDTM2MTEwOTA2NTczNlowDzENMAsGA1UEAwwEZGVtbzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAOC1bQDlL/NNF4OZllMnw5pg+eV6dCCm008oVzCyl9L+OiuK6fLZi2nUQKSnWVvkNwTCuSqOhT6PdUkDc+4sIMRgsaEWLkTR+MVwgQBADBQkOMBMYzcP47ajXtlbLNvMxZ9hC9wRrZjoxt5Cls2bz4EVNtPmsV67PxI2zPt0ajYJJpVBmUTt7UdXv6MIEcSYQ7D9vTDS5siHMzLkJKbivFDEriibdENoAlLTQNxetuq8ZKJAtf/L7/c1HnFK6FuCY5khKMI+pEI1CXM0h2jN6dDt0JQQ05oklVESmjJYP4zcBK5WFPglhaUwu4wK5fqIQ99qnG7UlOgqDw7KVCiu2HkCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAraHvHxOcBaFlAqeOETfvg4cqJ5sfl251oyRKB9YdKWVRRkPYHq6ia28k18iKGNamb52LCOuVZ9C8fhavLNWrgLzRMp9botRZPCVJtrh+6paAeB9/O8RqjObzX+FUaxC+EbvNFWMjrMmqJSpnG/LvshG/jyZGcwvsZjYOveZ0Dl15hCzyhFV2aUJwNk6msJhO5dtKyQWm08qEfnAuTLjMNc3mOSv/z5RSaLpTCJ8cNXQ/w7cgtgZVvTDPGgDFr7jKIYtStFewPgZM+cm7yZ3dllSFAdvQ/k59ofz0nQfgQZK0JYOOjVinsuYPsuuK/rzQP+f8Iy7neYbm1jd3m0j5rQ=="
 						],
-						"x5t": "3Q1vL5b6Czqxa9_EY8sdQMc74rQ",
-						"x5t#S256": "UWeCWZRMXGV-iPBe751uVP00c1npOhR4g5cuxAjWj2c",
-						"n": "qi_RZYurUzuFJc4BsbKEr_GhZ6-PLg45qZI14ouTzhY8NXKTM02Ps4R0E_D7XIHsA01lHMYrTGavBb9N7UKopGLpX5tbTCYzdy00e99VxWAmC9kpznxEkKGoFQSP1evfMrQkBEi0nPPsEFcc_i7KMkrZ7Eh8RkXfWb8fa8o12gQcpMla9YJYfyg1fw0GiGvC67as9dzVX-RpaYeJv3rfdEpZbvbVK0qLmrhNJADCoit67qUil-X96vF7D230kCgrgIZKuLDoB3zmvAhfJ4jdw4oBOKwsKcUf7heB5vtwqcumy1gG8lE0nZJtxo4BS4BO7uM5y4r2oeDzAoX1gY852Q",
+						"x5t": "RrOcvvzDckdEZFvJpw39oT2e0r4",
+						"x5t#S256": "E6reQa2mS1DjnuTYrIPERRhlTT_ghQSLplIVni7H0P0",
+						"n": "4LVtAOUv800Xg5mWUyfDmmD55Xp0IKbTTyhXMLKX0v46K4rp8tmLadRApKdZW-Q3BMK5Ko6FPo91SQNz7iwgxGCxoRYuRNH4xXCBAEAMFCQ4wExjNw_jtqNe2Vss28zFn2EL3BGtmOjG3kKWzZvPgRU20-axXrs_EjbM-3RqNgkmlUGZRO3tR1e_owgRxJhDsP29MNLmyIczMuQkpuK8UMSuKJt0Q2gCUtNA3F626rxkokC1_8vv9zUecUroW4JjmSEowj6kQjUJczSHaM3p0O3QlBDTmiSVURKaMlg_jNwErlYU-CWFpTC7jArl-ohD32qcbtSU6CoPDspUKK7YeQ",
+						"e": "AQAB"
+					},
+					{
+						"kid": "rInD1x0RbaX3wb4qzPSJ7vTRfvuR_-ZM_YDlcQ2JvqM",
+						"kty": "RSA",
+						"alg": "RSA-OAEP",
+						"use": "enc",
+						"x5c": [
+							"MIIClzCCAX8CBgGhvxkdgjANBgkqhkiG9w0BAQsFADAPMQ0wCwYDVQQDDARkZW1vMB4XDTI2MTEwOTA2NTU1NloXDTM2MTEwOTA2NTczNlowDzENMAsGA1UEAwwEZGVtbzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKGNiUvXBgz3SpAr+Ivi7Y3GAEOdY1Bd5GZOTKxK4TcJ2kzd6yV7qeuH/Hor2RJhr1vH4OXGaKLmJ4j0D3AvlUCMI6iMe0N/2o+0XCoe8RzaEZd4/dFFCceujXdTwUYUSW25BDFamVXvARkCUwTh6h/6fLi1skwyJPlDoP1K1UMEtWMCneP28geSs1Tpgm58qovxp74Gi0BeNZSeJyAt/iMIY6mBBl2GF1uSUmIrFLAtMZE3w4GgilWVjxAwJFP7p0OZtqbvJ1ow54F6nrdKq8MoD0xtjeveUmr0GZ9EpKJO5qE+P/FC++jdekojzQsNb1HfbKX3cL7Gc3KSGpOM0V0CAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAGn6IkpaJOhDmgQoaxx/ZFhgYvgF93akfN4a0klxgU5eQ9TnmslSwE/iBYJHF/Mt6dVGoMGRSd0o+N0l1JwIlx8z9WJs4nUd0stDVQyebz2pTWxrvNy5FNd1gCEnDAN/k8C7WVXWvF5ob2a5Xqblcqd2625iMhT86cOAGJgx8LmAa3EK57tMOgE4G5xm2efZmb1WuVTrpmrUc0xlL546oz3VsAuJKQQlRyLjqg9Ugh2CBXZVwXPpTmZjxoN4b4d7YHjkOdtQfdmZmDtnpeJ7+/VzqcWBTX13f8KAEl/GgFxik+kYuG7m65BSqntOr+smrUgMavT5n9MYHzrMiu2SMlQ=="
+						],
+						"x5t": "A7fP32deYaZsck0b0A0JEfxq6EQ",
+						"x5t#S256": "qdyMYekOgYrwwAeSdAAfR873xy5hbu7Ps96MTwMMtDs",
+						"n": "oY2JS9cGDPdKkCv4i-LtjcYAQ51jUF3kZk5MrErhNwnaTN3rJXup64f8eivZEmGvW8fg5cZoouYniPQPcC-VQIwjqIx7Q3_aj7RcKh7xHNoRl3j90UUJx66Nd1PBRhRJbbkEMVqZVe8BGQJTBOHqH_p8uLWyTDIk-UOg_UrVQwS1YwKd4_byB5KzVOmCbnyqi_GnvgaLQF41lJ4nIC3-IwhjqYEGXYYXW5JSYisUsC0xkTfDgaCKVZWPEDAkU_unQ5m2pu8nWjDngXqet0qrwygPTG2N695SavQZn0Skok7moT4_8UL76N16SiPNCw1vUd9spfdwvsZzcpIak4zRXQ",
 						"e": "AQAB"
 					}
 				]
@@ -445,10 +474,10 @@
 				"content-type": "application/json"
 			},
 			"body": {
-				"device_code": "m4kK8OAhRMyBDaVeBKaY5-UpEKrcn7VHrHKJgB283_U",
-				"user_code": "ZJMX-QJPS",
+				"device_code": "54_82yin8ovgVvtStoD7idpOuNO3Wcir0gj-kVStTEI",
+				"user_code": "KRTL-QQSC",
 				"verification_uri": "http://localhost:18080/realms/demo/device",
-				"verification_uri_complete": "http://localhost:18080/realms/demo/device?user_code=ZJMX-QJPS",
+				"verification_uri_complete": "http://localhost:18080/realms/demo/device?user_code=KRTL-QQSC",
 				"expires_in": 600,
 				"interval": 5
 			}
@@ -463,7 +492,7 @@
 			},
 			"body": {
 				"grant_type": "urn:ietf:params:oauth:grant-type:device_code",
-				"device_code": "m4kK8OAhRMyBDaVeBKaY5-UpEKrcn7VHrHKJgB283_U",
+				"device_code": "54_82yin8ovgVvtStoD7idpOuNO3Wcir0gj-kVStTEI",
 				"client_id": "demo-device"
 			}
 		},
@@ -504,7 +533,7 @@
 				"content-type": "application/x-www-form-urlencoded"
 			},
 			"body": {
-				"device_user_code": "ZJMX-QJPS"
+				"device_user_code": "KRTL-QQSC"
 			}
 		},
 		{
@@ -512,14 +541,14 @@
 			"direction": "response",
 			"status": 302,
 			"headers": {
-				"location": "http://localhost:18080/realms/demo/login-actions/authenticate?client_id=demo-device&tab_id=jbE7FCEyReg&client_data=e30"
+				"location": "http://localhost:18080/realms/demo/login-actions/authenticate?client_id=demo-device&tab_id=XYw1u4a8OH4&client_data=e30"
 			}
 		},
 		{
 			"step": null,
 			"direction": "request",
 			"method": "GET",
-			"url": "http://localhost:18080/realms/demo/login-actions/authenticate?client_id=demo-device&tab_id=jbE7FCEyReg&client_data=e30",
+			"url": "http://localhost:18080/realms/demo/login-actions/authenticate?client_id=demo-device&tab_id=XYw1u4a8OH4&client_data=e30",
 			"headers": {}
 		},
 		{
@@ -535,7 +564,7 @@
 			"step": "device-submit-credentials",
 			"direction": "request",
 			"method": "POST",
-			"url": "http://localhost:18080/realms/demo/login-actions/authenticate?session_code=wRV4vd2IWvKQ_7kVTT4lU0ucLAAJg9Cb-kdWFpoZq94&execution=1b2c0e29-429c-4ec2-bf82-7fd6cd230d9a&client_id=demo-device&tab_id=jbE7FCEyReg&client_data=e30",
+			"url": "http://localhost:18080/realms/demo/login-actions/authenticate?session_code=aLom1ta8hJ0-Ir7ohbj9YvUIjvVBpjoYkKWCvH4QEZ4&execution=875f4a27-cf0f-4699-a9df-6ed4ea12d315&client_id=demo-device&tab_id=XYw1u4a8OH4&client_data=e30",
 			"headers": {
 				"content-type": "application/x-www-form-urlencoded"
 			},
@@ -550,14 +579,14 @@
 			"direction": "response",
 			"status": 302,
 			"headers": {
-				"location": "http://localhost:18080/realms/demo/login-actions/required-action?execution=OAUTH_GRANT&client_id=demo-device&tab_id=jbE7FCEyReg&client_data=e30"
+				"location": "http://localhost:18080/realms/demo/login-actions/required-action?execution=OAUTH_GRANT&client_id=demo-device&tab_id=XYw1u4a8OH4&client_data=e30"
 			}
 		},
 		{
 			"step": null,
 			"direction": "request",
 			"method": "GET",
-			"url": "http://localhost:18080/realms/demo/login-actions/required-action?execution=OAUTH_GRANT&client_id=demo-device&tab_id=jbE7FCEyReg&client_data=e30",
+			"url": "http://localhost:18080/realms/demo/login-actions/required-action?execution=OAUTH_GRANT&client_id=demo-device&tab_id=XYw1u4a8OH4&client_data=e30",
 			"headers": {}
 		},
 		{
@@ -573,12 +602,12 @@
 			"step": "device-consent-deny",
 			"direction": "request",
 			"method": "POST",
-			"url": "http://localhost:18080/realms/demo/login-actions/consent?client_id=demo-device&tab_id=jbE7FCEyReg&client_data=e30",
+			"url": "http://localhost:18080/realms/demo/login-actions/consent?client_id=demo-device&tab_id=XYw1u4a8OH4&client_data=e30",
 			"headers": {
 				"content-type": "application/x-www-form-urlencoded"
 			},
 			"body": {
-				"code": "oDoRivisyOS1EGnvqfqJF4DI-zeKfUBTxQgUUHGW44s",
+				"code": "8ZLNNfbzU2YtlYcvMt1-UYWEOgRwxwfnFpzJw5t5vug",
 				"cancel": ""
 			}
 		},
@@ -616,7 +645,7 @@
 			},
 			"body": {
 				"grant_type": "urn:ietf:params:oauth:grant-type:device_code",
-				"device_code": "m4kK8OAhRMyBDaVeBKaY5-UpEKrcn7VHrHKJgB283_U",
+				"device_code": "54_82yin8ovgVvtStoD7idpOuNO3Wcir0gj-kVStTEI",
 				"client_id": "demo-device"
 			}
 		},

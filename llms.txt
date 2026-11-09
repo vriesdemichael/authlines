@@ -1,6 +1,6 @@
 # Authlines
 
-> OAuth and OpenID Connect flows as sequence diagrams to step through, recorded from a real Keycloak 26.8.1, with who has seen what at each step.
+> OAuth and OpenID Connect flows as sequence diagrams to step through, recorded from a real Keycloak 26.8.2, with who has seen what at each step.
 
 An agent helping someone with their own system can link to the flow that matches it, on the step it is explaining, with their names on the parties. The names go after the #, so they never reach a server.
 
