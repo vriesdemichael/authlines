@@ -729,6 +729,16 @@ export const mapTracks: readonly MapTrack[] = [
 					summary: 'Yes, by sending you their code. It is called device code phishing.',
 					answer:
 						'Yes. They start this flow on a device of their own and send you the address and the user code. If you log in and agree, the tokens go to them. The page asking you to agree can name an app you know, so ask whether you started this.'
+				}),
+				node({
+					id: 'device-someone-reads-it',
+					flow: 'device',
+					preset: 'on-a-device-read',
+					step: 'read-code-refused',
+					title: 'What if someone else can see the user code on the screen?',
+					summary: 'They can get there first, and the device ends up logged in as them.',
+					answer:
+						'They can enter it first, with an account of their own. They get no token for themselves, but the device ends up logged in as them, and the user is told the user code is not valid. So it matters who can see the screen.'
 				})
 			]
 		]

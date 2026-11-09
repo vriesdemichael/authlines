@@ -162,18 +162,6 @@ export const offTheMap: readonly MapNode[] = [
 		preset: 'gives-a-role',
 		step: 'service-gives-role'
 	}),
-	// Off the map since 2026-11-08, for Kerberos (#148), as the map's budget is 54. The device flow's
-	// own choice of someone misusing it still brings this on, in simple mode too.
-	node({
-		id: 'device-someone-reads-it',
-		flow: 'device',
-		preset: 'on-a-device-read',
-		step: 'read-code-refused',
-		title: 'What if someone else can see the user code on the screen?',
-		summary: 'They can get there first, and the device ends up logged in as them.',
-		answer:
-			'They can enter it first, with an account of their own. They get no token for themselves, but the device ends up logged in as them, and the user is told the user code is not valid. So it matters who can see the screen.'
-	}),
 	node({
 		id: 'pkce-to-the-other-provider',
 		alsoAskedAs: ['pkce upstream', 'pkce with the other provider', 'broker pkce'],
