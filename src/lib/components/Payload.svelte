@@ -16,6 +16,7 @@
 		type Line,
 		type RunValue
 	} from '#lib/recordings/wire.ts';
+	import { REST_MS } from '#lib/hint.svelte.ts';
 	import { citeText, citeUrl, keyWhy, type KeyPlace } from '#lib/recordings/key-why.ts';
 
 	interface Props {
@@ -92,6 +93,16 @@
 	}
 	let keyShown = $state<string | null>(null);
 	let keyKept = $state<string | null>(null);
+	// As everywhere else, only once the pointer rests on it, so passing over the traffic shows nothing.
+	let resting: ReturnType<typeof setTimeout> | undefined;
+	function restOn(id: string) {
+		clearTimeout(resting);
+		resting = setTimeout(() => (keyShown = id), REST_MS);
+	}
+	function leaveKey() {
+		clearTimeout(resting);
+		keyShown = null;
+	}
 	const keyOpen = (id: string) => keyKept === id || keyShown === id;
 	function keyKey(event: KeyboardEvent) {
 		if (event.key !== 'Escape' || keyKept === null) return;
@@ -168,8 +179,8 @@
 			data-key={key}
 			aria-expanded={keyOpen(id)}
 			aria-controls={`key-why-${id}`}
-			onmouseenter={() => (keyShown = id)}
-			onmouseleave={() => (keyShown = null)}
+			onmouseenter={() => restOn(id)}
+			onmouseleave={leaveKey}
 			onfocus={() => (keyShown = id)}
 			onblur={() => (keyShown = null)}
 			onkeydown={keyKey}

@@ -1,5 +1,8 @@
 <script lang="ts">
+	import { terms } from '#lib/flow/glossary.ts';
+	import { firstSentence, hint } from '#lib/hint.svelte.ts';
 	import { readAddress } from '#lib/recordings/address.ts';
+	import { keyWhy } from '#lib/recordings/key-why.ts';
 
 	interface Props {
 		/** As it was recorded. Nothing when these settings were not, and it is not made up. */
@@ -49,11 +52,16 @@
 					class="part"
 					class:marked={part.marked}
 					data-parameter={part.name}
-					title={part.whole}
 					>{separator(index)}{#if part.term}<button
 							type="button"
+							use:hint={firstSentence(terms[part.term].explains)}
 							onclick={() => onterm?.(part.term!)}>{part.name}</button
-						>{:else}{part.name}{/if}={part.value}</span
+						>{:else}<span use:hint={keyWhy(part.name, { where: 'wire' })?.says}>{part.name}</span
+						>{/if}=<span
+						class="value"
+						data-whole={part.whole}
+						use:hint={part.whole !== part.value ? part.whole : undefined}>{part.value}</span
+					></span
 				>{/each}{#if read.left}<span class="left">{read.parts.length ? '&' : '?'}…</span>{/if}
 		{:else}
 			<span class="none" data-testid="page-no-address" data-recorded={recorded}>

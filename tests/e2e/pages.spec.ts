@@ -26,7 +26,8 @@ test.describe('what a person sees in their browser', () => {
 		await open(page, 'mode=simple&step=callback');
 		await expect(address(page)).toContainText('localhost:9100/callback');
 		await expect(parameter(page, 'code')).toHaveClass(/marked/);
-		await expect(parameter(page, 'code')).toHaveAttribute('title', /.{20,}/);
+		// The whole value, which the pointer resting on it shows, where the address has only its start.
+		await expect(parameter(page, 'code').locator('.value')).toHaveAttribute('data-whole', /.{20,}/);
 		await expect(picture(page)).toHaveCount(0);
 		await expect(outline(page)).toContainText('what came back is in it');
 	});

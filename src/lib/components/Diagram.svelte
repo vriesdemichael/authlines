@@ -13,7 +13,9 @@
 	import { interpolate, toFrame, TRANSITION_MS, type Frame } from '#lib/diagram/motion.ts';
 	import type { Lit } from '#lib/flow/explain.ts';
 	import { sees } from '#lib/flow/eyes.ts';
-	import { artifacts, type ArtifactId } from '#lib/flow/vocabulary.ts';
+	import { artifacts, whyOf, type ArtifactId } from '#lib/flow/vocabulary.ts';
+	import { firstSentence, hint } from '#lib/hint.svelte.ts';
+	import { keyWhy } from '#lib/recordings/key-why.ts';
 
 	interface Props {
 		layout: DiagramLayout;
@@ -38,6 +40,8 @@
 		fullSize?: boolean;
 		onselect?: (step: string) => void;
 		onexplainlifeline?: (id: string) => void;
+		/** What a party is, in a sentence, for when the pointer rests on its head. */
+		laneSays?: (id: string) => string | undefined;
 		/** A right-click or a long press on a head, to give that party a name of its own (#168). */
 		onrenamelifeline?: ((id: string) => void) | null;
 		onexplainartifact?: (id: ArtifactId) => void;
@@ -58,6 +62,7 @@
 		fullSize = false,
 		onselect,
 		onexplainlifeline,
+		laneSays,
 		onrenamelifeline = null,
 		onexplainartifact
 	}: Props = $props();
@@ -65,6 +70,12 @@
 	// A press held on a touch screen is how a phone right-clicks, and moving the finger is not one.
 	const LONG_PRESS_MS = 550;
 	const STILL_ENOUGH = 10;
+	/** What a chip on a message is, in a sentence: a thing it carries, or a parameter. */
+	function chipSays(text: string, artifact: ArtifactId | undefined) {
+		if (artifact) return firstSentence(artifacts[artifact].explains);
+		return whyOf({ name: text }) ?? keyWhy(text.split('=')[0], { where: 'wire' })?.says;
+	}
+
 	let pressing: ReturnType<typeof setTimeout> | undefined;
 	let pressedAt = { x: 0, y: 0 };
 	const stopPressing = () => clearTimeout(pressing);
@@ -273,6 +284,7 @@
 						role="button"
 						tabindex={lane.leaving ? -1 : 0}
 						aria-describedby={`seen-${lane.id}`}
+						use:hint={lane.leaving ? undefined : laneSays?.(lane.id)}
 						onclick={() => {
 							// On its way out, so there is nothing left to explain.
 							if (!lane.leaving) onexplainlifeline?.(lane.id);
@@ -369,6 +381,7 @@
 										class:landing={travelling && landing.has(`${lane.id}:${chip.artifact}`)}
 										data-artifact={chip.artifact}
 										data-held={`${lane.id}:${chip.artifact}`}
+										use:hint={firstSentence(artifacts[chip.artifact].explains)}
 										onclick={(event) => {
 											event.stopPropagation();
 											onexplainartifact?.(chip.artifact);
@@ -551,6 +564,7 @@
 							style:opacity={chip.opacity}
 							data-chip={chip.leaving ? undefined : chip.id}
 							data-artifact={chip.artifact}
+							use:hint={chip.leaving ? undefined : chipSays(chip.text, chip.artifact)}
 							role={chip.artifact ? 'button' : undefined}
 							tabindex={chip.artifact ? -1 : undefined}
 							onclick={() => {

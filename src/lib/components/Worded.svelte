@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Segment } from '#lib/flow/glossary.ts';
+	import { firstSentence, hint } from '#lib/hint.svelte.ts';
 
 	interface Props {
 		segments: readonly Segment[];
@@ -21,7 +22,13 @@
 	{#if segment.term && onterm}
 		{@const id = segment.term.id}
 		<span class="together"
-			><button type="button" class="term" data-term={id} onclick={() => onterm(id)}>
+			><button
+				type="button"
+				class="term"
+				data-term={id}
+				use:hint={firstSentence(segment.term.explains)}
+				onclick={() => onterm(id)}
+			>
 				{segment.text}
 			</button>{stuckTo(index)}</span
 		>

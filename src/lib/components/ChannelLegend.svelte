@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { channels, type Channel } from '#lib/flow/vocabulary.ts';
+	import { hint } from '#lib/hint.svelte.ts';
 
 	interface Props {
 		present: readonly Channel[];
@@ -13,7 +14,7 @@
 
 <ul data-testid="channel-legend">
 	{#each shown as channel (channel)}
-		<li title={channels[channel].explains}>
+		<li use:hint={channels[channel].explains}>
 			<svg viewBox="0 0 28 8" aria-hidden="true" class={channel}>
 				<line x1="1" x2="27" y1="4" y2="4" />
 			</svg>

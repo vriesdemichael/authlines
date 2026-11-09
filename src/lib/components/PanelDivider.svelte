@@ -4,6 +4,8 @@
 	 * the maintainer asked on 2026-11-09 because the raw traffic was too narrow to read. It is a
 	 * separator a keyboard can move too, by the arrow keys, and Home puts it back.
 	 */
+	import { hint } from '#lib/hint.svelte.ts';
+
 	interface Props {
 		/** How wide the panel on its right is, in pixels. */
 		width: number;
@@ -67,7 +69,7 @@
 	aria-valuenow={width}
 	tabindex="0"
 	data-testid="panel-divider"
-	title="Drag to make the step wider or narrower. Double-click to put it back."
+	use:hint={'Drag to make the step wider or narrower. Double-click to put it back.'}
 	onpointerdown={down}
 	onpointermove={move}
 	onpointerup={up}

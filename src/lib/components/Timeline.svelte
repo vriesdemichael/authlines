@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { hint } from '#lib/hint.svelte.ts';
 	import type { Part } from '#lib/flow/model.ts';
 
 	interface Props {
@@ -38,7 +39,7 @@
 >
 	{#each parts as part (part.label)}
 		<div class="part" class:here={part === here} style:flex-grow={part.steps.length}>
-			<span class="name" title={part.why} data-part={part.label} data-jump={part.steps[0]}>
+			<span class="name" use:hint={part.why} data-part={part.label} data-jump={part.steps[0]}>
 				{part.label}
 			</span>
 			<div class="ticks">
@@ -50,7 +51,7 @@
 						class:current={number === position}
 						class:waiting={number === position && waiting !== null}
 						style:--wait={number === position && waiting !== null ? `${waiting}ms` : undefined}
-						title={`Step ${number}`}
+						use:hint={`Step ${number}`}
 						data-tick={step}
 						data-jump={step}
 					></span>

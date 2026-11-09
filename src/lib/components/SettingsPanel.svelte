@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { hint } from '#lib/hint.svelte.ts';
 	import { tick } from 'svelte';
 	import {
 		defaultSettings,
@@ -125,7 +126,7 @@
 				<legend>{simple ? (def.simple?.label ?? def.label) : def.label}</legend>
 				{#each def.options.filter((option) => !simple || !option.advanced || settings[id] === option.value) as option (option.value)}
 					{@const blocked = blockedBy(id, option.value)}
-					<label class:blocked title={blocked}>
+					<label class:blocked use:hint={blocked}>
 						<input
 							type="radio"
 							name={id}

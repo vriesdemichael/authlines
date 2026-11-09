@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import '../app.css';
+	import Hint from '#lib/components/Hint.svelte';
 	import SearchDialog from '#lib/components/SearchDialog.svelte';
 	import type { Result } from '#lib/search/search.ts';
 	import { INDEXABLE } from '#lib/site.ts';
@@ -37,3 +38,4 @@
 {@render children()}
 
 <SearchDialog hrefOf={resultHref} mapHref={resolve('/')} />
+<Hint />
