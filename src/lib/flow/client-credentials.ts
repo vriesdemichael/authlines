@@ -154,7 +154,7 @@ export const clientCredentials: DiagramDef = {
 			plain: 'The app looks the user up',
 			label: 'GET /admin/…/users',
 			concept:
-				'The app sends its own token to the identity provider’s admin API, which is the server’s own and not part of OAuth. It may look users up, so it finds the one it means.',
+				'The app sends its own token to the identity provider’s admin API, which is the server’s own and not part of OAuth. The token names that API in its audience, which it checks. The app may look users up, so it finds the one it means.',
 			fields: [
 				{ name: 'username', place: 'query' },
 				{ name: 'exact', place: 'query' },

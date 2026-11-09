@@ -124,6 +124,34 @@ describe('the weekly check of a recording', () => {
 		});
 		expect(shapeDifferences(shapeOf(at('one')), shapeOf(at('two')))).toEqual([]);
 	});
+
+	it('does not mind the ID the admin API gave a user, and still minds the rest of the path', () => {
+		const at = (path: string) => ({
+			...plain,
+			messages: [
+				{
+					step: 'service-gives-role',
+					direction: 'request' as const,
+					method: 'POST',
+					url: `http://localhost/admin/realms/demo/users/${path}`,
+					headers: {}
+				}
+			]
+		});
+		const user = (id: string) => `${id}/role-mappings/realm`;
+		expect(
+			shapeDifferences(
+				shapeOf(at(user('53f14a89-3147-4a4d-ac7a-d6387786c471'))),
+				shapeOf(at(user('cc15ec95-1182-47ec-9e3a-098f7d8d772a')))
+			)
+		).toEqual([]);
+		expect(
+			shapeDifferences(
+				shapeOf(at(user('53f14a89-3147-4a4d-ac7a-d6387786c471'))),
+				shapeOf(at('53f14a89-3147-4a4d-ac7a-d6387786c471/role-mappings/clients'))
+			)
+		).not.toEqual([]);
+	});
 });
 
 describe('the weekly check of what the notes say', () => {

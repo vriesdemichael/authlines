@@ -786,8 +786,9 @@ export class Demo {
 			`${admin}/users?username=${USERNAME}&exact=true`,
 			bearer
 		);
-		const [them] = jsonOf<{ id: string }[]>(found.text);
-		if (!them) throw new Error(`No user: ${found.text}`);
+		const users = jsonOf<unknown>(found.text);
+		const [them] = Array.isArray(users) ? (users as { id: string }[]) : [];
+		if (!them) throw new Error(`No user: ${found.status} ${found.text}`);
 		const roles = `${admin}/users/${them.id}/role-mappings/realm`;
 		if (!this.rolesToGive) throw new Error('No roles were handed to the app');
 		const given = await callWithJson(run, ['gives-role', 'role-given'], 'POST', roles, bearer, [

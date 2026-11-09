@@ -1,6 +1,6 @@
 # Authlines: links for an AI agent
 
-Authlines draws OAuth and OpenID Connect flows as sequence diagrams, recorded from a real Keycloak 26.8.1. If you are an agent helping someone with their own system, you can link to the flow and settings that match it, open it on the step you are explaining, and put their names on the parties. They get a diagram to step through, with who has seen what, and the requests a real server sent.
+Authlines draws OAuth and OpenID Connect flows as sequence diagrams, recorded from a real Keycloak 26.8.2. If you are an agent helping someone with their own system, you can link to the flow and settings that match it, open it on the step you are explaining, and put their names on the parties. They get a diagram to step through, with who has seen what, and the requests a real server sent.
 
 Nothing here contacts their system. You describe it with a link, and the site draws its own recording with their names on it.
 

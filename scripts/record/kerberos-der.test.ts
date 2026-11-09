@@ -59,8 +59,8 @@ describe('reading Kerberos off the wire', () => {
 			'msg-type': 'TGS-REQ (12)',
 			// 00 01 00 00: bit 15 alone.
 			'kdc-options': ['canonicalize'],
-			// 0x13DBE632
-			nonce: 333178418
+			// 0x769C7686, re-read with openssl after recording on 26.8.2
+			nonce: 1989965446
 		});
 	});
 

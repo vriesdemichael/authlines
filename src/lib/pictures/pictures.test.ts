@@ -517,9 +517,13 @@ describe('what a token says (#200)', () => {
 		// The values change with each run, so they are held to it in kind, and the names in full.
 		expect(shape(RECORDED.access)).toEqual(shape(claimsIn('access_token')));
 		expect(shape(RECORDED.id)).toEqual(shape(claimsIn('id_token')));
-		for (const name of ['iss', 'aud', 'azp', 'scope', 'acr', 'typ'] as const) {
+		// A scope is a list in which the order does not matter (RFC 6749 section 3.3), and a server may
+		// give it in another order on another run, so it is held to the recording as a set.
+		const words = (scope: unknown) => String(scope).split(' ').sort();
+		for (const name of ['iss', 'aud', 'azp', 'acr', 'typ'] as const) {
 			expect(RECORDED.access[name], name).toEqual(claimsIn('access_token')[name]);
 		}
+		expect(words(RECORDED.access.scope)).toEqual(words(claimsIn('access_token').scope));
 		expect(RECORDED.id.aud).toEqual(claimsIn('id_token').aud);
 		// And the token an app got for itself, from its own recording.
 		const service = (
@@ -529,9 +533,10 @@ describe('what a token says (#200)', () => {
 			Buffer.from(String(service.access_token).split('.')[1], 'base64url').toString()
 		) as Record<string, unknown>;
 		expect(shape(RECORDED.service)).toEqual(shape(itself));
-		for (const name of ['azp', 'client_id', 'preferred_username', 'scope'] as const) {
+		for (const name of ['azp', 'client_id', 'preferred_username'] as const) {
 			expect(RECORDED.service[name], name).toEqual(itself[name]);
 		}
+		expect(words(RECORDED.service.scope)).toEqual(words(itself.scope));
 		// No refresh token comes with it, and nothing about a login.
 		expect(service.refresh_token).toBeUndefined();
 		expect(itself.sid).toBeUndefined();

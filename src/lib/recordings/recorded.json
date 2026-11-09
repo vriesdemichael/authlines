@@ -1,91 +1,6 @@
 {
-	"keycloak": "26.8.1",
-	"recordedAt": "2026-11-01",
-	"flags": {
-		"dpop": {
-			"type": "DEFAULT",
-			"enabled": true
-		},
-		"identity-brokering-api:v1": {
-			"type": "DEFAULT",
-			"enabled": true
-		},
-		"identity-brokering-api:v2": {
-			"type": "DISABLED_BY_DEFAULT",
-			"enabled": false
-		},
-		"cimd": {
-			"type": "EXPERIMENTAL",
-			"enabled": false
-		},
-		"token-exchange-standard:v2": {
-			"type": "DEFAULT",
-			"enabled": true
-		}
-	},
-	"recordedOn": {
-		"attack-at-the-app-oidc": "2026-11-02",
-		"attack-at-the-app-pkce": "2026-11-02",
-		"attack-at-the-app": "2026-11-02",
-		"as-itself-dpop": "2026-11-08",
-		"as-itself": "2026-11-08",
-		"on-a-device": "2026-11-02",
-		"on-a-device-oidc": "2026-11-02",
-		"refresh-public-ends": "2026-11-02",
-		"api-no-token": "2026-11-02",
-		"on-a-device-says-no": "2026-11-02",
-		"on-a-device-runs-out": "2026-11-02",
-		"on-a-device-sent": "2026-11-02",
-		"on-a-device-sent-says-no": "2026-11-02",
-		"on-a-device-sent-runs-out": "2026-11-02",
-		"on-a-device-read": "2026-11-02",
-		"address-refused": "2026-11-02",
-		"browser-app": "2026-11-02",
-		"in-the-page": "2026-11-02",
-		"the-old-way": "2026-11-02",
-		"registers-itself": "2026-11-02",
-		"points-at-a-document": "2026-11-02",
-		"in-a-directory": "2026-11-03",
-		"behind-the-page": "2026-11-03",
-		"companies": "2026-11-03",
-		"companies-saml": "2026-11-03",
-		"companies-leaves": "2026-11-03",
-		"companies-oidc-leaves": "2026-11-03",
-		"dpop-thief": "2026-11-03",
-		"dpop-thief-bearer-only": "2026-11-03",
-		"their-link": "2026-11-03",
-		"their-link-any": "2026-11-03",
-		"their-link-any-public": "2026-11-03",
-		"their-link-any-public-pkce": "2026-11-03",
-		"par": "2026-11-04",
-		"par-public-pkce": "2026-11-04",
-		"exchange": "2026-11-04",
-		"exchange-oidc": "2026-11-04",
-		"exchange-refresh": "2026-11-05",
-		"exchange-refresh-oidc": "2026-11-05",
-		"upstream-v2-api": "2026-11-05",
-		"upstream-v2-refused": "2026-11-05",
-		"link-account": "2026-11-05",
-		"link-cancelled": "2026-11-05",
-		"refresh-broker-pkce": "2026-11-05",
-		"points-at-a-document-oidc": "2026-11-05",
-		"points-at-a-document-broker": "2026-11-05",
-		"sso-broker-pkce": "2026-11-05",
-		"exchange-broker": "2026-11-05",
-		"logout-offline": "2026-11-07",
-		"on-their-computer": "2026-11-05",
-		"on-their-computer-oidc": "2026-11-05",
-		"broker": "2026-11-05",
-		"implicit": "2026-11-08",
-		"broker-groups": "2026-11-08",
-		"broker-groups-given": "2026-11-08",
-		"one-time-code": "2026-11-08",
-		"passkey": "2026-11-08",
-		"new-key": "2026-11-08",
-		"gives-a-role": "2026-11-08",
-		"kerberos": "2026-11-08",
-		"kerberos-no-ticket": "2026-11-08"
-	},
+	"keycloak": "26.8.2",
+	"recordedAt": "2026-11-09",
 	"flows": {
 		"authorization-code": {
 			"presets": [
@@ -395,5 +310,32 @@
 				"sent-token-response"
 			]
 		}
+	},
+	"flags": {
+		"cimd": {
+			"type": "EXPERIMENTAL",
+			"enabled": false
+		},
+		"dpop": {
+			"type": "DEFAULT",
+			"enabled": true
+		},
+		"identity-brokering-api:v1": {
+			"type": "DEFAULT",
+			"enabled": true
+		},
+		"identity-brokering-api:v2": {
+			"type": "DISABLED_BY_DEFAULT",
+			"enabled": false
+		},
+		"token-exchange-standard:v2": {
+			"type": "DEFAULT",
+			"enabled": true
+		}
+	},
+	"recordedOn": {
+		"behind-the-page": "2026-11-09",
+		"link-account": "2026-11-09",
+		"link-cancelled": "2026-11-09"
 	}
 }
