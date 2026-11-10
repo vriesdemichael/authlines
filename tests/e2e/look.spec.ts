@@ -343,6 +343,54 @@ test.describe('the diagram, where one thing stands out (#63)', () => {
 		await expect(band).toHaveClass(/scrolled/);
 	});
 
+	// Content that does not fit its layout is one of the signs of a generated site (#231).
+	for (const [width, height] of [
+		[1280, 720],
+		[1440, 900]
+	]) {
+		test(`cuts nothing short at ${width}x${height}`, async ({ page }) => {
+			await page.setViewportSize({ width, height });
+			// A long value on the wire is shortened on purpose, says all of it where the pointer rests, and
+			// is whole when read large, so it is not something that did not fit.
+			const cut = () =>
+				page.evaluate(() =>
+					[...document.querySelectorAll('body *')]
+						.filter(
+							(element) =>
+								!element.closest(
+									'[data-testid="payload"], [data-testid="page-window"], [data-testid="run-values"]'
+								)
+						)
+						.filter((element) => {
+							const style = getComputedStyle(element);
+							return (
+								style.textOverflow === 'ellipsis' &&
+								style.display !== 'none' &&
+								element.scrollWidth > element.clientWidth + 1
+							);
+						})
+						.map((element) => element.textContent?.trim().slice(0, 60))
+				);
+			for (const search of ['mode=simple', 'mode=advanced&step=callback', 'mode=advanced&oidc=1']) {
+				await open(page, search);
+				expect(await cut(), search).toEqual([]);
+			}
+			await page.goto('./');
+			await page.getByTestId('living').waitFor();
+			expect(await cut(), 'home').toEqual([]);
+		});
+	}
+
+	test('fits the diagram on the home screen to what it shows', async ({ page }) => {
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await page.goto('./');
+		const living = page.getByTestId('living');
+		await living.waitFor();
+		// The old way has four messages, and no room is left empty under them.
+		const box = (await living.boundingBox())!;
+		expect(box.height).toBeLessThan(700);
+	});
+
 	test('keeps the words of a message together however they wrap', async ({ page }) => {
 		await page.setViewportSize({ width: 1024, height: 700 });
 		await open(page, 'mode=simple&sso=1&step=second-authorize');

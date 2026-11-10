@@ -208,25 +208,25 @@
 		background: none;
 		color: var(--muted);
 		font: inherit;
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 		text-decoration: underline;
 		cursor: pointer;
 	}
 
 	h3 {
 		margin: 0 0 6px;
-		font-size: 13px;
+		font-size: var(--size-ui);
 	}
 
 	p {
 		margin: 0 0 6px;
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 	}
 
 	ul {
 		margin: 0;
 		padding-left: 16px;
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 	}
 
 	.answer {
@@ -234,7 +234,7 @@
 	}
 
 	.copy button {
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 
 	.copy span {
@@ -246,18 +246,18 @@
 		margin: 0 0 6px;
 		overflow-x: auto;
 		font-family: var(--mono);
-		font-size: 11.5px;
+		font-size: var(--size-small);
 	}
 
 	.origin {
 		margin-top: 8px;
 		color: var(--muted);
-		font-size: 11.5px;
+		font-size: var(--size-small);
 	}
 
 	/* Where the names on the diagram and the recorded values part, said once above the traffic. */
 	.seam {
 		margin: 0 0 8px;
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 </style>

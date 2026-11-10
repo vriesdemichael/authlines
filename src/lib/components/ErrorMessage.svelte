@@ -40,7 +40,7 @@
 
 	h1 {
 		margin: 0 0 8px;
-		font-size: 24px;
+		font-size: var(--size-headline);
 	}
 
 	.actions {
@@ -50,8 +50,8 @@
 	}
 
 	.again {
-		background: var(--accent);
-		border-color: var(--accent);
+		background: var(--here);
+		border-color: var(--here);
 		color: var(--on-tone);
 		font-weight: 600;
 	}

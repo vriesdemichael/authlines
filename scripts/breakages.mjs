@@ -775,8 +775,26 @@ export const breakages = [
 	{
 		name: 'look: another hue creeps in',
 		file: 'src/app.css',
-		from: '--remembers: light-dark(#5a5f52, #c5c9b8);',
-		to: '--remembers: light-dark(#5a5f52, #c5c9b8);\n\t--louder: light-dark(#ff0000, #ff0000);'
+		from: '--remembers: light-dark(#575b44, #c9ceb4);',
+		to: '--remembers: light-dark(#575b44, #c9ceb4);\n\t--louder: light-dark(#ff0000, #ff0000);'
+	},
+	{
+		name: 'look: where you are gets a hue again',
+		file: 'src/app.css',
+		from: '--here: light-dark(#141720, #eceef3);',
+		to: '--here: light-dark(#3b37d6, #a5aeff);'
+	},
+	{
+		name: 'look: a size of its own creeps in',
+		file: 'src/lib/components/StepDetail.svelte',
+		from: 'font-size: var(--size-title);',
+		to: 'font-size: 17.5px;'
+	},
+	{
+		name: 'look: a pill creeps in',
+		file: 'src/lib/components/ExplainDialog.svelte',
+		from: 'border-radius: var(--radius);',
+		to: 'border-radius: 999px;'
 	},
 	{
 		name: 'look: what just changed gets a colour of its own again',

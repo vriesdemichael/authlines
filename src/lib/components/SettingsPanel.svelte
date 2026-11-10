@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { hint } from '#lib/hint.svelte.ts';
+	import { firstSentence, hint } from '#lib/hint.svelte.ts';
 	import { tick } from 'svelte';
 	import {
 		defaultSettings,
@@ -108,22 +108,35 @@
 {/if}
 {#each offered as id (id)}
 	{@const def = defOf(id)}
-	<section data-setting={id} class="beside-the-switch" aria-describedby={`about-${id}`}>
+	{@const label = simple ? (def.simple?.label ?? def.label) : def.label}
+	{@const summary = say(simple ? (def.simple?.summary ?? def.summary) : def.summary)}
+	{#snippet named()}
+		<button
+			type="button"
+			class="name"
+			id={`name-${id}`}
+			data-why={id}
+			use:hint={firstSentence(summary)}
+			onclick={() => onexplain?.(id)}>{label}</button
+		>
+	{/snippet}
+	<section data-setting={id} aria-describedby={`about-${id}`}>
 		{#if def.kind === 'toggle'}
 			{@const blocked = blockedBy(id, true)}
-			<label class="toggle" class:blocked>
+			<div class="toggle" class:blocked>
+				{@render named()}
 				<input
 					type="checkbox"
+					aria-labelledby={`name-${id}`}
 					checked={settings[id] === true}
 					disabled={blocked !== undefined}
 					onchange={(event) => set(id, event.currentTarget.checked)}
 				/>
-				{simple ? (def.simple?.label ?? def.label) : def.label}
-			</label>
+			</div>
 			{#if blocked}<p class="because" data-testid="blocked-because">{blocked}</p>{/if}
 		{:else}
 			<fieldset>
-				<legend>{simple ? (def.simple?.label ?? def.label) : def.label}</legend>
+				<legend>{@render named()}</legend>
 				{#each def.options.filter((option) => !simple || !option.advanced || settings[id] === option.value) as option (option.value)}
 					{@const blocked = blockedBy(id, option.value)}
 					<label class:blocked use:hint={blocked}>
@@ -156,21 +169,8 @@
 			class:shown={settings[id] !== defaultSettings[id]}
 			data-testid="setting-about"
 		>
-			{say(simple ? (def.simple?.summary ?? def.summary) : def.summary)}
+			{summary}
 		</p>
-		<ul class="more">
-			<li>
-				<button
-					type="button"
-					class="link"
-					data-why={id}
-					aria-label={`Why ${simple ? (def.simple?.label ?? def.label) : def.label}?`}
-					onclick={() => onexplain?.(id)}
-				>
-					?
-				</button>
-			</li>
-		</ul>
 	</section>
 {/each}
 
@@ -199,12 +199,12 @@
 {#if !simple}
 	<section data-testid="server-notes">
 		<label class="toggle">
+			Server notes
 			<input
 				type="checkbox"
 				checked={serverNotes}
 				onchange={(event) => onservernotes?.(event.currentTarget.checked)}
 			/>
-			Server notes
 		</label>
 		<p>Which setting controls each message.</p>
 	</section>
@@ -233,46 +233,24 @@
 {/if}
 
 <style>
-	/* A row for each "Why?" is more to read and takes the room from the settings, so it is a mark beside each. */
-	.beside-the-switch {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		column-gap: 8px;
-		align-items: center;
-	}
-
-	.beside-the-switch > :global(*) {
-		grid-column: 1 / -1;
-	}
-
-	.beside-the-switch > .toggle,
-	.beside-the-switch > fieldset {
-		grid-column: 1;
-	}
-
-	.beside-the-switch > .more {
-		grid-row: 1;
-		grid-column: 2;
-		align-self: start;
+	/* Its name says what it is for, as a word in the text does, so it needs no mark beside it (#231). */
+	.name {
 		margin: 0;
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		font-weight: 600;
+		text-align: left;
+		text-decoration: underline dotted var(--strong-line);
+		text-underline-offset: 3px;
+		cursor: help;
 	}
 
-	.beside-the-switch > .more .link {
-		display: block;
-		width: 18px;
-		height: 18px;
-		border: 1px solid var(--line);
-		border-radius: 50%;
-		color: var(--muted);
-		font-size: 11px;
-		line-height: 16px;
-		text-align: center;
-		text-decoration: none;
-	}
-
-	.beside-the-switch > .more .link:hover {
-		border-color: var(--accent);
-		color: var(--accent);
+	.name:hover {
+		text-decoration-color: var(--here);
 	}
 
 	/* Nothing comes before it when no setting is on offer, so it needs no line to set it apart. */
@@ -293,7 +271,7 @@
 	.not-here li {
 		margin-bottom: 8px;
 		color: var(--muted);
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 	}
 
 	.not-here strong {
@@ -303,7 +281,7 @@
 
 	h2 {
 		margin: 0 0 10px;
-		font-size: 13px;
+		font-size: var(--size-ui);
 		font-weight: 600;
 		color: var(--muted);
 	}
@@ -327,7 +305,6 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		flex-direction: row-reverse;
 		gap: 8px;
 	}
 
@@ -338,7 +315,7 @@
 		width: 32px;
 		height: 18px;
 		margin: 0;
-		border-radius: 9px;
+		border-radius: var(--radius);
 		background: var(--strong-line);
 		cursor: pointer;
 		transition: background 0.15s;
@@ -351,13 +328,13 @@
 		left: 2px;
 		width: 14px;
 		height: 14px;
-		border-radius: 50%;
+		border-radius: var(--radius);
 		background: var(--bg);
 		transition: transform 0.15s;
 	}
 
 	.toggle input:checked {
-		background: var(--accent);
+		background: var(--here);
 	}
 
 	.toggle input:checked::after {
@@ -387,7 +364,7 @@
 	}
 
 	input[type='radio'] {
-		accent-color: var(--accent);
+		accent-color: var(--here);
 	}
 
 	@media (prefers-reduced-motion: reduce) {
@@ -435,7 +412,7 @@
 	small {
 		display: block;
 		text-indent: 0;
-		font-size: 11.5px;
+		font-size: var(--size-small);
 	}
 
 	.flag {
@@ -446,7 +423,7 @@
 	p {
 		margin: 3px 0 0;
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 
 	/* What never changes stays out of the way: on when the setting is, or while someone is on it. Its
@@ -460,28 +437,9 @@
 		display: block;
 	}
 
-	.more {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 2px 10px;
-		margin: 3px 0 0;
-		padding: 0;
-		list-style: none;
-	}
-
-	.link {
-		padding: 0;
-		border: 0;
-		background: none;
-		color: var(--accent);
-		font-size: 11.5px;
-		text-align: left;
-		text-decoration: underline;
-	}
-
 	.also h3 {
 		margin: 0 0 4px;
-		font-size: 12px;
+		font-size: var(--size-small);
 		font-weight: 600;
 		color: var(--muted);
 	}
@@ -501,9 +459,9 @@
 		gap: 4px;
 		padding: 1px 4px 1px 10px;
 		border: 1px solid var(--line);
-		border-radius: 10px;
+		border-radius: var(--radius);
 		background: var(--raised);
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 
 	.remove {

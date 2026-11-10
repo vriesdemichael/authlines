@@ -172,6 +172,9 @@ test.describe('text that does not fit', () => {
 		await page.setViewportSize({ width: 900, height: 700 });
 		await page.goto(`${FLOW_PATH}how-access-works/?mode=advanced`);
 		await expect(page.getByTestId('title')).toHaveAttribute('title', 'How does an app get access?');
-		await expect(page.locator('.what')).toHaveAttribute('title', /Recorded from/);
+		// Under the diagram, on as many lines as it takes (#231).
+		const recorded = page.getByTestId('provenance');
+		await expect(recorded).toContainText('Recorded from');
+		expect(await recorded.evaluate((line) => line.scrollWidth <= line.clientWidth)).toBe(true);
 	});
 });

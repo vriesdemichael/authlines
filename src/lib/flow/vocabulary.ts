@@ -271,5 +271,3 @@ export const channels: Readonly<Record<Channel, { label: string; explains: strin
 		explains: 'Nothing is sent.'
 	}
 };
-
-export type LifelineIcon = 'browser' | 'app' | 'idp' | 'upstream' | 'api' | 'people' | 'attacker';

@@ -18,32 +18,55 @@
 	--strong-line: light-dark(#8b93a3, #6f7787);
 	--on-tone: light-dark(#ffffff, #12141a);
 
-	/* Where you are. */
-	--accent: light-dark(#3b37d6, #a5aeff);
-	--accent-soft: light-dark(#ecebff, #262a52);
+	/*
+	 * Where you are, in ink and weight and never in a hue, so that every colour on screen is about the
+	 * protocol (#231). The current step is filled in and heavier, and so is Next.
+	 */
+	--here: light-dark(#141720, #eceef3);
+	--here-soft: light-dark(#e9ebf0, #262930);
 
 	/* What a setting just changed, which is a soft band that goes again and not a colour of its own. */
 	--fresh: light-dark(#141720, #eceef3);
-	--fresh-soft: light-dark(#f1f2f5, #2a2e36);
+	--fresh-soft: light-dark(#f2f3f6, #1f2229);
 
 	/* Someone who has no business here, and nothing else. */
-	--attacker: light-dark(#b42318, #ff9d8f);
+	--attacker: light-dark(#b32e2f, #f98f87);
 
-	/* How a message travels. */
-	--front: light-dark(#b45309, #f5a35c);
-	--back: light-dark(#0f766e, #4fd1c5);
-	--people: light-dark(#7a3fb5, #c79bf2);
+	/*
+	 * How a message travels. The two channels are told apart by hue alone, so they have the same
+	 * lightness and strength in OKLCH: warm for what goes through the user's browser and cool for
+	 * what goes direct, on the blue and yellow axis that colour blindness leaves (#231). People are a
+	 * third, as strong.
+	 */
+	--front: light-dark(#9b5916, #ecaf79);
+	--back: light-dark(#1e7296, #84c8eb);
+	--people: light-dark(#885398, #d9a9e8);
 
 	/* What it carries, in three quiet groups, because the chip already says what it is. */
-	--proves: light-dark(#8a3f4f, #e6b3bd);
-	--proves-soft: light-dark(#f8eef0, #33222a);
-	--grants: light-dark(#3f5b80, #b4c6de);
-	--grants-soft: light-dark(#edf1f7, #222a36);
-	--remembers: light-dark(#5a5f52, #c5c9b8);
-	--remembers-soft: light-dark(#f1f2ed, #2a2c25);
+	--proves: light-dark(#884053, #eebbc5);
+	--proves-soft: light-dark(#f9e5e9, #3d262b);
+	--grants: light-dark(#4b5377, #c1c9e9);
+	--grants-soft: light-dark(#e7ebf8, #292d3d);
+	--remembers: light-dark(#575b44, #c9ceb4);
+	--remembers-soft: light-dark(#eaedde, #2d2f24);
 
 	--sans: 'IBM Plex Sans Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
 	--mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+	/*
+	 * Six sizes, each with a job, so that what matters is the largest thing where it is (#231). The
+	 * diagram's three are fixed, because its layout reckons with how wide its words are.
+	 */
+	--size-mark: 10.5px; /* a step's number, and what a party holds */
+	--size-small: 11.5px; /* what a message carries, and small print */
+	--size-ui: 13px; /* controls, notes, and the diagram's words */
+	--size-body: 14px; /* what there is to read */
+	--size-title: 18px; /* a step, a question, or what explains something */
+	--size-headline: 30px; /* the one line the home screen leads with */
+
+	/* One radius for what holds something or can be pressed, and a cut corner for what is passed around. */
+	--radius: 4px;
+	--cut: 4px;
 }
 
 * {
@@ -56,7 +79,7 @@ body {
 	height: 100%;
 	background: var(--bg);
 	color: var(--fg);
-	font: 14px/1.5 var(--sans);
+	font: var(--size-body)/1.5 var(--sans);
 }
 
 /* What each thing that gets passed around looks like, in the diagram and beside it. */
@@ -104,7 +127,7 @@ button {
 	color: inherit;
 	background: var(--raised);
 	border: 1px solid var(--line);
-	border-radius: 7px;
+	border-radius: var(--radius);
 	padding: 5px 14px;
 	cursor: pointer;
 }
@@ -120,12 +143,65 @@ button[aria-disabled='true'] {
 }
 
 :focus-visible {
-	outline: 2px solid var(--accent);
+	outline: 2px solid var(--here);
 	outline-offset: 1px;
 }
 
 a {
-	color: var(--accent);
+	color: var(--here);
+}
+
+/*
+ * Something that is passed around, outside the diagram too: filled, with no outline, and its corners
+ * cut, so that it is not taken for a button or a link (#231). The fill is behind it and cut, and the
+ * thing itself is not, so a focus ring around it still shows.
+ */
+.token {
+	position: relative;
+	isolation: isolate;
+	display: inline-block;
+	padding: 0 7px;
+	border: 0;
+	border-radius: 0;
+	background: none;
+	color: var(--chip, var(--muted));
+	font-size: var(--size-small);
+	font-weight: 600;
+	line-height: 18px;
+	vertical-align: baseline;
+}
+
+.token::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	background: var(--chip-soft, var(--panel));
+	clip-path: polygon(
+		var(--cut) 0,
+		calc(100% - var(--cut)) 0,
+		100% var(--cut),
+		100% calc(100% - var(--cut)),
+		calc(100% - var(--cut)) 100%,
+		var(--cut) 100%,
+		0 calc(100% - var(--cut)),
+		0 var(--cut)
+	);
+}
+
+button.token:hover:not(:disabled) {
+	text-decoration: underline;
+}
+
+/* A button that goes somewhere to read, which looks like the link it is to someone reading. */
+.as-link {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--here);
+	font: inherit;
+	text-decoration: underline;
+	cursor: pointer;
 }
 
 code {
@@ -138,5 +214,5 @@ code {
 	margin: 0;
 	padding: 10px 16px;
 	border-bottom: 1px solid var(--line);
-	background: var(--accent-soft);
+	background: var(--here-soft);
 }

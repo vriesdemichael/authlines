@@ -143,7 +143,7 @@
 		align-items: center;
 		gap: 8px;
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 
 	select {
@@ -153,7 +153,7 @@
 		color: var(--fg);
 		background: var(--bg);
 		border: 1px solid var(--line);
-		border-radius: 6px;
+		border-radius: var(--radius);
 		padding: 3px 6px;
 	}
 
@@ -166,7 +166,7 @@
 	.status,
 	.note {
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 
 	.note {
@@ -179,7 +179,7 @@
 
 	h2 {
 		margin: 2px 0;
-		font-size: 16px;
+		font-size: var(--size-title);
 	}
 
 	h2:focus {
@@ -188,7 +188,7 @@
 
 	h3 {
 		margin: 12px 0 4px;
-		font-size: 12px;
+		font-size: var(--size-small);
 		color: var(--muted);
 	}
 
@@ -196,7 +196,7 @@
 		margin: 0;
 		padding: 14px 16px;
 		font-family: var(--mono);
-		font-size: 11.5px;
+		font-size: var(--size-small);
 		line-height: 1.45;
 	}
 

@@ -33,7 +33,7 @@
 		padding: 6px 12px;
 		list-style: none;
 		color: var(--muted);
-		font-size: 11.5px;
+		font-size: var(--size-small);
 	}
 
 	li {

@@ -72,7 +72,7 @@
 	}
 
 	.timeline:focus-visible {
-		outline: 2px solid var(--accent);
+		outline: 2px solid var(--here);
 		outline-offset: 3px;
 	}
 
@@ -87,7 +87,7 @@
 	.name {
 		overflow: hidden;
 		color: var(--muted);
-		font-size: 11px;
+		font-size: var(--size-small);
 		line-height: 14px;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -119,12 +119,13 @@
 		background-size: 100% 8px;
 	}
 
-	.tick.done,
-	.tick.current {
-		background-image: linear-gradient(var(--accent), var(--accent));
+	/* What has happened stays quiet, and only where you are is in ink, as on the diagram. */
+	.tick.done {
+		background-image: linear-gradient(var(--strong-line), var(--strong-line));
 	}
 
 	.tick.current {
+		background-image: linear-gradient(var(--here), var(--here));
 		background-size: 100% 12px;
 	}
 

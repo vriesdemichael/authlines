@@ -22,7 +22,6 @@ export const deviceSetup: DiagramDef = {
 			plainRole: 'The app team',
 			name: 'App team',
 			role: 'People',
-			icon: 'people',
 			concept:
 				'The people who build and ship the app, which is probably you. They know what it needs to do, so they are the ones who ask.'
 		},
@@ -31,7 +30,6 @@ export const deviceSetup: DiagramDef = {
 			plainName: 'App',
 			plainRole: 'The one being set up',
 			...appWords,
-			icon: 'app',
 			concept:
 				'The application being set up. It has to learn about the identity provider before it can ask for anything.'
 		},
@@ -40,7 +38,6 @@ export const deviceSetup: DiagramDef = {
 			plainName: 'Identity provider',
 			plainRole: 'Will log users in',
 			...idpWords,
-			icon: 'idp',
 			concept: 'The identity provider. It has to know about the app, and the issuer names it.'
 		},
 		{
@@ -49,7 +46,6 @@ export const deviceSetup: DiagramDef = {
 			plainRole: 'Runs the provider',
 			name: 'Provider admin',
 			role: 'People',
-			icon: 'people',
 			concept:
 				'The people who run the identity provider. They register apps in its admin console. On a small team, or a provider you pay for, this may be you as well.'
 		},
@@ -58,7 +54,6 @@ export const deviceSetup: DiagramDef = {
 			plainName: 'API',
 			plainRole: 'Will check tokens',
 			...apiWords,
-			icon: 'api',
 			concept:
 				'The API the app will call. It has a setup of its own, because it has to know which tokens to accept.'
 		}

@@ -183,7 +183,12 @@
 			{#if seen.length}
 				Has seen so far:
 				{#each seen as id (id)}
-					<button type="button" class="chip" onclick={() => onexplainartifact?.(id)}>
+					<button
+						type="button"
+						class="token"
+						data-artifact={id}
+						onclick={() => onexplainartifact?.(id)}
+					>
 						{artifacts[id].label}
 					</button>
 				{/each}
@@ -207,12 +212,12 @@
 			{#each sources as ref (ref.source)}
 				<button
 					type="button"
-					class="chip"
+					class="as-link source"
 					data-name-source={ref.source}
 					onclick={() => onopensource?.(ref)}
 				>
-					{refLabel(ref)}
-				</button>
+					{refLabel(ref)}</button
+				>
 			{/each}
 		</p>
 	{/if}
@@ -232,7 +237,7 @@
 
 	h2 {
 		margin: 0 0 8px;
-		font-size: 16px;
+		font-size: var(--size-title);
 		font-weight: 600;
 	}
 
@@ -242,7 +247,7 @@
 
 	p {
 		margin: 0 0 8px;
-		font-size: 14px;
+		font-size: var(--size-body);
 	}
 
 	p:last-child {
@@ -251,7 +256,7 @@
 
 	.seen {
 		color: var(--muted);
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 	}
 
 	.rename {
@@ -260,7 +265,7 @@
 		gap: 6px 8px;
 		align-items: center;
 		margin: 12px 0 0;
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 	}
 
 	.rename input {
@@ -284,8 +289,12 @@
 		gap: 4px;
 	}
 
-	button {
+	button:not(.token, .as-link) {
 		padding: 0 8px;
-		font-size: 12px;
+		font-size: var(--size-small);
+	}
+
+	.source {
+		margin-right: 10px;
 	}
 </style>

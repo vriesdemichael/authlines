@@ -120,7 +120,7 @@ test.describe('what a setting adds', () => {
 
 		test('pointing at a switch moves nothing', async ({ page }) => {
 			await open(page, 'mode=simple');
-			await page.locator('[data-setting="oidc"] label').hover();
+			await page.locator('[data-setting="oidc"] .toggle').hover();
 			await page.waitForTimeout(300);
 			expect(await page.locator('.scroller').evaluate((scroller) => scroller.scrollTop)).toBe(0);
 		});

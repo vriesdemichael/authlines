@@ -1,11 +1,5 @@
 import { holdingsAt, type DiagramView, type StepKind } from '#lib/flow/model.ts';
-import {
-	artifacts,
-	type ArtifactId,
-	type Channel,
-	type LifelineIcon,
-	type Mode
-} from '#lib/flow/vocabulary.ts';
+import { artifacts, type ArtifactId, type Channel, type Mode } from '#lib/flow/vocabulary.ts';
 import {
 	nameIn,
 	roleIn,
@@ -29,13 +23,8 @@ const TIGHT_MARGIN = 62;
 /** Below this a head has no room for its name, so the diagram scales down instead of going under it. */
 const MIN_LANE_SPACING = 116;
 const HEAD_WIDTH = 144;
-/** Narrower than this, a head leaves out its icon. */
-export const FULL_HEAD_WIDTH = 140;
-/** Beside the icon of a full head. */
-const NAME_ROOM = 110;
-const TIGHT_NAME_EDGE = 8;
-/** Its name is a little smaller without the icon. */
-const TIGHT_NAME_SCALE = 0.96;
+/** What a name leaves free on each side of its head, which it is centred in. */
+const NAME_EDGE = 8;
 const FIRST_ROW_Y = 36;
 /** Used with no height to go on. With one, rows take what is there, between these two. */
 const ROW_HEIGHT = 46;
@@ -115,7 +104,6 @@ export interface LaneLayout {
 	role: string;
 	/** Named by the link that was opened, and not by the site. */
 	given: boolean;
-	icon: LifelineIcon;
 }
 
 /** A line of what a message says, which is a line of words, placed for its row. */
@@ -267,8 +255,7 @@ function nameWidth(name: string) {
 }
 
 function linesOfName(name: string, headWidth: number): readonly string[] {
-	const full = headWidth >= FULL_HEAD_WIDTH;
-	const room = full ? NAME_ROOM : (headWidth - TIGHT_NAME_EDGE) / TIGHT_NAME_SCALE;
+	const room = headWidth - NAME_EDGE * 2;
 	if (nameWidth(name) <= room) return [name];
 	const words = name.split(' ');
 	const splits = words
@@ -357,8 +344,7 @@ export function layoutDiagram(
 		name: nameIn(line, wording),
 		nameLines: linesOfName(nameIn(line, wording), headWidth),
 		role: roleIn(line, wording),
-		given: Boolean(line.given),
-		icon: line.icon
+		given: Boolean(line.given)
 	}));
 	const laneX = new Map(lanes.map((lane) => [lane.id, lane.x]));
 	const nameOf = (id: string) => lanes.find((lane) => lane.id === id)?.name ?? id;

@@ -266,13 +266,19 @@ describe('whose words the diagram is in', () => {
 	});
 
 	it('gives a long name a second line, and only then leaves out what it is', () => {
-		const view = evaluate(authorizationCode, defaultSettings);
-		const lane = (wording: Wording) =>
-			layoutDiagram(view, 'simple', { width: 1240, height: 800 }, wording).lanes.find(
-				({ id }) => id === 'idp'
-			)!;
-		expect(lane('plain').nameLines).toEqual(['Identity provider']);
-		expect(lane('specs').nameLines).toEqual(['Authorization', 'server']);
-		expect(lane('keycloak').nameLines).toEqual(['Keycloak']);
+		const lane = (wording: Wording, width: number, settings = defaultSettings) =>
+			layoutDiagram(
+				evaluate(authorizationCode, settings),
+				'simple',
+				{ width, height: 800 },
+				wording
+			).lanes.find(({ id }) => id === 'idp')!;
+		expect(lane('plain', 1240).nameLines).toEqual(['Identity provider']);
+		expect(lane('specs', 1240).nameLines).toEqual(['Authorization server']);
+		expect(lane('keycloak', 1240).nameLines).toEqual(['Keycloak']);
+		// Five parties in the narrowest room leave a head too narrow for it.
+		const narrow = lane('specs', 640, { ...defaultSettings, broker: true });
+		expect(narrow.headWidth).toBeLessThan(144);
+		expect(narrow.nameLines).toEqual(['Authorization', 'server']);
 	});
 });

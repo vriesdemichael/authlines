@@ -41,15 +41,15 @@
 		margin: 0 0 6px;
 		padding: 8px 10px;
 		overflow: auto;
-		border-radius: 6px;
+		border-radius: var(--radius);
 		background: var(--panel);
 		font-family: var(--mono);
-		font-size: 12px;
+		font-size: var(--size-small);
 		line-height: 1.5;
 	}
 
 	pre:focus-visible {
-		outline: 2px solid var(--accent);
+		outline: 2px solid var(--here);
 	}
 
 	p {
@@ -57,12 +57,12 @@
 	}
 
 	button {
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 
 	span {
 		margin-left: 6px;
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 </style>

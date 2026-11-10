@@ -81,15 +81,15 @@
 	}
 
 	.next:not([aria-disabled='true']) {
-		background: var(--accent);
-		border-color: var(--accent);
+		background: var(--here);
+		border-color: var(--here);
 		color: var(--on-tone);
 	}
 
 	.onward {
 		padding: 5px 14px;
-		border: 1px solid var(--accent);
-		border-radius: 7px;
+		border: 1px solid var(--here);
+		border-radius: var(--radius);
 		white-space: nowrap;
 		text-decoration: none;
 	}
@@ -101,7 +101,7 @@
 
 	@keyframes invite {
 		50% {
-			box-shadow: 0 0 0 5px var(--accent-soft);
+			box-shadow: 0 0 0 5px var(--here-soft);
 		}
 	}
 
@@ -114,7 +114,7 @@
 	.position {
 		margin-left: 4px;
 		color: var(--muted);
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
 	}

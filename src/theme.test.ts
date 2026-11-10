@@ -30,25 +30,25 @@ const pairs: readonly (readonly [string, string, number])[] = [
 	['fg', 'bg', TEXT],
 	['fg', 'panel', TEXT],
 	['fg', 'raised', TEXT],
-	['fg', 'accent-soft', TEXT],
+	['fg', 'here-soft', TEXT],
 	['muted', 'bg', TEXT],
 	['muted', 'panel', TEXT],
 	['muted', 'raised', TEXT],
-	['accent', 'bg', TEXT],
-	['accent', 'panel', TEXT],
-	['accent', 'accent-soft', TEXT],
-	['on-tone', 'accent', TEXT],
+	['here', 'bg', TEXT],
+	['here', 'panel', TEXT],
+	['here', 'here-soft', TEXT],
+	['on-tone', 'here', TEXT],
 	['fresh', 'bg', TEXT],
 	['fresh', 'fresh-soft', TEXT],
 	['on-tone', 'fresh', TEXT],
 	['front', 'bg', TEXT],
-	['front', 'accent-soft', SHAPE],
+	['front', 'here-soft', SHAPE],
 	['on-tone', 'front', TEXT],
 	['back', 'bg', TEXT],
-	['back', 'accent-soft', SHAPE],
+	['back', 'here-soft', SHAPE],
 	['on-tone', 'back', TEXT],
 	['people', 'bg', TEXT],
-	['people', 'accent-soft', SHAPE],
+	['people', 'here-soft', SHAPE],
 	['on-tone', 'people', TEXT],
 	['on-tone', 'muted', TEXT],
 	['attacker', 'bg', TEXT],
@@ -84,22 +84,18 @@ describe('colours (ADR-014)', () => {
 			'muted',
 			'line',
 			'strong-line',
-			'on-tone'
+			'on-tone',
+			'here'
 		]);
 		const hues = Object.keys(all).filter((name) => !name.endsWith('-soft') && !neutral.has(name));
 		expect(hues.sort()).toEqual(
-			[
-				'accent',
-				'front',
-				'back',
-				'people',
-				'attacker',
-				'fresh',
-				'proves',
-				'grants',
-				'remembers'
-			].sort()
+			['front', 'back', 'people', 'attacker', 'fresh', 'proves', 'grants', 'remembers'].sort()
 		);
+	});
+
+	// Every colour on screen is about the protocol, and none is a framework's (#231).
+	it('say where you are without a hue of its own', () => {
+		expect(all.here).toEqual(all.fg);
 	});
 
 	it('say what just changed without a hue of its own', () => {

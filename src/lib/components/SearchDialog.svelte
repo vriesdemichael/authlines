@@ -231,7 +231,7 @@
 		margin: 10vh auto auto;
 		padding: 0;
 		border: 1px solid var(--line);
-		border-radius: 10px;
+		border-radius: var(--radius);
 		background: var(--bg);
 		color: var(--fg);
 	}
@@ -249,7 +249,7 @@
 		width: 100%;
 		padding: 8px 10px;
 		border: 1px solid var(--strong-line);
-		border-radius: 7px;
+		border-radius: var(--radius);
 		background: var(--raised);
 		color: var(--fg);
 		font: inherit;
@@ -259,12 +259,12 @@
 	.nothing {
 		margin: 8px 2px;
 		color: var(--muted);
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 	}
 
 	.again {
 		padding: 0 8px;
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 	}
 
 	ul {
@@ -276,20 +276,20 @@
 	li a {
 		display: block;
 		padding: 8px 10px;
-		border-radius: 7px;
+		border-radius: var(--radius);
 		color: inherit;
 		text-decoration: none;
 	}
 
 	li a:hover,
 	li a.active {
-		background: var(--accent-soft);
+		background: var(--here-soft);
 	}
 
 	.kind {
 		display: block;
 		color: var(--muted);
-		font-size: 11.5px;
+		font-size: var(--size-small);
 	}
 
 	strong {
@@ -300,6 +300,6 @@
 	.says {
 		display: block;
 		color: var(--muted);
-		font-size: 13px;
+		font-size: var(--size-ui);
 	}
 </style>

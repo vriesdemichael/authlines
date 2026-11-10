@@ -311,7 +311,6 @@
 	);
 	const origin = $derived(provenance(base, flow, appState.settings));
 
-	let statusLine = $state<HTMLElement>();
 	let last = $state.raw<LastChange>(NOTHING_CHANGED);
 	// Set by flipping a setting, until the screen has moved to what that asked for.
 	let flipping: Settings | null = null;
@@ -900,17 +899,6 @@
 			/>
 		{/if}
 		<p class="status">
-			{#if !simple}
-				<span
-					class="what"
-					data-testid="provenance"
-					bind:this={statusLine}
-					title={statusLine?.textContent?.trim()}
-				>
-					{#if question}{flow.title}.{/if} Based on {origin.specs.join(', ')}.
-					{@render recorded()}
-				</span>
-			{/if}
 			<button
 				type="button"
 				class="quiet"
@@ -984,6 +972,14 @@
 		{/if}
 		{#if !simple && flowChoices.length > 1}
 			<FlowSwitch flows={flowChoices} current={base.id} onchange={(id) => onflow?.(id)} />
+		{/if}
+		<!-- Under which flow it is, all of it, where in the header it was cut short. Not under the
+		     diagram, where a longer line would take height from it each time a setting added a spec. -->
+		{#if !simple && !phone}
+			<p class="what" data-testid="provenance">
+				{#if flowChoices.length < 2}{flow.title}.{/if} Based on {origin.specs.join(', ')}.
+				{@render recorded()}
+			</p>
 		{/if}
 		<SettingsPanel
 			notApplicable={base.notHere}
@@ -1421,7 +1417,7 @@
 		min-width: 0;
 		margin: 0;
 		overflow: hidden;
-		font-size: 16px;
+		font-size: var(--size-title);
 		font-weight: 600;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -1432,7 +1428,7 @@
 		min-width: 0;
 		overflow: hidden;
 		color: var(--muted);
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
@@ -1446,14 +1442,14 @@
 		min-width: 0;
 		margin: 0;
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 
-	/* One line, so the diagram does not lose height to it. All of it is in the source and the title. */
+	/* On as many lines as it takes, so nothing of it is cut short (#231). */
 	.what {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		margin: -6px 0 14px;
+		color: var(--muted);
+		font-size: var(--size-small);
 	}
 
 	.settings-toggle {
@@ -1469,7 +1465,7 @@
 		border: 0;
 		border-radius: 0;
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 		line-height: 12px;
 		white-space: nowrap;
 		background: var(--bg);
@@ -1504,7 +1500,7 @@
 		border: 0;
 		background: none;
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 		text-decoration: underline;
 		white-space: nowrap;
 	}
@@ -1520,7 +1516,7 @@
 	.recorded {
 		margin: 0 12px 0 auto;
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 
 	.above {
@@ -1538,9 +1534,9 @@
 	.named {
 		margin: 0 0 14px;
 		padding: 10px 12px;
-		border-radius: 8px;
+		border-radius: var(--radius);
 		background: var(--panel);
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 	}
 
 	.eyes p,
@@ -1797,7 +1793,7 @@
 			margin: 0;
 			padding: 7px 10px;
 			border: 1px solid var(--line);
-			border-radius: 6px;
+			border-radius: var(--radius);
 		}
 
 		.settings-toggle.rail span {

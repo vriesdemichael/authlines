@@ -135,17 +135,17 @@
 
 	.brand {
 		color: var(--muted);
-		font-size: 13px;
+		font-size: var(--size-ui);
 	}
 
 	h1 {
 		margin: 12px 0;
-		font-size: 22px;
+		font-size: var(--size-headline);
 	}
 
 	h2 {
 		margin: 22px 0 6px;
-		font-size: 15px;
+		font-size: var(--size-body);
 	}
 
 	p {
@@ -155,7 +155,7 @@
 
 	.warning {
 		padding: 10px 12px;
-		border-radius: 8px;
+		border-radius: var(--radius);
 		background: var(--panel);
 		font-weight: 600;
 	}
@@ -163,7 +163,7 @@
 	.checked,
 	.aside {
 		color: var(--muted);
-		font-size: 13px;
+		font-size: var(--size-ui);
 	}
 
 	code {

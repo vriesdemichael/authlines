@@ -99,14 +99,15 @@ test.describe('simple mode', () => {
 		await expect(present(page, 'not-here')).toHaveCount(0);
 	});
 
-	test('has why as a mark beside the switch, and it does not get in the way of it', async ({
+	// Its name explains it, as a word on screen does, so it needs no mark beside it (#231).
+	test('explains a setting from its name, which does not get in the way of the switch', async ({
 		page
 	}) => {
 		await open(page, 'mode=simple');
 		const row = page.locator('[data-setting="broker"]');
 		const why = row.locator('[data-why="broker"]');
-		await expect(why).toHaveText('?');
-		await expect(why).toHaveAccessibleName(/^Why /);
+		await expect(why).toHaveText('Log in with another provider');
+		await expect(row.getByRole('checkbox')).toHaveAccessibleName('Log in with another provider');
 		await row.locator('input').check();
 		await expect(row.locator('input')).toBeChecked();
 		await expect(page).toHaveURL(/broker=1/);

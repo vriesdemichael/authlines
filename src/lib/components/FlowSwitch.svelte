@@ -28,7 +28,7 @@
 		padding-bottom: 12px;
 		border-bottom: 1px solid var(--line);
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 
 	select {
@@ -37,9 +37,9 @@
 		margin-top: 3px;
 		padding: 3px 4px;
 		border: 1px solid var(--line);
-		border-radius: 5px;
+		border-radius: var(--radius);
 		background: var(--bg);
 		color: var(--fg);
-		font-size: 13px;
+		font-size: var(--size-ui);
 	}
 </style>

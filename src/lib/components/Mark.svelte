@@ -49,10 +49,10 @@
 	}
 
 	.now {
-		stroke: var(--accent);
+		stroke: var(--here);
 	}
 
 	.now-head {
-		fill: var(--accent);
+		fill: var(--here);
 	}
 </style>

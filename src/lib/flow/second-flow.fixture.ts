@@ -8,7 +8,6 @@ const lifelines: DiagramDef['lifelines'] = [
 		plainRole: 'Acts for itself',
 		name: 'App',
 		role: 'OAuth client',
-		icon: 'app',
 		concept: 'An app that needs no user to act for.'
 	},
 	{
@@ -17,7 +16,6 @@ const lifelines: DiagramDef['lifelines'] = [
 		plainRole: 'Issues tokens',
 		name: 'IdP',
 		role: 'Authorization server',
-		icon: 'idp',
 		concept: 'Issues tokens.'
 	},
 	{
@@ -26,7 +24,6 @@ const lifelines: DiagramDef['lifelines'] = [
 		plainRole: 'Has the data',
 		name: 'API',
 		role: 'Resource server',
-		icon: 'api',
 		concept: 'What the app wants to call.'
 	}
 ];

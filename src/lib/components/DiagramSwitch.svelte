@@ -1,9 +1,11 @@
 <script lang="ts">
 	import type { DiagramId } from '#lib/flow/model.ts';
+	import { hint } from '#lib/hint.svelte.ts';
 
 	interface Props {
 		current: DiagramId;
 		hrefs: Readonly<Record<DiagramId, string>>;
+		/** What the one on screen shows, said where the pointer rests on its name (#231). */
 		caption: string;
 		/** What to call the first one, where there is no user to name it after. */
 		flowName?: string;
@@ -25,13 +27,11 @@
 			aria-current={diagram.id === current ? 'page' : undefined}
 			data-sveltekit-reset="false"
 			data-diagram={diagram.id}
+			use:hint={diagram.id === current && caption ? caption : undefined}
 		>
 			{diagram.label}
 		</a>
 	{/each}
-	{#if caption}
-		<p title={caption}>{caption}</p>
-	{/if}
 </nav>
 
 <style>
@@ -48,7 +48,7 @@
 		flex: none;
 		padding: 3px 12px;
 		border: 1px solid transparent;
-		border-radius: 6px;
+		border-radius: var(--radius);
 		color: var(--muted);
 		font-weight: 600;
 		text-decoration: none;
@@ -59,8 +59,8 @@
 	}
 
 	a[aria-current='page'] {
-		background: var(--accent-soft);
-		color: var(--accent);
+		background: var(--here-soft);
+		color: var(--here);
 	}
 
 	@media (forced-colors: active) {
@@ -69,16 +69,5 @@
 			color: HighlightText;
 			forced-color-adjust: none;
 		}
-	}
-
-	/* What gives way when there is little room, because the switch is what it is there for. */
-	p {
-		overflow: hidden;
-		min-width: 0;
-		margin: 0 0 0 12px;
-		color: var(--muted);
-		font-size: 12px;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 </style>

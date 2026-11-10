@@ -58,8 +58,8 @@
 	}
 
 	.term:hover {
-		color: var(--accent);
-		text-decoration-color: var(--accent);
+		color: var(--here);
+		text-decoration-color: var(--here);
 	}
 
 	@media print {

@@ -71,7 +71,7 @@
 			y={topOf(part)}
 			width={part.w}
 			height={part.h}
-			rx="12"
+			rx="4"
 		/>
 		{#each part.title ?? [] as text, i (i)}
 			<text class="zone-title" x={leftOf(part) + 12} y={topOf(part) + 18 + i * 15}
@@ -120,7 +120,6 @@
 			y={topOf(part)}
 			width={part.w}
 			height={part.h}
-			rx="3"
 		/>
 	{:else if part.shape === 'char'}
 		<!-- A box of a field, as a page draws one, with its character or the cursor. -->
@@ -131,7 +130,7 @@
 			y={topOf(part)}
 			width={part.w}
 			height={part.h}
-			rx="6"
+			rx="4"
 		/>
 		{#if part.says[0]}
 			<text class="char" x={part.x} y={part.y + 7} text-anchor="middle">{`${part.says[0]} `}</text>
@@ -146,7 +145,7 @@
 			y={topOf(part)}
 			width={part.w}
 			height={part.h}
-			rx="8"
+			rx="4"
 		/>
 		{#each part.title ?? [] as text, i (i)}
 			<text class="title" x={leftOf(part) + PAD} y={topOf(part) + PAD + 13 + i * 18}
@@ -169,7 +168,7 @@
 				y={topOf(part)}
 				width={part.w}
 				height={part.h}
-				rx={part.shape === 'ends' ? part.h / 2 : 8}
+				rx={part.shape === 'ends' ? part.h / 2 : 4}
 			/>
 		{/if}
 		{#each part.says as text, i (i)}
@@ -223,18 +222,26 @@
 			onclick={() => onopen?.(row.opens)}
 			onkeydown={(event) => press(event, row.opens)}
 		>
+			<!-- A line over each and no box inside the box, so space and alignment do the separating (#231). -->
 			<rect
-				class="shape"
-				x={leftOf(part) + 12}
+				class="hit"
+				x={leftOf(part) + PAD - 6}
 				y={rowsY(part) + i * ROW}
-				width={part.w - 24}
+				width={part.w - PAD * 2 + 12}
 				height={ROW - 8}
-				rx="5"
+				rx="4"
 			/>
-			<text class="row-says" x={leftOf(part) + 22} y={rowsY(part) + i * ROW + 17}
+			<line
+				class="line faint"
+				x1={leftOf(part) + PAD}
+				x2={leftOf(part) + part.w - PAD}
+				y1={rowsY(part) + i * ROW}
+				y2={rowsY(part) + i * ROW}
+			/>
+			<text class="row-says" x={leftOf(part) + PAD} y={rowsY(part) + i * ROW + 17}
 				>{`${row.says} `}</text
 			>
-			<text class="row-more" x={leftOf(part) + 22} y={rowsY(part) + i * ROW + 33}
+			<text class="row-more" x={leftOf(part) + PAD} y={rowsY(part) + i * ROW + 33}
 				>{`${row.more} `}</text
 			>
 		</g>
@@ -332,7 +339,7 @@
 
 	.label {
 		fill: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 		paint-order: stroke;
 		stroke: var(--bg);
 		stroke-width: 4px;
@@ -355,9 +362,8 @@
 		fill: var(--panel);
 	}
 
-	.row .shape {
-		fill: var(--raised);
-		stroke: var(--line);
+	.row.link:hover .hit {
+		fill: var(--here-soft);
 	}
 
 	.zone-box {
@@ -369,14 +375,14 @@
 
 	.zone-title {
 		fill: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 		letter-spacing: 0.03em;
 	}
 
 	/* Where you are, of several side by side, in the colour that always means that. */
 	.shape.current,
 	.zone-box.current {
-		stroke: var(--accent);
+		stroke: var(--here);
 		stroke-width: 2;
 	}
 
@@ -397,19 +403,19 @@
 	.link:focus-visible .mark.empty,
 	.link:hover .bar,
 	.link:focus-visible .bar {
-		stroke: var(--accent);
+		stroke: var(--here);
 		stroke-width: 2;
 	}
 
 	.link:focus-visible .hit {
-		stroke: var(--accent);
+		stroke: var(--here);
 		stroke-width: 2;
 	}
 
 	/* A text that goes somewhere looks it, when the mouse or the focus is on it. */
 	.text.link:hover text,
 	.text.link:focus-visible text {
-		fill: var(--accent);
+		fill: var(--here);
 		text-decoration: underline;
 	}
 
@@ -452,24 +458,25 @@
 
 	.title {
 		fill: var(--fg);
-		font-size: 14px;
+		font-size: var(--size-body);
 		font-weight: 600;
 	}
 
+	/* What a party holds is in the size for that, which also keeps an address inside its box. */
 	.sub {
 		fill: var(--muted);
 		font-family: var(--mono);
-		font-size: 11px;
+		font-size: var(--size-mark);
 	}
 
 	.says {
 		fill: var(--fg);
-		font-size: 13px;
+		font-size: var(--size-ui);
 	}
 
 	.more {
 		fill: var(--muted);
-		font-size: 11.5px;
+		font-size: var(--size-small);
 	}
 
 	/* A code as someone reads it off a screen, in the font of a value on the wire. */
@@ -477,7 +484,7 @@
 	.char {
 		fill: var(--fg);
 		font-family: var(--mono);
-		font-size: 20px;
+		font-size: var(--size-title);
 	}
 
 	.code {
@@ -491,11 +498,11 @@
 
 	.row-says {
 		fill: var(--fg);
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 	}
 
 	.row-more {
 		fill: var(--muted);
-		font-size: 11px;
+		font-size: var(--size-mark);
 	}
 </style>
