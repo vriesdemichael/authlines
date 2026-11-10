@@ -625,6 +625,83 @@ export const mapTracks: readonly MapTrack[] = [
 		]
 	},
 	{
+		id: 'who-may-do-what',
+		title: 'Who may do what',
+		lead: 'Logging in says who someone is. What they may do is decided elsewhere: by scope, by role, and by your own code.',
+		chains: [
+			[
+				node({
+					id: 'authn-or-authz',
+					alsoAskedAs: [
+						'authn',
+						'authz',
+						'authentication',
+						'authorization',
+						'scope or role',
+						'scopes and roles'
+					],
+					answer:
+						'Authentication is who someone is, found out once, at the login. Authorization is what they may do: what the app may do for them, by scope, what the user may do, by role, and whether this record is theirs, which the API knows from its own data.',
+					title: 'What is the difference between authentication and authorization?',
+					summary: 'Who someone is, and what they may do, each answered somewhere else.',
+					preset: 'oauth',
+					step: 'api-check-token',
+					explains: { kind: 'term', id: 'authn-authz' }
+				}),
+				node({
+					id: 'rbac-abac-rebac',
+					alsoAskedAs: ['rbac', 'abac', 'rebac', 'access control', 'permissions', 'zanzibar'],
+					answer:
+						'Three ways to decide whether Alice may see an order: by a role she has, by a rule over what is known about her, the order and the moment, or by how she is related to the order. Only roles are recorded here, in a token.',
+					title: 'What is the difference between RBAC, ABAC and ReBAC?',
+					summary: 'By role, by attributes, or by relationship.',
+					preset: 'oauth',
+					startsAtTheBeginning:
+						'It is about where a decision is made, and not one step of the flow.',
+					explains: { kind: 'term', id: 'access-control-models' }
+				})
+			],
+			[
+				node({
+					id: 'roles-from-groups',
+					alsoAskedAs: ['roles', 'groups', 'claim to role'],
+					answer:
+						'The other provider’s ID token says which groups the user is in, and the identity provider gives a role of its own to whoever is in one. Recorded: sales became reads-orders, in the app’s token.',
+					title: 'How does a group at another provider become a role in the token?',
+					summary:
+						'Their ID token says the group, and the identity provider gives a role of its own.',
+					mode: 'advanced',
+					preset: 'broker-groups',
+					step: 'match-user'
+				}),
+				node({
+					id: 'only-roles-given',
+					alsoAskedAs: ['full scope allowed', 'role scope mappings'],
+					answer:
+						'Every role the user had went into the token, until the app was given only reads-orders. Then the token had that alone and lost the account service from its audience, so the app was set up to name the API.',
+					title: 'Why does my token have roles the app does not need?',
+					summary:
+						'Some providers put every role in every token, unless the app is given only its own.',
+					mode: 'advanced',
+					preset: 'broker-groups-given',
+					step: 'token-response'
+				}),
+				node({
+					id: 'gives-a-role',
+					flow: 'client-credentials',
+					alsoAskedAs: ['service account', 'admin api', 'map roles', 'assign a role'],
+					answer:
+						'Its own token can be let look users up and give one role at the identity provider’s admin API, and nothing more. On the server recorded, it gave the user reads-orders, and was refused manages-orders, which nobody let it give.',
+					title: 'Can an app give a user a role, and only that one?',
+					summary: 'With its own token, at the admin API, allowed one role.',
+					mode: 'advanced',
+					preset: 'gives-a-role',
+					step: 'service-gives-role'
+				})
+			]
+		]
+	},
+	{
 		id: 'under-the-hood',
 		title: 'Under the hood',
 		lead: 'What really happens, for when you want to see it.',

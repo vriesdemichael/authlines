@@ -76,7 +76,8 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto;
 		column-gap: 12px;
-		padding: 9px 0;
+		/* Close enough for every part to fit on the first screen, however many there are (#200). */
+		padding: 7px 0;
 		cursor: pointer;
 		list-style: none;
 	}

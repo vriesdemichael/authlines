@@ -75,5 +75,12 @@ export function nodeMatching(state: AppState): MapNode | null {
 				JSON.stringify(candidate.explains) === JSON.stringify(state.explained)) &&
 			sameSettings(nodeSettings(candidate), state.settings)
 	);
-	return same.find((candidate) => nodeState(candidate).step === state.step) ?? same[0] ?? null;
+	// The question about what is open first, because while it is open that is the question someone is on.
+	const ordered = [
+		...same.filter((candidate) => candidate.explains),
+		...same.filter((candidate) => !candidate.explains)
+	];
+	return (
+		ordered.find((candidate) => nodeState(candidate).step === state.step) ?? ordered[0] ?? null
+	);
 }
