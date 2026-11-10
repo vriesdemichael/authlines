@@ -36,7 +36,7 @@
 	label {
 		flex: none;
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 		white-space: nowrap;
 	}
 
@@ -44,9 +44,9 @@
 		max-width: 130px;
 		padding: 1px 2px;
 		border: 1px solid var(--line);
-		border-radius: 5px;
+		border-radius: var(--radius);
 		background: var(--bg);
 		color: var(--fg);
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 </style>

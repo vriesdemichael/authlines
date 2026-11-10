@@ -98,7 +98,7 @@
 		overflow: hidden;
 		margin: 12px 0;
 		border: 1px solid var(--line);
-		border-radius: 8px;
+		border-radius: var(--radius);
 		background: var(--panel);
 	}
 
@@ -106,7 +106,7 @@
 		padding: 6px 8px;
 		border-bottom: 1px solid var(--line);
 		font-family: var(--mono);
-		font-size: 11.5px;
+		font-size: var(--size-small);
 		line-height: 1.5;
 		overflow-wrap: anywhere;
 	}
@@ -124,8 +124,8 @@
 	/* What this step is about. Everything else in the bar is what any address has. */
 	.marked {
 		padding: 0 2px;
-		border-radius: 3px;
-		background: var(--accent-soft);
+		border-radius: var(--radius);
+		background: var(--here-soft);
 		color: var(--fg);
 		font-weight: 600;
 	}
@@ -151,7 +151,7 @@
 		margin: 0;
 		padding: 6px 8px;
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 
 	figcaption {

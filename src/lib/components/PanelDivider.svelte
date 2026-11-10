@@ -103,7 +103,7 @@
 	.divider:hover::after,
 	.divider:focus-visible::after,
 	.dragging::after {
-		background: var(--accent);
+		background: var(--here);
 	}
 
 	.divider:focus-visible {
@@ -117,10 +117,10 @@
 		left: 0;
 		width: 9px;
 		padding: 4px 0;
-		border-radius: 3px;
+		border-radius: var(--radius);
 		color: var(--muted);
 		background: var(--bg);
-		font-size: 12px;
+		font-size: var(--size-small);
 		line-height: 1;
 		text-align: center;
 		transform: translateY(-50%);
@@ -129,6 +129,6 @@
 	.divider:hover .grip,
 	.divider:focus-visible .grip,
 	.dragging .grip {
-		color: var(--accent);
+		color: var(--here);
 	}
 </style>

@@ -59,7 +59,7 @@
 		height: 100%;
 		padding: 14px 16px;
 		background: var(--bg);
-		font-size: 13.5px;
+		font-size: var(--size-ui);
 	}
 
 	header {
@@ -71,7 +71,7 @@
 
 	h2 {
 		margin: 0;
-		font-size: 17px;
+		font-size: var(--size-title);
 	}
 
 	h2:focus {
@@ -80,20 +80,20 @@
 
 	h3 {
 		margin: 16px 0 6px;
-		font-size: 13.5px;
+		font-size: var(--size-ui);
 	}
 
 	.with {
 		margin: 2px 0 10px;
 		color: var(--muted);
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 	}
 
 	.larger {
 		margin: 0;
 		padding: 8px 10px;
-		border-radius: 6px;
-		background: var(--accent-soft);
+		border-radius: var(--radius);
+		background: var(--here-soft);
 	}
 
 	ul {
@@ -111,7 +111,7 @@
 		padding: 0;
 		border: 0;
 		background: none;
-		color: var(--link, var(--accent));
+		color: var(--link, var(--here));
 		font: inherit;
 		font-weight: 600;
 		text-align: left;

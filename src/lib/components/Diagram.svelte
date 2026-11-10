@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { ICONS } from '#lib/diagram/icons.ts';
 	import {
-		FULL_HEAD_WIDTH,
 		layHeld,
 		TIME_GAP,
 		SELF_LOOP,
@@ -10,6 +8,7 @@
 		WHOLE_SELF_LOOP,
 		type DiagramLayout
 	} from '#lib/diagram/layout.ts';
+	import { tag } from '#lib/diagram/shape.ts';
 	import { interpolate, toFrame, TRANSITION_MS, type Frame } from '#lib/diagram/motion.ts';
 	import type { Lit } from '#lib/flow/explain.ts';
 	import { sees } from '#lib/flow/eyes.ts';
@@ -310,12 +309,7 @@
 								y={frame.headHeight - 30}
 								width={lane.headWidth}
 								height={lane.headWidth}
-								rx="6"
-							/>
-							<path
-								class="icon"
-								d={ICONS[lane.icon]}
-								transform={`translate(-9 ${frame.headHeight - 27}) scale(0.75)`}
+								rx="4"
 							/>
 							<text
 								class="name slanted"
@@ -325,34 +319,21 @@
 								>{lane.name}{#if lane.given}<tspan class="kind"> · {lane.role}</tspan>{/if}</text
 							>
 						{:else}
-							<rect x={-lane.headWidth / 2} y="5" width={lane.headWidth} height="46" rx="8" />
+							<rect x={-lane.headWidth / 2} y="5" width={lane.headWidth} height="46" rx="4" />
 						{/if}
 						{#if frame.strip}
 							<!-- Drawn above. -->
-						{:else if lane.headWidth >= FULL_HEAD_WIDTH}
-							<path class="icon" d={ICONS[lane.icon]} transform="translate(-65 16) scale(0.95)" />
-							<g style:opacity={lane.words}>
-								<text class="name" class:given={lane.given} x="-38" y="25">{lane.nameLines[0]}</text
-								>
-								{#if lane.nameLines[1]}
-									<text class="name" class:given={lane.given} x="-38" y="41"
-										>{lane.nameLines[1]}</text
-									>
-								{:else}
-									<text class="role" x="-38" y="41">{lane.role}</text>
-								{/if}
-							</g>
 						{:else}
 							<g style:opacity={lane.words}>
-								<text class="name tight" class:given={lane.given} y="25" text-anchor="middle"
+								<text class="name" class:given={lane.given} y="25" text-anchor="middle"
 									>{lane.nameLines[0]}</text
 								>
 								{#if lane.nameLines[1]}
-									<text class="name tight" class:given={lane.given} y="41" text-anchor="middle"
+									<text class="name" class:given={lane.given} y="41" text-anchor="middle"
 										>{lane.nameLines[1]}</text
 									>
 								{:else}
-									<text class="role tight" y="41" text-anchor="middle">{lane.role}</text>
+									<text class="role" y="41" text-anchor="middle">{lane.role}</text>
 								{/if}
 							</g>
 						{/if}
@@ -361,14 +342,7 @@
 							{#each layHeld(holdings[lane.id] ?? [], frame.heldWidth) as chip (chip.artifact)}
 								{#if lane.id !== eyes && !eyesHold(chip.artifact)}
 									<g data-hidden-held
-										><rect
-											class="bar"
-											x={chip.x}
-											y={chip.y}
-											width={chip.width}
-											height="16"
-											rx="8"
-										/></g
+										><polygon class="bar" points={tag(chip.x, chip.y, chip.width, 16)} /></g
 									>
 								{:else}
 									<!-- Inside a button, so only for the mouse. The keyboard gets to the same words through
@@ -387,7 +361,7 @@
 											onexplainartifact?.(chip.artifact);
 										}}
 									>
-										<rect x={chip.x} y={chip.y} width={chip.width} height="16" rx="8" />
+										<polygon class="tag" points={tag(chip.x, chip.y, chip.width, 16)} />
 										<text x={chip.x + chip.width / 2} y={chip.y + 11.5} text-anchor="middle">
 											{chip.text}
 										</text>
@@ -429,7 +403,7 @@
 						style:opacity={group.opacity}
 						data-group={group.leaving ? undefined : group.id}
 					>
-						<rect x={group.x} y={group.y} width={group.width} height={group.height} rx="10" />
+						<rect x={group.x} y={group.y} width={group.width} height={group.height} rx="4" />
 						<text x={group.x + 12} y={group.y + (frame.whole ? 14 : 18)}>{group.label}</text>
 					</g>
 				{/each}
@@ -536,14 +510,10 @@
 				{#each frame.chips as chip (chip.id)}
 					{@const state = rowState(chip.step)}
 					{#if hiddenRows.has(chip.step)}
-						<rect
+						<polygon
 							class={`bar chip-bar ${state}`}
 							style:opacity={chip.opacity}
-							x={chip.x}
-							y={chip.y}
-							width={chip.width}
-							height="18"
-							rx="9"
+							points={tag(chip.x, chip.y, chip.width, 18)}
 						/>
 					{:else}
 						<!-- A chip with no token in it is not a button, so the role depends on the chip. -->
@@ -574,7 +544,7 @@
 								if (chip.artifact) activate(event, () => onexplainartifact?.(chip.artifact!));
 							}}
 						>
-							<rect x={chip.x} y={chip.y} width={chip.width} height="18" rx="9" />
+							<polygon class="tag" points={tag(chip.x, chip.y, chip.width, 18)} />
 							<text x={chip.x + chip.width / 2} y={chip.y + 13} text-anchor="middle"
 								>{chip.text}</text
 							>
@@ -620,7 +590,7 @@
 	}
 
 	.lane-head .name.slanted {
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 	/* Named by the link that was opened, which the note beside the diagram says. */
 	.lane-head .name.given {
@@ -658,7 +628,7 @@
 
 	text {
 		fill: var(--fg);
-		font-size: 13px;
+		font-size: var(--size-ui);
 	}
 
 	.lane-head rect {
@@ -669,56 +639,36 @@
 			stroke 0.2s;
 	}
 
-	.lane-head .icon {
-		fill: none;
-		stroke: var(--muted);
-		stroke-width: 1.6;
-		stroke-linecap: round;
-		stroke-linejoin: round;
-	}
-
 	.lane-head .name {
 		font-weight: 600;
-		font-size: 13px;
+		font-size: var(--size-ui);
 	}
 
 	.lane-head .role {
 		fill: var(--muted);
-		font-size: 11px;
+		font-size: var(--size-small);
 	}
 
-	.lane-head .tight {
-		font-size: 11.5px;
-	}
-
-	.lane-head .name.tight {
-		font-size: 12.5px;
-	}
-
+	/* Who takes part in the current step, in the band's grey, so only the step itself is in ink. */
 	.lane-head.active > rect {
-		fill: var(--accent-soft);
-		stroke: var(--accent);
-		stroke-width: 1.5;
-	}
-
-	.lane-head.active .icon {
-		stroke: var(--accent);
+		fill: var(--here-soft);
+		stroke: var(--strong-line);
 	}
 
 	/* What is being explained, and what a part of the diagram is, shown where it is. */
 	.row.lit .hit {
-		stroke: var(--accent);
+		stroke: var(--here);
 		stroke-width: 1.5;
 	}
 
 	.lane-head.lit > rect,
 	[data-lit='part-column'] .lane-head > rect {
-		stroke: var(--accent);
+		stroke: var(--here);
 		stroke-width: 2;
 	}
 
 	[data-lit='part-column'] .lifeline {
-		stroke: var(--accent);
+		stroke: var(--here);
 		stroke-width: 2;
 		opacity: 1 !important;
 	}
@@ -735,9 +685,9 @@
 	}
 
 	[data-lit='part-number'] .number circle,
-	[data-lit='part-chip'] .chip rect,
-	[data-lit='part-seen'] .held rect {
-		stroke: var(--accent);
+	[data-lit='part-chip'] .chip .tag,
+	[data-lit='part-seen'] .held .tag {
+		stroke: var(--here);
 		stroke-width: 2;
 	}
 
@@ -756,22 +706,12 @@
 		stroke: var(--attacker);
 	}
 
-	.lane-head[data-lifeline='attacker'] .role,
-	.lane-head[data-lifeline='attacker'] .icon {
+	.lane-head[data-lifeline='attacker'] .role {
 		fill: var(--attacker);
 	}
 
-	.lane-head[data-lifeline='attacker'] .icon {
-		fill: none;
-		stroke: var(--attacker);
-	}
-
-	.held rect {
-		stroke-width: 1;
-	}
-
 	.held text {
-		font-size: 10.5px;
+		font-size: var(--size-mark);
 		font-weight: 600;
 	}
 
@@ -792,7 +732,7 @@
 
 	.group text {
 		fill: var(--muted);
-		font-size: 11.5px;
+		font-size: var(--size-small);
 		font-weight: 600;
 	}
 
@@ -822,7 +762,7 @@
 	}
 
 	.row:focus-visible .hit {
-		stroke: var(--accent);
+		stroke: var(--here);
 		stroke-width: 1.5;
 	}
 
@@ -868,12 +808,12 @@
 	/* Knocked out of whatever passes behind it, so that a lifeline never strikes through the words. */
 	/* Enough to read, and no more, so that every row fits. */
 	.whole .label {
-		font-size: 11.5px;
+		font-size: var(--size-small);
 		stroke-width: 4px;
 	}
 
 	.whole .number text {
-		font-size: 8.5px;
+		font-size: var(--size-mark);
 	}
 
 	.label {
@@ -901,13 +841,13 @@
 
 	.number text {
 		fill: var(--row);
-		font-size: 10.5px;
+		font-size: var(--size-mark);
 		font-weight: 600;
 	}
 
 	.row.current .number circle {
 		fill: var(--row);
-		stroke: var(--accent-soft);
+		stroke: var(--here-soft);
 		stroke-width: 2;
 	}
 
@@ -969,13 +909,13 @@
 
 	.row.current .hit,
 	.row.current:hover .hit {
-		fill: var(--accent-soft);
+		fill: var(--here-soft);
 	}
 
 	.row.current .label {
 		fill: var(--fg);
 		font-weight: 600;
-		stroke: var(--accent-soft);
+		stroke: var(--here-soft);
 	}
 
 	.row.current line,
@@ -986,14 +926,14 @@
 	/* The one thing that moves on Next, and only there. What it carries shows when it gets there. */
 	.packet {
 		fill: var(--row);
-		stroke: var(--accent-soft);
+		stroke: var(--here-soft);
 		stroke-width: 2;
 		opacity: 0;
 		animation: travel var(--send) ease-in-out;
 	}
 
 	.packet.empty {
-		fill: var(--accent-soft);
+		fill: var(--here-soft);
 		stroke: var(--row);
 		stroke-width: 1.6;
 	}
@@ -1041,7 +981,7 @@
 	}
 
 	.row.current.fresh .hit {
-		fill: var(--accent-soft);
+		fill: var(--here-soft);
 		animation: none;
 	}
 
@@ -1090,7 +1030,7 @@
 	}
 
 	.lane-head:focus-visible > rect {
-		stroke: var(--accent);
+		stroke: var(--here);
 		stroke-width: 2;
 	}
 
@@ -1108,10 +1048,10 @@
 		cursor: pointer;
 	}
 
-	.chip rect,
-	.held rect {
+	/* Filled, with no outline, and its corners cut: a thing that is passed around, not a button. */
+	.chip .tag,
+	.held .tag {
 		fill: var(--chip-soft);
-		stroke: var(--chip);
 	}
 
 	.chip text,
@@ -1120,7 +1060,7 @@
 	}
 
 	.chip text {
-		font-size: 11.5px;
+		font-size: var(--size-small);
 		font-weight: 600;
 	}
 
@@ -1167,9 +1107,10 @@
 		opacity: 1 !important;
 	}
 
-	.chip.followed rect,
-	.held.followed rect {
-		stroke-width: 2;
+	.chip.followed .tag,
+	.held.followed .tag {
+		stroke: var(--chip);
+		stroke-width: 1.5;
 	}
 
 	/* What someone never saw, which is how much there was and nothing of what it said. */

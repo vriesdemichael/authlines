@@ -68,7 +68,7 @@
 		padding: 0;
 		overflow-y: auto;
 		border: 1px solid var(--line);
-		border-radius: 10px;
+		border-radius: var(--radius);
 		background: var(--bg);
 		color: var(--fg);
 		box-shadow: 0 12px 40px rgb(0 0 0 / 0.18);

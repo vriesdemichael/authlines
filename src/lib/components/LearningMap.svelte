@@ -85,26 +85,27 @@
 		display: none;
 	}
 
+	/* As large as the questions, apart by weight and the rule between parts, so the headline leads (#231). */
 	h2 {
 		margin: 0;
-		font-size: 16px;
+		font-size: var(--size-body);
 		font-weight: 600;
 	}
 
 	summary:hover h2 {
-		color: var(--accent);
+		color: var(--here);
 	}
 
 	.count {
 		color: var(--muted);
-		font-size: 13px;
+		font-size: var(--size-ui);
 	}
 
 	.lead {
 		grid-column: 1 / -1;
 		margin-top: 2px;
 		color: var(--muted);
-		font-size: 13.5px;
+		font-size: var(--size-ui);
 		line-height: 1.4;
 	}
 
@@ -129,7 +130,7 @@
 		display: block;
 		padding: 5px 0;
 		color: var(--fg);
-		font-size: 15px;
+		font-size: var(--size-body);
 		line-height: 1.4;
 		text-decoration: none;
 	}
@@ -141,14 +142,14 @@
 
 	.stop.showing .title,
 	.stop[aria-current='location'] .title {
-		color: var(--accent);
+		color: var(--here);
 		font-weight: 600;
 	}
 
 	.tag {
 		margin-left: 6px;
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 
 	/* Beside the diagram, the diagram says it. Still there for anyone who cannot see that. */
@@ -167,7 +168,7 @@
 		.summary {
 			display: block;
 			color: var(--muted);
-			font-size: 13.5px;
+			font-size: var(--size-ui);
 		}
 	}
 </style>

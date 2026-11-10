@@ -47,7 +47,6 @@ export const device: DiagramDef = {
 			plainName: "User's browser",
 			plainRole: 'On another device',
 			...browserWords,
-			icon: 'browser',
 			front: true,
 			concept:
 				'A browser on another device, usually the user’s phone, or the laptop they are working from. It never talks to the app and the app never talks to it. All that goes between them is what the user carries.'
@@ -57,7 +56,6 @@ export const device: DiagramDef = {
 			plainName: 'App',
 			plainRole: 'On a TV, say',
 			...appWords,
-			icon: 'app',
 			when: theRealApp,
 			concept:
 				'An application on something that is no good for logging in: a TV, a printer, or a tool in a terminal with no browser to hand. In OAuth’s terms it is the client. It makes calls, and this flow does not need anything to be able to call it. It has no secret here, because software on someone’s own device generally cannot keep one.'
@@ -68,7 +66,6 @@ export const device: DiagramDef = {
 			plainRole: 'Has no business here',
 			name: 'Attacker',
 			role: 'Wants to be let in',
-			icon: 'attacker',
 			when: any(sendsCode, readsCode),
 			concept: [
 				{
@@ -85,7 +82,6 @@ export const device: DiagramDef = {
 			plainName: 'Identity provider',
 			plainRole: 'Logs users in',
 			...idpWords,
-			icon: 'idp',
 			concept:
 				'The identity provider logs the user in, as it does anywhere. Here it is also the only one that talks to both the app and the browser, so it is what ties a login on one device to an app on another. Its issuer is the address that names it.'
 		},
@@ -94,7 +90,6 @@ export const device: DiagramDef = {
 			plainName: 'API',
 			plainRole: 'Has the data',
 			...apiWords,
-			icon: 'api',
 			concept:
 				'What the app wants to call. It decides from the token whether to answer, and does not need to know which flow got it.'
 		}

@@ -6,7 +6,7 @@ import {
 	type SettingId,
 	type Settings
 } from '#lib/flow/settings.ts';
-import type { ArtifactId, Channel, LifelineIcon, ShotId } from '#lib/flow/vocabulary.ts';
+import type { ArtifactId, Channel, ShotId } from '#lib/flow/vocabulary.ts';
 import type { SourceId, SourceRef } from '#lib/sources/sources.ts';
 
 /** Text that varies with the settings. The first case that holds wins. */
@@ -29,7 +29,6 @@ export interface LifelineDef {
 	role: Text;
 	knownAs?: readonly KnownAs[];
 	concept: Text;
-	icon: LifelineIcon;
 	/** Messages to or from this lifeline travel through the browser. */
 	front?: boolean;
 	/** Where it runs inside another lifeline, which then has all its arrows and what they carry. */
@@ -223,7 +222,6 @@ export interface Lifeline {
 	given?: string;
 	knownAs: readonly KnownAs[];
 	concept: string;
-	icon: LifelineIcon;
 	startsWith: ArtifactId[];
 }
 
@@ -398,7 +396,6 @@ export function evaluate(flow: DiagramDef, settings: Settings): DiagramView {
 				role: resolveText(lifeline.role, settings),
 				knownAs: lifeline.knownAs ?? [],
 				concept: resolveText(lifeline.concept, settings),
-				icon: lifeline.icon,
 				startsWith: (lifeline.startsWith ?? [])
 					.filter((held) => present(held.when, settings))
 					.map((held) => held.artifact)

@@ -32,7 +32,7 @@
 	div {
 		display: inline-flex;
 		border: 1px solid var(--line);
-		border-radius: 7px;
+		border-radius: var(--radius);
 		overflow: hidden;
 	}
 
@@ -42,13 +42,13 @@
 		border-radius: 0;
 		background: var(--raised);
 		color: var(--muted);
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 		font-weight: 500;
 	}
 
 	button[aria-pressed='true'] {
-		background: var(--accent-soft);
-		color: var(--accent);
+		background: var(--here-soft);
+		color: var(--here);
 		font-weight: 600;
 	}
 

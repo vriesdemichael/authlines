@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { hint } from '#lib/hint.svelte.ts';
 	import type { RunValue } from '#lib/recordings/wire.ts';
 
 	interface Props {
@@ -18,7 +19,7 @@
 			{#each values as value (value.value)}
 				<li data-value={value.name}>
 					<code class="name">{value.name}</code>
-					<code class="text" title={value.value}>{value.value}</code>
+					<code class="text" use:hint={value.value}>{value.value}</code>
 					<button type="button" class="from" onclick={() => onstep?.(value.step)}>
 						step {numberOf(value.step)}
 					</button>
@@ -37,14 +38,14 @@
 
 	h4 {
 		margin: 0 0 4px;
-		font-size: 12px;
+		font-size: var(--size-small);
 		font-weight: 600;
 	}
 
 	p {
 		margin: 0;
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 
 	ul {
@@ -60,7 +61,7 @@
 		align-items: baseline;
 		padding: 2px 0;
 		border-top: 1px solid var(--line);
-		font-size: 11.5px;
+		font-size: var(--size-small);
 	}
 
 	code {
@@ -81,8 +82,8 @@
 		padding: 0;
 		border: 0;
 		background: none;
-		color: var(--accent);
-		font-size: 11px;
+		color: var(--here);
+		font-size: var(--size-small);
 		text-decoration: underline;
 		white-space: nowrap;
 	}

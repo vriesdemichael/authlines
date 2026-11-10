@@ -27,7 +27,6 @@ export const clientCredentials: DiagramDef = {
 			plainName: 'App',
 			plainRole: 'Acts for itself',
 			...appWords,
-			icon: 'app',
 			startsWith: [{ artifact: 'secret' }],
 			concept:
 				'An application acting for itself, such as a job or a service. In OAuth’s terms it is the client. There is nobody behind it, and it has nobody’s permission but its own.'
@@ -37,7 +36,6 @@ export const clientCredentials: DiagramDef = {
 			plainName: 'Identity provider',
 			plainRole: 'Hands out tokens',
 			...idpWords,
-			icon: 'idp',
 			startsWith: [{ artifact: 'secret' }],
 			concept:
 				'The identity provider usually logs users in. Here nobody does, so all it does is check who the app is and hand out a token. Its issuer is the address that names it, and a token it signs says who issued it.'
@@ -47,7 +45,6 @@ export const clientCredentials: DiagramDef = {
 			plainName: 'API',
 			plainRole: 'Has the data',
 			...apiWords,
-			icon: 'api',
 			concept: 'What the app wants to call. It decides from the token whether to answer.'
 		}
 	],

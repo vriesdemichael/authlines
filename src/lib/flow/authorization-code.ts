@@ -130,7 +130,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainName: 'Ticket server',
 			plainRole: 'Kerberos',
 			...kdcWords,
-			icon: 'api',
 			concept:
 				'The key distribution center, which hands out Kerberos tickets and keeps a key for every user and service on the network. On a Windows network it runs on every domain controller, with Active Directory behind it. The one recorded here was not Windows, and neither was the computer.',
 			when: kerberos
@@ -141,7 +140,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainName: 'User’s computer',
 			plainRole: 'Holds their tickets',
 			...computerWords,
-			icon: 'app',
 			concept:
 				'The computer the user logged in to that morning, which the browser runs on. Its Kerberos keeps their tickets and asks the KDC for more. On Windows the system does that for the browser, which is handed only the ticket for the site it is on. On Linux, as recorded, the system’s Kerberos library does it inside the browser, so the browser itself reads the ticket-granting ticket and sends it to the KDC. This lane is that part, wherever it runs.',
 			when: kerberos
@@ -151,7 +149,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainName: "User's browser",
 			plainRole: 'Where the user is',
 			...browserWords,
-			icon: 'browser',
 			front: true,
 			when: all(not(inPage), not(behindThePage)),
 			concept:
@@ -164,7 +161,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			...browserWords,
 			name: 'Browser and client',
 			role: 'The client is a page',
-			icon: 'browser',
 			front: true,
 			when: inPage,
 			concept:
@@ -177,7 +173,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			...browserWords,
 			name: 'Browser and page',
 			role: 'The page runs here',
-			icon: 'browser',
 			front: true,
 			when: behindThePage,
 			concept:
@@ -188,7 +183,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainName: 'App',
 			plainRole: 'What the user uses',
 			...appWords,
-			icon: 'app',
 			when: all(not(behindThePage), not(inAProgram)),
 			joins: { lifeline: 'browser', when: inPage },
 			startsWith: [{ artifact: 'secret', when: confidential }],
@@ -219,7 +213,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 					}
 				}
 			],
-			icon: 'app',
 			when: inAProgram,
 			concept:
 				'A program on the user’s own computer, such as a command-line tool or a desktop app. In OAuth’s terms it is the client, and a public one: every copy of it is the same, so a secret in it would be no secret. It uses the user’s own browser to log in, and is never sent the password.'
@@ -229,7 +222,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainName: 'App’s server',
 			plainRole: 'Keeps the tokens',
 			...appWords,
-			icon: 'app',
 			when: behindThePage,
 			startsWith: [{ artifact: 'secret', when: confidential }],
 			concept:
@@ -240,7 +232,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainName: 'Second app',
 			plainRole: 'Same provider',
 			...secondAppWords,
-			icon: 'app',
 			startsWith: [{ artifact: 'secret' }],
 			when: secondApp,
 			concept:
@@ -251,7 +242,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainName: 'Identity provider',
 			plainRole: 'Logs users in',
 			...idpWords,
-			icon: 'idp',
 			startsWith: [{ artifact: 'secret', when: confidential }],
 			concept:
 				'The identity provider, or IdP, logs users in and issues tokens. Its issuer is the address that names it: a token it signs says who issued it, and everyone checks that against the address they were set up with.'
@@ -262,7 +252,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainRole: 'Has no business here',
 			name: 'Attacker',
 			role: 'Made the login link',
-			icon: 'attacker',
 			concept:
 				'Someone who is not the app, with a site of their own. To make the link they need only the app’s client ID, which is in every login address. For it to work, the identity provider has to let their address through, and the user has to open it and log in.',
 			when: all(attacker, byLink)
@@ -273,7 +262,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainRole: 'Has no business here',
 			name: 'Attacker',
 			role: 'Has a copy of the code',
-			icon: 'attacker',
 			concept:
 				"Someone who can read the redirects that go through the browser, but is not the app. Someone who can also change a request can swap in a challenge or a nonce of their own, and then neither stops them. On a phone that can be another app claiming the same address, which gets the code first. A log or a history that keeps addresses usually sees it too late, because a code works once. Something running inside the app's own page sees far more than this, and no setting here stops that.",
 			when: all(attacker, not(byLink))
@@ -284,7 +272,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainRole: 'Has no business here',
 			name: 'Attacker',
 			role: 'Has a copy of the token',
-			icon: 'attacker',
 			concept:
 				'Someone who has a copy of the access token, and not the key in the app that it is tied to, from a log that kept it, say, or a leak. Something running inside the app could use the key as well, which DPoP does not stop.',
 			when: thief
@@ -294,7 +281,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainName: 'User directory',
 			plainRole: 'Has the users',
 			...directoryWords,
-			icon: 'api',
 			concept: [
 				{
 					when: kerberos,
@@ -311,7 +297,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainName: 'Other provider',
 			plainRole: 'The other account',
 			...upstreamWords,
-			icon: 'upstream',
 			concept:
 				'Another identity provider, where the user has an account that the app wants to reach. The identity provider logs in there as the client, as it would to log the user in.',
 			when: links
@@ -321,7 +306,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainName: 'Other provider',
 			plainRole: 'Does the login',
 			...upstreamWords,
-			icon: 'upstream',
 			concept:
 				"Another identity provider, such as the one at the user's employer, which the identity provider trusts to log the user in.",
 			when: all(broker, not(companies))
@@ -331,7 +315,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainName: 'Their company',
 			plainRole: 'Its own provider',
 			...upstreamWords,
-			icon: 'upstream',
 			concept:
 				"The provider at the user's own company, which the company runs. Each customer can have one, and this is the one for the person logging in now. The identity provider trusts it for that company's people.",
 			when: companies
@@ -341,7 +324,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainName: 'API',
 			plainRole: 'Has the data',
 			...apiWords,
-			icon: 'api',
 			concept: [
 				{
 					when: exchange,
@@ -357,7 +339,6 @@ export const authorizationCode: DiagramDef = withTheOldWayInTheFlow({
 			plainName: 'Second API',
 			plainRole: 'The API calls it',
 			...secondApiWords,
-			icon: 'api',
 			when: exchange,
 			concept:
 				'Another API, which the first one calls for the user, to answer the app. The app never calls it. It takes only a token that names it, so the token the app sent would not get in.'

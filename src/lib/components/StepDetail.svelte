@@ -388,7 +388,7 @@
 		background: none;
 		color: var(--muted);
 		font: inherit;
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 		text-decoration: underline;
 		cursor: pointer;
 	}
@@ -402,7 +402,7 @@
 	.cites {
 		margin: 8px 0;
 		color: var(--muted);
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 	}
 
 	.cites summary {
@@ -420,7 +420,7 @@
 		padding: 0;
 		border: 0;
 		background: none;
-		color: var(--link, var(--accent));
+		color: var(--link, var(--here));
 		font: inherit;
 		text-decoration: underline;
 		cursor: pointer;
@@ -431,35 +431,33 @@
 		margin: 0;
 	}
 
+	/* Apart from the step by a rule under it, and not by a box around it (#231). */
 	.change {
-		margin-bottom: 16px;
-		padding: 8px 10px;
-		background: var(--panel);
-		border-left: 3px solid var(--fresh);
+		margin-bottom: 14px;
+		padding-bottom: 12px;
+		border-bottom: 1px solid var(--line);
 	}
 
 	.change h2 {
-		font-size: 12px;
+		font-size: var(--size-small);
 		color: var(--fresh);
 	}
 
 	.intro {
 		margin: 0 0 14px;
-		padding: 10px 12px;
-		border-radius: 8px;
-		background: var(--panel);
-		font-size: 13.5px;
+		color: var(--muted);
+		font-size: var(--size-ui);
 	}
 
 	.why {
 		margin: 6px 0 0;
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 	}
 
 	.plain {
 		margin: -4px 0 8px;
 		color: var(--muted);
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 	}
 
 	.onward {
@@ -475,23 +473,29 @@
 	.onward p {
 		margin: 2px 0 0;
 		color: var(--muted);
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 	}
 
 	.practice {
-		font-size: 13px;
+		font-size: var(--size-ui);
 	}
 
 	.practice strong {
 		font-weight: 600;
 	}
 
+	/* A question that opens, under the words it asks with, and no box around one line (#231). */
 	.pitfall {
 		margin: 0 0 8px;
-		padding: 6px 10px;
-		border: 1px solid var(--line);
-		border-radius: 6px;
-		font-size: 12.5px;
+		font-size: var(--size-ui);
+	}
+
+	.pitfall {
+		padding-left: 14px;
+	}
+
+	.pitfall > summary {
+		margin-left: -14px;
 	}
 
 	.pitfall img {
@@ -499,7 +503,7 @@
 		width: 100%;
 		height: auto;
 		margin-top: 6px;
-		border-radius: 6px;
+		border-radius: var(--radius);
 	}
 
 	.pitfall summary {
@@ -515,36 +519,35 @@
 		margin: 4px 0 0;
 		padding: 0;
 		list-style: none;
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 		font-weight: 600;
 	}
 
 	.part-why {
 		margin: 0 0 10px;
 		color: var(--muted);
-		font-size: 13px;
+		font-size: var(--size-ui);
 	}
 
 	.route {
 		margin: 0;
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 
 	.title {
 		margin: 2px 0 8px;
-		font-size: 18px;
+		font-size: var(--size-title);
 		font-weight: 600;
 		line-height: 1.3;
 	}
 
+	/* How it travels, with the same line as the legend under the diagram. */
 	.channel {
-		padding: 6px 10px;
-		border-left: 3px solid var(--tone);
-		background: var(--panel);
 		color: var(--muted);
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 		--tone: var(--muted);
+		--stroke: solid;
 	}
 
 	.channel strong {
@@ -552,9 +555,18 @@
 		font-weight: 600;
 	}
 
+	.channel strong::before {
+		content: '';
+		display: inline-block;
+		width: 28px;
+		margin-right: 8px;
+		border-top: 2.4px var(--stroke) var(--tone);
+		vertical-align: middle;
+	}
+
 	.known {
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 
 	.known[data-known='spec'] {
@@ -571,6 +583,7 @@
 
 	.channel[data-channel='people'] {
 		--tone: var(--people);
+		--stroke: dotted;
 	}
 
 	p {
@@ -579,12 +592,12 @@
 
 	.cause {
 		color: var(--fresh);
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 
 	h3 {
 		margin-top: 14px;
-		font-size: 12px;
+		font-size: var(--size-small);
 		color: var(--muted);
 	}
 
@@ -606,13 +619,13 @@
 	.place {
 		margin-left: 6px;
 		color: var(--muted);
-		font-size: 11.5px;
+		font-size: var(--size-small);
 	}
 
 	.note {
 		display: block;
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 
 	.note.cause {

@@ -22,8 +22,8 @@
 
 	button {
 		flex: none;
-		border-color: var(--accent);
-		color: var(--accent);
+		border-color: var(--here);
+		color: var(--here);
 		font-weight: 600;
 	}
 
@@ -31,7 +31,7 @@
 		max-width: 190px;
 		margin: 0;
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 		line-height: 1.25;
 	}
 

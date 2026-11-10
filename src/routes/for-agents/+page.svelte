@@ -184,22 +184,22 @@
 
 	.brand {
 		color: var(--muted);
-		font-size: 13px;
+		font-size: var(--size-ui);
 	}
 
 	h1 {
 		margin: 12px 0;
-		font-size: 22px;
+		font-size: var(--size-headline);
 	}
 
 	h2 {
 		margin: 24px 0 6px;
-		font-size: 15px;
+		font-size: var(--size-body);
 	}
 
 	h3 {
 		margin: 16px 0 4px;
-		font-size: 13.5px;
+		font-size: var(--size-ui);
 	}
 
 	p,
@@ -217,7 +217,7 @@
 
 	pre {
 		padding: 10px 12px;
-		border-radius: 8px;
+		border-radius: var(--radius);
 		background: var(--panel);
 		white-space: pre-wrap;
 	}

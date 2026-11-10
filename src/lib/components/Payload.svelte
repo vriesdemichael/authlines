@@ -354,15 +354,15 @@
 <style>
 	.raw {
 		padding: 8px 10px;
-		border-radius: 6px;
+		border-radius: var(--radius);
 		background: var(--panel);
 		font-family: var(--mono);
-		font-size: var(--raw-size, 11.5px);
+		font-size: var(--raw-size, var(--size-small));
 		line-height: 1.5;
 	}
 
 	.raw:focus-visible {
-		outline: 2px solid var(--accent);
+		outline: 2px solid var(--here);
 	}
 
 	.line {
@@ -387,7 +387,7 @@
 	.key:hover,
 	.key:focus-visible,
 	.key[aria-expanded='true'] {
-		color: var(--accent);
+		color: var(--here);
 	}
 
 	/* Over the lines under it, so nothing moves while the pointer is on a key. */
@@ -417,11 +417,11 @@
 		margin: 2px 0 0;
 		padding: 6px 8px;
 		border: 1px solid var(--line);
-		border-radius: 6px;
+		border-radius: var(--radius);
 		background: var(--bg);
 		box-shadow: 0 6px 16px rgb(0 0 0 / 0.18);
 		font-family: var(--sans, inherit);
-		font-size: 12px;
+		font-size: var(--size-small);
 		line-height: 1.45;
 		white-space: normal;
 		word-break: normal;
@@ -431,13 +431,13 @@
 		display: inline-block;
 		max-width: 100%;
 		height: 0.9em;
-		border-radius: 2px;
+		border-radius: var(--radius);
 		background: var(--muted);
 		vertical-align: -0.05em;
 	}
 
 	.value {
-		border-radius: 3px;
+		border-radius: var(--radius);
 		color: var(--chip, inherit);
 		background: var(--chip-soft, transparent);
 		font-weight: 500;
@@ -467,7 +467,7 @@
 		border: 0;
 		background: none;
 		font-family: var(--sans);
-		font-size: 11px;
+		font-size: var(--size-small);
 		white-space: nowrap;
 	}
 
@@ -477,13 +477,13 @@
 	}
 
 	.from {
-		color: var(--accent);
+		color: var(--here);
 		text-decoration: underline;
 	}
 
 	.jwt {
 		margin-top: 6px;
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 	}
 
 	.jwt summary {
@@ -494,7 +494,7 @@
 		margin: 6px 0 0;
 		padding: 0;
 		list-style: none;
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 
 	.behind li {
@@ -517,7 +517,7 @@
 		display: inline-flex;
 		margin: 0 0 6px;
 		border: 1px solid var(--line);
-		border-radius: 6px;
+		border-radius: var(--radius);
 		overflow: hidden;
 	}
 
@@ -527,7 +527,7 @@
 		background: none;
 		color: var(--muted);
 		font: inherit;
-		font-size: 12px;
+		font-size: var(--size-small);
 		cursor: pointer;
 	}
 
@@ -540,14 +540,14 @@
 	.opened {
 		margin: 2px 0 4px 2ch;
 		padding-left: 8px;
-		border-left: 2px solid var(--line);
+		border-left: 1px solid var(--line);
 	}
 
 	.part {
 		display: block;
 		color: var(--muted);
 		font-family: var(--sans);
-		font-size: 11px;
+		font-size: var(--size-small);
 	}
 
 	/* Quiet, as a word in a step's text is, because what is under it matters more. */
@@ -562,8 +562,8 @@
 	}
 
 	.part.term:hover {
-		color: var(--accent);
-		text-decoration-color: var(--accent);
+		color: var(--here);
+		text-decoration-color: var(--here);
 	}
 
 	.opened pre {
@@ -578,9 +578,9 @@
 		margin: 4px 0 0;
 		padding: 8px 10px;
 		overflow-x: auto;
-		border-radius: 6px;
+		border-radius: var(--radius);
 		background: var(--panel);
 		font-family: var(--mono);
-		font-size: 11.5px;
+		font-size: var(--size-small);
 	}
 </style>

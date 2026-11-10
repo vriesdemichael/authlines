@@ -65,7 +65,6 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plainRole: 'The app team',
 			name: 'App team',
 			role: 'People',
-			icon: 'people',
 			concept:
 				'The people who build and run the app, which is probably you. They know where it runs, so they are the ones who know what to register.'
 		},
@@ -74,7 +73,6 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plainName: 'App',
 			plainRole: 'The one being set up',
 			...appWords,
-			icon: 'app',
 			when: not(inAProgram),
 			concept:
 				'The application being set up. It has to learn about the identity provider before anyone logs in.'
@@ -84,7 +82,6 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plainName: 'Program',
 			plainRole: 'The one being set up',
 			...appWords,
-			icon: 'app',
 			when: inAProgram,
 			concept:
 				'A program for users’ own computers, being set up. Every copy of it learns about the identity provider, and each is the same client.'
@@ -94,7 +91,6 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plainName: 'Identity provider',
 			plainRole: 'Will log users in',
 			...idpWords,
-			icon: 'idp',
 			concept: 'The identity provider. It has to know about the app, and the issuer names it.'
 		},
 		{
@@ -103,7 +99,6 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plainRole: 'Runs the provider',
 			name: 'Provider admin',
 			role: 'People',
-			icon: 'people',
 			concept:
 				'The people who run the identity provider. They register apps in its admin console. On a small team, or a provider you pay for, this may be you as well.'
 		},
@@ -112,7 +107,6 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plainName: 'Ticket server',
 			plainRole: 'Kerberos',
 			...kdcWords,
-			icon: 'api',
 			concept:
 				'The key distribution center of the company’s network, which keeps a key for every user and service on it. On a Windows network it runs on every domain controller.',
 			when: kerberos
@@ -123,7 +117,6 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plainRole: 'Run the domain',
 			name: 'Domain admins',
 			role: 'People',
-			icon: 'people',
 			concept:
 				'The people who look after the company’s network: its accounts, the KDC, and how its computers and their browsers are set up. Often not the people who run the identity provider.',
 			when: kerberos
@@ -135,7 +128,6 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plainRole: 'Set up by the admins',
 			name: 'Company computers',
 			role: 'And their browsers',
-			icon: 'browser',
 			concept:
 				'The company’s own computers and the browsers on them, which the network admins set up before anyone logs in. A browser sends a ticket only to sites it was told to: Chromium by a list in its settings, or on Windows with no list, by the sites Windows counts as local, and Firefox by a list of its own.',
 			when: withATicket
@@ -145,7 +137,6 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plainName: 'Other provider',
 			plainRole: 'The other account',
 			...upstreamWords,
-			icon: 'upstream',
 			concept:
 				'Another identity provider, where users have accounts that the app wants to reach. The identity provider is its client.',
 			when: links
@@ -155,7 +146,6 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plainName: 'Other provider',
 			plainRole: 'Will do the login',
 			...upstreamWords,
-			icon: 'upstream',
 			concept: 'Another identity provider, which the identity provider will trust to log users in.',
 			when: all(broker, not(companies))
 		},
@@ -165,7 +155,6 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plainRole: 'At the customer',
 			name: 'Customer admins',
 			role: 'People',
-			icon: 'people',
 			concept:
 				"The people who run the customer's own provider. Each customer has its own, and what they do is not something anyone on our side can do for them, so this part is a conversation with each new customer.",
 			when: companies
@@ -175,7 +164,6 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plainName: 'Their company',
 			plainRole: 'Its own provider',
 			...upstreamWords,
-			icon: 'upstream',
 			concept:
 				"The customer's own provider, which their admins run, and which will log their people in.",
 			when: companies
@@ -185,7 +173,6 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plainName: 'API',
 			plainRole: 'Will check tokens',
 			...apiWords,
-			icon: 'api',
 			concept:
 				'The API the app will call. It has a setup of its own, because it has to know which tokens to accept.'
 		},
@@ -194,7 +181,6 @@ export const authorizationCodeSetup: DiagramDef = withTheOldWayInTheSetup({
 			plainName: 'Second API',
 			plainRole: 'Checks tokens too',
 			...secondApiWords,
-			icon: 'api',
 			when: exchange,
 			concept:
 				'The API the first one will call for the user. It is set up like the first: which issuer to trust, and its own name, which a token has to carry to get in.'

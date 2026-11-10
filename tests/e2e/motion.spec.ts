@@ -168,7 +168,7 @@ test.describe('filmed frame by frame', () => {
 				.map((element) => element.getBoundingClientRect())
 				.filter((box) => box.width && box.bottom > view.top && box.top < view.bottom);
 		const words = boxes('.row .label tspan');
-		const chips = boxes('.chip:not(.future) rect');
+		const chips = boxes('.chip:not(.future) .tag');
 		const crossing = chips.filter((chip) =>
 			words.some(
 				(word) =>

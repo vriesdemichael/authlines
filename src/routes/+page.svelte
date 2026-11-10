@@ -127,7 +127,7 @@
 	.source {
 		margin: 24px 0 0;
 		color: var(--muted);
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 	}
 
 	main {
@@ -172,15 +172,18 @@
 
 	h1 {
 		margin: 0 0 14px;
-		font-size: 17px;
+		font-size: var(--size-body);
 		font-weight: 600;
 	}
 
+	/* The largest thing on the page, by far, so it is what is read first (#231). */
 	.headline {
-		margin: 0 0 6px;
-		font-size: 24px;
+		margin: 0 0 10px;
+		font-size: var(--size-headline);
 		font-weight: 600;
-		letter-spacing: -0.01em;
+		line-height: 1.2;
+		letter-spacing: -0.015em;
+		text-wrap: balance;
 	}
 
 	.search {
@@ -199,15 +202,15 @@
 	kbd {
 		padding: 0 6px;
 		border: 1px solid var(--line);
-		border-radius: 4px;
+		border-radius: var(--radius);
 		font: inherit;
-		font-size: 12px;
+		font-size: var(--size-small);
 	}
 
 	.lead {
 		max-width: 680px;
 		margin: 0 0 18px;
 		color: var(--muted);
-		font-size: 15.5px;
+		font-size: var(--size-body);
 	}
 </style>

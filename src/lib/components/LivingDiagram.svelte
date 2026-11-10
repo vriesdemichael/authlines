@@ -23,7 +23,10 @@
 
 	const SAYS_WHAT_CHANGED_MS = 2600;
 	let width = $state(0);
-	let height = $state(0);
+	/** All the height there is, and what the words under the picture take of it. */
+	let room = $state(0);
+	let wordsHeight = $state(0);
+	const height = $derived(Math.max(0, room - wordsHeight - 2));
 	let fresh = $state<ReadonlySet<string>>(new Set());
 	const view = $derived(nodeView(node));
 	let shown = untrack(() => view);
@@ -54,6 +57,8 @@
 			flip === null
 		)
 	);
+	// As tall as what is drawn, and no taller, so the card holds no empty room under it (#231).
+	const drawn = $derived(height ? Math.min(height, layout.headHeight + layout.height) : null);
 	const eyes = $derived(nodeState(node).eyes);
 	// Nothing someone has not been told about yet, and the one thing they have.
 	const holdings = $derived.by(() => {
@@ -69,57 +74,69 @@
 	const words = $derived(flip?.on ? wayIn.on : wayIn.off);
 </script>
 
-<section class="living" data-testid="living" data-node={node.id}>
-	<!-- To look at. What can be done with it is in the link under it, and on the map beside it. -->
-	<div class="picture" inert bind:clientWidth={width} bind:clientHeight={height}>
-		<Diagram {layout} currentStep={current} {fresh} {eyes} {holdings} />
-	</div>
-	<div class="words">
-		{#if flip}
-			<strong>{words.title}</strong>
-			<p data-testid="living-answer">{words.says}</p>
-			<label class="flip">
-				<input
-					type="checkbox"
-					data-testid="way-in-switch"
-					checked={flip.on}
-					onchange={(event) => flip.onflip(event.currentTarget.checked)}
-				/>
-				{wayIn.switch}
-			</label>
-			{#if flip.on}
+<div class="room" bind:clientHeight={room}>
+	<section class="living" data-testid="living" data-node={node.id}>
+		<!-- To look at. What can be done with it is in the link under it, and on the map beside it. -->
+		<div
+			class="picture"
+			inert
+			bind:clientWidth={width}
+			style:height={drawn === null ? null : `${drawn}px`}
+		>
+			<Diagram {layout} currentStep={current} {fresh} {eyes} {holdings} />
+		</div>
+		<div class="words" bind:clientHeight={wordsHeight}>
+			{#if flip}
+				<strong>{words.title}</strong>
+				<p data-testid="living-answer">{words.says}</p>
+				<label class="flip">
+					<input
+						type="checkbox"
+						data-testid="way-in-switch"
+						checked={flip.on}
+						onchange={(event) => flip.onflip(event.currentTarget.checked)}
+					/>
+					{wayIn.switch}
+				</label>
+				{#if flip.on}
+					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the page resolves it -->
+					<a {href} data-testid="living-open">{wayIn.on.link}</a>
+				{/if}
+			{:else}
+				<strong>{node.title}</strong>
+				<p data-testid="living-answer">{node.answer}</p>
 				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the page resolves it -->
-				<a {href} data-testid="living-open">{wayIn.on.link}</a>
+				<a {href} data-testid="living-open">Open this question</a>
+				{#if startHref}
+					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the page resolves it -->
+					<a class="start" href={startHref} data-testid="living-start" onclick={onstart}>
+						Back to the start
+					</a>
+				{/if}
 			{/if}
-		{:else}
-			<strong>{node.title}</strong>
-			<p data-testid="living-answer">{node.answer}</p>
-			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the page resolves it -->
-			<a {href} data-testid="living-open">Open this question</a>
-			{#if startHref}
-				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the page resolves it -->
-				<a class="start" href={startHref} data-testid="living-start" onclick={onstart}>
-					Back to the start
-				</a>
-			{/if}
-		{/if}
-	</div>
-</section>
+		</div>
+	</section>
+</div>
 
 <style>
+	.room {
+		height: 100%;
+		min-height: 0;
+	}
+
 	.living {
 		display: flex;
 		flex-direction: column;
-		height: 100%;
+		max-height: 100%;
 		min-height: 0;
 		border: 1px solid var(--line);
-		border-radius: 10px;
+		border-radius: var(--radius);
 		overflow: hidden;
 		background: var(--bg);
 	}
 
 	.picture {
-		flex: 1;
+		flex: none;
 		min-height: 0;
 	}
 
@@ -127,7 +144,7 @@
 		flex: none;
 		padding: 12px 16px;
 		border-top: 1px solid var(--line);
-		font-size: 14px;
+		font-size: var(--size-body);
 	}
 
 	p {
@@ -152,6 +169,6 @@
 	.flip input {
 		width: 18px;
 		height: 18px;
-		accent-color: var(--accent);
+		accent-color: var(--here);
 	}
 </style>

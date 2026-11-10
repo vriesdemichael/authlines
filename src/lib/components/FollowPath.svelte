@@ -39,14 +39,14 @@
 	section {
 		margin: 0 0 14px;
 		padding: 10px 12px;
-		border-radius: 8px;
+		border-radius: var(--radius);
 		background: var(--panel);
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 	}
 
 	h2 {
 		margin: 0 0 6px;
-		font-size: 13px;
+		font-size: var(--size-ui);
 	}
 
 	ol {
@@ -64,7 +64,7 @@
 		border: 0;
 		background: none;
 		color: var(--fg);
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 		text-align: left;
 	}
 
@@ -88,7 +88,7 @@
 		border: 0;
 		background: none;
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 		text-decoration: underline;
 	}
 </style>

@@ -75,11 +75,11 @@
 		margin: 0;
 		padding: 6px 9px;
 		border: 1px solid var(--line);
-		border-radius: 6px;
+		border-radius: var(--radius);
 		color: var(--fg);
 		background: var(--bg);
 		box-shadow: 0 4px 14px rgb(0 0 0 / 0.16);
-		font-size: 12.5px;
+		font-size: var(--size-ui);
 		line-height: 1.45;
 		pointer-events: none;
 	}

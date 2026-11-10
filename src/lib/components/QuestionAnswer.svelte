@@ -55,7 +55,7 @@
 
 	p {
 		margin: 0;
-		font-size: 15px;
+		font-size: var(--size-body);
 		line-height: 1.45;
 	}
 
@@ -66,7 +66,7 @@
 		border: 0;
 		background: none;
 		color: var(--muted);
-		font-size: 12px;
+		font-size: var(--size-small);
 		text-decoration: underline;
 	}
 </style>

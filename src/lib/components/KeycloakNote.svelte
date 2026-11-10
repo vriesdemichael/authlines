@@ -29,13 +29,18 @@
 </details>
 
 <style>
+	/* It opens under its own words, like any question on the step, with no box around it (#231). */
 	.note {
 		margin: 0 0 6px;
-		padding: 6px 10px;
-		border: 1px solid var(--line);
-		border-left: 3px solid var(--strong-line);
-		border-radius: 6px;
-		font-size: 12.5px;
+		font-size: var(--size-ui);
+	}
+
+	.note {
+		padding-left: 14px;
+	}
+
+	.note > summary {
+		margin-left: -14px;
 	}
 
 	summary {
@@ -59,6 +64,6 @@
 	.flag,
 	.checked {
 		color: var(--muted);
-		font-size: 11.5px;
+		font-size: var(--size-small);
 	}
 </style>
