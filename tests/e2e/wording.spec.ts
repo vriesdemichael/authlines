@@ -144,9 +144,9 @@ test.describe('whose words the diagram is in', () => {
 	]) {
 		for (const wording of ['plain', 'specs', 'keycloak']) {
 			for (const settings of ['', 'oidc=1&broker=1&sso=1']) {
-				test(`every name fits its head at ${width}x${height}, ${wording} ${settings}`, async ({
-					page
-				}) => {
+				// No space at the end with no settings: a list of tests cannot name a title that has one.
+				const which = [wording, settings].filter(Boolean).join(' ');
+				test(`every name fits its head at ${width}x${height}, ${which}`, async ({ page }) => {
 					await page.setViewportSize({ width, height });
 					await open(page, `mode=simple&say=${wording}&${settings}`);
 					const over = await page.locator('.lane-head').evaluateAll((heads) =>
