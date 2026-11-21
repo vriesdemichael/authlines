@@ -32,7 +32,9 @@ jobs:
       - run: pnpm test:unit
 
   # Jobs of their own, because most tests run in all three browsers and there are more with each
-  # setting. Every merge waits for the slowest, so they are split to finish at about the same time.
+  # setting. Every merge waits for the slowest, so they are split to finish at about the same time:
+  # each job takes every nth test, because the slow ones sit together in the list and Playwright's
+  # own --shard cuts it into runs.
   click-through:
     name: Click-through (${{ matrix.browser }} ${{ matrix.part }} of ${{ matrix.parts }})
     runs-on: ubuntu-latest
@@ -44,14 +46,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { browser: chromium, part: 1, parts: 2 }
-          - { browser: chromium, part: 2, parts: 2 }
-          - { browser: firefox, part: 1, parts: 3 }
-          - { browser: firefox, part: 2, parts: 3 }
-          - { browser: firefox, part: 3, parts: 3 }
-          - { browser: webkit, part: 1, parts: 3 }
-          - { browser: webkit, part: 2, parts: 3 }
-          - { browser: webkit, part: 3, parts: 3 }
+          - { browser: chromium, part: 1, parts: 3 }
+          - { browser: chromium, part: 2, parts: 3 }
+          - { browser: chromium, part: 3, parts: 3 }
+          - { browser: firefox, part: 1, parts: 4 }
+          - { browser: firefox, part: 2, parts: 4 }
+          - { browser: firefox, part: 3, parts: 4 }
+          - { browser: firefox, part: 4, parts: 4 }
+          - { browser: webkit, part: 1, parts: 4 }
+          - { browser: webkit, part: 2, parts: 4 }
+          - { browser: webkit, part: 3, parts: 4 }
+          - { browser: webkit, part: 4, parts: 4 }
           # The click-through alone, at a phone's size, in Chromium (#15).
           - { browser: phone, part: 1, parts: 1 }
     steps:
@@ -64,7 +69,8 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test:e2e --project=${{ matrix.browser }} --shard=${{ matrix.part }}/${{ matrix.parts }}
+      - run: node tests/support/shard.mjs ${{ matrix.browser }} ${{ matrix.part }} ${{ matrix.parts }} tests-of-this-job.txt
+      - run: pnpm test:e2e --project=${{ matrix.browser }} --test-list=tests-of-this-job.txt
         env:
           # Firefox will not run as root with a HOME that belongs to someone else, which is what a
           # container job gets.

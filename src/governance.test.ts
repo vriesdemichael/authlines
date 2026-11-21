@@ -55,6 +55,36 @@ describe('the check branch protection requires (ADR-006)', () => {
 	});
 });
 
+describe('the click-through jobs (ADR-006)', () => {
+	const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
+	const jobs = [...workflow.matchAll(/- \{ browser: (\w+), part: (\d+), parts: (\d+) \}/g)].map(
+		([, browser, part, parts]) => ({ browser, part: Number(part), parts: Number(parts) })
+	);
+
+	it('take every part of each browser between them, because a part no job takes is tests nobody runs', () => {
+		const browsers = [...new Set(jobs.map((job) => job.browser))];
+		expect(browsers.sort()).toEqual(['chromium', 'firefox', 'phone', 'webkit']);
+		for (const browser of browsers) {
+			const mine = jobs.filter((job) => job.browser === browser);
+			const parts = mine[0].parts;
+			expect(mine.map((job) => job.parts)).toEqual(mine.map(() => parts));
+			expect(mine.map((job) => job.part).sort((a, b) => a - b)).toEqual(
+				Array.from({ length: parts }, (_, index) => index + 1)
+			);
+		}
+	});
+
+	it('run the list written for that part, and are not split a second way', () => {
+		expect(workflow).toContain(
+			'node tests/support/shard.mjs ${{ matrix.browser }} ${{ matrix.part }} ${{ matrix.parts }} tests-of-this-job.txt'
+		);
+		expect(workflow).toContain(
+			'pnpm test:e2e --project=${{ matrix.browser }} --test-list=tests-of-this-job.txt'
+		);
+		expect(workflow).not.toContain('--shard=');
+	});
+});
+
 describe('decision records (ADR-002)', () => {
 	const folder = 'docs/adr';
 	const index = readFileSync(join(folder, 'index.md'), 'utf8');

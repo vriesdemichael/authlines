@@ -1128,6 +1128,18 @@ export const breakages = [
 		from: 'needs: complete',
 		to: 'needs: checks'
 	},
+	{
+		name: 'ci: one part of a browser has no job',
+		file: '.github/workflows/ci.yml',
+		from: '          - { browser: firefox, part: 2, parts: 4 }\n',
+		to: ''
+	},
+	{
+		name: 'ci: every job of a browser runs all of its tests',
+		file: '.github/workflows/ci.yml',
+		from: ' --test-list=tests-of-this-job.txt',
+		to: ''
+	},
 
 	// How it moves.
 	{
